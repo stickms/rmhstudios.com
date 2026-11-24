@@ -17,7 +17,7 @@
  *    GPU and JS memory and renders nearest-first so fast flipping never pauses.
  */
 
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { readerQualityLabels } from '@/components/library/reader-quality-labels';
 import { Link } from '@tanstack/react-router';
@@ -26,12 +26,14 @@ import {
   Bookmark,
   BookmarkCheck,
   Check,
+  ChevronDown,
   Download,
   Info,
   List,
   Loader2,
   Maximize2,
   Minimize2,
+  MoreHorizontal,
   Minus,
   Plus,
   Search,
@@ -49,6 +51,7 @@ import { useSyncedBookState, type Bookmark as BookmarkT, type Note } from '@/lib
 import { useSession } from '@/components/Providers';
 import { ContinuedNotice } from './ContinuedNotice';
 import { usePopPresence } from '@/hooks/usePopPresence';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { BookCanvas } from './BookCanvas';
 import { ReaderDetails } from './ReaderDetails';
 import { FindPanel } from './FindPanel';
@@ -408,10 +411,112 @@ export function BookReader({ book }: { book: LibraryBook }) {
     setZoom(Math.max(0.8, Math.min(1.5, Math.round(next * 10) / 10)));
   }, []);
 
+  const compact = useMediaQuery('(max-width: 800px)');
   const openDetails = useCallback((trigger: HTMLElement) => {
     detailsTriggerRef.current = trigger;
     setDetailsOpen(true);
   }, []);
+
+  // Header pieces: one set of elements, laid out inline on desktop and folded into the
+  // ⋯ menu on a phone, so the two layouts can't drift apart.
+  const chapterMenu = (
+    <>
+      {status === 'ready' && chapters.length > 0 && (
+    <ChapterMenu chapters={chapters} curPage={curPage} onJump={goToPage} />
+  )}
+    </>
+  );
+  const pageCounter = (
+    <>
+      {status === 'ready' &&
+    (editingPage ? (
+      <PageJump
+        numPages={numPages}
+        curPage={curPage}
+        onJump={(p) => {
+          goToPage(p);
+          setEditingPage(false);
+        }}
+        onCancel={() => setEditingPage(false)}
+      />
+    ) : (
+      pageLabel && (
+        <button
+          type="button"
+          className="lib-reader__count lib-reader__count--btn"
+          onClick={() => setEditingPage(true)}
+          title={t("jump-to-page", { defaultValue: "Jump to page" })}
+          aria-label={t("jump-to-a-page", { defaultValue: "Jump to a page" })}
+        >
+          {pageLabel}
+        </button>
+      )
+    ))}
+    </>
+  );
+  const bookmarkButton = (
+    <>
+      {status === 'ready' && (
+    <button
+      type="button"
+      className={`vibe-toolbar__icon transition-transform duration-site-fast active:scale-90${bookmarked ? ' is-on' : ''}`}
+      onClick={toggleBookmark}
+      aria-keyshortcuts="B"
+      aria-pressed={bookmarked}
+      title={bookmarked ? t('remove-bookmark', { defaultValue: 'Remove bookmark' }) : t('add-bookmark', { defaultValue: 'Bookmark this page' })}
+      aria-label={bookmarked ? t('remove-bookmark', { defaultValue: 'Remove bookmark' }) : t('add-bookmark', { defaultValue: 'Bookmark this page' })}
+    >
+      {bookmarked ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
+    </button>
+  )}
+    </>
+  );
+  const findButton = (
+    <>
+      {status === 'ready' && (
+    <button
+      ref={findButtonRef}
+      type="button"
+      className={`vibe-toolbar__icon transition-transform duration-site-fast active:scale-90${findOpen ? ' is-on' : ''}`}
+      onClick={() => (findOpen ? closeFind(false) : openFind())}
+      aria-keyshortcuts="Control+F Meta+F"
+      aria-pressed={findOpen}
+      title={ts('panel-title', { defaultValue: 'Find in book' })}
+      aria-label={ts('panel-title', { defaultValue: 'Find in book' })}
+    >
+      <Search size={16} />
+    </button>
+  )}
+    </>
+  );
+  const marksMenu = (
+    <>
+      {status === 'ready' && (
+    <MarksMenu
+      bookmarks={marks.state.bookmarks}
+      notes={marks.state.notes}
+      curPage={curPage}
+      onJump={goToPage}
+      onRemoveBookmark={marks.removeBookmark}
+      onAddNote={marks.addNote}
+      onRemoveNote={marks.removeNote}
+    />
+  )}
+    </>
+  );
+  const readingTools = (
+    <ReaderReadingTools
+    book={book}
+    source={textSource}
+    numPages={numPages}
+    curPage={curPage}
+    ready={status === 'ready'}
+    stageEl={readerRef.current?.querySelector<HTMLElement>('.lib-reader__stage') ?? null}
+    findJump={findJump}
+    Dropdown={Dropdown}
+  />
+  );
+  const qualityMenu = <>{status === 'ready' && <QualityMenu quality={quality} onChange={setQuality} />}</>;
 
   return (
     <main
@@ -434,91 +539,77 @@ export function BookReader({ book }: { book: LibraryBook }) {
           <span className="lib-reader__title" title={book.title}>{book.title}</span>
         </button>
         <div className="lib-reader__actions">
-          {status === 'ready' && chapters.length > 0 && (
-            <ChapterMenu chapters={chapters} curPage={curPage} onJump={goToPage} />
+          {!compact && chapterMenu}
+          {pageCounter}
+          {bookmarkButton}
+          {compact ? (
+            <MoreMenu label={t('more-actions', { defaultValue: 'More actions' })}>
+              {(close) => (
+                <>
+                  {chapterMenu}
+                  {status === 'ready' && (
+                    <button
+                      type="button"
+                      className="lib-reader__row"
+                      onClick={() => {
+                        close();
+                        openFind();
+                      }}
+                    >
+                      <Search size={16} />
+                      <span>{ts('panel-title', { defaultValue: 'Find in book' })}</span>
+                    </button>
+                  )}
+                  {marksMenu}
+                  {readingTools}
+                  {qualityMenu}
+                  <button
+                    type="button"
+                    className="lib-reader__row"
+                    onClick={(event) => {
+                      const trigger = event.currentTarget;
+                      close();
+                      openDetails(trigger);
+                    }}
+                  >
+                    <Info size={16} />
+                    <span>{t('book-details', { defaultValue: 'Book details' })}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="lib-reader__row"
+                    onClick={() => {
+                      close();
+                      toggleFullscreen();
+                    }}
+                  >
+                    {fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                    <span>{fullscreen ? t('exit-fullscreen', { defaultValue: 'Exit fullscreen' }) : t('enter-fullscreen', { defaultValue: 'Enter fullscreen' })}</span>
+                  </button>
+                  <a href={book.url} download className="lib-reader__row" onClick={close}>
+                    <Download size={16} />
+                    <span>{t("download-pdf", { defaultValue: "Download PDF" })}</span>
+                  </a>
+                </>
+              )}
+            </MoreMenu>
+          ) : (
+            <>
+              {findButton}
+              {marksMenu}
+              {readingTools}
+              {qualityMenu}
+              <button type="button" className="vibe-toolbar__icon lib-reader__desktop-action" onClick={(event) => openDetails(event.currentTarget)} aria-label={t('book-details', { defaultValue: 'Book details' })} title={t('book-details', { defaultValue: 'Book details' })}>
+                <Info size={16} />
+              </button>
+              <button type="button" className="vibe-toolbar__icon lib-reader__desktop-action" onClick={toggleFullscreen} aria-keyshortcuts="F" aria-label={fullscreen ? t('exit-fullscreen', { defaultValue: 'Exit fullscreen' }) : t('enter-fullscreen', { defaultValue: 'Enter fullscreen' })} title={fullscreen ? t('exit-fullscreen', { defaultValue: 'Exit fullscreen' }) : t('enter-fullscreen', { defaultValue: 'Enter fullscreen' })}>
+                {fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+              </button>
+              <a href={book.url} download className="vibe-toolbar__icon transition-transform duration-site-fast active:scale-90" aria-label={t("download-pdf", { defaultValue: "Download PDF" })}>
+                <Download size={16} />
+              </a>
+            </>
           )}
-          {status === 'ready' &&
-            (editingPage ? (
-              <PageJump
-                numPages={numPages}
-                curPage={curPage}
-                onJump={(p) => {
-                  goToPage(p);
-                  setEditingPage(false);
-                }}
-                onCancel={() => setEditingPage(false)}
-              />
-            ) : (
-              pageLabel && (
-                <button
-                  type="button"
-                  className="lib-reader__count lib-reader__count--btn"
-                  onClick={() => setEditingPage(true)}
-                  title={t("jump-to-page", { defaultValue: "Jump to page" })}
-                  aria-label={t("jump-to-a-page", { defaultValue: "Jump to a page" })}
-                >
-                  {pageLabel}
-                </button>
-              )
-            ))}
-          {status === 'ready' && (
-            <button
-              type="button"
-              className={`vibe-toolbar__icon transition-transform duration-site-fast active:scale-90${bookmarked ? ' is-on' : ''}`}
-              onClick={toggleBookmark}
-              aria-keyshortcuts="B"
-              aria-pressed={bookmarked}
-              title={bookmarked ? t('remove-bookmark', { defaultValue: 'Remove bookmark' }) : t('add-bookmark', { defaultValue: 'Bookmark this page' })}
-              aria-label={bookmarked ? t('remove-bookmark', { defaultValue: 'Remove bookmark' }) : t('add-bookmark', { defaultValue: 'Bookmark this page' })}
-            >
-              {bookmarked ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
-            </button>
-          )}
-          {status === 'ready' && (
-            <button
-              ref={findButtonRef}
-              type="button"
-              className={`vibe-toolbar__icon transition-transform duration-site-fast active:scale-90${findOpen ? ' is-on' : ''}`}
-              onClick={() => (findOpen ? closeFind(false) : openFind())}
-              aria-keyshortcuts="Control+F Meta+F"
-              aria-pressed={findOpen}
-              title={ts('panel-title', { defaultValue: 'Find in book' })}
-              aria-label={ts('panel-title', { defaultValue: 'Find in book' })}
-            >
-              <Search size={16} />
-            </button>
-          )}
-          {status === 'ready' && (
-            <MarksMenu
-              bookmarks={marks.state.bookmarks}
-              notes={marks.state.notes}
-              curPage={curPage}
-              onJump={goToPage}
-              onRemoveBookmark={marks.removeBookmark}
-              onAddNote={marks.addNote}
-              onRemoveNote={marks.removeNote}
-            />
-          )}
-          <ReaderReadingTools
-            book={book}
-            source={textSource}
-            numPages={numPages}
-            curPage={curPage}
-            ready={status === 'ready'}
-            stageEl={readerRef.current?.querySelector<HTMLElement>('.lib-reader__stage') ?? null}
-            findJump={findJump}
-            Dropdown={Dropdown}
-          />
-          {status === 'ready' && <QualityMenu quality={quality} onChange={setQuality} />}
-          <button type="button" className="vibe-toolbar__icon lib-reader__desktop-action" onClick={(event) => openDetails(event.currentTarget)} aria-label={t('book-details', { defaultValue: 'Book details' })} title={t('book-details', { defaultValue: 'Book details' })}>
-            <Info size={16} />
-          </button>
-          <button type="button" className="vibe-toolbar__icon lib-reader__desktop-action" onClick={toggleFullscreen} aria-keyshortcuts="F" aria-label={fullscreen ? t('exit-fullscreen', { defaultValue: 'Exit fullscreen' }) : t('enter-fullscreen', { defaultValue: 'Enter fullscreen' })} title={fullscreen ? t('exit-fullscreen', { defaultValue: 'Exit fullscreen' }) : t('enter-fullscreen', { defaultValue: 'Enter fullscreen' })}>
-            {fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-          </button>
-          <a href={book.url} download className="vibe-toolbar__icon transition-transform duration-site-fast active:scale-90" aria-label={t("download-pdf", { defaultValue: "Download PDF" })}>
-            <Download size={16} />
-          </a>
         </div>
       </header>
       <ContinuedNotice page={marks.continuedFrom} />
@@ -711,23 +802,96 @@ function PageJump({
   );
 }
 
-/** A reusable dropdown shell: a toolbar icon button that toggles a popover menu and
- *  closes on outside-click / Escape. */
-export function Dropdown({
-  icon,
-  label,
-  on,
-  children,
-  wide,
-  panelRole = 'menu',
-}: {
+/** True inside the phone ⋯ menu, where each Dropdown folds open in place instead of
+ *  floating a second popover over the first (which would run off a narrow screen). */
+const InlineMenuContext = createContext(false);
+
+type DropdownProps = {
   icon: React.ReactNode;
   label: string;
   on?: boolean;
   children: (close: () => void) => React.ReactNode;
   wide?: boolean;
   panelRole?: 'menu' | 'dialog';
-}) {
+};
+
+/** A reusable dropdown shell: a toolbar icon button that toggles a popover menu and
+ *  closes on outside-click / Escape. Inside {@link MoreMenu} it renders as a fold-out row. */
+export function Dropdown(props: DropdownProps) {
+  const inline = useContext(InlineMenuContext);
+  return inline ? <FoldRow {...props} /> : <PopoverDropdown {...props} />;
+}
+
+function FoldRow({ icon, label, on, children }: DropdownProps) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="lib-reader__fold">
+      <button
+        type="button"
+        className={`lib-reader__row${on ? ' is-on' : ''}`}
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        {icon}
+        <span>{label}</span>
+        <ChevronDown size={14} className="lib-reader__row-chevron" data-open={open || undefined} />
+      </button>
+      {open && <div className="lib-reader__fold-body">{children(() => setOpen(false))}</div>}
+    </div>
+  );
+}
+
+/** The phone header's ⋯ button and the panel it opens. Its children render as rows. */
+function MoreMenu({ label, children }: { label: string; children: (close: () => void) => React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const { present, state } = usePopPresence(open);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: PointerEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div className="lib-reader__chapters" ref={ref}>
+      <button
+        type="button"
+        className={`vibe-toolbar__icon transition-transform duration-site-fast active:scale-90${open ? ' is-on' : ''}`}
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={label}
+        title={label}
+      >
+        <MoreHorizontal size={18} />
+      </button>
+      {present && (
+        <div
+          className="lib-reader__chapters-menu lib-reader__more-menu"
+          data-motion="pop"
+          data-state={state}
+          role="menu"
+          aria-label={label}
+        >
+          <InlineMenuContext.Provider value>{children(() => setOpen(false))}</InlineMenuContext.Provider>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PopoverDropdown({ icon, label, on, children, wide, panelRole = 'menu' }: DropdownProps) {
   const [open, setOpen] = useState(false);
   // Held mounted for its close (globals.css §7.1); the dismiss listeners below
   // stay on `open`, so a panel on its way out no longer behaves like one.
