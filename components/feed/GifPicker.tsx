@@ -77,7 +77,7 @@ export function GifPicker({ onSelect, onClose, className ='', initialQuery ='', 
  if (error ==='unavailable') return unavailable; // feature off → hide entirely, or say so
 
  return (
- <div className={`surface-overlay rounded-site p-4 ${className}`}>
+ <div className={`border-t border-site-border pt-4 ${className}`}>
  <div className="flex items-center justify-between gap-2 mb-2">
  <div className="relative flex-1">
  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-muted"/>
