@@ -460,6 +460,7 @@ function BookCard({ book, onNavigate }: { book: LibraryBook; onNavigate?: () => 
               fit="cover"
               width={150}
               sizes="150px"
+              loading="eager"
               className={COVER_WRAP}
               imgClassName={COVER_IMG}
             />

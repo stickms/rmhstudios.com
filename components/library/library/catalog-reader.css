@@ -223,7 +223,8 @@
    shape; the spine band + page badge sit on top. */
 .lib-book__cover.has-cover {
   padding: 0;
-  background: #fff;
+  /* Shown only until the art paints; a flat token, never a white flash. */
+  background: var(--site-bg-subtle);
 }
 
 .lib-book__edge {

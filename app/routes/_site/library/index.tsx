@@ -863,6 +863,9 @@ function BookSpine({
                 fit="cover"
                 width={380}
                 sizes="(max-width: 560px) 148px, 184px"
+                // Lazy images inside the cover's preserve-3d / will-change layer never
+                // intersect on iOS Safari, so mobile covers stayed blank.
+                loading="eager"
                 className="absolute inset-0 z-0 h-full w-full rounded-[3px_6px_6px_3px]"
                 imgClassName="h-full w-full object-top"
               />
