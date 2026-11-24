@@ -16,8 +16,12 @@ import medschoolsCss from '@features/medschools/ui/medschools.css?url';
 import frauncesCss from '@/app/fonts/fraunces.css?url';
 import frauncesLatin from '@fontsource-variable/fraunces/files/fraunces-latin-opsz-normal.woff2?url';
 import { preloadFont } from '@/lib/fonts/self-hosted';
+import { awaitStylesheet } from '@/lib/route/await-stylesheet';
 
 export const Route = createFileRoute('/med')({
+  // A client navigation (from /services, say) keeps the old page until the app's sheet is in, so
+  // the Med shell never paints unstyled and then snaps into its palette.
+  loader: () => awaitStylesheet(medschoolsCss),
   head: () => ({
     links: [
       { rel: 'stylesheet', href: medschoolsCss },
