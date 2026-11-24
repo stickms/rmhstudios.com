@@ -7,9 +7,9 @@
  * a lighter and a darker shade of its own colour, so it reads as wet paint dragged across a canvas. The SVG it draws has
  * no gradient, blur or transparency (Steel R1; a picture is content, but the source stays flat anyway) and is
  * rasterised to WebP, one large file and one small one per scene so a phone does not download a desktop picture, plus a
- * 48px preview per scene (a few hundred bytes) written into lib/auth/login-art-previews.ts as a data URI: the page shows
- * it at once and fades the real picture in over it, so a slow connection sees a soft blur that sharpens, with no CSS
- * filter (Steel B2). The
+ * 48px preview per scene (a few hundred bytes) written into lib/auth/login-art-previews.ts as a data URI, and a soft 320px
+ * one: the page shows the preview at once, fades the 320px one in over it, then the real picture, so a slow connection
+ * sees a blur that sharpens in steps, with the blur baked into the pixels and no CSS filter (Steel B2). The
  * result is deterministic: the same scene and seed always draw the same picture.
  *
  *   pnpm exec tsx scripts/gen-login-painting.ts                       # every scene, both sizes, into public/images/login
@@ -641,8 +641,16 @@ export function paint(sceneName: string, seed: number): string {
 
 // ── command line ────────────────────────────────────────────────────────────────────────────────────────────────
 
-/** Output widths. The page asks for the small one below 640px and the large one from there up (see login.tsx). */
-const SIZES = { 800: 800, 1600: 1600 } as const;
+/**
+ * Output widths. The page asks for the small one below 640px and the large one from there up (see login.tsx). The 320px
+ * one is the middle step of the blur-up: low quality on purpose and softened in the pixels, so the compression is not
+ * visible, and a few KB, so it arrives well before the real picture on a slow connection.
+ */
+const SIZES: readonly { width: number; blur: number; quality: number }[] = [
+  { width: 320, blur: 1.1, quality: 45 },
+  { width: 800, blur: 0, quality: 80 },
+  { width: 1600, blur: 0, quality: 80 },
+];
 
 /** The preview is this many px wide, and heavily compressed: it is meant to be soft. */
 const PREVIEW_WIDTH = 48;
@@ -664,13 +672,13 @@ async function main(): Promise<void> {
   for (const name of names) {
     const svg = paint(name, seed);
     if (keepSvg) writeFileSync(resolve(outDir, `${name}.svg`), svg);
-    for (const width of Object.values(SIZES)) {
+    for (const { width, blur, quality } of SIZES) {
       // The SVG has a viewBox and no size, so it is SIZE px at 72 dpi; the density scales it to the width asked for.
       const file = resolve(outDir, `${name}-${width}.webp`);
-      const info = await sharp(Buffer.from(svg), { density: (72 * width) / SIZE })
-        .webp({ quality: 80, effort: 6 })
-        .toFile(file);
-      process.stdout.write(`wrote ${file} (${info.width}x${info.height}, ${(info.size / 1024).toFixed(0)} KB)\n`);
+      let image = sharp(Buffer.from(svg), { density: (72 * width) / SIZE });
+      if (blur > 0) image = image.blur(blur);
+      const info = await image.webp({ quality, effort: 6 }).toFile(file);
+      process.stdout.write(`wrote ${file} (${info.width}x${info.height}, ${(info.size / 1024).toFixed(1)} KB)\n`);
     }
     // Softened in the pixels themselves (not by a CSS filter), so the browser's upscaling shows a smooth wash of the
     // painting's colours instead of the encoder's blocks.

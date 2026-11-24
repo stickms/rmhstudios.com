@@ -1,8 +1,8 @@
 /**
  * The paintings on the login page: one is picked at random each visit.
  *
- * The files are drawn by `scripts/gen-login-painting.ts` into `public/images/login/<scene>-<width>.webp`, two widths
- * per scene (the page asks for the small one below 640px). `LOGIN_ART` here and the generator's scenes are held equal by
+ * The files are drawn by `scripts/gen-login-painting.ts` into `public/images/login/<scene>-<width>.webp`, three widths
+ * per scene. `LOGIN_ART` here and the generator's scenes are held equal by
  * `lib/auth/__tests__/login-art.test.ts`, which checks the files on disk.
  *
  * Client-safe.
@@ -11,8 +11,11 @@ export const LOGIN_ART = ['meadow', 'twilight', 'harvest', 'coast'] as const;
 
 export type LoginArt = (typeof LOGIN_ART)[number];
 
-/** The widths the generator writes. */
-export const LOGIN_ART_WIDTHS = [800, 1600] as const;
+/**
+ * The widths the generator writes: 320 is the soft low-quality middle step of the blur-up, 800 and 1600 the real
+ * picture (the page uses 800 below 640px and 1600 from there up).
+ */
+export const LOGIN_ART_WIDTHS = [320, 800, 1600] as const;
 
 export type LoginArtWidth = (typeof LOGIN_ART_WIDTHS)[number];
 

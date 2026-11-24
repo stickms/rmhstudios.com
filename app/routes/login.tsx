@@ -117,12 +117,15 @@ function LoginPage() {
   // The painting beside the form is one of several, picked at random on each visit. It is picked after hydration, not
   // while rendering: the server's page is cached and has to be the same for everyone, and a choice made during render
   // would not match what the client chooses. The last one shown is remembered, so two visits in a row never show the
-  // same picture. It loads in two steps so a slow connection sees something at once: a 48px preview (a few hundred
-  // bytes, inlined, scaled up so the browser's own smoothing blurs it: no CSS filter, Steel B2) shows as soon as the
-  // picture is chosen, and the real one fades in over it when it has downloaded (Steel M9).
+  // same picture. It develops in three steps so a slow connection sees something at once and the low quality never
+  // shows: a 48px preview (a few hundred bytes, inlined) as soon as the picture is chosen, then a soft 320px version
+  // (a few KB), then the real one, each fading in over the last (Steel M9). The blur is baked into those two small
+  // images, so the blur fades out step by step without a CSS filter (Steel B2).
   const [art, setArt] = useState<LoginArt | null>(null);
+  const [softLoaded, setSoftLoaded] = useState(false);
   const [artLoaded, setArtLoaded] = useState(false);
   const previewArrive = useArrival(art !== null);
+  const softArrive = useArrival(softLoaded);
   const artArrive = useArrival(artLoaded);
   // Once per mount: React's development double-run of effects would otherwise pick twice, and the second pick only
   // avoids the first, so it could land on the picture the previous visit showed.
@@ -771,6 +774,21 @@ function LoginPage() {
             className={cn(
               'absolute inset-0 size-full object-cover object-[50%_46%] lg:object-[50%_50%]',
               previewArrive,
+            )}
+          />
+        ) : null}
+        {art ? (
+          <img
+            src={loginArtSrc(art, 320)}
+            alt=""
+            width={320}
+            height={320}
+            decoding="async"
+            onLoad={() => setSoftLoaded(true)}
+            className={cn(
+              'absolute inset-0 size-full object-cover object-[50%_46%] lg:object-[50%_50%]',
+              !softLoaded && 'invisible',
+              softArrive,
             )}
           />
         ) : null}
