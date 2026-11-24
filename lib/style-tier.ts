@@ -35,7 +35,7 @@ export const SITE_SHEET_ROUTES: ReadonlySet<string> = new Set([
   '/ref/$code',
   // RMH Med Schools: a full-screen app, but its whole import graph is site-sheet code plus `--app-*` utilities (the
   // app tokens are imported by globals.css), and its pages are public and indexable, so they take the lean sheet.
-  '/rmh-medschool',
+  '/med',
 ]);
 
 /**

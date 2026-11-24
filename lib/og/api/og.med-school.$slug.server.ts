@@ -21,7 +21,7 @@ export const route = apiRoute('/api/og/med-school/$slug', {
       eyebrow: 'RMH Med Schools',
       title: card.name,
       subtitle: `${card.degree} · ${card.city}, ${card.state}`,
-      path: `/rmh-medschool/${params.slug}`,
+      path: `/med/${params.slug}`,
       ...(card.reported
         ? {
             stats: [

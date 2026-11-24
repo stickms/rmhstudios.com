@@ -164,7 +164,7 @@ describe('OverlapSection', () => {
       </QueryClientProvider>,
     );
     expect(html).toContain('Diversity · 2 schools');
-    expect(html).toContain('/rmh-medschool/duke?tab=secondaries');
+    expect(html).toContain('/med/duke?tab=secondaries');
   });
 
   it('opened and loading it shows a skeleton, and the tracker source has its own key', () => {

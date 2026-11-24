@@ -37,7 +37,7 @@ export function LiveRow({
       <StatusIcon status={status} />
       <div className="medapp-row__body">
         <p className="medapp-row__name">
-          <Link to="/rmh-medschool/$slug" params={{ slug: event.school.slug }} search={SCHOOL_SEARCH_DEFAULTS}>
+          <Link to="/med/$slug" params={{ slug: event.school.slug }} search={SCHOOL_SEARCH_DEFAULTS}>
             {event.school.name}
           </Link>
         </p>

@@ -58,7 +58,14 @@ const m = vi.hoisted(() => {
       return { count: hit.length };
     }),
   };
-  return { rows, clock, prisma: { medQaLimitRequest }, getUserTier: vi.fn(async (): Promise<string> => 'free'), audit: vi.fn(async () => undefined), notify: vi.fn(async (..._a: unknown[]) => undefined) };
+  return {
+    rows,
+    clock,
+    prisma: { medQaLimitRequest },
+    getUserTier: vi.fn(async (): Promise<string> => 'free'),
+    audit: vi.fn(async () => undefined),
+    notify: vi.fn(async (..._a: unknown[]) => undefined),
+  };
 });
 vi.mock('@/lib/prisma.server', () => ({ prisma: m.prisma }));
 vi.mock('@/lib/entitlements', () => ({ getUserTier: m.getUserTier }));
@@ -68,7 +75,13 @@ vi.mock('@/lib/notifications.server', () => ({ createNotification: m.notify }));
 
 import { AppError } from '@/lib/errors/codes';
 import { resolveQaTier } from './qa/budget.server';
-import { decideLimitRequest, getLimitRequestState, limitState, listLimitRequests, submitLimitRequest } from './qa-limit.server';
+import {
+  decideLimitRequest,
+  getLimitRequestState,
+  limitState,
+  listLimitRequests,
+  submitLimitRequest,
+} from './qa-limit.server';
 
 const NOW = new Date('2026-11-23T12:00:00Z');
 const days = (n: number) => new Date(NOW.getTime() + n * 86_400_000);
@@ -91,9 +104,9 @@ describe('submitting a limit request', () => {
     expect(m.rows[1]!.note).toBe('');
   });
   it('allows only one pending request per member, also when two arrive together', async () => {
-    expect(await code(Promise.all([submitLimitRequest('u1', false, 'a', NOW), submitLimitRequest('u1', false, 'b', NOW)]))).toBe(
-      'MEDSCHOOLS_QA_LIMIT_PENDING',
-    );
+    expect(
+      await code(Promise.all([submitLimitRequest('u1', false, 'a', NOW), submitLimitRequest('u1', false, 'b', NOW)])),
+    ).toBe('MEDSCHOOLS_QA_LIMIT_PENDING');
     expect(m.rows).toHaveLength(1);
     expect(await code(submitLimitRequest('u1', false, 'again', NOW))).toBe('MEDSCHOOLS_QA_LIMIT_PENDING');
   });
@@ -181,13 +194,21 @@ describe('deciding', () => {
     await decideLimitRequest('a1', { id: b, action: 'decline', adminNote: 'not yet' }, NOW);
     await decideLimitRequest('a1', { id: a, action: 'revoke', adminNote: 'abuse' }, days(1));
     await new Promise((r) => setTimeout(r, 0));
-    const calls = m.notify.mock.calls.map((c) => c[0] as { userId: string; link: string; type: string; preview: { key: string; params: Record<string, string> } });
+    const calls = m.notify.mock.calls.map(
+      (c) =>
+        c[0] as {
+          userId: string;
+          link: string;
+          type: string;
+          preview: { key: string; params: Record<string, string> };
+        },
+    );
     expect(calls.map((c) => [c.userId, c.preview.key, c.preview.params])).toEqual([
       ['u1', 'medschools-qa-limit-approved', {}],
       ['u2', 'medschools-qa-limit-declined-note', { note: 'not yet' }],
       ['u1', 'medschools-qa-limit-revoked-note', { note: 'abuse' }],
     ]);
-    expect(calls.every((c) => c.link === '/rmh-medschool/ask' && c.type === 'SYSTEM')).toBe(true);
+    expect(calls.every((c) => c.link === '/med/ask' && c.type === 'SYSTEM')).toBe(true);
   });
   it('does not notify on a lost race, and a failing notice never fails the decision', async () => {
     await submitLimitRequest('u1', false, undefined, NOW);

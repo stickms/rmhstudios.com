@@ -5,13 +5,13 @@ import { listsQuery, prefsQuery } from '@features/medschools/medschools.queries'
 import { ListsPage } from '@features/medschools/ui/lists/ListsPage';
 
 /**
- * /rmh-medschool/lists: the signed-in member's saved lists and preferences. Private (noindex, not in the sitemap); its
+ * /med/lists: the signed-in member's saved lists and preferences. Private (noindex, not in the sitemap); its
  * data comes from `me/**`, which declares no cache. Signed out, the loader's fetches fail quietly and the page shows
  * the site's sign-in prompt (precedent: `tracker.tsx`, `wallet.tsx`).
  */
-export const Route = createFileRoute('/rmh-medschool/lists')({
+export const Route = createFileRoute('/med/lists')({
   head: definePage({
-    path: '/rmh-medschool/lists',
+    path: '/med/lists',
     title: 'My lists | RMH Studios',
     description: 'Your private saved medical school lists and preferences.',
     noIndex: true,

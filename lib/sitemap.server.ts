@@ -515,7 +515,7 @@ export const SITEMAP_SECTIONS: Record<SitemapSectionName, Section> = {
         take,
       });
       return rows.map((s) => ({
-        loc: `/rmh-medschool/${s.slug}`,
+        loc: `/med/${s.slug}`,
         lastmod: s.updatedAt,
         changefreq: 'daily' as const,
         priority: 0.5,

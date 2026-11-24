@@ -31,8 +31,8 @@ export const THEME_EXCLUDED_ROUTES = [
   // reserved a scrollbar gutter beside a page that never scrolls.
   '/discord',
   // RMH Med Schools: a full-screen app (owner, roadmap item 11) with its own paper palette and its own light/dark.
-  // In no catalog, so nothing above derives it; `/rmh-medschool/**` is the whole tree.
-  '/rmh-medschool',
+  // In no catalog, so nothing above derives it; `/med/**` is the whole tree.
+  '/med',
 ].filter((href) => href.startsWith('/'));
 
 /**

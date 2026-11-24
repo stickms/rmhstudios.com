@@ -103,8 +103,8 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'Not-found branch of the build detail page.',
   },
-  '/rmh-medschool/$slug': {
-    path: '/rmh-medschool/fouc-audit-no-such-school',
+  '/med/$slug': {
+    path: '/med/fouc-audit-no-such-school',
     fidelity: 'shell',
     why: 'Not-found branch of the school page (an unknown slug is a 404 from the loader).',
   },

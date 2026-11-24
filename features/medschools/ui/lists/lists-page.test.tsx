@@ -117,7 +117,7 @@ describe('ListsPage', () => {
       h.session = { user: { id: 'u1' } };
       const html = render({ lists: [...lists].sort((x, y) => x.position - y.position) });
       expect(html.indexOf('Reach')).toBeLessThan(html.indexOf('Safety'));
-      expect(html).toContain('href="/rmh-medschool/duke"');
+      expect(html).toContain('href="/med/duke"');
       expect(html).toContain('Visit in March');
       expect(html).toContain('2 schools');
       expect(html).toContain('1 school');
@@ -128,7 +128,7 @@ describe('ListsPage', () => {
       const html = render();
       expect(html).toContain('gone School');
       expect(html).toContain('No longer listed');
-      expect(html).not.toContain('href="/rmh-medschool/gone"');
+      expect(html).not.toContain('href="/med/gone"');
     });
 
     it('shows a note as text that opens its editor (closed until asked for), and counts by code point', () => {

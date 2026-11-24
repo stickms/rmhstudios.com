@@ -4,7 +4,7 @@ const base = {
   schoolSlug: 'duke',
   untrusted: false,
   updatedAt: null,
-  href: '/rmh-medschool/duke',
+  href: '/med/duke',
   sourceHref: null,
 } as const;
 

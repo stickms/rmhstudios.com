@@ -63,7 +63,7 @@ const TYPE_WORD: Record<string, string> = {
   HOLD: 'hold',
 };
 
-const pagePath = (slug: string, query = '') => `/rmh-medschool/${slug}${query}`;
+const pagePath = (slug: string, query = '') => `/med/${slug}${query}`;
 
 function programWord(school: SchoolHead, program: 'REG' | 'PHD' | 'ALL' | null): string {
   if (program === 'PHD') return `${school.degree}-PhD`;

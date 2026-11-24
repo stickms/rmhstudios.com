@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { MODE_STORAGE_KEY, resolveMode, serializeMode } from '../../engine/mode';
 import { backTargetFor, isMedIndex } from './back-target';
 
-const route = vi.hoisted(() => ({ pathname: '/rmh-medschool/live' }));
+const route = vi.hoisted(() => ({ pathname: '/med/live' }));
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (_k: string, o?: { defaultValue?: string }) => o?.defaultValue ?? _k }),
@@ -25,24 +25,18 @@ const read = (f: string) => readFileSync(f, 'utf8');
 
 describe('medschools shell', () => {
   it('chooses the left button: the index links home to the site, everything else goes back to the index', () => {
-    expect(backTargetFor('/rmh-medschool')).toBe('/');
-    expect(backTargetFor('/rmh-medschool/')).toBe('/');
-    expect(isMedIndex('/rmh-medschool/')).toBe(true);
-    expect(isMedIndex('/rmh-medschool/live')).toBe(false);
-    for (const p of [
-      '/rmh-medschool/live',
-      '/rmh-medschool/duke',
-      '/rmh-medschool/tracker',
-      '/rmh-medschool/lists',
-      '/rmh-medschool/ask',
-    ])
-      expect(backTargetFor(p)).toBe('/rmh-medschool');
+    expect(backTargetFor('/med')).toBe('/');
+    expect(backTargetFor('/med/')).toBe('/');
+    expect(isMedIndex('/med/')).toBe(true);
+    expect(isMedIndex('/med/live')).toBe(false);
+    for (const p of ['/med/live', '/med/duke', '/med/tracker', '/med/lists', '/med/ask'])
+      expect(backTargetFor(p)).toBe('/med');
   });
 
   it('draws the back link on a sub-page, 44px round, with a label and a fallback href', async () => {
     const { MedTopBar } = await import('./MedTopBar');
     const html = renderToStaticMarkup(<MedTopBar />);
-    expect(html).toContain('href="/rmh-medschool"');
+    expect(html).toContain('href="/med"');
     expect(html).toContain('aria-label="Back to all schools"');
     expect(html).toContain('<span class="medapp-title">RMH Med Schools</span>');
     expect(html).not.toContain('<h1');
@@ -53,7 +47,7 @@ describe('medschools shell', () => {
 
   it('draws a home link on the index, to the site home, and makes the app name the page h1', async () => {
     const { MedTopBar } = await import('./MedTopBar');
-    route.pathname = '/rmh-medschool';
+    route.pathname = '/med';
     try {
       const html = renderToStaticMarkup(<MedTopBar />);
       expect(html).toContain('href="/"');
@@ -61,11 +55,12 @@ describe('medschools shell', () => {
       expect(html).not.toContain('Back to all schools');
       expect(html).toContain('<h1 class="medapp-title">RMH Med Schools</h1>');
     } finally {
-      route.pathname = '/rmh-medschool/live';
+      route.pathname = '/med/live';
     }
   });
 
   it('stores the mode as {"dark": boolean}, follows the system otherwise, and shares its key with the pre-paint entry', () => {
+    // The key keeps its pre-rename name on purpose: it preserves saved light/dark choices.
     expect(MODE_STORAGE_KEY).toBe('rmh-medschool-mode');
     expect(resolveMode(null, true)).toBe('dark');
     expect(resolveMode(null, false)).toBe('light');
@@ -73,15 +68,17 @@ describe('medschools shell', () => {
     expect(resolveMode(serializeMode('light'), true)).toBe('light');
     expect(resolveMode(serializeMode('dark'), false)).toBe('dark');
     const theme = read('stores/themeStore.ts');
-    expect(theme).toMatch(/'\/rmh-medschool': \{\s*key: 'rmh-medschool-mode',\s*darkFlag: 'dark',[^}]*system: true/);
+    expect(theme).toMatch(
+      /'\/med': \{\s*(?:\/\/[^\n]*\s*)?key: 'rmh-medschool-mode',\s*darkFlag: 'dark',[^}]*system: true/,
+    );
     expect(read('lib/device-data/registry.ts')).toContain("'rmh-medschool-mode'");
-    expect(read('lib/prepaint/theme-routes.ts')).toContain("'/rmh-medschool'");
+    expect(read('lib/prepaint/theme-routes.ts')).toContain("'/med'");
   });
 
   it('paints both grounds the stylesheet declares as --app-bg', () => {
     const css = readCss('features/medschools/ui/medschools.css').toLowerCase();
     const theme = read('stores/themeStore.ts').toLowerCase();
-    const entry = /'\/rmh-medschool': \{[^}]*\}/.exec(theme)?.[0] ?? '';
+    const entry = /'\/med': \{[^}]*\}/.exec(theme)?.[0] ?? '';
     for (const hex of ['#f6f1e7', '#1b1e2a']) {
       expect(entry).toContain(hex);
       expect(css).toContain(`--app-bg: ${hex};`);
@@ -119,7 +116,7 @@ describe('medschools shell', () => {
 
   it('the layout mounts the cookie notice and links the stylesheet and the display face', () => {
     expect(read('features/medschools/ui/shell/MedApp.tsx')).toContain('<CookieConsent />');
-    const route = read('app/routes/rmh-medschool.tsx');
+    const route = read('app/routes/med.tsx');
     expect(route).toContain('medschools.css?url');
     expect(route).toContain('fraunces.css?url');
     expect(route).not.toMatch(/inter/i);

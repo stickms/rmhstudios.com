@@ -141,9 +141,9 @@ const seedActivity =
   };
 
 describe('route file', () => {
-  const src = root('../../../app/routes/rmh-medschool/$slug.tsx');
+  const src = root('../../../app/routes/med/$slug.tsx');
   it('is thin: validateSearch, strip defaults, notFound through the loader, card and breadcrumbs, no charts', () => {
-    expect(src).toContain("createFileRoute('/rmh-medschool/$slug')");
+    expect(src).toContain("createFileRoute('/med/$slug')");
     expect(src).toContain('validateSearch: validateSchoolSearch');
     expect(src).toContain('stripSearchParams(SCHOOL_SEARCH_DEFAULTS)');
     expect(src).toContain('definePage');
@@ -162,7 +162,7 @@ describe('route file', () => {
   });
   it('SchoolLink is gone: links are typed', () => {
     expect(() => root('./SchoolLink.tsx')).toThrow();
-    expect(root('./IndexPage.tsx')).toContain('to="/rmh-medschool/$slug"');
+    expect(root('./IndexPage.tsx')).toContain('to="/med/$slug"');
   });
 });
 
@@ -690,9 +690,9 @@ describe('the Ask panel on a school page', () => {
     h.session = { user: { id: 'u1' } };
     const html = render(seedActivity(activity()));
     expect(html).toContain('Ask about Duke University School of Medicine');
-    expect(html.indexOf('Ask about Duke')).toBeGreaterThan(html.indexOf('href="/rmh-medschool/tracker"'));
+    expect(html.indexOf('Ask about Duke')).toBeGreaterThan(html.indexOf('href="/med/tracker"'));
     expect(html.indexOf('Ask about Duke')).toBeGreaterThan(html.indexOf('>Activity<'));
-    expect(html).toContain('href="/rmh-medschool/ask"');
+    expect(html).toContain('href="/med/ask"');
     expect(html.match(/data-variant="primary"/g)?.length ?? 0).toBe(1);
     // Three suggestions when pinned (the school page has no other plain buttons of this kind).
     expect(html).toContain('What are the MCAT and GPA medians?');

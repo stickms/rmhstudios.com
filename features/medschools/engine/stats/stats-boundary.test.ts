@@ -21,7 +21,7 @@ describe('engine/stats boundary', () => {
     }
   });
   it('is not imported by ui/ or the school routes (bundle rule)', () => {
-    const roots = [join(here, '../../ui'), join(here, '../../../../app/routes/rmh-medschool')];
+    const roots = [join(here, '../../ui'), join(here, '../../../../app/routes/med')];
     for (const root of roots) {
       // The routes moved out of `_site/` for the app redesign (roadmap item 11). A root that no longer exists must
       // fail here, not make the loop quietly check nothing.

@@ -8,7 +8,7 @@ import { OptionGroup } from './OptionGroup';
 import { PracticePanel } from './practice/PracticePanel';
 import { PageHead } from './shell/PageHead';
 
-/** /rmh-medschool/practice: the general, non-school questions by program, with practice mode. Readable signed out. */
+/** /med/practice: the general, non-school questions by program, with practice mode. Readable signed out. */
 export function PracticePage() {
   const { t } = useTranslation('medschools');
   const [program, setProgram] = useState<GeneralProgram>('REG');
@@ -52,7 +52,7 @@ export function PracticePage() {
               defaultValue:
                 'Questions an interviewer may ask at any school. Choose one, set a timer and answer out loud. For a school’s own reported questions, open its Interviews tab.',
             })}{' '}
-            <Link to="/rmh-medschool" className="medapp-link">
+            <Link to="/med" className="medapp-link">
               {t('ask-browse', { defaultValue: 'Browse schools' })}
             </Link>
           </>

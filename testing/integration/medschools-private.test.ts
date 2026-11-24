@@ -212,11 +212,11 @@ describe('the private endpoints refuse anonymous requests and are never publicly
   });
 
   it('serves the reserved paths as pages, not as the school 404', async () => {
-    for (const path of ['/rmh-medschool/tracker', '/rmh-medschool/lists']) {
+    for (const path of ['/med/tracker', '/med/lists']) {
       const res = await anon.get(path);
       expect(res.status, path).toBe(200);
     }
-    const tracker = String(await anon.get('/rmh-medschool/tracker').then((r) => r.body));
+    const tracker = String(await anon.get('/med/tracker').then((r) => r.body));
     expect(tracker.toLowerCase()).toContain('sign in');
     expect(tracker).toMatch(/<meta[^>]+name="robots"[^>]+noindex/i);
   });
@@ -592,16 +592,14 @@ describe('lists and preferences', () => {
     expect(got.chartCategories).toEqual(['INTERVIEW', 'ACCEPTANCE']);
     expect(JSON.stringify(got)).not.toContain(c.id);
 
-    const signedIn = String((await c.client.get('/rmh-medschool')).body);
-    const signedOut = String((await anon.get('/rmh-medschool')).body);
+    const signedIn = String((await c.client.get('/med')).body);
+    const signedOut = String((await anon.get('/med')).body);
     // The programs are a multi-select of checkboxes (in the HTML while closed); the member's preference narrows them,
     // the public default does not.
     const pressed = (html: string) =>
       Object.fromEntries(
         [
-          ...html.matchAll(
-            /<input type="checkbox" class="medapp-check"([^>]*)\/><span>(MD|MD-PhD|DO|DO-PhD)<\/span>/g,
-          ),
+          ...html.matchAll(/<input type="checkbox" class="medapp-check"([^>]*)\/><span>(MD|MD-PhD|DO|DO-PhD)<\/span>/g),
         ].map((m) => [m[2], String(m[1]!.includes('checked=""'))]),
       );
     expect(pressed(signedIn)).toEqual({ MD: 'false', 'MD-PhD': 'true', DO: 'false', 'DO-PhD': 'false' });

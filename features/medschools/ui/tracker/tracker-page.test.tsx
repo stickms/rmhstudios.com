@@ -160,7 +160,7 @@ describe('TrackerPage signed out', () => {
     const html = render(dto(), false);
     expect(html).toContain('Sign in to track your cycle');
     expect(html).toContain('href="/login"');
-    expect(html).toContain('/rmh-medschool/tracker');
+    expect(html).toContain('/med/tracker');
     expect(html).not.toContain('Share my milestones');
     expect(html).not.toContain('Duke');
   });
@@ -169,7 +169,7 @@ describe('TrackerPage signed out', () => {
 describe('TrackerPage signed in', () => {
   it('links each school to its page, labels programs by degree and dates in UTC', () => {
     const html = render(dto());
-    expect(html).toContain('href="/rmh-medschool/duke"');
+    expect(html).toContain('href="/med/duke"');
     expect(html).toContain('Interview invite, Nov 20');
     expect(html).toContain('DO-PhD');
     expect(html).not.toContain('MD-PhD');
@@ -186,7 +186,7 @@ describe('TrackerPage signed in', () => {
     const d = dto();
     d.cycle!.applications[0]!.school.active = false;
     const html = render(d);
-    expect(html).not.toContain('href="/rmh-medschool/duke"');
+    expect(html).not.toContain('href="/med/duke"');
     expect(html).toContain('Duke University School of Medicine');
   });
 

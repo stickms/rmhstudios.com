@@ -97,7 +97,7 @@ describe('a grounded answer', () => {
         sourceName: 'CycleTrack',
         schoolSlug: 'duke',
         updatedAt: null,
-        href: '/rmh-medschool/duke',
+        href: '/med/duke',
         sourceHref: null,
       },
       expect.objectContaining({ ref: 'f2', sourceName: 'Admit.org' }),

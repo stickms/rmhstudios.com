@@ -74,7 +74,7 @@ export function ListItemRow({
         <div className="medapp-item__title">
           {school.active ? (
             <Link
-              to="/rmh-medschool/$slug"
+              to="/med/$slug"
               params={{ slug: school.slug }}
               search={SCHOOL_SEARCH_DEFAULTS}
               className="medapp-name"

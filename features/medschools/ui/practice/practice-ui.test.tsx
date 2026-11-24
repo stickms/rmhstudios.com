@@ -115,7 +115,7 @@ describe('PracticePage', () => {
     expect(html).not.toContain('Why an MD-PhD and not just one of the two?');
   });
   it('is a thin noindex route', () => {
-    const src = readFileSync('app/routes/rmh-medschool/practice.tsx', 'utf8');
+    const src = readFileSync('app/routes/med/practice.tsx', 'utf8');
     expect(src).toContain('noIndex: true');
     expect(src).not.toMatch(/loader:|validateSearch:/);
   });

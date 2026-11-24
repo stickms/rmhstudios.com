@@ -155,12 +155,12 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   },
   // RMH Med Schools lives under the Services hub, not the catalog, so both pages are listed here permanently (owner O1).
   {
-    loc: '/rmh-medschool',
+    loc: '/med',
     changefreq: 'daily',
     priority: 0.7,
   },
   {
-    loc: '/rmh-medschool/live',
+    loc: '/med/live',
     changefreq: 'hourly',
     priority: 0.5,
   },
@@ -521,10 +521,10 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/drafts': 'personal',
   '/follows': 'personal',
   '/study/stats': 'personal', // the member's own review statistics
-  '/rmh-medschool/tracker': 'personal', // the member's private application tracker (noindex)
-  '/rmh-medschool/ask': 'personal', // signed-in Q&A (noindex)
-  '/rmh-medschool/practice': 'noindex', // interview practice (noindex)
-  '/rmh-medschool/lists': 'personal', // the member's private saved lists and preferences (noindex)
+  '/med/tracker': 'personal', // the member's private application tracker (noindex)
+  '/med/ask': 'personal', // signed-in Q&A (noindex)
+  '/med/practice': 'noindex', // interview practice (noindex)
+  '/med/lists': 'personal', // the member's private saved lists and preferences (noindex)
   '/connections/new': 'personal', // signed-in authoring form
   '/games/trades': 'personal', // the viewer's own offers
   '/games/market': 'noindex', // card listings change by the minute and are behind sign-in to act on
@@ -862,7 +862,7 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/jams/$slug': 'community',
   '/homes/listing/$id': 'homes',
   '/rmhladder/jobs/$jobId': 'jobs',
-  '/rmh-medschool/$slug': 'medschools',
+  '/med/$slug': 'medschools',
 
   // Slice It's two public per-entity pages (L15, X12). Dynamic and deliberately
   // unlisted rather than sectioned: both are unbounded in the library's own

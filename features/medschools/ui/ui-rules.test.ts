@@ -8,9 +8,7 @@ import { describe, expect, it } from 'vitest';
  * item 11): the Steel content rules this file used to hold (no rounded, shadow, backdrop, uppercase) came out with the
  * tier move, and the app-tier rules below replace them: palette tokens only, no hex, no keyframes, nothing `fixed`.
  */
-const ROUTES = ['index', 'live', '$slug', 'tracker', 'lists', 'ask', 'practice'].map(
-  (n) => `app/routes/rmh-medschool/${n}.tsx`,
-);
+const ROUTES = ['index', 'live', '$slug', 'tracker', 'lists', 'ask', 'practice'].map((n) => `app/routes/med/${n}.tsx`);
 const uiFiles = globSync('features/medschools/ui/**/*.tsx')
   .map(String)
   .filter((f) => !/\.test\./.test(f))
@@ -68,7 +66,7 @@ describe('medschools ui rules', () => {
     const stray = css.split('\n').filter((l) => /#[0-9a-fA-F]{3,8}\b/.test(l) && !/^\s*--(app|site)-[\w-]+:/.test(l));
     expect(stray.filter((l) => !/^\s*(\/?\*|\*)/.test(l))).toEqual([]);
     expect(css).not.toMatch(/@keyframes|position:\s*fixed|!important/);
-    for (const f of [...uiFiles, 'app/routes/rmh-medschool.tsx']) {
+    for (const f of [...uiFiles, 'app/routes/med.tsx']) {
       const src = read(f);
       // No raw palette colour, no hex in markup, no fixed layer (iOS fills its bars from edge-pinned layers).
       expect(src, f).not.toMatch(/#[0-9a-fA-F]{6}\b|\b(?:bg|text|border)-(?:red|blue|green|gray|slate|zinc)-\d/);
@@ -82,7 +80,7 @@ describe('medschools ui rules', () => {
       /(?:^|[\s"'`:!-])(?:[a-z-]+-)?site-[a-z-]+|--site-|(?:^|[\s"'`])t-(?:title|heading|body|post|prose|label|meta)(?=[\s"'`])/;
     const controls =
       /@\/components\/(?:ui\/(?:button|select|search-field|switch|textarea|input|icon-button|signed-out-prompt|skeleton|empty-state)|feed\/PageLayout)'/;
-    for (const f of [...uiFiles, 'app/routes/rmh-medschool.tsx']) {
+    for (const f of [...uiFiles, 'app/routes/med.tsx']) {
       const src = read(f).replace(/\/\*[\s\S]*?\*\//g, '');
       expect(
         src.split('\n').filter((l) => steel.test(l) && !/^\s*\/\//.test(l)),
@@ -117,7 +115,7 @@ describe('medschools ui rules', () => {
   });
 
   it('keeps the private tracker route private and thin (noindex, definePage, prefetched, no zod)', () => {
-    const src = read('app/routes/rmh-medschool/tracker.tsx');
+    const src = read('app/routes/med/tracker.tsx');
     expect(src).toContain('noIndex: true');
     expect(src).toContain('definePage');
     expect(src).toContain('prefetchRouteQuery');
@@ -125,7 +123,7 @@ describe('medschools ui rules', () => {
   });
 
   it('keeps the private lists route private and thin (noindex, definePage, prefetched, no zod)', () => {
-    const src = read('app/routes/rmh-medschool/lists.tsx');
+    const src = read('app/routes/med/lists.tsx');
     expect(src).toContain('noIndex: true');
     expect(src).toContain('definePage');
     expect(src).toContain('prefetchRouteQuery');
@@ -133,7 +131,7 @@ describe('medschools ui rules', () => {
   });
 
   it('keeps the ask route private and thin (noindex, definePage, no engine/qa, no zod, no charts)', () => {
-    const src = read('app/routes/rmh-medschool/ask.tsx');
+    const src = read('app/routes/med/ask.tsx');
     expect(src).toContain('noIndex: true');
     expect(src).toContain('definePage');
     expect(src).not.toMatch(/from 'zod'|ui\/charts|d3-|engine\/qa/);
@@ -147,16 +145,16 @@ describe('medschools ui rules', () => {
 
   it('the app frame mounts the live rail itself; the Steel shell no longer hands it the margin', () => {
     expect(read('features/medschools/ui/shell/MedApp.tsx')).toContain("import('../rail/ActivityRail')");
-    expect(read('components/shell/margin-takeover.ts')).not.toContain("prefix: '/rmh-medschool'");
+    expect(read('components/shell/margin-takeover.ts')).not.toContain("prefix: '/med'");
   });
 
   it('is a top-level layout route with its own error and not-found frames and no auth gate', () => {
-    const src = read('app/routes/rmh-medschool.tsx');
-    expect(src).toContain("createFileRoute('/rmh-medschool')");
+    const src = read('app/routes/med.tsx');
+    expect(src).toContain("createFileRoute('/med')");
     expect(src).toContain('errorComponent');
     expect(src).toContain('notFoundComponent');
     expect(src).not.toMatch(/beforeLoad|createServerFn|redirect\(/);
-    expect(existsSync('app/routes/_site/rmh-medschool')).toBe(false);
+    expect(existsSync('app/routes/_site/med')).toBe(false);
   });
 
   it('keeps createServerFn out of the query factories', () => {
@@ -168,8 +166,8 @@ describe('medschools ui rules', () => {
     for (const r of manifest.routes) expect(existsSync(r), r).toBe(true);
     expect(manifest.listed).toBe(false);
     expect(manifest.catalog).toBeUndefined();
-    expect(read('app/routes/_site/services/index.tsx')).toContain("href: '/rmh-medschool'");
-    expect(read('lib/search/catalog.ts')).toContain("'/rmh-medschool'");
+    expect(read('app/routes/_site/services/index.tsx')).toContain("href: '/med'");
+    expect(read('lib/search/catalog.ts')).toContain("'/med'");
     expect(existsSync('features/medschools/catalog.ts')).toBe(false);
     expect(read('lib/catalog/index.ts')).not.toContain('medschools');
   });

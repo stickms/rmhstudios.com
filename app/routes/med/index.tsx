@@ -12,9 +12,9 @@ import {
 } from '@features/medschools/medschools.queries';
 import { IndexPage } from '@features/medschools/ui/IndexPage';
 
-export const Route = createFileRoute('/rmh-medschool/')({
+export const Route = createFileRoute('/med/')({
   head: definePage({
-    path: '/rmh-medschool',
+    path: '/med',
     title: 'RMH Med Schools | RMH Studios',
     description:
       'Interview invites and decisions reported by medical school and day, from CycleTrack, Admit.org and Student Doctor Network. Reported events, not applicants.',

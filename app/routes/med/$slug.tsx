@@ -8,7 +8,7 @@ import { SchoolPage } from '@features/medschools/ui/SchoolPage';
 type SchoolHeadData = SchoolHead | null;
 type SchoolParams = { slug: string };
 
-export const Route = createFileRoute('/rmh-medschool/$slug')({
+export const Route = createFileRoute('/med/$slug')({
   validateSearch: validateSchoolSearch,
   // Only `tab` and `type` defaults are stripped: `program` and `show` absent means "the viewer's preferences",
   // present (even the default) is a choice (D14).
@@ -27,7 +27,7 @@ export const Route = createFileRoute('/rmh-medschool/$slug')({
     return loadSchoolHead(context.queryClient, params.slug, deps, prefs, cause);
   },
   head: definePage<SchoolHeadData, SchoolParams>({
-    path: ({ params }) => `/rmh-medschool/${params.slug}`,
+    path: ({ params }) => `/med/${params.slug}`,
     title: ({ loaderData }) => `${loaderData?.name ?? 'Med school'} | RMH Med Schools | RMH Studios`,
     description: ({ loaderData }) =>
       `Reported interview invites and decisions at ${loaderData?.name ?? 'this school'}, by day, with past cycles. Reported events, not applicants.`,
@@ -36,8 +36,8 @@ export const Route = createFileRoute('/rmh-medschool/$slug')({
       loaderData
         ? [
             breadcrumbSchema([
-              { name: 'RMH Med Schools', path: '/rmh-medschool' },
-              { name: loaderData.name, path: `/rmh-medschool/${params.slug}` },
+              { name: 'RMH Med Schools', path: '/med' },
+              { name: loaderData.name, path: `/med/${params.slug}` },
             ]),
           ]
         : [],
