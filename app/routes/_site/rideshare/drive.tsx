@@ -260,7 +260,7 @@ function ApplicationForm({
         </Notice>
       )}
 
-      <div className="rounded-site p-5">
+      <div className="py-5">
         <h3 className="site-section-label mb-3">{t('vehicle-details', { defaultValue: 'Vehicle details' })}</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {field('drv-make', t('label-make', { defaultValue: 'Make' }),
@@ -280,7 +280,7 @@ function ApplicationForm({
         </div>
       </div>
 
-      <div className="space-y-3 rounded-site p-5">
+      <div className="space-y-3 py-5">
         <div>
           <h3 className="site-section-label">{t('which-class-drive', { defaultValue: 'Which class will you drive?' })}</h3>
           <p className="mt-2 text-xs text-site-text-muted">{t('class-hint', { defaultValue: 'Pick the option that best matches your vehicle.' })}</p>
@@ -461,7 +461,7 @@ function DriverDashboard({
             title={t('no-open-requests', { defaultValue: 'No open requests right now. Check back soon!' })}
           />
         ) : (
-          <ul className="space-y-3">
+          <ul>
             {available.map((ride) => (
               <RideCard key={ride.id} ride={ride} busy={busy === ride.id} showRider>
                 <Button size="sm" className="min-h-11" onClick={() => accept(ride.id)} loading={busy === ride.id}>
@@ -496,7 +496,7 @@ function RideCard({
     <motion.li
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`rounded-site p-5 ${busy ?'opacity-70':''}`}
+      className={`rule-row py-5 ${busy ?'opacity-70':''}`}
     >
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-2 text-sm font-semibold text-site-text">
