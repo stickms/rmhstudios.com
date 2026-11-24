@@ -86,7 +86,7 @@ function HealthPage() {
   const { stale, runs, openReviewTasks, resumeReadiness, alerts } = Route.useLoaderData();
   const [expandedRun, setExpandedRun] = useState<string | null>(null);
 
-  const panel ='space-y-3 rounded-site p-5 sm:p-5';
+  const panel ='space-y-3 py-5 sm:py-5';
   const rowCls = 'flex flex-wrap items-center gap-x-4 gap-y-2 py-3 text-sm';
   const hint = 'text-sm text-site-text-muted';
 

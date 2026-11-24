@@ -53,7 +53,7 @@ export function TrashRow({ item, busy, onRestore, onPurge, className }: TrashRow
     Date.now() - Date.parse(item.deletedAt) > DELETED_POST_GRACE_MS;
 
   return (
-    <li className={cn('rounded-site p-5', className)}>
+    <li className={cn('rule-row py-5', className)}>
       <div className="flex flex-col gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <Icon className="mt-0.5 size-4 shrink-0 text-site-text-muted" aria-hidden />

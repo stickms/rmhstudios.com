@@ -133,7 +133,7 @@ function DiceCard({
   )
     return null;
   return (
-    <div className="relative w-56 max-w-full rounded-site p-4 text-site-text">
+    <div className="relative w-56 max-w-full py-4 text-site-text">
       <p className="flex items-center gap-1.5 text-xs text-site-text-muted">
         <Dices
           className="size-4"
@@ -195,7 +195,7 @@ function CoinCard({
   )
     return null;
   return (
-    <div className="relative w-56 max-w-full rounded-site p-4 text-site-text">
+    <div className="relative w-56 max-w-full py-4 text-site-text">
       <p className="flex items-center gap-1.5 text-xs text-site-text-muted">
         <Coins
           className="size-4"
@@ -373,7 +373,7 @@ function ChecklistCard({
     };
 
   return (
-    <div className="relative w-72 max-w-full rounded-site p-4 text-site-text">
+    <div className="relative w-72 max-w-full py-4 text-site-text">
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="flex min-w-0 items-center gap-1.5 text-sm font-semibold">
           <ListChecks
@@ -585,7 +585,7 @@ function DmPollCard({
     };
 
   return (
-    <div className="relative w-64 max-w-full rounded-site p-4 text-site-text">
+    <div className="relative w-64 max-w-full py-4 text-site-text">
       <p className="mb-2 flex items-start gap-1.5 text-sm font-semibold">
         <BarChart3
           className="mt-0.5 size-4 shrink-0 text-site-accent"

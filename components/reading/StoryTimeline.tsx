@@ -19,7 +19,7 @@ export function StoryTimeline({ story }: { story: Pick<StoryPageData, 'slug' | '
       })}
       wrapTitle
     >
-      <div className="px-4 pt-4 pb-12">
+      <div className="pt-4 pb-12">
         <FollowButton kind="news_story" target={story.slug} className="mb-4" />
         {story.articles.length === 0 ? (
           <EmptyState
@@ -49,7 +49,7 @@ export function StoryTimeline({ story }: { story: Pick<StoryPageData, 'slug' | '
                     params={{
                       slug: a.slug,
                     }}
-                    className="surface-press mt-2 block rounded-site px-4 py-3"
+                    className="row-hover mt-2 block py-3"
                   >
                     <Badge className="mb-2">{a.category}</Badge>
                     <h2 className="text-lg font-semibold leading-snug text-site-text">{a.title}</h2>

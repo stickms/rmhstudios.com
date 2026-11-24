@@ -249,7 +249,7 @@ export function CarFamily() {
       </section>
 
       {/* What is on the stage. */}
-      <section className="rounded-site p-5 sm:p-5">
+      <section className="py-5">
         <div className="flex items-start gap-4">
           <div className="flex size-12 shrink-0 items-center justify-center rounded-site text-site-accent">
             <ActiveIcon className="size-6" aria-hidden />
@@ -320,7 +320,7 @@ export function CarFamily() {
             defaultValue: 'The family, to scale',
           })}
         </h3>
-        <div className="rounded-site p-5">
+        <div className="py-5">
           <ul className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4 lg:grid-cols-7">
             {FLEET.map(({ info, body }) => (
               <li key={info.id} className="flex flex-col items-center gap-1">
