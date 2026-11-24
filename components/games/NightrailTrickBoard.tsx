@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { ThumbsUp, Trophy } from 'lucide-react';
-import { Card } from '@/components/ui/card';
+import { Section } from '@/components/ui/rules';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/contract/client';
 import { getNightrailTricksApi, voteNightrailTrickApi } from '@/lib/trick-week/nightrail-tricks.contract';
@@ -82,7 +82,7 @@ export function NightrailTrickBoard({ winner, signedIn }: { winner: TrickView | 
   };
 
   return (
-    <Card className="gap-3 p-4">
+    <Section className="flex flex-col gap-3">
       <h2 className="site-section-label flex items-center gap-2">
         <Trophy className="h-4 w-4 text-site-warning" aria-hidden />
         {t('trick-week-title', {
@@ -123,9 +123,9 @@ export function NightrailTrickBoard({ winner, signedIn }: { winner: TrickView | 
             })}
           </p>
         ) : (
-          <ul className={cn('space-y-2', arrival)}>
+          <ul className={cn(arrival)}>
             {data.tricks.map((trick) => (
-              <li key={trick.id} className="surface-card flex items-center gap-3 rounded-site px-4 py-3">
+              <li key={trick.id} className="flex items-center gap-3 border-b border-site-border py-3">
                 <TrickLine trick={trick} />
                 <Button
                   size="sm"
@@ -143,6 +143,6 @@ export function NightrailTrickBoard({ winner, signedIn }: { winner: TrickView | 
           </ul>
         )
       ) : null}
-    </Card>
+    </Section>
   );
 }

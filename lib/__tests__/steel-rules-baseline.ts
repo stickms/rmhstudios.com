@@ -6,10 +6,6 @@
  * is clean must be deleted. Nothing new goes in.
  */
 export const STEEL_RULES_BASELINE: Record<string, { wave: string; count: number }> = {
-  'components/games/HowToPlay.tsx': { wave: 'wave 4', count: 1 },
-  'components/games/NightrailTrickBoard.tsx': { wave: 'wave 4', count: 2 },
-  'components/groupcall/GroupCallInviteDialog.tsx': { wave: 'wave 4', count: 2 },
-  'components/groupcall/GroupCallRoster.tsx': { wave: 'wave 4', count: 3 },
   'components/kaikai-debt/AddDebtForm.tsx': { wave: 'wave 4', count: 2 },
   'components/kaikai-debt/AskDebtPanel.tsx': { wave: 'wave 4', count: 2 },
   'components/kaikai-debt/DebtDesks.tsx': { wave: 'wave 4', count: 2 },
@@ -29,9 +25,6 @@ export const STEEL_RULES_BASELINE: Record<string, { wave: string; count: number 
   'components/party/ControllerPad.tsx': { wave: 'wave 4', count: 1 },
   'components/party/PacksPage.tsx': { wave: 'wave 4', count: 1 },
   'components/rebar-rutabaga/Masthead.tsx': { wave: 'wave 4', count: 1 },
-  'components/rebar-rutabaga/TastingMenu.tsx': { wave: 'wave 4', count: 1 },
-  'components/rmhcalculator/NotebookTab.tsx': { wave: 'wave 4', count: 1 },
-  'components/rmhcode/TokenGenerator.tsx': { wave: 'wave 4', count: 1 },
   'components/security/BreachesSection.tsx': { wave: 'wave 4', count: 9 },
   'components/security/SecurityPage.tsx': { wave: 'wave 4', count: 13 },
   'components/settings/ShortcutCapture.tsx': { wave: 'wave 2', count: 1 },
@@ -39,9 +32,6 @@ export const STEEL_RULES_BASELINE: Record<string, { wave: string; count: number 
   'components/studio/SampleBrowser.tsx': { wave: 'wave 4', count: 1 },
   'components/studio/creative/ChallengePanel.tsx': { wave: 'wave 4', count: 5 },
   'components/studio/creative/JamPanel.tsx': { wave: 'wave 4', count: 1 },
-  'components/toolbox/contrast/ContrastTool.tsx': { wave: 'wave 4', count: 1 },
-  'components/toolbox/diff/DiffTool.tsx': { wave: 'wave 4', count: 1 },
-  'components/toolbox/regex/RegexTool.tsx': { wave: 'wave 4', count: 1 },
   'features/casino/ui/BaccaratControls.tsx': { wave: 'wave 4', count: 1 },
   'features/casino/ui/BaccaratGame.tsx': { wave: 'wave 4', count: 2 },
   'features/casino/ui/BaccaratLobby.tsx': { wave: 'wave 4', count: 2 },

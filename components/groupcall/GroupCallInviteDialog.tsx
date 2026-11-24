@@ -253,7 +253,7 @@ export function GroupCallInviteDialog({
                     name: displayName(person, unnamed),
                     defaultValue: 'Remove {{name}}',
                   })}
-                  className="surface-card flex items-center gap-1.5 rounded-full py-1 pl-1 pr-2 text-xs font-medium text-site-text transition-colors duration-150 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent/50"
+                  className="flex items-center gap-1.5 rounded-full py-1 pl-1 pr-2 text-xs font-medium text-site-text transition-colors duration-150 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent/50"
                 >
                   <UserAvatar
                     src={person.image ?? undefined}
@@ -315,7 +315,7 @@ export function GroupCallInviteDialog({
                       onClick={() => toggle(person)}
                       onKeyDown={(event) => onRowKeyDown(event, index)}
                       className={cn(
-                        'surface-card flex w-full items-center gap-3 rounded-site px-3 py-2 text-left',
+                        'row-hover flex w-full items-center gap-3 border-b border-site-border py-2 text-left',
                         'transition-[background-color,border-color] duration-150 hover:bg-site-surface-hover',
                         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent/50',
                         'disabled:cursor-not-allowed disabled:opacity-45',
