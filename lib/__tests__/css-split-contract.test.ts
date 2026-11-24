@@ -15,7 +15,7 @@ import { siteAppCssFiles } from './css-tiers';
 
 const ROOT = process.cwd();
 const MAX_LINES = 1500;
-const ENTRIES = ['app/globals.css', 'components/library/library.css'];
+const ENTRIES = ['app/globals.css', 'components/library/library.css', 'features/medschools/ui/medschools.css'];
 
 describe('stylesheet size and split integrity', () => {
   it(`no site/app-tier stylesheet exceeds ${MAX_LINES} lines`, () => {

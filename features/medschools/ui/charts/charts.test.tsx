@@ -1,4 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs';
+import { readCss } from '@/lib/__tests__/css-source';
 import path from 'node:path';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
@@ -557,7 +558,7 @@ describe('ArrivalBars (when results arrive)', () => {
 });
 
 describe('chart colours, from the stylesheet', () => {
-  const css = readFileSync(path.resolve(__dirname, '../medschools.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const css = readCss(path.resolve(__dirname, '../medschools.css')).replace(/\/\*[\s\S]*?\*\//g, '');
   /** The `--name: #hex` declarations of the first `{ ... }` after `selector`. */
   const tokens = (selector: string): Record<string, string> => {
     const at = css.indexOf(selector);

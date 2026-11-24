@@ -1,4 +1,5 @@
 import { existsSync, globSync, readFileSync } from 'node:fs';
+import { readCss } from '@/lib/__tests__/css-source';
 import { describe, expect, it } from 'vitest';
 
 /**
@@ -62,7 +63,7 @@ describe('medschools ui rules', () => {
   });
 
   it('keeps to the app tier: palette tokens only, no hex, no keyframes, nothing position: fixed', () => {
-    const css = read('features/medschools/ui/medschools.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    const css = readCss('features/medschools/ui/medschools.css').replace(/\/\*[\s\S]*?\*\//g, '');
     // Every colour is an `--app-*` token declaration; any other hex means a colour that escaped the palette.
     const stray = css.split('\n').filter((l) => /#[0-9a-fA-F]{3,8}\b/.test(l) && !/^\s*--(app|site)-[\w-]+:/.test(l));
     expect(stray.filter((l) => !/^\s*(\/?\*|\*)/.test(l))).toEqual([]);
@@ -92,7 +93,7 @@ describe('medschools ui rules', () => {
   });
 
   it('keeps the --site-* bridge to one block, on <html>, naming only the overlay pieces that need it', () => {
-    const css = read('features/medschools/ui/medschools.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    const css = readCss('features/medschools/ui/medschools.css').replace(/\/\*[\s\S]*?\*\//g, '');
     const decls = css.split('\n').filter((l) => /^\s*--site-[\w-]+:/.test(l));
     expect(decls.length).toBeLessThanOrEqual(12);
     const block = css.slice(css.indexOf(':root:has(.medapp-theme) {\n  --site-bg'));

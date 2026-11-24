@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { readCss } from '@/lib/__tests__/css-source';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { MODE_STORAGE_KEY, resolveMode, serializeMode } from '../../engine/mode';
@@ -78,7 +79,7 @@ describe('medschools shell', () => {
   });
 
   it('paints both grounds the stylesheet declares as --app-bg', () => {
-    const css = read('features/medschools/ui/medschools.css').toLowerCase();
+    const css = readCss('features/medschools/ui/medschools.css').toLowerCase();
     const theme = read('stores/themeStore.ts').toLowerCase();
     const entry = /'\/rmh-medschool': \{[^}]*\}/.exec(theme)?.[0] ?? '';
     for (const hex of ['#f6f1e7', '#1b1e2a']) {
@@ -88,7 +89,7 @@ describe('medschools shell', () => {
   });
 
   it('keeps the wash static: in the flow, no fixed layer, no animation, a tile for each mode', () => {
-    const css = read('features/medschools/ui/medschools.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    const css = readCss('features/medschools/ui/medschools.css').replace(/\/\*[\s\S]*?\*\//g, '');
     expect(css).toMatch(/\.medapp-page\s*\{[^}]*background-image: var\(--app-med-wash-image\)/);
     // Nothing is fixed, and nothing is sticky flush to an edge of the screen. The one rule pinned at 0 is the rail's
     // heading, sticky inside the rail panel's own scroll box (the panel itself sits 16px off the top).
@@ -104,7 +105,7 @@ describe('medschools shell', () => {
   });
 
   it('defines the status pairs, chart slots and the --site bridge in both modes', () => {
-    const css = read('features/medschools/ui/medschools.css');
+    const css = readCss('features/medschools/ui/medschools.css');
     for (const k of ['accept', 'reject', 'hold', 'secondary', 'waitlist', 'matric', 'interview', 'withdrawn'])
       for (const part of ['swatch', 'ink', 'text']) expect(css).toContain(`--app-med-${k}-${part}:`);
     for (let i = 1; i <= 5; i++) {

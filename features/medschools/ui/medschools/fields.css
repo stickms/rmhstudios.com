@@ -1,0 +1,421 @@
+/* ── Fields: input, textarea, search, select, switch ─────────────────────── */
+/* A field on paper: the control height, the 14px radius, a 1px rule, 16px text (iOS zooms into anything smaller). The
+   focus ring is the app tier's global one. */
+.medapp-field {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: var(--app-med-control);
+  padding-inline: 14px;
+  border-radius: var(--app-med-radius);
+  border: 1px solid var(--app-border-bright);
+  background-color: var(--app-surface);
+  color: var(--app-text);
+  font: inherit;
+  font-size: var(--app-med-text-body);
+  line-height: 1.3;
+  transition: border-color 90ms var(--app-ease);
+}
+.medapp-field::placeholder {
+  color: var(--app-text-muted);
+  opacity: 1;
+}
+.medapp-field:hover:not(:disabled) {
+  border-color: var(--app-text-muted);
+}
+.medapp-field[aria-invalid='true'] {
+  border-color: var(--app-danger);
+}
+.medapp-field:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+textarea.medapp-field {
+  min-block-size: 112px;
+  padding-block: 12px;
+  line-height: 1.5;
+  resize: vertical;
+}
+input.medapp-field[type='date'] {
+  inline-size: 100%;
+  max-inline-size: 13rem;
+}
+.medapp-search {
+  position: relative;
+  min-inline-size: 0;
+}
+.medapp-search .medapp-field {
+  padding-inline: 42px 44px;
+}
+.medapp-search__icon {
+  position: absolute;
+  inset-inline-start: 14px;
+  inset-block: 0;
+  margin-block: auto;
+  color: var(--app-text-muted);
+  pointer-events: none;
+}
+.medapp-search__clear {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block: 0;
+  inline-size: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--app-med-radius);
+  background: transparent;
+  color: var(--app-text-muted);
+  cursor: pointer;
+}
+.medapp-search__clear:hover {
+  color: var(--app-text);
+}
+/* The select trigger is the shared Radix trigger in its app tier, drawn as a field with its chevron. */
+.medapp-select {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: var(--app-med-control);
+  block-size: var(--app-med-control);
+  padding-block: 0;
+  padding-inline: 14px 38px;
+  border-radius: var(--app-med-radius);
+  border: 1px solid var(--app-border-bright);
+  background-color: var(--app-surface);
+  color: var(--app-text);
+  font: inherit;
+  font-size: var(--app-med-text-body);
+}
+.medapp-select:hover:not(:disabled) {
+  border-color: var(--app-text-muted);
+}
+.medapp-select[aria-invalid='true'] {
+  border-color: var(--app-danger);
+}
+/* Switch: a 48 x 28 track and a 20px thumb inside a 52 x 44 target. */
+.medapp-switch {
+  position: relative;
+  flex: none;
+  inline-size: 52px;
+  block-size: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.medapp-switch::before {
+  content: '';
+  position: absolute;
+  inset-inline: 2px;
+  inset-block: 8px;
+  border-radius: 14px;
+  border: 1px solid var(--app-border-bright);
+  background-color: var(--app-bg-subtle);
+  transition: background-color 140ms var(--app-ease);
+}
+.medapp-switch::after {
+  content: '';
+  position: absolute;
+  inset-block-start: 12px;
+  inset-inline-start: 7px;
+  inline-size: 20px;
+  block-size: 20px;
+  border-radius: 10px;
+  background-color: var(--app-text-muted);
+  transition:
+    inset-inline-start 140ms var(--app-ease),
+    background-color 140ms var(--app-ease);
+}
+.medapp-switch[aria-checked='true']::before {
+  border-color: var(--app-accent);
+  background-color: var(--app-accent);
+}
+.medapp-switch[aria-checked='true']::after {
+  inset-inline-start: 27px;
+  background-color: var(--app-accent-fg);
+}
+.medapp-switch:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+/* A labelled field: the label above the control, 8px between them. */
+.medapp-fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-2);
+  min-inline-size: 0;
+}
+/* A field with a button on the same line (the cycle and "Add cycle"): one height, one centre line. */
+.medapp-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-med-space-2);
+  min-inline-size: 0;
+}
+.medapp-inline > :first-child {
+  flex: 1 1 140px;
+  min-inline-size: 0;
+}
+/* Fields side by side from 640px, stacked on a phone; each column the same width, aligned on their labels. */
+.medapp-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--app-med-space-4) var(--app-med-space-5);
+  align-items: start;
+}
+@media (min-width: 640px) {
+  .medapp-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+/* An inline form (add a cycle, a milestone): labelled fields then the actions, all ending on one line from 640px;
+   stacked full width on a phone. */
+.medapp-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-3);
+}
+.medapp-form > .medapp-actions {
+  margin-block-start: var(--app-med-space-1);
+}
+@media (min-width: 640px) {
+  .medapp-form {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+  .medapp-form > .medapp-fieldset {
+    flex: 1 1 180px;
+  }
+  .medapp-form > .medapp-actions {
+    margin-block-start: 0;
+  }
+}
+/* A sub-part of a panel (a form that opened, the sharing switch): a rule above it and 16px either side of the rule. */
+.medapp-subrule {
+  margin-block-start: var(--app-med-space-4);
+  padding-block-start: var(--app-med-space-4);
+  border-top: 1px solid var(--app-border);
+}
+/* An empty, failed or signed-out state: centred, calm, short, with one action. */
+.medapp-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--app-med-space-2);
+  padding: var(--app-med-space-6) var(--app-med-panel-pad);
+  text-align: center;
+}
+.medapp-empty-state .medapp-meta,
+.medapp-empty-state .medapp-text {
+  max-inline-size: 42ch;
+}
+.medapp-empty-state .medapp-actions {
+  justify-content: center;
+  margin-block-start: var(--app-med-space-3);
+}
+.medapp-empty-state .medapp-h2 {
+  font-size: var(--app-med-text-section);
+}
+/* A row with more than one line of its own (a tracked school, a list's school): padded, on a rule. */
+.medapp-item {
+  padding-block: var(--app-med-space-4);
+  border-bottom: 1px solid var(--app-border);
+}
+.medapp-rows > .medapp-item:last-child {
+  border-bottom: 0;
+}
+.medapp-item__head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-med-space-3);
+}
+.medapp-item__title {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+  padding-block-start: var(--app-med-space-1);
+}
+.medapp-item__actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--app-med-space-2);
+}
+/* The name of a thing that opens its page: weight 600 in the ink, no underline at rest (the hover draws one), so a row
+   reads as a title and not as a run of links. */
+.medapp-name {
+  font-size: var(--app-med-text-body);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--app-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+a.medapp-name:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.medapp-crest-cell {
+  flex: none;
+  padding-block-start: 2px;
+}
+/* A pick-list row that is one button (the school search). */
+.medapp-list > .medapp-list__pick {
+  padding-block: 0;
+}
+.medapp-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  inline-size: 100%;
+  min-block-size: 48px;
+  padding-block: 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.medapp-pick:hover {
+  background-color: var(--app-surface-hover);
+}
+/* A native checkbox in the app's ink, 20px (24px on touch). */
+/* The native control (the site's drawn checkbox reads Steel names), so it takes the app's ink through accent-color. */
+.medapp-check {
+  appearance: auto;
+  inline-size: 20px;
+  block-size: 20px;
+  flex: none;
+  margin: 0;
+  accent-color: var(--app-accent);
+}
+span.medapp-check {
+  visibility: hidden;
+}
+.medapp-check::before,
+.medapp-check::after {
+  content: none;
+}
+@media (pointer: coarse) {
+  .medapp-check {
+    inline-size: 24px;
+    block-size: 24px;
+  }
+}
+.medapp-pick:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+/* A checkbox row: the box, the words, the whole row the target (44px). */
+.medapp-checkrow {
+  display: flex;
+  align-items: center;
+  gap: var(--app-med-space-3);
+  min-block-size: 44px;
+  font-size: 15px;
+  color: var(--app-text);
+  cursor: pointer;
+}
+.medapp-checkrow:has(input:disabled) {
+  cursor: default;
+}
+/* A native disclosure: a 48px summary with its words and a chevron at the end that turns when it opens. Closed by
+   default; rows on rules. */
+.medapp-disclosure {
+  border-bottom: 1px solid var(--app-border);
+}
+.medapp-disclosure:last-child {
+  border-bottom: 0;
+}
+.medapp-disclosure > summary,
+.medapp-more > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-med-space-3);
+  min-block-size: 48px;
+  list-style: none;
+  cursor: pointer;
+}
+.medapp-disclosure > summary {
+  font-size: var(--app-med-text-body);
+  font-weight: 600;
+  color: var(--app-text);
+}
+.medapp-disclosure > summary::-webkit-details-marker,
+.medapp-more > summary::-webkit-details-marker {
+  display: none;
+}
+.medapp-disclosure > summary::after,
+.medapp-more > summary::after {
+  content: '';
+  flex: none;
+  inline-size: 8px;
+  block-size: 8px;
+  margin-inline-end: 6px;
+  border-inline-end: 1.5px solid var(--app-text-muted);
+  border-block-end: 1.5px solid var(--app-text-muted);
+  transform: translateY(-2px) rotate(45deg);
+}
+.medapp-disclosure[open] > summary::after,
+.medapp-more[open] > summary::after {
+  transform: translateY(2px) rotate(-135deg);
+}
+.medapp-disclosure__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-3);
+  padding-block: var(--app-med-space-1) var(--app-med-space-4);
+}
+.medapp-disclosures {
+  border-top: 1px solid var(--app-border);
+}
+/* "How sharing works": a quieter disclosure inside a block of text, a tertiary summary with the chevron beside it. */
+.medapp-more > summary {
+  justify-content: flex-start;
+  inline-size: fit-content;
+  min-block-size: 44px;
+  font-size: var(--app-med-text-secondary);
+  font-weight: 500;
+  color: var(--app-text);
+  text-decoration: underline;
+  text-decoration-color: var(--app-border-bright);
+  text-underline-offset: 4px;
+}
+.medapp-more > summary:hover {
+  text-decoration-color: currentColor;
+}
+.medapp-more__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-3);
+  padding-block-end: var(--app-med-space-2);
+}
+/* Paragraph rhythm. `.medapp-meta` and `.medapp-text` zero their margin (unlayered, so it beats a utility), so the gaps
+   between neighbours are set here. */
+.medapp-meta + .medapp-meta,
+.medapp-text + .medapp-meta,
+.medapp-meta + .medapp-text {
+  margin-block-start: 6px;
+}
+.medapp-form + .medapp-meta,
+.medapp-meta + .medapp-form {
+  margin-block-start: var(--app-med-space-2);
+}
+/* The app tier paints anything with a `bg-app-surface` class with a gel coat (gradient and inset rim). The select's
+   trigger and list carry that class, so on this app's flat paper they are reset to the solid fill. */
+.app-theme .medapp-select,
+.app-theme [data-slot='select-content'] {
+  background-image: none;
+  box-shadow: none;
+}
+.app-theme [data-slot='select-content'] {
+  border-radius: var(--app-med-radius);
+  box-shadow: var(--app-shadow);
+}
