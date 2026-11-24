@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useSession } from '@/components/session/session-context';
-import { Switch } from '@/components/ui/switch';
+import { MedSwitch } from '../controls/MedSwitch';
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
 import { QA_THINK_CLIENT_TIMEOUT_MS } from '../../ai-budget';
 import { postMedInterviewFollowupsApi, type MedInterviewFollowupsRes } from '../../medschools.contract';
@@ -68,7 +68,7 @@ export function FollowupsSection({
       </p>
       {status.data?.thinkingAvailable ? (
         <div className="medapp-controls">
-          <Switch
+          <MedSwitch
             id={`${id}-think`}
             checked={think}
             onCheckedChange={setThink}

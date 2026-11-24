@@ -25,20 +25,20 @@ export function MyChance({ mine }: { mine: readonly ChanceDto[] }) {
       : c.school.shortName;
   return (
     <section className="mt-6" aria-labelledby="ask-mine-heading">
-      <h3 id="ask-mine-heading" className="t-heading m-0">
+      <h3 id="ask-mine-heading" className="medapp-h3">
         {t('ask-mine-heading', { defaultValue: 'Your estimate' })}
       </h3>
       {shown.length === 0 ? (
-        <p className="t-body m-0 mt-2">
+        <p className="medapp-text mt-2">
           {t('ask-mine-none', { defaultValue: 'You have no open application at this school.' })}{' '}
-          <Link to="/rmh-medschool/tracker" className="underline">
+          <Link to="/rmh-medschool/tracker" className="medapp-link">
             {t('ask-mine-add', { defaultValue: 'Add this school to your tracker' })}
           </Link>
         </p>
       ) : (
         shown.map((c) => (
           <div key={c.applicationId} className="mt-2">
-            <p className="t-label m-0">{rowLabel(c)}</p>
+            <p className="medapp-label">{rowLabel(c)}</p>
             <ChanceLine chance={c} />
           </div>
         ))

@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { SearchField } from '@/components/ui/search-field';
-import { Select } from '@/components/ui/select';
+import { MedSearch } from './controls/MedSearch';
+import { MedSelect } from './controls/MedSelect';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { schoolProgramOf } from '../engine/programs';
@@ -93,7 +93,7 @@ export function IndexPage() {
       </nav>
 
       <div className="medapp-toolbar">
-        <SearchField
+        <MedSearch
           containerClassName="w-full sm:w-auto sm:min-w-48 sm:flex-1"
           aria-label={t('index-search-label', { defaultValue: 'Search schools' })}
           placeholder={t('index-search-placeholder', { defaultValue: 'Search schools' })}
@@ -104,8 +104,7 @@ export function IndexPage() {
             pushQuery(v);
           }}
         />
-        <Select
-          controlSize="sm"
+        <MedSelect
           aria-label={t('index-state-label', { defaultValue: 'State' })}
           value={search.state ?? ''}
           onChange={(e) => setSearch({ state: e.target.value || undefined })}
@@ -116,13 +115,12 @@ export function IndexPage() {
               {s}
             </option>
           ))}
-        </Select>
+        </MedSelect>
       </div>
       <ProgramSetToggles value={view.programs} onChange={(programs) => setView({ programs })} />
       {myLists.length > 0 ? (
         <div className="mt-3">
-          <Select
-            controlSize="sm"
+          <MedSelect
             aria-label={t('index-list-label', { defaultValue: 'My lists' })}
             value={listSlugs || search.list === 'all' ? (search.list ?? '') : ''}
             onChange={(e) => setSearch({ list: e.target.value || undefined })}
@@ -134,7 +132,7 @@ export function IndexPage() {
                 {l.name}
               </option>
             ))}
-          </Select>
+          </MedSelect>
         </div>
       ) : null}
       {search.list && !signedIn ? (

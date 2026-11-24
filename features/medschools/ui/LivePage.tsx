@@ -1,7 +1,7 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Select } from '@/components/ui/select';
+import { MedSelect } from './controls/MedSelect';
 import { ARRIVE } from '@/components/ui/arrive';
 import { parseLiveSearch } from '../engine/search';
 import type { MedEventTypeId } from '../medschools.contract';
@@ -63,8 +63,7 @@ export function LivePage() {
     <>
       <PageHead title={t('live-title', { defaultValue: 'Live reported events' })} />
       <div className="medapp-toolbar">
-        <Select
-          controlSize="sm"
+        <MedSelect
           aria-label={t('live-type-label', { defaultValue: 'Event' })}
           value={search.type ?? ''}
           onChange={(e) => setSearch({ type: (e.target.value || undefined) as MedEventTypeId | undefined })}
@@ -75,9 +74,8 @@ export function LivePage() {
               {eventLabel(ty)}
             </option>
           ))}
-        </Select>
-        <Select
-          controlSize="sm"
+        </MedSelect>
+        <MedSelect
           aria-label={t('live-school-label', { defaultValue: 'School' })}
           value={search.school ?? ''}
           onChange={(e) => setSearch({ school: e.target.value || undefined })}
@@ -88,7 +86,7 @@ export function LivePage() {
               {s.shortName}
             </option>
           ))}
-        </Select>
+        </MedSelect>
       </div>
       <ProgramSetToggles value={view.programs} onChange={(programs) => setView({ programs })} />
       <PrefsNote fromPrefs={view.fromPrefs} />

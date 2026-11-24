@@ -37,12 +37,12 @@ export function AnswerView({ res, seconds = null }: { res: MedAskRes; seconds?: 
           defaultValue: 'Your own estimate could not be loaded just now. Try again, or open My tracker.',
         })
       : res.notice === 'removed-ungrounded'
-      ? t('ask-notice-removed', {
-          defaultValue: 'Some statements were removed because their figures could not be matched to the data.',
-        })
-      : res.notice === 'thin'
-        ? t('ask-notice-thin', { defaultValue: 'RMH has little data on this yet, so the answer may be incomplete.' })
-        : null;
+        ? t('ask-notice-removed', {
+            defaultValue: 'Some statements were removed because their figures could not be matched to the data.',
+          })
+        : res.notice === 'thin'
+          ? t('ask-notice-thin', { defaultValue: 'RMH has little data on this yet, so the answer may be incomplete.' })
+          : null;
 
   // Interview questions and comments are member-reported text: quoted with their source, never checked. The sentence
   // says so only when the answer cites one (plan R17).
@@ -65,16 +65,16 @@ export function AnswerView({ res, seconds = null }: { res: MedAskRes; seconds?: 
   return (
     <div data-ask-status={res.status} data-testid="ask-answer">
       {res.segments.length > 0 ? (
-        <ol className="m-0 list-none border-t border-site-border p-0">
+        <ol className="medapp-list">
           {res.segments.map((seg, i) => {
             const nums = [...new Set(seg.cites.flatMap((r) => numberOf.get(r) ?? []))].sort((a, b) => a - b);
             return (
-              <li key={i} className="border-b border-site-border py-3">
-                <p className="t-post m-0" dir="auto">
+              <li key={i}>
+                <p className="medapp-text" dir="auto">
                   {seg.text}
                 </p>
                 {nums.length > 0 ? (
-                  <p className="t-meta m-0 mt-1 flex flex-wrap items-center gap-x-1">
+                  <p className="medapp-meta mt-1 flex flex-wrap items-center gap-x-1">
                     <span>{t('ask-segment-sources', { defaultValue: 'Sources:' })}</span>
                     {nums.map((n) => (
                       <a
@@ -93,22 +93,22 @@ export function AnswerView({ res, seconds = null }: { res: MedAskRes; seconds?: 
           })}
         </ol>
       ) : null}
-      {empty ? <p className="t-body m-0 py-3">{empty}</p> : null}
-      {notice ? <p className="t-meta m-0 mt-2">{notice}</p> : null}
+      {empty ? <p className="medapp-text py-3">{empty}</p> : null}
+      {notice ? <p className="medapp-meta mt-2">{notice}</p> : null}
       {res.thinking && seconds !== null ? (
-        <p className="t-meta m-0 mt-1" data-testid="ask-thought">
+        <p className="medapp-meta mt-1" data-testid="ask-thought">
           {t('ask-thought-for', { defaultValue: 'Thought for {{n}} s', n: `\u2068${seconds}\u2069` })}
         </p>
       ) : null}
       {memberReported ? (
-        <p className="t-meta m-0 mt-1">
+        <p className="medapp-meta mt-1">
           {t('ask-notice-member-reported', {
             defaultValue:
               'Interview questions and comments are reported by members. RMH checks the figures in an answer, not what members wrote.',
           })}
         </p>
       ) : null}
-      {used ? <p className="t-meta m-0 mt-1">{used}</p> : null}
+      {used ? <p className="medapp-meta mt-1">{used}</p> : null}
       {res.mine !== null ? <MyChance mine={res.mine} /> : null}
       <Citations citations={res.citations} schools={res.schools} />
     </div>

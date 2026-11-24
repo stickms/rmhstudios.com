@@ -110,8 +110,8 @@ describe('AskPanel', () => {
     expect(html).toContain('maxLength="400"');
     expect(html).toContain('12 of 15 questions left today');
     expect(html).toContain('Your question is sent to our AI provider to write the answer. RMH does not keep it.');
-    expect(html.match(/bg-site-accent/g)?.length).toBe(1);
-    expect(html).toContain('>Ask</span>');
+    expect(html.match(/data-variant="primary"/g)?.length).toBe(1);
+    expect(html).toContain('>Ask</button>');
     // Suggestion rows fill, never submit.
     // Plus the "Think it through" switch, which is a button too.
     expect(html.match(/type="button"/g)?.length).toBe(suggestionsFor(false).length + 1);
@@ -187,14 +187,14 @@ describe('limit tiers on the Ask page (R19)', () => {
     const html = panel({}, FREE, LIMIT());
     expect(html).toContain('Need more questions? Request a higher limit');
     expect(html).toContain('maxLength="500"');
-    expect(html).toContain('>Submit</span>');
-    expect(html.match(/bg-site-accent/g)?.length).toBe(1);
+    expect(html).toContain('>Submit</button>');
+    expect(html.match(/data-variant="primary"/g)?.length).toBe(1);
   });
   it('shows pending, approved and declined-with-date instead of the form', () => {
     h.session = { user: { id: 'u1' } };
     const pending = panel({}, FREE, LIMIT({ state: 'pending' }));
     expect(pending).toContain('waiting for review');
-    expect(pending).not.toContain('>Submit</span>');
+    expect(pending).not.toContain('>Submit</button>');
     const ok = panel(
       {},
       { ...FREE, tier: 'approved', dailyCap: 40, remainingToday: 40 },
@@ -205,7 +205,7 @@ describe('limit tiers on the Ask page (R19)', () => {
     const no = panel({}, FREE, LIMIT({ state: 'declined', reapplyOn: '2026-12-23T12:00:00.000Z' }));
     expect(no).toContain('not approved. You can ask again on');
     expect(no).toMatch(/Dec(ember)? 23, 2026|12\/23\/2026/);
-    expect(no).not.toContain('>Submit</span>');
+    expect(no).not.toContain('>Submit</button>');
   });
 });
 

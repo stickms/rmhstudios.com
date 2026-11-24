@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
-import { SearchField } from '@/components/ui/search-field';
-import { Select } from '@/components/ui/select';
+import { MedButton } from '../controls/MedButton';
+import { MedSearch } from '../controls/MedSearch';
+import { MedSelect } from '../controls/MedSelect';
 import { useRefusalText } from '@/components/errors/useRefusalText';
 import { Q_MAX } from '../../engine/search';
 import type { MedSchoolListItemDto } from '../../medschools.contract';
@@ -15,7 +15,7 @@ const MAX_MATCHES = 8;
 /**
  * Add a school to the cycle: search the public school list (already cached by the index page), pick one, choose the
  * program by that school's degree (REG reads "MD" or "DO", PHD "MD-PhD" or "DO-PhD"; spec 4a), add. A duplicate or a
- * full cycle is the server's 409, shown as a `t-meta` line.
+ * full cycle is the server's 409, shown as a `medapp-meta` line.
  */
 export function AddSchool({
   onAdd,
@@ -55,12 +55,12 @@ export function AddSchool({
   };
 
   return (
-    <div className="border-b border-site-border py-4">
+    <div className="medapp-panel medapp-panel--padded mt-3">
       {picked ? (
-        <div className="flex flex-wrap items-end gap-2">
-          <div className="min-w-44 flex-1">
-            <p className="t-body m-0">{picked.name}</p>
-            <p className="t-meta m-0">
+        <div className="medapp-form">
+          <div className="medapp-item__title">
+            <p className="medapp-text">{picked.name}</p>
+            <p className="medapp-meta">
               {t('index-school-meta', {
                 defaultValue: '{{degree}} · {{city}}, {{state}}',
                 degree: picked.degree,
@@ -69,8 +69,7 @@ export function AddSchool({
               })}
             </p>
           </div>
-          <Select
-            controlSize="sm"
+          <MedSelect
             aria-label={t('program-select-label', { defaultValue: 'Program' })}
             value={program}
             disabled={busy}
@@ -78,18 +77,18 @@ export function AddSchool({
           >
             <option value="REG">{programFilterLabel('REG', picked.degree)}</option>
             <option value="PHD">{programFilterLabel('PHD', picked.degree)}</option>
-          </Select>
-          <Button loading={busy} onClick={() => void submit()}>
+          </MedSelect>
+          <MedButton variant="primary" loading={busy} onClick={() => void submit()}>
             {t('tracker-add-confirm', { defaultValue: 'Add' })}
-          </Button>
-          <Button variant="ghost" disabled={busy} onClick={() => setPicked(null)}>
+          </MedButton>
+          <MedButton variant="ghost" disabled={busy} onClick={() => setPicked(null)}>
             {t('tracker-add-change', { defaultValue: 'Change school' })}
-          </Button>
+          </MedButton>
         </div>
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-2">
-            <SearchField
+          <div className="medapp-form">
+            <MedSearch
               containerClassName="min-w-48 flex-1"
               aria-label={t('tracker-add-search', { defaultValue: 'Search schools to add' })}
               placeholder={t('tracker-add-search', { defaultValue: 'Search schools to add' })}
@@ -98,27 +97,27 @@ export function AddSchool({
               onValueChange={setQ}
               autoFocus
             />
-            <Button variant="ghost" onClick={onCancel}>
+            <MedButton variant="ghost" onClick={onCancel}>
               {t('tracker-cancel', { defaultValue: 'Cancel' })}
-            </Button>
+            </MedButton>
           </div>
           {needle && schools.data && matches.length === 0 ? (
-            <p className="t-meta m-0 mt-3">{t('tracker-add-none', { defaultValue: 'No school matches.' })}</p>
+            <p className="medapp-meta mt-3">{t('tracker-add-none', { defaultValue: 'No school matches.' })}</p>
           ) : null}
-          <ul className="m-0 mt-2 list-none p-0">
+          <ul className="medapp-list mt-2">
             {matches.map((s) => (
-              <li key={s.slug} className="border-b border-site-border last:border-b-0">
+              <li key={s.slug} className="medapp-list__pick">
                 <button
                   type="button"
-                  className="flex min-h-11 w-full flex-col items-start justify-center py-2 text-start hover:bg-site-bg-subtle"
+                  className="medapp-pick"
                   onClick={() => {
                     setPicked(s);
                     setProgram('REG');
                     setError(null);
                   }}
                 >
-                  <span className="t-body">{s.name}</span>
-                  <span className="t-meta">
+                  <span className="medapp-text">{s.name}</span>
+                  <span className="medapp-meta">
                     {t('index-school-meta', {
                       defaultValue: '{{degree}} · {{city}}, {{state}}',
                       degree: s.degree,
@@ -133,7 +132,7 @@ export function AddSchool({
         </>
       )}
       {error ? (
-        <p className="t-meta m-0 mt-3" role="alert">
+        <p className="medapp-meta mt-3" role="alert">
           {error}
         </p>
       ) : null}

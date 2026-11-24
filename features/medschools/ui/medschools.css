@@ -21,12 +21,15 @@
  * the ink on it), the status pairs (`swatch` is the disc, `ink` the icon on it, `text` the words in the same hue) and
  * the chart series (`-n` the line, `-n-fill` the pastel fill).
  *
- * ## The `--site-*` bridge
+ * ## The overlay bridge (the only `--site-*` left)
  *
- * The existing pages are Steel components that read `--site-*`. `/rmh-medschool` is an app route, so no site theme
- * class is applied; the bridge below points the `--site-*` names at this palette so those components render in it now
- * and the restyle (phase B) can go component by component. The tokens are also set on `<html>` while the app is on
- * screen (`:root:has(.medapp-theme)`), because a dialog or popover portals to `<body>`, outside the app's root.
+ * Nothing under `features/medschools/ui` reads `--site-*` any more (`ui-rules.test.ts` holds that for the markup): every
+ * page, form control and panel is `--app-*` / `--app-med-*`. Four shared pieces that portal to `<body>`, outside the
+ * app's root, still paint in Steel tokens and are not worth a second copy: the anchored menu (`AnchoredMenu` and
+ * `MenuItem`: the save-to-list, list and school action menus), the confirm and prompt dialogs (`useConfirm`,
+ * `usePrompt`, with their `Dialog`, `Button` and `Input`), the toaster, and `SortableList`'s move buttons. The block at
+ * the end of the palettes points just the names those read at this palette, on `<html>` only while the app is on screen
+ * (`:root:has(.medapp-theme)`), so they follow the app's light and dark and the site's own pages are untouched.
  *
  * ## The wash
  *
@@ -114,28 +117,6 @@
   /* Type: Fraunces for headings only; the body is the site's DM Sans (the AppShell tier already points
      `--app-font-body` at `--site-font-body`). */
   --app-font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
-
-  /* The bridge (see the header). It reads the `--app-*` values above, so it holds for both modes. */
-  --site-bg: var(--app-bg);
-  --site-bg-subtle: var(--app-bg-subtle);
-  --site-surface: var(--app-surface);
-  --site-surface-hover: var(--app-surface-hover);
-  --site-surface-active: var(--app-surface-active);
-  --site-border: var(--app-border);
-  --site-text: var(--app-text);
-  --site-text-muted: var(--app-text-muted);
-  --site-accent: var(--app-accent);
-  --site-accent-fg: var(--app-accent-fg);
-  --site-accent-hover: var(--app-accent-hover);
-  --site-success: var(--app-success);
-  --site-success-fg: var(--app-bg);
-  --site-danger: var(--app-danger);
-  --site-danger-fg: var(--app-bg);
-  --site-warning: var(--app-warning);
-  --site-warning-fg: var(--app-bg);
-  --site-radius: 20px;
-  --site-radius-sm: 12px;
-  --site-control-radius: 22px;
 }
 
 /* ── Dark: ink-navy night ────────────────────────────────────────────────── */
@@ -272,6 +253,23 @@
   --app-med-chart-5: #ebcf73;
   --app-med-chart-5-fill: #a98b2e;
   color-scheme: dark;
+}
+
+/* The overlay bridge (see the header): the names the shared menu, dialogs, toaster and sortable buttons read. It reads the
+   `--app-*` values above, so it holds for light and dark, and it is on <html>, where a portal resolves it. */
+:root:has(.medapp-theme) {
+  --site-bg: var(--app-bg);
+  --site-bg-subtle: var(--app-bg-subtle);
+  --site-surface: var(--app-surface);
+  --site-border: var(--app-border);
+  --site-text: var(--app-text);
+  --site-text-muted: var(--app-text-muted);
+  --site-accent: var(--app-accent);
+  --site-accent-fg: var(--app-accent-fg);
+  --site-success: var(--app-success);
+  --site-danger: var(--app-danger);
+  --site-radius: 14px;
+  --site-radius-sm: 10px;
 }
 
 /* ── Frame ───────────────────────────────────────────────────────────────── */
@@ -1101,4 +1099,300 @@
 .medapp-list > li > .medapp-text + .medapp-meta,
 .medapp-list > li > .medapp-meta + .medapp-meta {
   margin-block-start: 4px;
+}
+
+/* ── Controls (phase B3): buttons, fields, search, select, switch ────────── */
+/* One button shape: the chip. A ghost chip has no border or fill; a danger chip names its action in the danger colour. */
+.medapp-chip--quiet {
+  border-color: transparent;
+  background-color: transparent;
+}
+.medapp-chip--quiet:hover {
+  background-color: var(--app-surface-hover);
+}
+.medapp-chip--danger {
+  border-color: var(--app-danger);
+  color: var(--app-danger);
+}
+.medapp-chip[aria-busy='true'] {
+  cursor: progress;
+}
+/* A field on paper (the mockup's form): 44px, 14px radius, 1px border. The focus ring is the app tier's global one. */
+.medapp-field {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: 44px;
+  padding-inline: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--app-border);
+  background-color: var(--app-surface);
+  color: var(--app-text);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.3;
+  transition: border-color 90ms var(--app-ease);
+}
+.medapp-field::placeholder {
+  color: var(--app-text-muted);
+  opacity: 1;
+}
+.medapp-field:hover:not(:disabled) {
+  border-color: var(--app-border-bright);
+}
+.medapp-field[aria-invalid='true'] {
+  border-color: var(--app-danger);
+}
+.medapp-field:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+textarea.medapp-field {
+  min-block-size: 96px;
+  padding-block: 12px;
+  border-radius: 18px;
+  line-height: 1.45;
+  resize: vertical;
+}
+input.medapp-field[type='date'] {
+  inline-size: 11rem;
+}
+.medapp-search {
+  position: relative;
+  min-inline-size: 0;
+}
+.medapp-search .medapp-field {
+  padding-inline: 40px 44px;
+  border-radius: 22px;
+}
+.medapp-search__icon {
+  position: absolute;
+  inset-inline-start: 14px;
+  inset-block: 0;
+  margin-block: auto;
+  color: var(--app-text-muted);
+  pointer-events: none;
+}
+.medapp-search__clear {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block: 0;
+  inline-size: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 22px;
+  background: transparent;
+  color: var(--app-text-muted);
+  cursor: pointer;
+}
+.medapp-search__clear:hover {
+  color: var(--app-text);
+}
+/* The select trigger is the shared Radix trigger in its app tier, drawn as a field. */
+.medapp-select {
+  box-sizing: border-box;
+  min-block-size: 44px;
+  padding-block: 8px;
+  padding-inline: 14px 38px;
+  border-radius: 14px;
+  border: 1px solid var(--app-border);
+  background-color: var(--app-surface);
+  color: var(--app-text);
+  font: inherit;
+  font-size: 15px;
+}
+.medapp-select:hover:not(:disabled) {
+  border-color: var(--app-border-bright);
+}
+.medapp-select[aria-invalid='true'] {
+  border-color: var(--app-danger);
+}
+/* Switch: a 48 x 28 track and a 20px thumb inside a 52 x 44 target. */
+.medapp-switch {
+  position: relative;
+  flex: none;
+  inline-size: 52px;
+  block-size: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.medapp-switch::before {
+  content: '';
+  position: absolute;
+  inset-inline: 2px;
+  inset-block: 8px;
+  border-radius: 14px;
+  border: 1px solid var(--app-border-bright);
+  background-color: var(--app-bg-subtle);
+  transition: background-color 140ms var(--app-ease);
+}
+.medapp-switch::after {
+  content: '';
+  position: absolute;
+  inset-block-start: 12px;
+  inset-inline-start: 7px;
+  inline-size: 20px;
+  block-size: 20px;
+  border-radius: 10px;
+  background-color: var(--app-text-muted);
+  transition:
+    inset-inline-start 140ms var(--app-ease),
+    background-color 140ms var(--app-ease);
+}
+.medapp-switch[aria-checked='true']::before {
+  border-color: var(--app-accent);
+  background-color: var(--app-accent);
+}
+.medapp-switch[aria-checked='true']::after {
+  inset-inline-start: 27px;
+  background-color: var(--app-accent-fg);
+}
+.medapp-switch:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+/* A labelled form field: label above the control. */
+.medapp-fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-inline-size: 0;
+}
+.medapp-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+/* An empty state's second line and action sit under the headline, centred like it. */
+.medapp-empty__body {
+  margin-block-start: -12px;
+  padding-block-end: 8px;
+  text-align: center;
+}
+.medapp-empty__action {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+/* A row with more than one line of its own (a tracked school, a list's item): padded, on a rule. */
+.medapp-item {
+  padding-block: 14px;
+  border-bottom: 1px solid var(--app-border);
+}
+.medapp-rows > .medapp-item:last-child {
+  border-bottom: 0;
+}
+.medapp-item__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+.medapp-item__title {
+  min-inline-size: 11rem;
+  flex: 1 1 0;
+}
+.medapp-item__actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+}
+.medapp-subrule {
+  margin-block-start: 8px;
+  padding-block-start: 8px;
+  border-top: 1px solid var(--app-border);
+}
+/* A pick-list row that is one button (the school search). */
+.medapp-list > .medapp-list__pick {
+  padding-block: 0;
+}
+.medapp-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  inline-size: 100%;
+  min-block-size: 44px;
+  padding-block: 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.medapp-pick:hover {
+  background-color: var(--app-surface-hover);
+}
+/* A native checkbox in the app's ink, 20px (24px on touch). */
+.medapp-check {
+  inline-size: 20px;
+  block-size: 20px;
+  flex: none;
+  margin: 0;
+  accent-color: var(--app-accent);
+}
+span.medapp-check {
+  visibility: hidden;
+}
+@media (pointer: coarse) {
+  .medapp-check {
+    inline-size: 24px;
+    block-size: 24px;
+  }
+}
+.medapp-pick:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+/* A native disclosure in a list or a panel: rows on rules, a 44px summary. */
+.medapp-disclosure {
+  border-bottom: 1px solid var(--app-border);
+}
+.medapp-disclosure:last-child {
+  border-bottom: 0;
+}
+.medapp-disclosure > summary {
+  display: flex;
+  align-items: center;
+  min-block-size: 44px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--app-text);
+  cursor: pointer;
+}
+.medapp-disclosures {
+  border-top: 1px solid var(--app-border);
+}
+/* Paragraph rhythm. `.medapp-meta` and `.medapp-text` zero their margin (unlayered, so it beats a utility), so the gaps
+   between neighbours are set here. */
+.medapp-meta + .medapp-meta,
+.medapp-text + .medapp-meta,
+.medapp-meta + .medapp-text {
+  margin-block-start: 6px;
+}
+.medapp-form + .medapp-meta,
+.medapp-meta + .medapp-form {
+  margin-block-start: 8px;
+}
+textarea.medapp-field--compact {
+  min-block-size: 64px;
+}
+/* The app tier paints anything with a `bg-app-surface` class with a gel coat (gradient and inset rim). The select's
+   trigger and list carry that class, so on this app's flat paper they are reset to the solid fill. */
+.app-theme .medapp-select,
+.app-theme [data-slot='select-content'] {
+  background-image: none;
+  box-shadow: none;
+}
+.app-theme [data-slot='select-content'] {
+  border-radius: 16px;
+  box-shadow: var(--app-shadow);
 }
