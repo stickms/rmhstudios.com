@@ -614,6 +614,7 @@ import { route as r_features_medschools_api_medschools_schools } from '@/feature
 import { route as r_features_medschools_api_medschools_schools_slug } from '@/features/medschools/api/medschools.schools.$slug.server';
 import { route as r_features_medschools_api_medschools_schools_slug_activity } from '@/features/medschools/api/medschools.schools.$slug.activity.server';
 import { route as r_features_medschools_api_medschools_schools_slug_arrivals } from '@/features/medschools/api/medschools.schools.$slug.arrivals.server';
+import { route as r_features_medschools_api_medschools_schools_slug_facts } from '@/features/medschools/api/medschools.schools.$slug.facts.server';
 import { route as r_features_medschools_api_medschools_schools_slug_forecast } from '@/features/medschools/api/medschools.schools.$slug.forecast.server';
 import { route as r_features_medschools_api_medschools_schools_slug_history } from '@/features/medschools/api/medschools.schools.$slug.history.server';
 import { route as r_features_medschools_api_medschools_schools_slug_secondaries } from '@/features/medschools/api/medschools.schools.$slug.secondaries.server';
@@ -1819,6 +1820,7 @@ const API_ROUTES_M: readonly ApiRoute[] = [
   r_features_medschools_api_medschools_schools_slug, // /api/medschools/schools/$slug
   r_features_medschools_api_medschools_schools_slug_activity, // /api/medschools/schools/$slug/activity
   r_features_medschools_api_medschools_schools_slug_arrivals, // /api/medschools/schools/$slug/arrivals
+  r_features_medschools_api_medschools_schools_slug_facts, // /api/medschools/schools/$slug/facts
   r_features_medschools_api_medschools_schools_slug_forecast, // /api/medschools/schools/$slug/forecast
   r_features_medschools_api_medschools_schools_slug_history, // /api/medschools/schools/$slug/history
   r_features_medschools_api_medschools_schools_slug_secondaries, // /api/medschools/schools/$slug/secondaries

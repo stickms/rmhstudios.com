@@ -28,6 +28,7 @@ const REQUIRED = [
   'interview-overview-harvard.json',
   'interview-questions-harvard.json',
   'interview-feedback-harvard.json',
+  'curriculum-all.json',
   'recent-updates-hostile.json',
   'profile-flag-hostile.json',
   'secondary-essays-harvard.html',

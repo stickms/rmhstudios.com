@@ -33,7 +33,7 @@ import {
   parseVibeProject,
   buildVibeHtml,
   buildVibePreview,
-  hasVibeEntry,
+  hasConventionalVibeEntry,
   BundleError,
   injectVibeStorageShim,
 } from '@/lib/rmhvibe/vibe-bundle.server';
@@ -922,7 +922,7 @@ export function createPreviewer(edit?: EditBase) {
       title = partial.title ?? '';
       if (partial.writing) pending.push(partial.writing);
     }
-    if (!hasVibeEntry(files)) return;
+    if (!hasConventionalVibeEntry(files)) return;
     lastDone = partial.done.length;
     inflight = true;
     try {

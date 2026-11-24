@@ -227,3 +227,28 @@ export const FORUM_THREAD: AdmitOperation = {
   }
 }`,
 };
+
+/**
+ * Curriculum table (med.admit.org school curriculum): one row per school, about 190 in one reply, no arguments. Selects
+ * the school's slug and the eight published fields. `internal_rank` exists on the row and is deliberately NOT selected:
+ * it is Admit's own ranking, never stored or shown.
+ */
+export const SCHOOL_CURRICULUM: AdmitOperation = {
+  operationName: 'getAllSchoolCurriculum',
+  query: `query getAllSchoolCurriculum {
+  getAllSchoolCurriculum {
+    school {
+      slug
+    }
+    aoa
+    pc_grades
+    pc_length
+    clerk_grades
+    nbme_or_in_house
+    mspe
+    lecture_attendance_required
+    home_hospital
+  }
+}`,
+  variables: {},
+};

@@ -1397,3 +1397,24 @@ textarea.medapp-field--compact {
   border-radius: 16px;
   box-shadow: var(--app-shadow);
 }
+
+/* Admissions facts: a label over its value, so a school's sentence reads at full width. */
+.medapp-defs--stack > div {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+}
+.medapp-defs--stack dd {
+  text-align: start;
+}
+.medapp-defs__note {
+  display: block;
+  margin-block-start: 2px;
+}
+
+/* Curriculum: the home hospitals, one to a line. */
+.medapp-plain-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

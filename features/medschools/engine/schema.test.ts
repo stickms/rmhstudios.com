@@ -572,9 +572,80 @@ model MedTrackerApplication {
           d.includes('medschools') &&
           d !== mine &&
           !d.endsWith('_medschools_school_pages_turnaround') &&
-          !d.endsWith('_medschools_matriculated'),
+          !d.endsWith('_medschools_matriculated') &&
+          !d.endsWith('_medschools_school_facts') &&
+          !d.endsWith('_medschools_admit_curriculum'),
       );
       for (const o of others) expect(mine > o, o).toBe(true);
+    });
+  });
+  describe('school facts: institutional, sourced, no person', () => {
+    const body = () => parseModels(schema()).find((x) => x.model === 'MedSchoolFact');
+    it('is institutional data: no person column, no relation to User, not user-owned (nothing to erase)', () => {
+      const m = body();
+      expect(m).toBeDefined();
+      expect(
+        m?.fields.some((f) => PERSON_LIKE.test(f) || f === 'userId' || /handle|post|author|member\b/i.test(f)),
+      ).toBe(false);
+      expect(m?.body).not.toMatch(/\bUser\b/);
+      expect(USER_OWNED.has('MedSchoolFact')).toBe(false);
+    });
+
+    it('pins its columns and its unique key', () => {
+      const m = body();
+      expect(m?.fields).toEqual([
+        'id',
+        'schoolId',
+        'program',
+        'cycleYear',
+        'kind',
+        'valueNum',
+        'valueText',
+        'valueJson',
+        'note',
+        'source',
+        'sourceUrl',
+        'sourceLabel',
+        'reportId',
+        'page',
+        'checkedOn',
+      ]);
+      expect(m?.body).toContain('@@unique([schoolId, program, cycleYear, kind, source])');
+      expect(schema()).toMatch(/enum MedFactSource \{\s*AAMC_MSAR_REPORT\s*SCHOOL_PROFILE\s*ADMIT\s*\}/);
+    });
+
+    it('the migration is additive', () => {
+      const dir = readdirSync('prisma/migrations').find((d) => d.endsWith('_medschools_school_facts')) ?? '';
+      const sql = readFileSync(`prisma/migrations/${dir}/migration.sql`, 'utf8');
+      expect(sql).toContain('CREATE TABLE "med_school_fact"');
+      expect(sql).not.toMatch(/\bDROP\b|\bALTER TABLE "(?!med_school_fact)/i);
+    });
+
+    it('the Admit curriculum migration only adds the ADMIT enum value', () => {
+      const dir = readdirSync('prisma/migrations').find((d) => d.endsWith('_medschools_admit_curriculum')) ?? '';
+      const sql = readFileSync(`prisma/migrations/${dir}/migration.sql`, 'utf8')
+        .split('\n')
+        .filter((l) => !l.startsWith('--') && l.trim() !== '')
+        .join(' ');
+      expect(sql).toBe(`ALTER TYPE "MedFactSource" ADD VALUE 'ADMIT';`);
+      expect(dir > '20261208090000_medschools_school_facts').toBe(true);
+    });
+
+    it('the fact kinds a source may write are validated strings, and Admit rank is none of them', async () => {
+      const { CURRICULUM_KIND_IDS, FACT_KIND_IDS, FACT_SOURCES } = await import('./school-facts');
+      expect(FACT_SOURCES).toContain('ADMIT');
+      expect(CURRICULUM_KIND_IDS).toEqual([
+        'CURRICULUM_PRECLINICAL_GRADING',
+        'CURRICULUM_PRECLINICAL_LENGTH',
+        'CURRICULUM_CLERKSHIP_GRADING',
+        'CURRICULUM_SHELF_EXAMS',
+        'CURRICULUM_MSPE',
+        'CURRICULUM_LECTURE_ATTENDANCE',
+        'AOA_CHAPTER',
+        'HOME_HOSPITALS',
+      ]);
+      for (const k of CURRICULUM_KIND_IDS) expect(FACT_KIND_IDS as string[]).not.toContain(k);
+      expect(CURRICULUM_KIND_IDS.join(' ')).not.toMatch(/RANK/);
     });
   });
 });

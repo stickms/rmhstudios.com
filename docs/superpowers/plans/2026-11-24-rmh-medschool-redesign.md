@@ -162,6 +162,75 @@ These settle the open questions in section 7 and override the plan text where th
   `bg-site-accent` or `>Ask</span>` now count `data-variant="primary"` and `>Ask</button>`.
 - **Left for C and D.** The stats page, the AI school list and the rest of the mockup's data screens.
 
+## Phase C step 1 as built
+
+AAMC MSAR "Reports for Applicants and Advisors" as dated, sourced school facts, shown on the school page. Where the code
+differs from section 4 below:
+
+- **Permission and source.** The owner states (2026-11-24) that RMH has AAMC's permission to use what is on the reports
+  page. The PDFs say they "may be reproduced and distributed with attribution for individual, educational, and
+  noncommercial purposes only". The statement is recorded in the data file's `permission` header and in
+  `features/medschools/CLAUDE.md`. Every figure reads "Source: AAMC MSAR Report for Applicants and Advisors, <year>
+  entering class, <report name>" and links to the page. The MSAR **profiles** (mec.aamc.org/msar-ui) are not covered and
+  are never fetched. Reports cover MD (AMCAS) schools only, so a DO school shows no Admissions facts section at all.
+- **Two reports are not "2027".** The Deposit Due Date PDF is labelled **2026** (its dates are April 30, 2026 and so on)
+  and the PREview PDF prints no year (the AAMC page lists it with the 2027 reports). Each fact carries its own report's
+  year, so the deposit block reads "2026 entering class" and nothing pretends otherwise. Tuition is "Tuition and Student
+  Fees Survey, Academic Year 2024-2025" and debt is "LCME Part I-B ... 2023-2024"; the report's own source line is
+  appended to the source label where it is not "Information provided directly by individual medical schools".
+- **Model.** `MedSchoolFact` (migration `20261208090000_medschools_school_facts`, additive): `schoolId`, `program`,
+  `cycleYear`, `kind` (a validated string: the catalogue is `engine/school-facts.ts`, not a Postgres enum, so a new kind
+  is not a migration), `valueNum`, `valueText`, `valueJson`, `note`, `source` (`MedFactSource`: `AAMC_MSAR_REPORT`,
+  `SCHOOL_PROFILE` reserved for step 2), `sourceUrl`, `sourceLabel`, `reportId`, `page`, `checkedOn`; unique on (school,
+  program, cycleYear, kind, source). **`program` is not null, default `REG`** (the MD program): a nullable column in a
+  unique index lets duplicates through in Postgres and Prisma cannot upsert on it. `enteredBy` is dropped (no admin
+  entry yet). No relation to User, so the erasure registry needs no entry; `schema.test.ts` pins the columns and that no
+  person column exists.
+- **Import.** `scrape/msar-reports.ts` (zod file schema, `importMsarReports`, `ensureMsarReportsImported` gated by a
+  `MedSourceRun` with job `msar-reports-import` and the file's hash), run at worker start next to the school pages; the
+  file is in the Dockerfile server-builder COPY line. The table always equals the file (a fact dropped from a newer file
+  is deleted). `msar-reports.test.ts` holds import once, restart does nothing, a changed file re-imports, an invalid
+  file is rejected, the shipped file is valid.
+- **Public read.** A new endpoint `GET /api/medschools/schools/$slug/facts` (the less invasive option: the pinned keys
+  of `schools/$slug` do not move) with its own pinned key set in `testing/integration/medschools-public.test.ts`: user
+  independent, public cache 600/3600/86400, 404 for an unknown or inactive slug, `facts: []` for a school with none.
+- **UI.** `ui/facts/AdmissionsFacts.tsx`: on the Activity tab, under the chart: a paper panel "Admissions facts" with
+  one block per report (rows on rules, `.medapp-defs`), a source line on every block, `MedEmpty` for an MD school with
+  no fact, nothing for a DO school. Shown: who can apply (out-of-state, international, Canadian, DACA, with the school's
+  own note), DACA details, PREview, MCAT date window, interviews (format, invitations, regional, video), secondary fee,
+  fee waiver and deadline, deposit, and in- and out-of-state cost of attendance and tuition. Stored but not shown yet:
+  letters, community-college coursework, waitlist, debt, the typical interview day, the secondary "sent to" text. MCAT
+  and GPA tiles are NOT here (step 2, from the schools' own class-profile pages); no placeholder figures.
+- **Not structured.** Premedical Coursework Chart (7041, 220 pages, a course by course table whose cells carry nested
+  symbols and free text) is not parsed; nor are the free-text-only reports (mission 6966, gender and sexual minority
+  support 6986, transfer 7021, contact 14526, admission policies narrative 6991): little a checker or a tile can use,
+  and long prose is the school's own to publish. They can be added the same way (a kind, an extractor config).
+- **Reading the symbols.** Yes, No and Case-by-Case are images (green tick, red cross, yellow dot), which `pdftotext`
+  renders as nothing. `scripts/medschools/msar_extract.py` (Python, `pdfplumber`) reads each table cell by cell from its
+  ruled grid and classifies every icon from the pixels of its own cell, and the 6996 counts (327 yes, 272 no, 80
+  case-by-case, 25 blank) equal the counts of the four distinct image streams. A blank image is "no answer" (the
+  Canadian rows, an unanswered cell) and gives no fact. Report 7026's legend is Accepted / Preferred / Not accepted on
+  the same icons; 7031's blank is 6996's yellow dot for every one of 18 schools, and the parser stops if the two reports
+  ever disagree. A total cost of attendance printed $0 and an average debt of $0 are "no figure" and left out.
+- **The PREview PDF.** Its text layer holds a wrapped second line ("process") inside the next row's cell, so a position
+  read garbles two rows into one. The cell is read as the one sentence it begins with (`msar-parse.ts`); a cell that is
+  none of the five sentences stops the run.
+- **Verification.** `scripts/medschools/check-msar-reports.ts <pdf-dir>`: every stored text (4,305 of them: values,
+  notes and the printed school names) must appear, with whitespace removed, in the `pdftotext` text of the page the fact
+  names; every code, date and amount must be what its own text says; the file must reproduce from a fresh extraction of
+  the PDFs. Result: OK. It was run against a deliberately altered file and failed on all three counts.
+- **Coverage.** 163 of 163 US schools in the reports matched (the 14 Canadian schools are not in the registry and are
+  skipped, none unmatched); the registry has 165 MD schools, and `charles-r-drew-ucla` and `cleveland-clinic-lerner`
+  have no report row of their own; 56 DO schools get nothing. 6,102 facts. Per kind (schools): out-of-state, Canadian,
+  international, DACA acceptance 163 each; DACA details 97; PREview 147; MCAT latest 162, oldest 161; letters 162 / 162
+  / 163; community college 163 x 4; secondary required 161, fee 153, sent to 158, fee waiver 144, deadline 148;
+  interview format 161, invitations 162, typical day 160, regional 157, video 158; waitlist positions 159, offers 89,
+  procedures 154; deposit required 162, amounts 70 / 69, due 52, refundable by 37, refundable 70, applied 70; cost of
+  attendance in-state 159, out-of-state 154 (tuition and insurance the same); aid percent 157, average debt 154.
+- **Name matching.** `data/medschools/msar-aliases.json` maps each "<state>|<name as printed>" to a registry slug, by
+  hand; the parser reports a name it does not have under `unmatched` and never guesses. The PREview report prints no
+  state, so its names are looked up on their own.
+
 ## 0. What the code says (the findings that shape the plan)
 
 1. **Routes today.** Six files under `app/routes/_site/rmh-medschool/`: `index`, `live`, `$slug`, `tracker`, `lists`,
@@ -435,6 +504,45 @@ B3 and C can run in parallel after B2.
   - The sign-in prompts use `StatusText` and shared controls.
 - **Presentational only.** No data code changes, as the roadmap promised. All strings through `t()` in `medschools`;
   changing a shipped string's wording means a new key.
+
+## Phase C curriculum (owner 2026-11-24)
+
+"Include curriculum stats like pass/fail, and clerkship grades (pass fail or hp/p/fail etc) and AOA membership among
+other things." Admit.org's `getAllSchoolCurriculum` as `MedSchoolFact` rows with a new source, shown on the school page.
+
+- **Probe (one request, 2026-11-24).** No arguments, 191 schools, one row each, no null school. Fields: `school.slug`,
+  `aoa` (bool or null), `pc_grades`, `pc_length`, `clerk_grades`, `nbme_or_in_house` (strings or null), `mspe` and
+  `lecture_attendance_required` (bool or null), `home_hospital` (list of strings or null, at most 6). A null is "Admit
+  has no answer" (63 to 70 schools per field), never "no". Vocabularies seen: `pc_grades` `P/F` 109, `H/P/F` 7,
+  `H/HP/P/F` 4, and one each of `H/HP/P/BP/F`, `H/NH/P/F`, `P, ID, IDP, IDF`, `S/SAR/US/W`, `A/B/C/D/F`, `A/B/C/F`;
+  `pc_length` `1.5 Years` 79, `2 Years` 58, `1 Year` 10; `clerk_grades` `H/HP/P/F` 70, `P/F` 20, `H/P/F` 16, `A/B/C/D/F`
+  6, `H/NH/P/F` 3, `H/HP/P/LP/F` 3 and eight one-offs (`H/NH/HP/P/F`, `H/HP/LP/F`, `H/HP/P/BP/F`, `H/S+/S/F`,
+  `H/S/SAR/US/W`, `H/HP/SP/MP/F`, `H/PF`, `A/B/C/F`); `nbme_or_in_house` `Both` 68, `In-House Exams` 38,
+  `NBME Based` 18. All 191 slugs are in the shipped Admit alias file. `internal_rank` is Admit's own ranking: the query
+  does not select it and nothing stores or shows it.
+- **Normalised, verbatim kept.** Clerkship `H_HP_P_F`, `H_P_F`, `P_F` (exact strings only) else `OTHER`; preclinical
+  `PASS_FAIL` (`P/F`), `TIERED` (honors or letter scales) else `OTHER`; shelf `NBME`, `IN_HOUSE`, `BOTH`; length in
+  years when it reads "N Year(s)". Every grading, length and shelf row keeps Admit's string in `valueJson.text`, which
+  the endpoint already returns as `printed`, so **the facts endpoint's pinned key set did not change**: `reportId` is
+  now nullable (null for Admit rows, `report` empty, `cycleYear` 0 because the table is not about an entering class).
+- **Storage.** Migration `20261209090000_medschools_admit_curriculum` adds the enum value `ADMIT` and nothing else.
+  Kinds `CURRICULUM_PRECLINICAL_GRADING`, `_PRECLINICAL_LENGTH`, `_CLERKSHIP_GRADING`, `_SHELF_EXAMS`, `_MSPE`,
+  `_LECTURE_ATTENDANCE`, `AOA_CHAPTER`, `HOME_HOSPITALS` are a second catalogue in `engine/school-facts.ts`
+  (`CURRICULUM_KINDS`); the endpoint serves a row only when its kind belongs to its own source's catalogue. `sourceUrl`
+  is `https://admit.org` (Admit's per-school page pattern is still unknown, `ADMIT_SCHOOL_URL`), `checkedOn` the fetch
+  day. Upsert per school x kind; a kind Admit stopped publishing for a school in the reply is deleted; only `ADMIT` rows
+  are ever read or deleted; a school missing from a reply keeps its rows; an empty or invalid reply writes nothing.
+- **Job.** `medschools.admit-curriculum`, Saturday 02:25 UTC, one request through the shared Admit host (so it spends
+  the persisted `ADMIT` daily budget), 6 day persisted minimum interval, first run queued at worker start while none has
+  finished, `MedSourceRun` job `admit-curriculum`. No model, no secret. `server/CLAUDE.md`, `.env.example`.
+- **UI: a Facts tab (sixth tab).** `ui/facts/Curriculum.tsx` and `AdmissionsFacts` sit together on `?tab=facts`; the
+  Activity tab is charts and the live list again. The Admissions facts panel alone was already eight blocks long under
+  the charts; adding Curriculum above it would have put both below two charts and a table on a phone. The tab is the
+  four edits (`SCHOOL_TABS`, query prefetch, label and switch, component). Curriculum shows for MD and DO schools alike
+  when Admit has the school; Admissions facts stays MD only. The source line reads "Source: Admit.org, checked <date>"
+  with a link, then one muted sentence: "Compiled by Admit.org; confirm with the school."
+- **Open.** What Admit's `mspe` flag means is not stated by the API (the row is labelled "MSPE" with Yes or No, as Admit
+  names it); read it off Admit's curriculum page before giving it a longer label.
 
 ## 4. Phase C: public school stats
 

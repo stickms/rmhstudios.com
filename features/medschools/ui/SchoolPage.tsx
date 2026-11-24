@@ -19,6 +19,8 @@ import { SecondariesTab } from './SecondariesTab';
 import { SaveToList } from './SaveToList';
 import { SchoolCrest } from './SchoolCrest';
 import { SchoolFacts } from './SchoolFacts';
+import { AdmissionsFacts } from './facts/AdmissionsFacts';
+import { Curriculum } from './facts/Curriculum';
 import { PageHead } from './shell/PageHead';
 import { SkeletonSwap } from './skeletons';
 import type { SchoolSearch, SchoolSearchPatch } from './school-search';
@@ -70,6 +72,8 @@ export function SchoolPage() {
         return t('school-tab-interviews', { defaultValue: 'Interviews' });
       case 'secondaries':
         return t('school-tab-secondaries', { defaultValue: 'Secondaries' });
+      case 'facts':
+        return t('school-tab-facts', { defaultValue: 'Facts' });
     }
   };
 
@@ -167,6 +171,11 @@ export function SchoolPage() {
               />
             ) : search.tab === 'secondaries' ? (
               <SecondariesTab slug={slug} detail={detail} search={search} programControl={programControl} />
+            ) : search.tab === 'facts' ? (
+              <>
+                <Curriculum slug={slug} />
+                <AdmissionsFacts slug={slug} degree={detail.school.degree} />
+              </>
             ) : (
               <>
                 <div className="medapp-controls">{programControl}</div>

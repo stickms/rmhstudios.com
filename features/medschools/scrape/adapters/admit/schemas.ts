@@ -137,3 +137,21 @@ export const crestSchool = z.object({
 export const schoolCrestsData = z.object({
   getAllCycleResults: z.array(z.object({ school: crestSchool.nullable() })),
 });
+
+/** The curriculum reply: rows are validated one by one (`curriculumRow`) so a single odd row costs only itself. */
+export const schoolCurriculumData = z.object({
+  getAllSchoolCurriculum: z.array(z.unknown()),
+});
+
+/** `null` on any field means Admit has no answer for that school (unknown, never "no"). Unknown keys are stripped. */
+export const curriculumRow = z.object({
+  school: z.object({ slug: z.string().min(1) }),
+  aoa: z.boolean().nullable(),
+  pc_grades: z.string().nullable(),
+  pc_length: z.string().nullable(),
+  clerk_grades: z.string().nullable(),
+  nbme_or_in_house: z.string().nullable(),
+  mspe: z.boolean().nullable(),
+  lecture_attendance_required: z.boolean().nullable(),
+  home_hospital: z.array(z.string()).nullable(),
+});

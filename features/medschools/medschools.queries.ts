@@ -15,6 +15,7 @@ import {
   getMedSchoolArrivalsApi,
   getMedSchoolForecastApi,
   getMedSchoolHistoryApi,
+  getMedSchoolFactsApi,
   getMedSchoolSecondariesApi,
   getMedRollingGuidanceApi,
   getMedSecondaryOverlapApi,
@@ -74,6 +75,10 @@ export const secondariesQuery = (slug: string, q: { program: MedProgramFilter })
     { params: { slug }, query: q },
     { staleTime: 5 * 60_000 },
   );
+
+/** The Facts tab: Admissions facts (the AAMC MSAR reports) and Curriculum (Admit.org). Public, so the loader prefetches the same key as anyone's. */
+export const schoolFactsQuery = (slug: string) =>
+  contractQuery(['medschools', 'facts', slug], getMedSchoolFactsApi, { params: { slug } }, { staleTime: 30 * 60_000 });
 
 export const arrivalsQuery = (slug: string, q: { program: MedProgramFilter; type: MedChartedTypeId }) =>
   contractQuery(
@@ -250,6 +255,9 @@ export async function loadSchoolHead(
     await prefetchRouteQuery(queryClient, forecastQuery(slug, { program: program === 'PHD' ? 'PHD' : 'REG', type }));
   } else if (deps.tab === 'secondaries') {
     await prefetchRouteQuery(queryClient, secondariesQuery(slug, { program }));
+  } else if (deps.tab === 'facts') {
+    // One query for both sections (the AAMC reports and Admit's curriculum), for an MD and a DO school alike.
+    await prefetchRouteQuery(queryClient, schoolFactsQuery(slug));
   }
   const { school } = detail;
   return {

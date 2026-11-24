@@ -30,6 +30,7 @@ const UNIQUE_KEYS: Record<string, string[]> = {
   medSecondaryCheck: ['schoolId', 'source'],
   medSchoolAdmissionsPolicy: ['schoolId', 'program'],
   medSecondaryTurnaround: ['schoolId', 'program'],
+  medSchoolFact: ['schoolId', 'program', 'cycleYear', 'kind', 'source'],
 };
 
 /** `onDelete: Cascade` edges: deleting a row of the key removes the child rows whose `fk` equals its id. */
@@ -57,6 +58,7 @@ const CASCADES: Record<string, { child: string; fk: string }[]> = {
     { child: 'medSecondaryCheck', fk: 'schoolId' },
     { child: 'medSchoolAdmissionsPolicy', fk: 'schoolId' },
     { child: 'medSecondaryTurnaround', fk: 'schoolId' },
+    { child: 'medSchoolFact', fk: 'schoolId' },
   ],
   medSecondaryPrompt: [{ child: 'medSecondaryObservation', fk: 'promptId' }],
   medTrackerCycle: [{ child: 'medTrackerApplication', fk: 'cycleId' }],
@@ -352,6 +354,7 @@ export function createFakePrisma(options: FakePrismaOptions = {}): {
     'medSecondaryCheck',
     'medSchoolAdmissionsPolicy',
     'medSecondaryTurnaround',
+    'medSchoolFact',
     'user',
     'aiUsage',
   ];
