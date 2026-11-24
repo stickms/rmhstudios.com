@@ -40,7 +40,7 @@ export function RecurrenceFields({
 }) {
   const { t } = useTranslation('f-calendar');
   return (
-    <fieldset className="flex flex-col gap-3 rounded-site border border-site-border p-4">
+    <fieldset className="flex flex-col gap-3">
       <legend className="px-1 text-xs font-medium text-site-text-muted">
         {t('rec-legend', {
           defaultValue: 'Repeats',

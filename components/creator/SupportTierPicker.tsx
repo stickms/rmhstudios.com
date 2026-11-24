@@ -115,7 +115,7 @@ export function SupportTierPicker({ creatorId, tiers, creatorName, trigger, onJo
         ) : (
           <div className="space-y-3">
             {tiers.map((tier) => (
-              <div key={tier.id} className="rounded-site surface-card p-5 space-y-3">
+              <div key={tier.id} className="space-y-3 border-b border-site-border py-4">
                 <div className="flex items-baseline justify-between gap-3">
                   <h3 className="font-semibold text-site-text">{tier.name}</h3>
                   <span className="flex items-center gap-1 text-sm font-semibold text-site-text tabular-nums">
