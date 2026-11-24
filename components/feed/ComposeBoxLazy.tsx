@@ -85,7 +85,7 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  // visitor never flashes a sign-in prompt either.
  if (!session && !isPending) {
  return (
- <div className="mx-3 py-6 text-center">
+ <div className="py-6 text-center">
  <p className="text-sm text-site-text-muted mb-2">
  {t('sign-in-prompt', { defaultValue:'Sign in to post RMHarks'})}
  </p>

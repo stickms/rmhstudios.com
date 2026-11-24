@@ -42,7 +42,6 @@ export const STEEL_GHOST_BASELINE: Record<string, { batch: string; count: number
   'components/discovery/FeedForm.tsx': { batch: 'E3 pages', count: 1 },
   'components/discovery/WhyTrending.tsx': { batch: 'E3 pages', count: 3 },
   'components/events/EventCard.tsx': { batch: 'E4 rest', count: 1 },
-  'components/feed/CommunitiesSkeleton.tsx': { batch: 'E1 feed', count: 1 },
   'components/forecasting/ForecastingPanel.tsx': { batch: 'E4 rest', count: 2 },
   'components/gifting/ExchangeDetail.tsx': { batch: 'E4 rest', count: 1 },
   'components/gifting/ExchangesPage.tsx': { batch: 'E4 rest', count: 1 },

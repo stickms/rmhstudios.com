@@ -20,7 +20,6 @@ import {
  type RankedChallengeAction,
 } from'@/lib/ranked/ranked.contract';
 import { useArrival } from '@/components/ui/arrive';
-import { cn } from '@/lib/utils';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Rating {
@@ -397,7 +396,7 @@ export function RankedColumn({
  ) : lb.length === 0 ? (
  <EmptyState className={lbArrival} icon={Trophy} title={t('no-ranked-players', { defaultValue:'No ranked players yet.'})} />
  ) : (
- <div className={cn(lbArrival)}>
+ <div className={lbArrival}>
  {lb.map((row) => (
  <div
  key={row.user.id}
