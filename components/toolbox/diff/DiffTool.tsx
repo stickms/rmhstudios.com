@@ -91,7 +91,7 @@ export function DiffTool() {
                   unchanged: summary.unchanged,
                 })}
           </p>
-          <ol dir="ltr" className="overflow-x-auto rounded-site border border-site-border font-mono text-sm">
+          <ol dir="ltr" className="overflow-x-auto border-y border-site-border font-mono text-sm">
             {lines.slice(0, RENDER_LIMIT).map((line, i) => (
               <li
                 key={i}

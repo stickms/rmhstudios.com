@@ -137,7 +137,7 @@ export function AskDebtPanel({ disabled }: { disabled?: boolean }) {
 
   if (!isPending && !signedIn) {
     return (
-      <div className="surface-panel flex flex-col items-start gap-3 rounded-site p-5">
+      <div className="rule-section flex flex-col items-start gap-3">
         <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-site-text">
           <MessageCircleQuestion className="size-5 text-site-accent" aria-hidden />
           {t('ask.title', {
@@ -168,7 +168,7 @@ export function AskDebtPanel({ disabled }: { disabled?: boolean }) {
   }
 
   return (
-    <div className="surface-panel flex flex-col gap-3 rounded-site p-5">
+    <div className="rule-section flex flex-col gap-3">
       <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-site-text">
         <MessageCircleQuestion className="size-5 text-site-accent" aria-hidden />
         {t('ask.title', {

@@ -47,7 +47,7 @@ export function HowToPlay({ gameId }: { gameId: string }) {
   }
 
   return (
-    <section className="surface-card rounded-site p-5">
+    <section className="rule-section">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}

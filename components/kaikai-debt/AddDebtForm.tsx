@@ -208,7 +208,7 @@ export function AddDebtForm({
     !signedIn
   ) {
     return (
-      <div className="surface-panel flex flex-col items-start gap-3 rounded-site p-5">
+      <div className="rule-section flex flex-col items-start gap-3">
         <h2 className="font-display text-lg font-semibold text-site-text">
           {t(
             'add.title',
@@ -259,7 +259,7 @@ export function AddDebtForm({
       onSubmit={
         submit
       }
-      className="surface-panel flex flex-col gap-3 rounded-site p-5"
+      className="rule-section flex flex-col gap-3"
     >
       <div>
         <h2 className="font-display text-lg font-semibold text-site-text">

@@ -214,7 +214,7 @@ export function DebtAnalytics({ snapshot }: { snapshot: DebtSnapshot }) {
 
       <StatTiles stats={scoped} nowMs={nowMs} />
 
-      <div className="surface-card flex flex-col gap-3 rounded-site p-2.5 sm:p-4">
+      <div className="rule-section flex flex-col gap-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h3 className="text-xs font-medium text-site-text-muted">
             {t('stats.filter.title', {

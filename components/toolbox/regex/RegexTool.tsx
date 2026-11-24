@@ -126,7 +126,7 @@ export function RegexTool() {
           {subject && (
             <p
               dir="ltr"
-              className="whitespace-pre-wrap break-all rounded-site border border-site-border p-3 font-mono text-sm"
+              className="whitespace-pre-wrap break-all border-y border-site-border py-3 font-mono text-sm"
             >
               {segments.map((seg, i) =>
                 seg.match === -1 ? (

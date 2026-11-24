@@ -8,10 +8,10 @@
  * **The globe finally gets a stage.** Previously it sat in a 420px column
  * beside a wall of specification, which is a diagram's treatment. Here the
  * panel it lives on is the only surface on the entire page that comes forward —
- * the one plane above the plaster — and it is the only place the liquid glass
- * appears. Scarcity is what makes it read as a material rather than a style.
+ * the one plane above the plaster, set off by a rule rather than a box. Scarcity
+ * is what makes it read as the subject rather than a decoration.
  *
- * **The specs are a rule-separated list, not four glass tiles.** Boxing four
+ * **The specs are a rule-separated list, not four tiles.** Boxing four
  * short facts produced four competing rectangles; a printed menu would set them
  * as a column of rules with the label in the margin, which is also how a reader
  * scans for one of them.
@@ -68,9 +68,9 @@ export function TastingMenu() {
         <DrawnRule className="mt-12" delay={0.1} />
 
         <div className="mt-16 grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-20">
-          {/* The one raised plane on the page, and the only liquid glass. */}
+          {/* The one ruled column on the page: the globe and its panel. */}
           <Reveal delay={0.12}>
-            <div className="surface-panel rounded-none p-5 sm:p-7">
+            <div className="rounded-none p-5 sm:p-7">
               <MenuGlobe selected={selected} onSelect={setSelected} />
             </div>
             <p className="mt-4 font-mono text-rem-68 uppercase tracking-[0.16em] text-rebar-ink-faint">

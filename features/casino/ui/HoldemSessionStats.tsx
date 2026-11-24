@@ -77,7 +77,7 @@ export function HoldemSessionStats() {
     return null;
 
   return (
-    <div className="surface-card rounded-site-sm overflow-hidden">
+    <div className="overflow-hidden">
       <button
         onClick={() =>
           setExpanded(
