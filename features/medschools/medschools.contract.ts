@@ -24,6 +24,8 @@ import type {
   saveListItemBody,
 } from './api/me-schemas';
 import type { MedEventType, MedProgram, MedSource } from './engine/types';
+import type { ApplicantStats, HoursCategory, Mission } from './engine/applicant';
+import type { buildListBody, putOnboardingBody, putStatsBody, saveBuiltListBody } from './api/stats-schemas';
 
 export interface AliasMissDto {
   id: string;
@@ -1188,3 +1190,145 @@ export const postMedSecondariesAdminApi = endpoint<{
   };
   res: { prompts: number; created: number; rejected: number };
 }>()({ method: 'POST', path: '/api/admin/medschools/secondaries' });
+
+/* ------------------------- Private applicant stats (phase D) ------------------------- */
+
+/**
+ * The caller's own stats (`null` when none was ever entered) and whether the onboarding step is still offered. The home
+ * state is the preference's, repeated so the form can show it. No id of any row: attempts and activities are in order.
+ */
+export interface MedStatsRes {
+  stats: ApplicantStats | null;
+  onboarding: 'pending' | 'done';
+  homeState: string | null;
+}
+
+/** Signed in, never cached. */
+export const getMedStatsApi = endpoint<{ res: MedStatsRes }>()({ method: 'GET', path: '/api/medschools/me/stats' });
+
+/** Replace the caller's stats (400 on any value out of range; unknown keys are refused). Marks onboarding done. */
+export const putMedStatsApi = endpoint<{ body: z.infer<typeof putStatsBody>; res: MedStatsRes }>()({
+  method: 'PUT',
+  path: '/api/medschools/me/stats',
+});
+
+/** Remove every stat the caller entered. */
+export const deleteMedStatsApi = endpoint<{ res: MedStatsRes }>()({
+  method: 'DELETE',
+  path: '/api/medschools/me/stats',
+});
+
+/** "Skip for now", remembered on the account. */
+export const putMedStatsOnboardingApi = endpoint<{ body: z.infer<typeof putOnboardingBody>; res: MedStatsRes }>()({
+  method: 'PUT',
+  path: '/api/medschools/me/stats/onboarding',
+});
+
+/* ------------------------- The AI list builder (phase D) ------------------------- */
+
+/** Computed in code (`engine/builder/label.ts`), never by the model. `not-compared`: the member did not use their stats. */
+export type MedBuildLabel = 'likely' | 'target' | 'reach' | 'not-enough-data' | 'not-compared';
+
+/** One comparison a label rests on: the member's figure against the class's published one. */
+export interface MedBuildComparisonDto {
+  metric: 'MCAT' | 'GPA';
+  /** As the member entered it ("512", "3.81"). */
+  yours: string;
+  /** As the school publishes it. */
+  theirs: string;
+  /** Which statistic the school published: median, mean, or a figure whose statistic the page does not name. */
+  stat: 'median' | 'mean' | 'unnamed';
+  band: 'above' | 'near' | 'below';
+}
+
+/** A public figure a school's row used, with where it came from. */
+export interface MedBuildFigureDto {
+  ref: string;
+  /** The profile kind (`MCAT_MEDIAN`, `IN_STATE_PCT`, ...); the page labels it. */
+  kind: string;
+  value: string;
+  /** The class the figure is from, as the page gives it. */
+  classLabel: string;
+  enteringYear: number | null;
+  sourceUrl: string;
+  checkedOn: string;
+  /** The page's own words the figure was read from (the class profile's evidence). */
+  evidence: string;
+}
+
+export interface MedBuildSchoolDto {
+  slug: string;
+  name: string;
+  shortName: string;
+  state: string;
+  degree: 'MD' | 'DO';
+  /** What saving this row stores: `PHD` when the request asked for MD-PhD / DO-PhD programs. */
+  program: 'ANY' | 'PHD';
+  label: MedBuildLabel;
+  comparisons: MedBuildComparisonDto[];
+  figures: MedBuildFigureDto[];
+  city: string;
+  /** In the member's home state (the MD-PhD program and an NIH MSTP are cited figures, never repeated here). */
+  notes: 'home-state'[];
+  /** The model's one sentence, kept only when the grounding check kept it; `cites` are refs of `figures` and `member`. */
+  reason: { text: string; cites: string[] } | null;
+}
+
+/**
+ * One of the member's own figures the build used, as data: the page words it (`builder-*` keys), so no sentence is built
+ * on the server. Returned to the member only; never stored.
+ */
+export interface MedBuildMemberFactDto {
+  ref: string;
+  kind: 'mcat' | 'gpa' | 'science-gpa' | 'home-state' | 'hours' | 'missions';
+  /** The figure as entered: "512", "3.81", "TX", "1200"; empty for `missions`. */
+  value: string;
+  /** The MCAT attempt's month (`mcat` only). */
+  year: number | null;
+  month: number | null;
+  /** `hours` only. */
+  category: HoursCategory | null;
+  /** `missions` only. */
+  missions: Mission[];
+}
+
+export interface MedBuildRes {
+  status: 'built' | 'partial' | 'no-candidates' | 'no-picks' | 'declined';
+  usedStats: boolean;
+  /** The member asked to use their stats and has no MCAT or GPA entered: nothing could be compared. */
+  statsMissing: boolean;
+  schools: MedBuildSchoolDto[];
+  member: MedBuildMemberFactDto[];
+  /** What the request was read as, so the page can say it. */
+  filters: {
+    states: string[];
+    degree: 'MD' | 'DO' | null;
+    mdphd: boolean;
+    size: 'small' | 'medium' | 'large' | null;
+    missions: Mission[];
+    /** Asked-for missions RMH has no public data on, so they chose nothing (ids; the page words them). */
+    unused: Mission[];
+    count: number;
+  };
+  notice: 'removed-ungrounded' | null;
+  tier: MedQaTier;
+  remainingToday: number | null;
+  dailyCap: number | null;
+  thinking: boolean;
+}
+
+/**
+ * Signed in. One build is one of the member's daily Q&A questions and runs under the Q&A's gates: 429
+ * `MEDSCHOOLS_QA_DAILY_CAP` or `MEDSCHOOLS_QA_BUSY`, 503 `MEDSCHOOLS_QA_PAUSED` or `AI_UNAVAILABLE`, 402
+ * `AI_BUDGET_EXCEEDED`, 403 for a suspended account. Nothing in the request or the result is stored. Never cached.
+ */
+export const buildMedListApi = endpoint<{ body: z.infer<typeof buildListBody>; res: MedBuildRes }>()({
+  method: 'POST',
+  path: '/api/medschools/me/list-builder',
+});
+
+/** Save the ticked schools of a build as one new list (409 `MEDSCHOOLS_LIST_CAP` at 20 lists). */
+export const saveMedBuiltListApi = endpoint<{ body: z.infer<typeof saveBuiltListBody>; res: MedListDto }>()({
+  method: 'POST',
+  path: '/api/medschools/me/list-builder/save',
+});

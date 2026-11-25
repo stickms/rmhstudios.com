@@ -46,6 +46,8 @@ import { anonymizeAccount, scheduleDeletion } from '@/lib/account/deletion.serve
 import { auditRmh, SharingUnavailableError } from '@features/medschools/api/share-sync.server';
 import { addApplication, putCycle, putMilestone } from '@features/medschools/api/tracker.server';
 import { exportMedschools } from '@features/medschools/api/export.server';
+import { putStats } from '@features/medschools/api/stats.server';
+import { putStatsBody } from '@features/medschools/api/stats-schemas';
 
 const SECRET = 'unit-test-secret-0123456789';
 const NOW = new Date('2026-11-20T12:00:00.000Z');
@@ -223,6 +225,36 @@ describe('scheduleDeletion', () => {
     await expect(scheduleDeletion('u1', NOW)).resolves.toBeInstanceOf(Date);
     expect(console.error).toHaveBeenCalled();
     expect(rmhEvents()).toHaveLength(4);
+  });
+});
+
+describe('applicant stats (phase D)', () => {
+  const stats = putStatsBody.parse({
+    mcat: [{ year: 2026, month: 4, total: 512 }],
+    gpa: { cumulative: 3.81 },
+    hours: [{ category: 'RESEARCH', hours: 1200, note: 'two labs', activities: [{ title: 'Lab A', hours: 700 }] }],
+  });
+
+  it("erases the member's stats and every child row, and leaves another member's", async () => {
+    await seed();
+    await putStats('u1', stats);
+    await putStats('u2', stats);
+    await anonymizeAccount('u1');
+    const owners = (t: string, key: string) => f.tables[t]!.map((r) => (r as Record<string, unknown>)[key]);
+    expect(owners('medApplicantProfile', 'userId')).toEqual(['u2']);
+    expect(owners('medMcatAttempt', 'profileId')).toEqual(['u2']);
+    expect(owners('medApplicantHours', 'profileId')).toEqual(['u2']);
+    expect(owners('medApplicantActivity', 'profileId')).toEqual(['u2']);
+  });
+
+  it('the export carries the stats, with no ids', async () => {
+    await seed();
+    await putStats('u1', stats);
+    const out = await exportMedschools('u1');
+    expect(out.stats?.mcat.map((m) => m.total)).toEqual([512]);
+    expect(out.stats?.hours[0]).toMatchObject({ category: 'RESEARCH', note: 'two labs' });
+    expect(JSON.stringify(out.stats)).not.toMatch(/"(id|userId|profileId)"/);
+    expect((await exportMedschools('u2')).stats).toBeNull();
   });
 });
 

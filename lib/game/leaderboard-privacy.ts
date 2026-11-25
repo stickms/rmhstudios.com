@@ -244,6 +244,9 @@ export const BOARD_PRIVACY_EXEMPT: Readonly<Record<string, BoardPrivacyExemption
   'lib/communities/api/communities.$slug.onboarding.server.ts': {
     reason: "A community's onboarding questions and the caller's own answers.",
   },
+  'features/medschools/api/medschools.me.stats.onboarding.server.ts': {
+    reason: "Records that the caller skipped the RMH Med Schools stats step (the name contains 'onboarding').",
+  },
   'lib/preferences/keyboard.server.ts': {
     reason: "The caller's own key bindings (the name contains 'board').",
   },

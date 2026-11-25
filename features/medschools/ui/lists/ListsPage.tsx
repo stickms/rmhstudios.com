@@ -1,9 +1,11 @@
 import { lazy, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { FileUp, Plus } from 'lucide-react';
-import { MedButton } from '../controls/MedButton';
+import { FileUp, Plus, Sparkles } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { MedButton, medButtonClass } from '../controls/MedButton';
 import { ArrivalSuspense } from '@/components/ui/arrive';
+import { OnboardingNote } from '../stats/OnboardingNote';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { usePrompt } from '@/components/ui/prompt-dialog';
 import { useRefusalText } from '@/components/errors/useRefusalText';
@@ -212,6 +214,10 @@ export function ListsPage() {
         title={t('lists-title', { defaultValue: 'My lists' })}
         actions={
           <>
+            <Link to="/med/lists/build" className={medButtonClass('secondary')}>
+              <Sparkles aria-hidden="true" className="size-4" />
+              {t('lists-build', { defaultValue: 'Build with AI' })}
+            </Link>
             <MedButton variant="secondary" disabled={atListCap} onClick={() => setImporting({ list: null })}>
               <FileUp aria-hidden="true" className="size-4" />
               {t('lists-import-new', { defaultValue: 'Import a new list' })}
@@ -223,6 +229,7 @@ export function ListsPage() {
           </>
         }
       />
+      <OnboardingNote signedIn={signedIn} />
       <SkeletonSwap ready={!!lists.data}>
         {stale ? (
           <p className="medapp-meta mb-4" role="status">

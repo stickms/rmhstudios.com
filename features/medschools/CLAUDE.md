@@ -61,10 +61,10 @@ longer govern this feature**; the admin page does not move with it (`components/
   practice (`Mic`), Live activity (`Activity`), the member's area (`UserRound`) and the light/dark toggle, each a 44px
   round link or button with an accessible name and a `title`. A page never links to itself (no Live on `/med/live`, no
   practice on `/med/practice`). The member's area, signed in, is an `AnchoredMenu` (keyboard, Escape, focus back): My
-  cycle (`/med/tracker`), My school lists, Preferences (`/med/lists#preferences`), Ask about schools; "My stats" joins
-  it when it exists. On those pages the button is the ink fill and the item is `aria-current`. Signed out it is a link
-  to `/login?callbackURL=<this page>`. The index's old link row (`Places`) is gone; the school page's member links moved
-  into the same menu. **The rail** is in the server HTML at every width (frame, the open-live icon link
+  cycle (`/med/tracker`), My school lists, Preferences (`/med/lists#preferences`), Ask about schools, My stats
+  (`/med/stats`, phase D). On those pages the button is the ink fill and the item is `aria-current`. Signed out it is a
+  link to `/login?callbackURL=<this page>`. The index's old link row (`Places`) is gone; the school page's member links
+  moved into the same menu. **The rail** is in the server HTML at every width (frame, the open-live icon link
   `SquareArrowOutUpRight`, the search, the two filters and `RailSkeleton`'s eight static rows) and CSS shows the column
   from 1280px, so nothing shifts when it fills; it starts level with the top bar. Its list (`rail/RailFeed.tsx`) is a
   lazy chunk loaded and queried only at 1280px and up (`useMediaQuery`), replaces the skeleton with the M9 fade and
@@ -685,6 +685,55 @@ nothing). Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-phase6-ai-qa.md
   `DEEPSEEK_API_KEY=integration-fake`, `DEEPSEEK_BASE_URL=http://127.0.0.1:$INTEGRATION_AI_FAKE_PORT/v1`; the
   model-dependent cases skip without `INTEGRATION_AI_FAKE_PORT`, and CI sets it). Visual: `visual-check.mjs --fake-ai`.
 
+## Phase D: private stats and the AI list builder (owner 2026-11-24)
+
+Plan: `docs/superpowers/plans/2026-11-25-rmh-medschool-phase-d.md` (it replaces the redesign plan's section 5; the
+owner's four decisions there are binding).
+
+- **Stats are private only.** `MedApplicantProfile` (key `userId`, the only stats model with it) and its cascading
+  children `MedMcatAttempt`, `MedApplicantHours` (one per category) and `MedApplicantActivity` (optional sub-entries),
+  migration `20261211090000_medschools_applicant_stats`. Home state is not duplicated: it stays
+  `MedUserPrefs.homeState`, which `me/stats` reads and its PUT writes. Rules in `engine/applicant.ts` (sections 118-132,
+  totals 472-528 and equal to the sum when all four are given, a missing total with four sections is their sum, GPA
+  0.00-4.00 with two decimals, hours 0-20000, notes 300 characters), strict zod in `api/stats-schemas.ts`. Endpoints
+  `me/stats` (GET, PUT replaces under the `med-stats:<user>` lock, DELETE clears) and `me/stats/onboarding` (PUT
+  `{ state: 'skipped' }`); no cache, no ids in the DTO. Erased by `medschoolsErasureOps` (registry entry, deletion doc),
+  carried in `exportMedschools` (`stats`). `api/builder/privacy.server.test.ts` pins that only the stats module, the
+  builder, the export, the `me/**` routes and erasure touch the models or the module, and no public reader or job does.
+- **Onboarding.** `ui/stats/OnboardingNote.tsx` on `/med/lists` and `/med/lists/build` while `onboarding` is `pending`
+  (no row): "Add what you're comfortable sharing. It's private to you.", "Add my stats" (`/med/stats?welcome=1`, the
+  four sections as steps) and "Skip for now" (remembered on the account by `onboardedAt`). It never blocks a list. "My
+  stats" (`/med/stats`) is in the member menu.
+- **The label rule (`engine/builder/label.ts`, code, never the model).** The member's figures: the most recent MCAT
+  attempt's total and the cumulative GPA. The school's: the first class (Facts tab order) with a numeric MCAT or GPA
+  figure for the MD program, median over mean over the plain unnamed figure, never a range. Per figure MCAT `diff >= 3`
+  above, `<= -3` below; GPA `>= 0.10` above, `<= -0.10` below; else near. None compared: not enough published data; any
+  below: reach; both compared and both above: likely; else target. Without "Use my stats": `not-compared`. The page says
+  it is not a chance of admission.
+- **The builder (`POST me/list-builder`, `api/builder/build.server.ts`).** The Ask's gates (`admitQuestion`,
+  `runUnderLease`, tiers, the admin bypass, the shared pause, `qaDeadlineMs`, the thinking switch for the answer call);
+  one build is one daily question. Route call (`MEDSCHOOLS_LIST_ROUTE`, `engine/builder/route.ts`: states, Census
+  regions mapped in code, degree, MD-PhD, size, missions, count 5-30 default 15, the home state the request states);
+  candidates in code from public data only (`api/builder/candidates.server.ts` reads active schools, class profiles and
+  MD-PhD rows through `classProfilesOf` / `mdphdOf`; `engine/builder/candidates.ts`: research ranks MD-PhD/MSTP schools
+  first, other missions are `unused`, size by published class size under 125 / 200 and over, at most 40); answer call
+  (`MEDSCHOOLS_LIST_ANSWER`) may only pick candidate ids and write one reason; `groundPicks` (`engine/builder/facts.ts`)
+  keeps a reason only when `groundAnswer` keeps it against that school's facts plus the member's (`m1`..., "Your ...",
+  `schoolSlug` null, trusted). An unreadable reply refunds the day's question (`AI_UNAVAILABLE`). The model sees the
+  request, the candidates' public figures and, only with "Use my stats", `statsForBuilder`'s figures (latest MCAT total
+  and month, GPAs, home state, hour totals, mission chips): never a note, an activity title, a section score, a tracker
+  row, a list or an id. Nothing is stored, cached or logged (counts and a status only).
+- **Save (`POST me/list-builder/save`).** `createListWithItems` in `api/lists.server.ts`: one new ordinary
+  `MedSchoolList` with the ticked active schools, under the list lock and caps; nothing links it to the build.
+- **UI.** `ui/stats/` (`StatsPage`, `StatsSections`, pure `draft.ts`), `ui/builder/` (`BuilderPage`, `BuildResult`,
+  `useBuild`). Groups reach, target, likely, not enough data; each row its crest, label, comparison lines, the reason
+  with cite numbers, and every figure with its `SourceRef`; "Save as a list" is the ink primary once there is a result.
+  Strings `stats-*` and `builder-*`; CSS `ui/medschools/stats-builder.css`.
+- **Tests.** `engine/applicant.test.ts`, `engine/builder/*.test.ts`, `api/stats*.test.ts`, `api/builder/*.test.ts`,
+  `api/lists.server.test.ts`, `ui/builder/builder-ui.test.tsx`, `lib/account/__tests__/medschools-erasure.test.ts`,
+  `lib/ai/__tests__/medschools-list-prompts.test.ts`; black box `testing/integration/medschools-builder.test.ts` (fake
+  provider).
+
 ## Interview prep (roadmap item 6)
 
 Plan: `docs/superpowers/plans/2026-11-24-rmh-medschool-interview-prep.md`. Practice mode (`ui/practice/`:
@@ -989,38 +1038,38 @@ while open, so "Add to list" is its one ink primary. Endpoints `POST me/lists/im
   endpoints; `readUnderGates` in `parse.server.ts` is the extraction, the "anything to read" check, `admitQuestion`,
   `runUnderLease`, the one model call and the unreadable-reply refund, once; `runner.server.ts` makes one runner per
   prompt. The list import is `list-parse.server.ts` (prompt `MEDSCHOOLS_LIST_IMPORT`, the same `medschools-import` task,
-  flash, so it is one of the day's questions) plus `list-validate.ts`. The extractors, limits (2 MB, 40,000
-  characters) and privacy rules are the tracker import's. **Its refusals are its own** (no list message mentions dates
-  or the tracker): `toListRefusal` re-codes the shared reader's `MEDSCHOOLS_IMPORT_TOO_LARGE` / `_UNSUPPORTED` as
+  flash, so it is one of the day's questions) plus `list-validate.ts`. The extractors, limits (2 MB, 40,000 characters)
+  and privacy rules are the tracker import's. **Its refusals are its own** (no list message mentions dates or the
+  tracker): `toListRefusal` re-codes the shared reader's `MEDSCHOOLS_IMPORT_TOO_LARGE` / `_UNSUPPORTED` as
   `MEDSCHOOLS_LIST_IMPORT_TOO_LARGE` (413) / `_UNSUPPORTED` (415) and an unreadable reply (question refunded) as
   `MEDSCHOOLS_LIST_IMPORT_UNREADABLE` (503; a provider failure stays `AI_UNAVAILABLE`); a text with no letters is
   `MEDSCHOOLS_LIST_IMPORT_EMPTY` (422) before any gate, as is a reply with no school the text holds (after the call).
   The view's own pre-send file refusals use the same list codes.
-- **Only names, and the server is the validator** (`list-validate.ts`, pure). A name is kept only when the member's
-  text holds it (folded for case and spacing; under three characters never), else it is dropped and counted (an
-  invented school never reaches the page). It resolves to a school only when it names exactly ONE active school: the
-  tracker matcher (`matchSchool`: name, short name, slug, aliases), else the index search's rule (`schoolMatches`: a
-  fragment of a name, short name or alias from the alias table, or exactly its initials, "UCSF"); none or several is
-  "Unrecognised school" with the tracker's `SchoolPicker`. A slug or id from the model is never read. Program: `PHD`
-  only when the model says so and a line holding the name says PhD or MSTP; `REG` when the model says MD or DO and that
-  line writes MD or DO in capitals ("do" is a word); else `ANY`. File order is kept, a school and program named twice
-  is one row, at most 200 rows (`LIST_IMPORT_LIMITS`, a list's cap; the model may return 400 before the cut).
+- **Only names, and the server is the validator** (`list-validate.ts`, pure). A name is kept only when the member's text
+  holds it (folded for case and spacing; under three characters never), else it is dropped and counted (an invented
+  school never reaches the page). It resolves to a school only when it names exactly ONE active school: the tracker
+  matcher (`matchSchool`: name, short name, slug, aliases), else the index search's rule (`schoolMatches`: a fragment of
+  a name, short name or alias from the alias table, or exactly its initials, "UCSF"); none or several is "Unrecognised
+  school" with the tracker's `SchoolPicker`. A slug or id from the model is never read. Program: `PHD` only when the
+  model says so and a line holding the name says PhD or MSTP; `REG` when the model says MD or DO and that line writes MD
+  or DO in capitals ("do" is a word); else `ANY`. File order is kept, a school and program named twice is one row, at
+  most 200 rows (`LIST_IMPORT_LIMITS`, a list's cap; the model may return 400 before the cut).
 - **Save** (`importListItems` in `api/lists.server.ts`, under the list lock): `target` is `{ listId }` (the caller's;
   anyone else's, or a missing one, is a 404) or `{ newList: name }` (a new list; the 21st is `MEDSCHOOLS_LIST_CAP`; a
   quick repeat, the caller's list of exactly that cleaned name made in the last 10 s with exactly these schools and
   programs, `IMPORT_REPEAT_WINDOW_MS`, is returned with `added: 0` instead of a second copy; the view also ignores a
-  second press while its save is in flight); `items` are slug and program (strict schema: no user, item or school id). A school and program
-  already on the list, or named twice, is `alreadyThere`; an inactive or unknown school is `invalid`; the rest are
-  appended in order. All or nothing at 200 schools (`MEDSCHOOLS_ITEM_CAP`): over it nothing is written, not even the new
-  list.
+  second press while its save is in flight); `items` are slug and program (strict schema: no user, item or school id). A
+  school and program already on the list, or named twice, is `alreadyThere`; an inactive or unknown school is `invalid`;
+  the rest are appended in order. All or nothing at 200 schools (`MEDSCHOOLS_ITEM_CAP`): over it nothing is written, not
+  even the new list.
 - **Nothing kept.** No bytes, text or file name is stored, cached or logged; the log line is counts and a status
   (`list-ok`, `list-empty`); the only trace is the text-free `AiUsage` row. `api/import/privacy.server.test.ts` pins the
   list files with the tracker's, and the integration test scans every table for the file's words.
-- **UI.** `model.ts` (pure, tested) decides each row's fate (add, already on the list, named twice, unticked,
-  unmatched; a row already on the target list starts unticked with its tick disabled and a note, and becomes tickable
-  when its program is changed to one the list lacks), the save body (only the rows that will be added) and the 200 cap; `ListImportPreview.tsx` is rows on rules
-  with crests, a tick, the program select (either, MD or MD-PhD, DO or DO-PhD) and the picker. A new list's name is
-  typed in the preview ("Imported schools" to start). Strings are `lists-import-*`.
+- **UI.** `model.ts` (pure, tested) decides each row's fate (add, already on the list, named twice, unticked, unmatched;
+  a row already on the target list starts unticked with its tick disabled and a note, and becomes tickable when its
+  program is changed to one the list lacks), the save body (only the rows that will be added) and the 200 cap;
+  `ListImportPreview.tsx` is rows on rules with crests, a tick, the program select (either, MD or MD-PhD, DO or DO-PhD)
+  and the picker. A new list's name is typed in the preview ("Imported schools" to start). Strings are `lists-import-*`.
 - **Tests.** Unit: `features/medschools/api/import/list-*.test.ts`, `api/lists-import*.test.ts`,
   `ui/lists/import/*.test.*`. Black box: `testing/integration/medschools-list-import.test.ts` (fake provider).
 
@@ -1119,9 +1168,8 @@ is a school slug). Endpoints, all signed in, `Cache-Control` never public, no DT
 `me/tracker` (GET), `me/tracker/cycle` (PUT, DELETE), `me/tracker/applications` (POST), `.../applications/$id` (PATCH,
 DELETE), `.../applications/$id/milestones/$type` (PUT, DELETE), `me/lists` (GET, POST), `me/lists/$id` (PATCH, DELETE),
 `me/list-order`, `me/list-items` (save a school, creating "My schools" on first use), `me/lists/$id/items/$itemId`,
-`me/lists/$id/item-order`, `me/lists/$id/add-to-tracker`, `me/lists/import/parse` and `me/lists/import/save` (see
-"List import"), `me/prefs` (GET, PUT). Another member's id is a 404, never
-a 403.
+`me/lists/$id/item-order`, `me/lists/$id/add-to-tracker`, `me/lists/import/parse` and `me/lists/import/save` (see "List
+import"), `me/prefs` (GET, PUT). Another member's id is a 404, never a 403.
 
 - **One writer (D1).** `api/share-sync.server.ts` is the only module that writes the tracker rows or an RMH event or
   count (`share-ratchet.test.ts`). The database cascade deletes milestones without application code seeing it, and an

@@ -1,0 +1,200 @@
+/**
+ * Phase D: the private stats form ("My stats"), the onboarding note and the AI list builder. Tokens only (`--app-*`,
+ * `--app-med-*`); one level of panel, rules and space inside it; 44px targets come from the shared controls.
+ */
+
+/* The stats form: a section's fields, its MCAT attempts, its hours rows. */
+.medapp-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-3);
+}
+.medapp-stats__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-4);
+}
+.medapp-stats__attempt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-3);
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0 0 var(--app-med-space-4);
+  border: 0;
+  border-bottom: 1px solid var(--app-border);
+}
+.medapp-stats__attempt > legend {
+  padding: 0;
+  margin-block-end: var(--app-med-space-2);
+}
+/* Two columns on a phone (month and day, then the scores), four from 640px. */
+.medapp-stats__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--app-med-space-3);
+}
+@media (min-width: 640px) {
+  .medapp-stats__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.medapp-stats__rowend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-med-space-2);
+}
+.medapp-stats__err {
+  color: var(--app-med-reject-text);
+}
+.medapp-stats__hours {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-med-space-3);
+}
+.medapp-stats__num {
+  inline-size: 7.5rem;
+  flex: none;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+.medapp-stats__details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-3);
+  padding-block: var(--app-med-space-3);
+}
+/* An activity: its name, its hours and the remove button on one line from 640px; stacked on a phone. */
+.medapp-stats__activity {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--app-med-space-2) var(--app-med-space-3);
+  align-items: end;
+}
+.medapp-stats__activity > :first-child {
+  grid-column: 1 / -1;
+}
+@media (min-width: 640px) {
+  .medapp-stats__activity {
+    grid-template-columns: minmax(0, 1fr) 7.5rem auto;
+  }
+  .medapp-stats__activity > :first-child {
+    grid-column: auto;
+  }
+}
+/* The mission chips wrap (several may be on), unlike the one-line segmented groups. */
+.medapp-stats__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-med-space-2);
+}
+@media (pointer: coarse) {
+  .medapp-stats__chips > .medapp-chip {
+    min-block-size: 44px;
+  }
+}
+.medapp-stats__actions {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* The onboarding note above the lists and the builder. */
+.medapp-onboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-2);
+}
+
+/* The builder's result: groups of school rows. */
+.medapp-build {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-5);
+}
+.medapp-build__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-2);
+}
+/* The tick's whole 44px square is the target; the box sits in it. */
+.medapp-build__tick {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: 44px;
+  block-size: 44px;
+  margin-inline-start: -12px;
+  cursor: pointer;
+}
+/* The label is a word on a tonal fill; colour is never the cue (the word is). */
+.medapp-build__label {
+  flex: none;
+  padding: 2px var(--app-med-space-2);
+  border-radius: var(--app-med-radius-sm);
+  background-color: var(--app-med-tonal);
+  color: var(--app-text);
+  font-size: var(--app-med-text-meta);
+  font-weight: 600;
+}
+/* On a phone the label sits under the school's name (one of the two is shown; display: none hides the other from
+   assistive technology too), so a long label never squeezes the name. */
+.medapp-build__label--under {
+  display: none;
+  align-self: flex-start;
+  margin-block: 2px;
+}
+@media (max-width: 559px) {
+  .medapp-build__label--side {
+    display: none;
+  }
+  .medapp-build__label--under {
+    display: inline-block;
+  }
+}
+.medapp-build__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-2);
+  padding-block-start: var(--app-med-space-2);
+  padding-inline-start: calc(32px + var(--app-med-space-3));
+}
+.medapp-build__compare {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--app-med-text-secondary);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.medapp-build__figs,
+.medapp-build__yours {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.medapp-build__fig {
+  justify-content: space-between;
+  gap: var(--app-med-space-2);
+  padding-block: var(--app-med-space-1);
+  font-size: var(--app-med-text-secondary);
+}
+.medapp-build__cite {
+  display: inline-block;
+  min-inline-size: 1.25rem;
+  color: var(--app-text-muted);
+  font-size: var(--app-med-text-meta);
+  font-variant-numeric: tabular-nums;
+}
+.medapp-build__num {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}

@@ -65,9 +65,16 @@ const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const mentions = (text: string, name: string): boolean =>
   new RegExp(`(?<![\\p{L}\\p{N}])${escapeRe(name)}(?![\\p{L}\\p{N}])`, 'iu').test(text);
 
+/**
+ * What the validator reads of a fact: its ref, its text (the allowed numbers), whether it is untrusted forum text and
+ * its school. The Ask passes `RetrievedFact`s; the list builder (phase D) passes its own facts, the member's included
+ * (`schoolSlug` null, trusted: figures the member typed about themselves).
+ */
+export type GroundFact = Pick<RetrievedFact, 'ref' | 'text' | 'untrusted' | 'schoolSlug'>;
+
 export function groundAnswer(
   raw: unknown,
-  facts: readonly RetrievedFact[],
+  facts: readonly GroundFact[],
   opts: { secrets?: readonly string[]; schoolNames?: SchoolNames } = {},
 ): Grounded {
   const empty: Grounded = { segments: [], dropped: 0, reasons: ['empty'], citedRefs: [] };

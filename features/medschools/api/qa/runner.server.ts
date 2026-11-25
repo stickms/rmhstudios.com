@@ -6,7 +6,13 @@
  * Both calls take the question's signal (the request's, and the overall deadline) and never retry: the deadline is
  * under the client's timeout, so a retry could only make the member wait past it for an answer nobody reads.
  */
-import { MEDSCHOOLS_INTERVIEW_FOLLOWUPS, MEDSCHOOLS_QA_ANSWER, MEDSCHOOLS_QA_ROUTE } from '@/lib/ai/prompts';
+import {
+  MEDSCHOOLS_INTERVIEW_FOLLOWUPS,
+  MEDSCHOOLS_LIST_ANSWER,
+  MEDSCHOOLS_LIST_ROUTE,
+  MEDSCHOOLS_QA_ANSWER,
+  MEDSCHOOLS_QA_ROUTE,
+} from '@/lib/ai/prompts';
 import { QA_THINK_DEADLINE_MS } from '../../ai-budget';
 import { jsonFromModelText, runTask } from '@/lib/ai/provider.server';
 
@@ -96,6 +102,46 @@ export const aiFollowupRunner: FollowupRunner = {
         ...(think
           ? { thinking: true, maxTokens: THINK_MAX_TOKENS, timeoutMs: QA_THINK_DEADLINE_MS }
           : { maxTokens: FOLLOWUP_MAX_TOKENS }),
+        ...(signal ? { signal } : {}),
+      }),
+    );
+  },
+};
+
+/**
+ * The list builder's two calls (phase D): the same seam as the Q&A (`QaRunner`), with its own prompts, under the same
+ * task label so the spend is the Q&A's share. The answer may hold up to 30 short reasons, so its plain budget is larger.
+ */
+const BUILD_ROUTE_MAX_TOKENS = 300;
+const BUILD_ANSWER_MAX_TOKENS = 3_500;
+
+export const aiBuilderRunner: QaRunner = {
+  async route(system, user, userId, signal) {
+    return parsed(
+      await runTask(TASK, system, user, {
+        userId,
+        json: true,
+        promptId: MEDSCHOOLS_LIST_ROUTE.id,
+        promptVer: MEDSCHOOLS_LIST_ROUTE.version,
+        maxTokens: BUILD_ROUTE_MAX_TOKENS,
+        temperature: 0,
+        maxRetries: 0,
+        ...(signal ? { signal } : {}),
+      }),
+    );
+  },
+  async answer(system, user, userId, signal, opts) {
+    const think = opts?.think === true;
+    return parsed(
+      await runTask(TASK, system, user, {
+        userId,
+        json: true,
+        promptId: MEDSCHOOLS_LIST_ANSWER.id,
+        promptVer: MEDSCHOOLS_LIST_ANSWER.version,
+        maxRetries: 0,
+        ...(think
+          ? { thinking: true, maxTokens: THINK_MAX_TOKENS, timeoutMs: QA_THINK_DEADLINE_MS }
+          : { maxTokens: BUILD_ANSWER_MAX_TOKENS }),
         ...(signal ? { signal } : {}),
       }),
     );
