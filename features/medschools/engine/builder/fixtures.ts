@@ -45,6 +45,7 @@ export const school = (slug: string, over: Partial<PublicSchool> = {}): PublicSc
   slug,
   name: `${slug[0]!.toUpperCase()}${slug.slice(1)} School of Medicine`,
   shortName: slug,
+  city: 'Town',
   state: 'NY',
   degree: 'MD',
   classes: [],

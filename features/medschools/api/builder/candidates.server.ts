@@ -13,7 +13,7 @@ export async function readPublicSchools(): Promise<PublicSchool[]> {
   const [schools, profileRows, phdRows] = await Promise.all([
     prisma.medSchool.findMany({
       where: { active: true },
-      select: { id: true, slug: true, name: true, shortName: true, state: true, degree: true },
+      select: { id: true, slug: true, name: true, shortName: true, city: true, state: true, degree: true },
     }),
     prisma.medSchoolFact.findMany({
       where: { source: 'SCHOOL_PROFILE', kind: { startsWith: 'PROFILE_' } },
@@ -63,6 +63,7 @@ export async function readPublicSchools(): Promise<PublicSchool[]> {
             slug: s.slug,
             name: s.name,
             shortName: s.shortName,
+            city: s.city,
             state: s.state,
             degree: s.degree,
             classes: classProfilesOf(profiles.get(s.id) ?? []),

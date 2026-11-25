@@ -52,25 +52,60 @@ export const HOURS_LABEL: Record<HoursCategory, string> = {
   TEACHING: 'teaching',
 };
 
+/**
+ * One of the member's figures: the structured fact the page words (`MedBuildMemberFactDto`) plus the English line the
+ * model is shown and the validator reads numbers from. The line never leaves the server.
+ */
+export type MemberFact = MedBuildMemberFactDto & { text: string };
+
 /** The member's own figures as citeable facts, refs `m1`, `m2`, ... */
-export function memberFacts(s: BuilderMemberStats | null): MedBuildMemberFactDto[] {
+export function memberFacts(s: BuilderMemberStats | null): MemberFact[] {
   if (!s) return [];
-  const out: Omit<MedBuildMemberFactDto, 'ref'>[] = [];
+  const base = { year: null, month: null, category: null, missions: [] as Mission[] };
+  const out: Omit<MemberFact, 'ref'>[] = [];
   if (s.mcat) {
     out.push({
-      label: 'Your MCAT',
+      ...base,
+      kind: 'mcat',
+      value: String(s.mcat.total),
+      year: s.mcat.year,
+      month: s.mcat.month,
       text: `Your most recent MCAT total (${MONTHS[s.mcat.month - 1] ?? ''} ${s.mcat.year}): ${s.mcat.total}`,
     });
   }
-  if (s.gpaCumulative !== null) out.push({ label: 'Your GPA', text: `Your cumulative GPA: ${s.gpaCumulative.toFixed(2)}` });
-  if (s.gpaScience !== null) out.push({ label: 'Your science GPA', text: `Your science GPA: ${s.gpaScience.toFixed(2)}` });
-  if (s.homeState) out.push({ label: 'Your home state', text: `Your home state: ${s.homeState}` });
-  for (const h of s.hours) {
-    out.push({ label: 'Your hours', text: `Your ${HOURS_LABEL[h.category]} hours: ${h.hours}` });
+  if (s.gpaCumulative !== null) {
+    const v = s.gpaCumulative.toFixed(2);
+    out.push({ ...base, kind: 'gpa', value: v, text: `Your cumulative GPA: ${v}` });
   }
-  if (s.missions.length) out.push({ label: 'Your interests', text: `Your mission interests: ${s.missions.join(', ')}` });
+  if (s.gpaScience !== null) {
+    const v = s.gpaScience.toFixed(2);
+    out.push({ ...base, kind: 'science-gpa', value: v, text: `Your science GPA: ${v}` });
+  }
+  if (s.homeState) out.push({ ...base, kind: 'home-state', value: s.homeState, text: `Your home state: ${s.homeState}` });
+  for (const h of s.hours) {
+    out.push({
+      ...base,
+      kind: 'hours',
+      value: String(h.hours),
+      category: h.category,
+      text: `Your ${HOURS_LABEL[h.category]} hours: ${h.hours}`,
+    });
+  }
+  if (s.missions.length) {
+    out.push({
+      ...base,
+      kind: 'missions',
+      value: '',
+      missions: [...s.missions],
+      text: `Your mission interests: ${s.missions.join(', ')}`,
+    });
+  }
   return out.map((f, i) => ({ ref: `m${i + 1}`, ...f }));
 }
+
+/** What the member is sent back: the structured facts, without the server's English line. */
+export const memberDtos = (facts: readonly MemberFact[]): MedBuildMemberFactDto[] =>
+  facts.map(({ text: _text, ...dto }) => dto);
 
 const SGPA_KINDS: readonly ProfileKindId[] = ['SGPA_MEDIAN', 'SGPA_MEAN', 'SGPA_SCORE'];
 
@@ -161,7 +196,7 @@ const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
 export function groundPicks(
   raw: unknown,
   candidates: readonly ModelCandidate[],
-  member: readonly MedBuildMemberFactDto[],
+  member: readonly MemberFact[],
   count: number,
   opts: { secrets?: readonly string[] } = {},
 ): { picks: Pick[]; reasonsDropped: number; ignored: number } | null {

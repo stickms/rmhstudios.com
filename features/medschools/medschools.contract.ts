@@ -24,7 +24,7 @@ import type {
   saveListItemBody,
 } from './api/me-schemas';
 import type { MedEventType, MedProgram, MedSource } from './engine/types';
-import type { ApplicantStats } from './engine/applicant';
+import type { ApplicantStats, HoursCategory, Mission } from './engine/applicant';
 import type { buildListBody, putOnboardingBody, putStatsBody, saveBuiltListBody } from './api/stats-schemas';
 
 export interface AliasMissDto {
@@ -1198,17 +1198,29 @@ export interface MedBuildSchoolDto {
   label: MedBuildLabel;
   comparisons: MedBuildComparisonDto[];
   figures: MedBuildFigureDto[];
-  /** Plain facts the code knows about the school (an MD-PhD program, an NIH MSTP, in the member's home state). */
-  notes: ('mdphd' | 'mstp' | 'home-state')[];
+  city: string;
+  /** In the member's home state (the MD-PhD program and an NIH MSTP are cited figures, never repeated here). */
+  notes: 'home-state'[];
   /** The model's one sentence, kept only when the grounding check kept it; `cites` are refs of `figures` and `member`. */
   reason: { text: string; cites: string[] } | null;
 }
 
-/** The member's own figures the build used, labelled as theirs. Returned to the member only; never stored. */
+/**
+ * One of the member's own figures the build used, as data: the page words it (`builder-*` keys), so no sentence is built
+ * on the server. Returned to the member only; never stored.
+ */
 export interface MedBuildMemberFactDto {
   ref: string;
-  label: string;
-  text: string;
+  kind: 'mcat' | 'gpa' | 'science-gpa' | 'home-state' | 'hours' | 'missions';
+  /** The figure as entered: "512", "3.81", "TX", "1200"; empty for `missions`. */
+  value: string;
+  /** The MCAT attempt's month (`mcat` only). */
+  year: number | null;
+  month: number | null;
+  /** `hours` only. */
+  category: HoursCategory | null;
+  /** `missions` only. */
+  missions: Mission[];
 }
 
 export interface MedBuildRes {
@@ -1224,9 +1236,9 @@ export interface MedBuildRes {
     degree: 'MD' | 'DO' | null;
     mdphd: boolean;
     size: 'small' | 'medium' | 'large' | null;
-    missions: string[];
-    /** Asked-for missions RMH has no public data on, so they chose nothing. */
-    unused: string[];
+    missions: Mission[];
+    /** Asked-for missions RMH has no public data on, so they chose nothing (ids; the page words them). */
+    unused: Mission[];
     count: number;
   };
   notice: 'removed-ungrounded' | null;

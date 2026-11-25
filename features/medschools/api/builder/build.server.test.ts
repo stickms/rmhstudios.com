@@ -87,7 +87,13 @@ describe('buildList', () => {
     const alpha = res.schools[0]!;
     expect(alpha.comparisons[0]).toEqual({ metric: 'MCAT', yours: '513', theirs: '520', stat: 'median', band: 'below' });
     expect(alpha.reason?.cites).toEqual(['m1', 'c1f1']);
-    expect(alpha.notes).toEqual(['mdphd', 'mstp', 'home-state']);
+    // The MD-PhD program and MSTP are cited figures, never repeated as notes.
+    expect(alpha.notes).toEqual(['home-state']);
+    expect(alpha.figures.map((f) => f.kind)).toEqual(expect.arrayContaining(['MDPHD_PROGRAM', 'MSTP_T32']));
+    expect(alpha.city).toBe('Town');
+    // The member's figures come back as data, never as a sentence built on the server.
+    expect(res.member[0]).toEqual({ ref: 'm1', kind: 'mcat', value: '513', year: 2026, month: 4, category: null, missions: [] });
+    expect(JSON.stringify(res.member)).not.toMatch(/Your|"text"/);
     expect(res.schools.find((s) => s.slug === 'charlie')?.reason).toBeNull(); // "99" is in no fact
     expect(res.member.map((x) => x.ref)).toEqual(['m1', 'm2', 'm3', 'm4', 'm5', 'm6']);
     expect(res.filters.missions).toEqual(['research']);

@@ -23,6 +23,7 @@ export interface PublicSchool {
   slug: string;
   name: string;
   shortName: string;
+  city: string;
   state: string;
   degree: 'MD' | 'DO';
   /** The class profiles, in the Facts tab's order (`classProfilesOf`). */

@@ -9,15 +9,19 @@ import type {
   MedBuildComparisonDto,
   MedBuildFigureDto,
   MedBuildLabel,
+  MedBuildMemberFactDto,
   MedBuildRes,
   MedBuildSchoolDto,
 } from '../../medschools.contract';
 import { useKindLabel } from '../facts/EnteringClass';
 import { SchoolCrest } from '../SchoolCrest';
 import { SourceRef } from '../SourceRef';
+import { useStatsText } from '../stats/StatsSections';
 
 export function useBuilderText() {
   const { t } = useTranslation('medschools');
+  const { locale } = useLocaleFormat();
+  const { hoursLabel, missionLabel } = useStatsText();
   const label = (l: MedBuildLabel): string => {
     switch (l) {
       case 'reach':
@@ -71,7 +75,38 @@ export function useBuilderText() {
           theirs: c.theirs,
         });
   };
-  return { label, groupNote, comparison };
+  const memberLine = (m: MedBuildMemberFactDto): string => {
+    switch (m.kind) {
+      case 'mcat':
+        return m.year !== null && m.month !== null
+          ? t('builder-yours-mcat', {
+              defaultValue: 'Your most recent MCAT total ({{when}}): {{value}}',
+              when: new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
+                Date.UTC(m.year, m.month - 1, 1),
+              ),
+              value: m.value,
+            })
+          : t('builder-yours-mcat-plain', { defaultValue: 'Your most recent MCAT total: {{value}}', value: m.value });
+      case 'gpa':
+        return t('builder-yours-gpa', { defaultValue: 'Your cumulative GPA: {{value}}', value: m.value });
+      case 'science-gpa':
+        return t('builder-yours-sgpa', { defaultValue: 'Your science GPA: {{value}}', value: m.value });
+      case 'home-state':
+        return t('builder-yours-home', { defaultValue: 'Your home state: {{value}}', value: m.value });
+      case 'hours':
+        return t('builder-yours-hours', {
+          defaultValue: '{{category}} hours: {{value}}',
+          category: m.category ? hoursLabel(m.category) : '',
+          value: m.value,
+        });
+      default:
+        return t('builder-yours-missions', {
+          defaultValue: 'Your mission interests: {{missions}}',
+          missions: m.missions.map(missionLabel).join(', '),
+        });
+    }
+  };
+  return { label, groupNote, comparison, memberLine };
 }
 
 function FigureRow({ f, schoolName }: { f: MedBuildFigureDto; schoolName: string }) {
@@ -165,10 +200,19 @@ function SchoolRow({
           </Link>
           <span className="medapp-build__label medapp-build__label--under">{label(s.label)}</span>
           <span className="medapp-meta">
-            {`${s.state} · ${s.degree}`}
-            {s.notes.includes('home-state') ? ` · ${t('builder-note-home', { defaultValue: 'In your home state' })}` : ''}
-            {s.notes.includes('mdphd') ? ` · ${t('builder-note-mdphd', { defaultValue: 'MD-PhD program' })}` : ''}
-            {s.notes.includes('mstp') ? ` · ${t('builder-note-mstp', { defaultValue: 'NIH MSTP' })}` : ''}
+            {s.notes.includes('home-state')
+              ? t('builder-school-meta-home', {
+                  defaultValue: '{{degree}} · {{city}}, {{state}} · In your home state',
+                  degree: s.degree,
+                  city: s.city,
+                  state: s.state,
+                })
+              : t('index-school-meta', {
+                  defaultValue: '{{degree}} · {{city}}, {{state}}',
+                  degree: s.degree,
+                  city: s.city,
+                  state: s.state,
+                })}
           </span>
         </div>
         <span className="medapp-build__label medapp-build__label--side">{label(s.label)}</span>
@@ -223,7 +267,8 @@ export function BuildResult({
   onToggle: (slug: string, on: boolean) => void;
 }) {
   const { t } = useTranslation('medschools');
-  const { label, groupNote } = useBuilderText();
+  const { label, groupNote, memberLine } = useBuilderText();
+  const { missionLabel } = useStatsText();
   const groups = LABEL_ORDER.map((l) => [l, res.schools.filter((s) => s.label === l)] as const).filter(
     ([, list]) => list.length > 0,
   );
@@ -250,7 +295,7 @@ export function BuildResult({
         <p className="medapp-meta">
           {t('builder-unused', {
             defaultValue: 'RMH has no public data on {{missions}}, so it did not choose any school.',
-            missions: res.filters.unused.join(', '),
+            missions: res.filters.unused.map(missionLabel).join(', '),
           })}
         </p>
       ) : null}
@@ -283,7 +328,7 @@ export function BuildResult({
           <ul className="medapp-build__yours">
             {res.member.map((m) => (
               <li key={m.ref} className="medapp-meta">
-                {m.text}
+                {memberLine(m)}
               </li>
             ))}
           </ul>

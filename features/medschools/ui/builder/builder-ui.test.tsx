@@ -27,6 +27,7 @@ const school = (slug: string, label: MedBuildSchoolDto['label'], over: Partial<M
   name: `${slug} School of Medicine`,
   shortName: slug,
   state: 'NY',
+  city: 'Albany',
   degree: 'MD',
   program: 'ANY',
   label,
@@ -41,7 +42,10 @@ const res = (schools: MedBuildSchoolDto[], over: Partial<MedBuildRes> = {}): Med
   usedStats: true,
   statsMissing: false,
   schools,
-  member: [{ ref: 'm1', label: 'Your MCAT', text: 'Your most recent MCAT total (April 2026): 513' }],
+  member: [
+    { ref: 'm1', kind: 'mcat', value: '513', year: 2026, month: 4, category: null, missions: [] },
+    { ref: 'm2', kind: 'hours', value: '1200', year: null, month: null, category: 'RESEARCH', missions: [] },
+  ],
   filters: { states: [], degree: null, mdphd: false, size: null, missions: [], unused: [], count: 15 },
   notice: null,
   tier: 'free',
@@ -87,6 +91,10 @@ describe('BuildResult', () => {
     expect(out).toContain('[yours, 1]');
     expect(out).toContain('No published class figures');
     expect(out).toContain('Your figures used');
+    expect(out).toContain('Your most recent MCAT total (April 2026): 513');
+    expect(out).toContain('Research hours: 1200');
+    expect(out).toContain('MD · Albany, NY');
+    expect(out).not.toMatch(/MD · MD|NIH MSTP</);
     expect(out.replace(/href="[^"]*"/g, '')).not.toMatch(/\d\s?%|chance of/i);
   });
 
@@ -101,7 +109,7 @@ describe('BuildResult', () => {
     );
     expect(out).toContain('nothing was compared');
     expect(out).toContain('Some reasons were removed');
-    expect(out).toContain('no public data on rural');
+    expect(out).toContain('no public data on Rural');
     expect(out).toContain('Schools (1)');
   });
 

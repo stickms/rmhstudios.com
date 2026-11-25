@@ -22,6 +22,7 @@ import { selectCandidates, type PublicSchool } from '../../engine/builder/candid
 import {
   candidateFigures,
   groundPicks,
+  memberDtos,
   memberFacts,
   type BuilderMemberStats,
   type ModelCandidate,
@@ -29,6 +30,7 @@ import {
 import { LABEL_ORDER, labelFor } from '../../engine/builder/label';
 import { parseBuilderRoute, type BuilderRoute } from '../../engine/builder/route';
 import { cleanForPrompt } from '../../engine/qa/sanitize';
+import type { Mission } from '../../engine/applicant';
 import type { MedBuildRes, MedBuildSchoolDto } from '../../medschools.contract';
 import { admitQuestion } from '../qa/budget.server';
 import { assertLive, runUnderLease } from '../qa/lease.server';
@@ -56,7 +58,7 @@ export interface BuildDeps {
 const MAX_REQUEST = 400;
 type Base = Pick<MedBuildRes, 'tier' | 'remainingToday' | 'dailyCap'>;
 
-const filtersOf = (r: BuilderRoute, unused: string[] = []): MedBuildRes['filters'] => ({
+const filtersOf = (r: BuilderRoute, unused: Mission[] = []): MedBuildRes['filters'] => ({
   states: r.states,
   degree: r.degree,
   mdphd: r.mdphd,
@@ -181,7 +183,7 @@ async function run(
         request,
         count: route.count,
         candidates: model,
-        member: member.map(({ ref, label, text }) => ({ ref, label, text })),
+        member: member.map(({ ref, kind, text }) => ({ ref, label: kind, text })),
       }),
     ),
     i.userId,
@@ -196,21 +198,20 @@ async function run(
   }
   if (checked.picks.length === 0) {
     log('no-picks', { candidates: candidates.length, ignored: checked.ignored });
-    return empty({ status: 'no-picks', filters, usedStats, statsMissing, member, thinking: think });
+    return empty({ status: 'no-picks', filters, usedStats, statsMissing, member: memberDtos(member), thinking: think });
   }
   const home = shown?.homeState ?? null;
   const out: MedBuildSchoolDto[] = checked.picks.map((p) => {
     const r = rows[p.index]!;
     const s = r.c.school;
-    const notes: MedBuildSchoolDto['notes'] = [];
-    if (s.mdphd?.program.exists) notes.push('mdphd');
-    if (s.mdphd?.program.exists && s.mdphd.mstp?.listed) notes.push('mstp');
-    if (home && s.state === home) notes.push('home-state');
+    // The MD-PhD program and an MSTP listing are cited figures of the row; only the home state is a note.
+    const notes: MedBuildSchoolDto['notes'] = home && s.state === home ? ['home-state'] : [];
     return {
       slug: s.slug,
       name: s.name,
       shortName: s.shortName,
       state: s.state,
+      city: s.city,
       degree: s.degree,
       program: route.mdphd ? 'PHD' : 'ANY',
       label: r.label,
@@ -237,7 +238,7 @@ async function run(
     usedStats,
     statsMissing,
     schools: out,
-    member,
+    member: memberDtos(member),
     filters,
     notice: checked.reasonsDropped > 0 ? 'removed-ungrounded' : null,
     thinking: think,
