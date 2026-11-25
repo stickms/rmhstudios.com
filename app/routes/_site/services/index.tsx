@@ -167,7 +167,7 @@ function ServicesPage() {
     >
       <Cells columns={2} className="pt-4 pb-12">
         {SERVICES.map((service) => (
-          <li key={service.id}>
+          <li key={service.id} className="flex">
             <ServiceRow service={service} />
           </li>
         ))}
