@@ -15,9 +15,11 @@ import {
 } from '@/lib/router/route-announce';
 
 export const ROUTE_ANNOUNCER_ID = 'route-announcer';
+/** The second live region: announcements alternate between the two, so each is a fresh insertion (see `announce`). */
+export const ROUTE_ANNOUNCER_ALT_ID = 'route-announcer-alt';
 export const MAIN_CONTENT_ID = 'main-content';
 
-interface ResolvedEvent {
+export interface ResolvedEvent {
   fromLocation?: { pathname: string };
   toLocation: { pathname: string };
 }
@@ -77,10 +79,36 @@ function resolvedTitle(matches: ReadonlyArray<{ meta?: unknown }>): string | und
 /**
  * Browser-only, once per page load (app/router.tsx latches it). Returns a function that removes
  * the listeners and the subscription's effect, for tests.
+ *
+ * `before` is the last pathname change the router resolved before this module arrived (app/router.tsx records it
+ * synchronously); it is announced once, on install, so a navigation made while the chunk loaded is not silent.
  */
-export function installRouteAnnouncer(router: RouterLike, doc: DocLike = document as unknown as DocLike): () => void {
+export function installRouteAnnouncer(
+  router: RouterLike,
+  doc: DocLike = document as unknown as DocLike,
+  before?: ResolvedEvent | null,
+): () => void {
   let input: InputKind = 'none';
   let live = true;
+  let turn = 0;
+
+  /**
+   * Two polite regions used in turn. Some screen readers coalesce a region cleared and rewritten in one task, so a
+   * repeated title was silent. Each announcement goes into the region the last one did not use, after both are
+   * emptied: always a fresh insertion into an empty region.
+   */
+  const announce = () => {
+    const first = doc.getElementById(ROUTE_ANNOUNCER_ID);
+    const second = doc.getElementById(ROUTE_ANNOUNCER_ALT_ID);
+    const on = turn % 2 === 0 ? first : (second ?? first);
+    const off = on === first ? second : first;
+    if (!on) return;
+    turn += 1;
+    const text = announcementText(resolvedTitle(router.state.matches) ?? doc.title) || first?.dataset?.fallback || '';
+    if (off) off.textContent = '';
+    on.textContent = '';
+    on.textContent = text;
+  };
 
   const onKey = () => {
     input = nextInputKind(input, 'keydown');
@@ -97,13 +125,7 @@ export function installRouteAnnouncer(router: RouterLike, doc: DocLike = documen
     input = 'none';
     if (!pathnameChanged(event.fromLocation, event.toLocation)) return;
 
-    const region = doc.getElementById(ROUTE_ANNOUNCER_ID);
-    if (region) {
-      const text = announcementText(resolvedTitle(router.state.matches) ?? doc.title) || region.dataset?.fallback || '';
-      // Cleared and rewritten, so a repeat of the same title is heard again.
-      region.textContent = '';
-      region.textContent = text;
-    }
+    announce();
 
     const active = doc.activeElement;
     const focusOnBody = !active || active === doc.body;
@@ -114,6 +136,8 @@ export function installRouteAnnouncer(router: RouterLike, doc: DocLike = documen
       doc.getElementById(MAIN_CONTENT_ID)?.focus({ preventScroll: true });
     }
   });
+
+  if (before && pathnameChanged(before.fromLocation, before.toLocation)) announce();
 
   return () => {
     live = false;

@@ -57,6 +57,11 @@ export const route = apiRoute('/api/admin/reports', {
       const targetMap = new Map(targets.map((t) => [t.id, resolveUser(t)]));
       // s03-04: one groupBy for the visible members' moderator-note counts.
       const noteCounts = await noteCountsFor(targetIds);
+      // s13-17: a reported message with its earlier versions (admin only).
+      const dmIds = pageRows.filter((r) => r.entityType === 'dm').map((r) => r.entityId);
+      const dmViews = dmIds.length
+        ? await (await import('@/lib/messages/dm-reports.server')).dmReportViews(dmIds)
+        : null;
 
       const items = pageRows.map((r) => ({
         id: r.id,
@@ -71,6 +76,7 @@ export const route = apiRoute('/api/admin/reports', {
         reporter: resolveUser(r.reporter),
         targetUser: r.targetUserId ? (targetMap.get(r.targetUserId) ?? null) : null,
         targetNoteCount: r.targetUserId ? (noteCounts.get(r.targetUserId) ?? 0) : 0,
+        ...(dmViews ? { dm: r.entityType === 'dm' ? (dmViews.get(r.entityId) ?? null) : null } : {}),
       }));
 
       const counts = await prisma.contentReport.groupBy({

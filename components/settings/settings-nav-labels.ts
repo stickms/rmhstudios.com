@@ -93,6 +93,13 @@ export function settingsNavText(t: TFunction): Record<string, SettingsNavText> {
         defaultValue: 'Your saved game replays: make one public or unlisted, or delete it',
       }),
     },
+    lists: {
+      label: t('settings-nav-lists', { ns: 'feed', defaultValue: 'Lists you are on' }),
+      hint: t('settings-nav-lists-hint', {
+        ns: 'feed',
+        defaultValue: 'The public lists that include you, and leaving them',
+      }),
+    },
     blocked: {
       label: t('settings-nav-blocked', { ns: 'feed', defaultValue: 'Blocked and muted' }),
       hint: t('settings-nav-blocked-hint', {

@@ -144,7 +144,7 @@ The posts of a feed or list as the site pages them for you, newest first: your o
 
 ### `PUT /api/v1/me/feeds/{id}/members`
 
-Make the list's members exactly these handles (case-insensitive, at most 500; an empty array clears the list). Handles that match no account, a deleted or banned account, or a member blocked in either direction are not added and come back in `skipped` with the reason `not_found` or `blocked`. Only your own lists: a feed that is not a list, or another member's, is a `404`.
+Make the list's members exactly these handles (case-insensitive, at most 500; an empty array clears the list). Handles that match no account, a deleted or banned account, or a member blocked in either direction are not added and come back in `skipped` with the reason `not_found` or `blocked`; a member who left the list stays off it and comes back as `left`. Only your own lists: a feed that is not a list, or another member's, is a `404`.
 
 **Scope:** `write:feeds` · **Success:** `200` · **Idempotent:** accepts `Idempotency-Key` · **Operation id:** `replaceListMembers`
 

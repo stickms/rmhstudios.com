@@ -1,4 +1,5 @@
 import { processSource } from './process-source';
+import { catalogJobWhere } from '../own-jobs';
 import { recheckSource } from './recheck';
 import { expireStaleJobs, resolveJobMaxAgeMs } from './expire-stale';
 import type { ExpireStalePrisma } from './expire-stale';
@@ -359,6 +360,7 @@ export async function runPipeline(
     try {
       const activeJobs = await deps.prisma.ladderJob.findMany({
         where: {
+          ...catalogJobWhere(),
           sourceId: source.id,
           status: 'active',
         },

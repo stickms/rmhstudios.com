@@ -14,6 +14,7 @@ import { createNotification } from '@/lib/notifications.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import { generateRoomCode } from '@/lib/rmhtube/utils';
 import { parseMedia } from '@/lib/rmhtube/media';
+import { enqueueTubePartyFanout } from '@/lib/rmhtube/subscriptions.server';
 import {
   EXPIRE_AFTER_MS,
   GOING_AVATARS,
@@ -191,7 +192,7 @@ export async function scheduleParty(
       // The limit checks and the insert share one transaction behind a per-host advisory lock, so two
       // concurrent requests cannot both read "under the limit" and both create. A room-code collision
       // aborts the transaction, so the retry loop sits outside it.
-      return await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx): Promise<PartyResult> => {
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`rmhtube-party-host:${hostId}`}))`;
         const upcoming = await tx.rmhTubeRoom.count({
           where: {
@@ -254,6 +255,9 @@ export async function scheduleParty(
           value: toDto(row, hostId, new Set()),
         };
       });
+      // s13-07: the subscribers hear about a public party only once it has committed (a failed queue is logged, not thrown).
+      if (result.ok && result.value.isPublic) await enqueueTubePartyFanout(result.value.roomId);
+      return result;
     } catch (err) {
       if (!isUniqueViolation(err)) throw err;
     }

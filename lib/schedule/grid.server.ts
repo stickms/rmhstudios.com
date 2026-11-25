@@ -26,6 +26,7 @@ import { attendanceBetween } from '@/lib/calendar/feed-entries';
 import { OVERRIDE_MARGIN_MS, applyOverrides } from '@/lib/events/occurrences';
 import { overridesForEvents } from '@/lib/events/occurrences.server';
 import { myEventInputs } from '@/lib/calendar/my-events.server';
+import { ladderCalendarFor } from '@/lib/rmhladder/calendar-entries.server';
 import {
   buildGrid,
   groupByDay,
@@ -186,7 +187,11 @@ export async function getMyGrid(userId: string, from: Date = new Date(), days = 
   const clamped = Math.min(Math.max(1, Math.trunc(days)), MAX_DAYS);
   const start = startOfDay(from);
   const end = new Date(start.getTime() + clamped * DAY_MS);
-  const inputs = await myEventInputs(userId, start, end);
+  const [inputs, ladder] = await Promise.all([
+    myEventInputs(userId, start, end),
+    // s13-09 — RMHLadder entries, only when the member switched "Show on my calendar" on.
+    ladderCalendarFor(userId, start, end),
+  ]);
 
   const occurrences: Occurrence[] = [];
   for (const input of inputs) {
@@ -213,6 +218,17 @@ export async function getMyGrid(userId: string, from: Date = new Date(), days = 
         endsAt: new Date(startsAt.getTime() + span),
       });
     }
+  }
+  for (const e of ladder.entries) {
+    occurrences.push({
+      slotId: e.uid,
+      kind: 'community-event',
+      title: e.title,
+      href: e.href,
+      startsAt: e.startsAt,
+      endsAt: e.endsAt,
+      ...(e.allDay ? { allDay: true } : {}),
+    });
   }
   occurrences.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
 

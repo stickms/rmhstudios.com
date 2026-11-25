@@ -1,5 +1,15 @@
 # Changelog
 
+## Sprint 13 — 2026-12
+
+<!-- s13-10 api-ladder -->
+- New scopes `read:ladder` and `write:ladder` (group RMHLadder), both **explicit**: `*`, `read:*` and `write:*` do not grant them, and neither is part of a new key's default grant, because a job search is private: the default grant (`READ_SCOPES`) now leaves out every explicit scope, and the scopes it held before are unchanged. A key must list `read:ladder` or `write:ladder` itself; the key-creation pickers leave them unticked under "All".
+- New endpoints, all answered with `Cache-Control: private, no-store`: `GET /api/v1/me/ladder/applications?limit=&cursor=&status=` (`read:ladder`; your applications, most recently changed first, 1 to 50, default 25; `status` is one status or several separated by commas), `GET /api/v1/me/ladder/applications/{id}` (`read:ladder`; the same plus `events`, the newest 50 timeline events), `PATCH /api/v1/me/ladder/applications/{id}` (`write:ladder`, honours `Idempotency-Key`; `status`, `appliedDate`, `followUpDate`, `interviewDates` and `notes`, through the site's own update, so the timeline gets one event per change) and `POST /api/v1/me/ladder/own-jobs` (`write:ladder`, `201`, honours `Idempotency-Key`; `title`, `company`, `link`, `location`, `remoteStatus`, `employmentType` and `deadline`, with the site's limit of 300 own jobs: `409 conflict` beyond it).
+- An application is `{ id, status, appliedDate, followUpDate, interviewDates, notes, updatedAt, job }` where `job` is `{ id, title, company, location, remote, url, deadline, own }`. Offers and pay figures, resumes, the answer bank, referral names and contact e-mails are not in the API; a field outside the lists above is `400 invalid_request`. Another member's application is `404 not_found`.
+
+<!-- s13-11 lists-on -->
+- `PUT /api/v1/me/feeds/{id}/members` now also skips a member who left the list (they chose to be off it, and the owner cannot add them back): the handle comes back in `skipped` with the new reason `left`, beside `not_found` and `blocked`. Nothing else changes.
+
 ## Sprint 12 — 2026-11
 
 <!-- s12-12 api-reviews -->

@@ -107,6 +107,18 @@ export function MyReportsPanel() {
     'study-deck': t('kind-study-deck', { defaultValue: 'Flashcard deck' }),
     persona: t('kind-persona', { defaultValue: 'AI persona' }),
     'home-listing': t('kind-home-listing', { defaultValue: 'Home listing' }),
+
+    // Sprint 13 (docs/autonomous/sprint-13/plan.md §Anchors)
+    // s13-06 tube-chat-reports
+    'tube-chat': t('kind-tube-chat', { defaultValue: 'Room message' }),
+
+    // s13-15 rideshare-safety
+    ride: t('kind-ride', { defaultValue: 'Trip' }),
+
+    // s13-16 pack-reports
+    'rmhbox-pack': t('kind-rmhbox-pack', { defaultValue: 'Prompt pack' }),
+
+    // s13-17 dm-reports
   };
   const GONE: Partial<Record<ReportEntityType, string>> = {
     rmhark: t('gone-rmhark', { defaultValue: 'A post that is no longer available' }),
@@ -125,6 +137,19 @@ export function MyReportsPanel() {
     'study-deck': t('gone-study-deck', { defaultValue: 'A flashcard deck that is no longer available' }),
     persona: t('gone-persona', { defaultValue: 'An AI persona that is no longer available' }),
     'home-listing': t('gone-home-listing', { defaultValue: 'A home listing that is no longer available' }),
+
+    // Sprint 13 (docs/autonomous/sprint-13/plan.md §Anchors)
+    // s13-06 tube-chat-reports
+    'tube-chat': t('gone-tube-chat', { defaultValue: 'A room message that is no longer available' }),
+
+    // s13-15 rideshare-safety
+    ride: t('gone-ride', { defaultValue: 'A trip that is no longer available' }),
+
+    // s13-16 pack-reports
+    'rmhbox-pack': t('gone-rmhbox-pack', { defaultValue: 'A prompt pack that is no longer available' }),
+
+    // s13-17 dm-reports
+    dm: t('gone-dm', { defaultValue: 'A message that is no longer available' }),
   };
 
   const whatOf = (r: MyReport): string =>

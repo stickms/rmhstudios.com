@@ -172,6 +172,35 @@ export async function takedownReportedContent(entityType: string, entityId: stri
   } else if (entityType === 'home-listing') {
     await (await import('@/lib/homes/listings.server')).moderateListing(entityId, now);
   }
+
+  // Sprint 13 (docs/autonomous/sprint-13/plan.md §Anchors)
+  // s13-06 tube-chat-reports
+  if (entityType === 'tube-chat') {
+    // s13-06: the row goes and the running room is told through Redis. Without Redis the next restore no longer
+    // has it, but the live room keeps it until then; that is logged so the decision's trail says so.
+    const { takeDownChatMessage } = await import('@/lib/rmhtube/chat-reports.server');
+    const { published, deleted } = await takeDownChatMessage(entityId);
+    if (deleted && !published) {
+      console.warn(`[tube-chat] removed ${entityId}; the live room was not reached (no Redis)`);
+    }
+  }
+
+  // s13-15 rideshare-safety
+  // A trip is not removable: there is nothing to take down. The decision acts on the account through the account tools.
+
+  // s13-16 pack-reports
+  if (entityType === 'rmhbox-pack') {
+    // s13-16: the pack is hidden for good (`moderatedAt`): off every shelf and out of the lobby, and its owner cannot
+    // unhide or feature it. Idempotent, so a repeated decision is harmless.
+    await (await import('@/lib/party/pack-moderation.server')).takeDownPack(entityId, now);
+  }
+
+  // s13-17 dm-reports
+  if (entityType === 'dm') {
+    // s13-17: a direct message becomes the deleted-message row both members see (`deletedBy: 'moderator'`); a group
+    // message is deleted outright. Idempotent, so a repeated decision is harmless.
+    await (await import('@/lib/messages/dm-reports.server')).takeDownDmMessage(entityId, now);
+  }
 }
 
 export interface Decision {
@@ -302,6 +331,19 @@ export async function decideReports(ids: readonly string[], decision: Decision):
   for (const r of claimed) {
     const key = groupKey(r.entityType, r.entityId);
     byTarget.set(key, [...(byTarget.get(key) ?? []), r]);
+  }
+
+  // s13-16 pack-reports: dismissing the last open report of a pack the reports hid brings the pack back.
+  if (decision.action === 'dismiss') {
+    for (const reports of byTarget.values()) {
+      const first = reports[0];
+      if (first?.entityType !== 'rmhbox-pack') continue;
+      try {
+        await (await import('@/lib/party/pack-moderation.server')).restoreReportedPack(first.entityId);
+      } catch (e) {
+        console.error('Pack restore failed:', e);
+      }
+    }
   }
 
   if (decision.message && decision.action === 'resolve') {
@@ -551,6 +593,36 @@ async function previewsFor(targets: readonly DecideTarget[]): Promise<Map<string
           for (const [id, title] of titles) out.set(groupKey('home-listing', id), snippet(title, 160));
         })
       : Promise.resolve(),
+
+    // Sprint 13 (docs/autonomous/sprint-13/plan.md §Anchors)
+    // s13-06 tube-chat-reports
+    idsOf('tube-chat').length
+      ? (await import('@/lib/rmhtube/chat-reports.server')).chatPreviews(idsOf('tube-chat')).then((texts) => {
+          for (const [id, text] of texts) out.set(groupKey('tube-chat', id), snippet(text, 300));
+        })
+      : Promise.resolve(),
+
+    // s13-15 rideshare-safety
+    idsOf('ride').length
+      ? (await import('@/lib/rideshare/safety.server')).ridePreview(idsOf('ride')).then((texts) => {
+          for (const [id, text] of texts) out.set(groupKey('ride', id), snippet(text, 3000));
+        })
+      : Promise.resolve(),
+
+    // s13-16 pack-reports
+    idsOf('rmhbox-pack').length
+      ? (await import('@/lib/party/pack-moderation.server')).packPreviews(idsOf('rmhbox-pack')).then((texts) => {
+          for (const [id, text] of texts) out.set(groupKey('rmhbox-pack', id), snippet(text, 3000));
+        })
+      : Promise.resolve(),
+
+    // s13-17 dm-reports
+    idsOf('dm').length
+      ? (await import('@/lib/messages/dm-reports.server')).dmReportViews(idsOf('dm')).then(async (views) => {
+          const { dmPreviewLine } = await import('@/lib/messages/dm-report');
+          for (const [id, view] of views) out.set(groupKey('dm', id), snippet(dmPreviewLine(view), 3000));
+        })
+      : Promise.resolve(),
   ]);
   for (const bi of buildIssues)
     out.set(groupKey('build-issue', bi.id), snippet(`${bi.build.title}: ${bi.title}. ${bi.body}`, 160));
@@ -692,6 +764,10 @@ export async function listReportGroups(filters: TriageFilters): Promise<ReportGr
     previewsFor(targets),
   ]);
 
+  // s13-17: a reported message's earlier versions (a moderation read path; admin only).
+  const dmIds = targets.filter((t) => t.entityType === 'dm').map((t) => t.entityId);
+  const dmViews = dmIds.length ? await (await import('@/lib/messages/dm-reports.server')).dmReportViews(dmIds) : null;
+
   const reporterIds = [...new Set(reportLists.flat().map((r) => r.reporterId))];
   const targetUserIds = [
     ...new Set(
@@ -765,6 +841,7 @@ export async function listReportGroups(filters: TriageFilters): Promise<ReportGr
       firstAt: (g._min.createdAt ?? new Date(0)).toISOString(),
       lastAt: (g._max.createdAt ?? new Date(0)).toISOString(),
       preview: previews.get(key) ?? null,
+      ...(dmViews ? { dm: g.entityType === 'dm' ? (dmViews.get(g.entityId) ?? null) : null } : {}),
       targetUser: owner ? (targetUserMap.get(owner) ?? null) : null,
       targetNoteCount: (owner && noteCounts.get(owner)) || 0,
       reliability: groupReliability(

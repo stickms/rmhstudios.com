@@ -1,0 +1,10 @@
+{
+  "abandon": "Close the case",
+  "banner": "Assists on: this run is not ranked",
+  "end-not-ranked": "Not ranked: assists were on",
+  "paused-aria": "Paused. The board is still open.",
+  "paused-open": "Paused. You can still place, sell and upgrade.",
+  "quit-to-menu": "Quit to menu",
+  "resume": "Resume",
+  "settings-link": "Game assists"
+}

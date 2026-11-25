@@ -8,6 +8,9 @@ model DeletionHold {
   webhookIds      String[] @default([])
   /// Stripe subscription ids this request set to cancel at the period's end (s12-18); only ids its own call flipped.
   subscriptionIds String[] @default([])
+  /// When the billing sync last finished with nothing left to do for the member's current choice (s13-18). A
+  /// done-stamp only: a request and a withdrawal null it, and the hourly sweep queues every hold where it is null.
+  billingSyncedAt DateTime?
   createdAt       DateTime @default(now())
 
   user User @relation("UserDeletionHold", fields: [userId], references: [id], onDelete: Cascade)

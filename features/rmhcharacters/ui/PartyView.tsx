@@ -119,13 +119,13 @@ export function SummaryTable({
               <tr key={m.userId} className="border-b border-app-border">
                 <th scope="row" className={cn(cell, 'text-left font-normal')}>
                   <span className="block font-medium" dir="auto">
-                    {s ? s.name || t('table.unnamed', { defaultValue: 'Unnamed character' }) : '—'}
+                    {m.hidden ? '—' : s ? s.name || t('table.unnamed', { defaultValue: 'Unnamed character' }) : '—'}
                   </span>
                   <span className="block text-xs text-app-text-muted">
-                    <bdi>{m.name}</bdi>
+                    {m.hidden ? t('table.hiddenPlayer', { defaultValue: 'A player' }) : <bdi>{m.name}</bdi>}
                     {m.isGm ? ` · ${t('table.gm', { defaultValue: 'game master' })}` : ''}
                   </span>
-                  {s ? (
+                  {m.hidden ? null : s ? (
                     <span className="block text-xs text-app-text-muted">
                       {[s.ancestry, ...s.classes.map((k) => `${k.name} ${k.level}`)].filter(Boolean).join(' · ') ||
                         t('table.level', { defaultValue: 'Level {{n}}', n: s.level })}
@@ -162,7 +162,10 @@ export function SummaryTable({
                         type="button"
                         size="icon"
                         variant="ghost"
-                        aria-label={t('table.remove', { defaultValue: 'Remove {{name}}', name: m.name })}
+                        aria-label={t('table.remove', {
+                          defaultValue: 'Remove {{name}}',
+                          name: m.hidden ? t('table.hiddenPlayer', { defaultValue: 'A player' }) : m.name,
+                        })}
                         onClick={() => onRemove(m)}
                       >
                         <X aria-hidden />
@@ -198,7 +201,7 @@ export function TurnOrderList({ order, turnIndex }: { order: TurnLine[]; turnInd
         >
           <span className="w-10 font-mono tabular-nums text-app-text-muted">{line.value}</span>
           <span className={cn('min-w-0 flex-1 truncate text-app-text', i === turnIndex && 'font-semibold')} dir="auto">
-            {line.name}
+            {line.hidden ? t('table.hiddenPlayer', { defaultValue: 'A player' }) : line.name}
           </span>
           {i === turnIndex ? (
             <span className="text-xs font-medium text-app-text">
@@ -233,6 +236,7 @@ function TurnOrderEditor({
   const extras = draft.filter((l) => l.kind === 'extra').length;
   const missing = party.members.filter((m) => !draft.some((l) => l.userId === m.userId));
 
+  const lineName = (l: TurnLine) => (l.hidden ? t('table.hiddenPlayer', { defaultValue: 'A player' }) : l.name);
   const newId = () => Math.random().toString(36).slice(2, 12);
   const setValue = (id: string, value: number) =>
     setDraft((d) =>
@@ -294,11 +298,11 @@ function TurnOrderEditor({
                 value={line.value}
                 min={-PARTY_ORDER_VALUE_MAX}
                 max={PARTY_ORDER_VALUE_MAX}
-                aria-label={t('turn.value', { defaultValue: 'Initiative for {{name}}', name: line.name })}
+                aria-label={t('turn.value', { defaultValue: 'Initiative for {{name}}', name: lineName(line) })}
                 onChange={(e) => setValue(line.id, Math.round(Number(e.target.value) || 0))}
               />
               <span className="min-w-0 flex-1 truncate text-app-text" dir="auto">
-                {line.name}
+                {lineName(line)}
               </span>
               {i === turn ? (
                 <span className="text-xs font-medium text-app-text">
@@ -313,7 +317,7 @@ function TurnOrderEditor({
                 type="button"
                 size="icon"
                 variant="ghost"
-                aria-label={t('turn.roll', { defaultValue: 'Roll initiative for {{name}}', name: line.name })}
+                aria-label={t('turn.roll', { defaultValue: 'Roll initiative for {{name}}', name: lineName(line) })}
                 onClick={() =>
                   setValue(line.id, rollD20({ bonus: line.kind === 'member' ? initiativeOf(line.userId) : 0 }).total)
                 }
@@ -324,7 +328,10 @@ function TurnOrderEditor({
                 type="button"
                 size="icon"
                 variant="ghost"
-                aria-label={t('turn.removeLine', { defaultValue: 'Remove {{name}} from the order', name: line.name })}
+                aria-label={t('turn.removeLine', {
+                  defaultValue: 'Remove {{name}} from the order',
+                  name: lineName(line),
+                })}
                 onClick={() => {
                   setDraft((d) => d.filter((l) => l.id !== line.id));
                   setTurn((c) => (i < c ? c - 1 : c));
@@ -350,6 +357,7 @@ function TurnOrderEditor({
                   userId: m.userId,
                   name: m.summary?.name || m.name,
                   value: 0,
+                  ...(m.hidden ? { hidden: true } : {}),
                 })),
               ])
             }

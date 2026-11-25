@@ -25,6 +25,7 @@ vi.mock('@/lib/bulk/bulk.server', () => ({
   }),
 }));
 vi.mock('@/lib/account/deletion-billing-queue.server', () => ({ enqueueBillingSync: vi.fn(async () => true) }));
+vi.mock('@/lib/db/advisory-lock.server', () => ({ lockKey: vi.fn(async () => undefined) }));
 vi.mock('@/lib/notifications.server', () => ({ createNotification: vi.fn(async () => undefined) }));
 vi.mock('@/lib/admin-audit.server', () => ({ recordAdminActionIn: vi.fn() }));
 vi.mock('@/lib/notify/dispatch.server', () => ({ dispatch: vi.fn() }));
@@ -167,6 +168,21 @@ describe('POST /api/account/delete', () => {
     expect(await res.json()).toMatchObject({ success: true, signOut: true });
     expect(h.scheduleDeletion).toHaveBeenCalledWith('u1');
     expect(h.fake.tables.deletionHold).toHaveLength(1);
+  });
+
+  it('clears the billing done-stamp after the schedule and queues the sync again (s13-18)', async () => {
+    const { enqueueBillingSync } = await import('@/lib/account/deletion-billing-queue.server');
+    const enqueue = vi.mocked(enqueueBillingSync);
+    enqueue.mockClear();
+    // A sync that ran between the pause and the schedule stamped the hold done.
+    h.scheduleDeletion.mockImplementationOnce(async () => {
+      for (const row of h.fake.tables.deletionHold ?? []) row.billingSyncedAt = NOW;
+      return new Date('2026-12-30T00:00:00Z');
+    });
+    const res = await handler();
+    expect(res.status).toBe(200);
+    expect(h.fake.tables.deletionHold?.[0]?.billingSyncedAt).toBeNull();
+    expect(enqueue.mock.calls.map((c) => c[0])).toEqual(['u1', 'u1']);
   });
 
   it('a failing pause step fails the request with 500 and never schedules the deletion', async () => {

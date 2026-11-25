@@ -320,6 +320,25 @@ export const SCOPES: ScopeDetail[] = [
     group: 'RMHCharacters',
     description: 'Read your characters and the summaries of your parties.',
   },
+
+  // Sprint 13
+  // s13-10 api-ladder
+  {
+    id: 'read:ladder',
+    action: 'read',
+    group: 'RMHLadder',
+    description:
+      'Read your RMHLadder applications, their dates and notes, and their timelines. Never offers, pay, resumes or contacts. Not included in `*` or `read:*`, and not in a new key’s default grant: a key must list it itself.',
+    explicit: true,
+  },
+  {
+    id: 'write:ladder',
+    action: 'write',
+    group: 'RMHLadder',
+    description:
+      'Change an application’s status, dates and notes, and add a job you found yourself. Not included in `*` or `write:*`: a key must list it itself.',
+    explicit: true,
+  },
 ];
 
 export const ALL_SCOPES: string[] = SCOPES.map((s) => s.id);
@@ -329,8 +348,11 @@ const SCOPE_BY_ID = new Map(SCOPES.map((s) => [s.id, s]));
 /** The scopes a wildcard or "select all" covers: every catalog scope that is not explicit-only. */
 export const WILDCARD_SCOPES: string[] = SCOPES.filter((s) => !s.explicit).map((s) => s.id);
 
-/** Read-only scopes — the safe default grant for a new key. */
-export const READ_SCOPES: string[] = SCOPES.filter((s) => s.action === 'read').map((s) => s.id);
+/**
+ * Read-only scopes — the safe default grant for a new key. An explicit scope is never in it: a private read
+ * (RMHLadder, s13-10) must be chosen by name, not inherited from the default grant.
+ */
+export const READ_SCOPES: string[] = SCOPES.filter((s) => s.action === 'read' && !s.explicit).map((s) => s.id);
 
 /** Default scopes applied when a key is created without an explicit selection. */
 export const DEFAULT_SCOPES: string[] = [...READ_SCOPES];

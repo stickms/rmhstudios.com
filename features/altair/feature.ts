@@ -19,9 +19,10 @@ export default defineFeature({
     'features/altair/api/altair.run.finish.server.ts',
     'features/altair/api/altair.run.start.server.ts',
     'features/altair/api/altair.run.status.server.ts',
+    'features/altair/api/altair.runs.server.ts',
     'features/altair/api/altair.score.server.ts',
   ],
-  namespaces: ['c-altair', 'r-altair'],
+  namespaces: ['altair-runs', 'c-altair', 'r-altair'],
   catalog: 'features/altair/catalog.ts',
   listed: true,
 });

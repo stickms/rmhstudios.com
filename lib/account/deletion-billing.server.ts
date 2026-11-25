@@ -10,14 +10,21 @@
  *    "stop" and "resume" command: two opposite jobs retrying in the wrong order would leave a returning member's
  *    membership set to end, or resume one for an account being deleted.
  *  - `stopBilling` sets each active subscription to cancel at the period's end (no refund, no proration), reading it
- *    from Stripe first (the webhook-written `Subscription` row can lag) and recording on the `DeletionHold` only the
- *    ids its own `update` flipped. A subscription the member had already set to cancel is never recorded, so a
- *    restore never resumes it.
- *  - `resumeBilling` resumes the recorded ids that Stripe still shows as set to cancel at the period's end and not
- *    ended; one the member cancelled for themselves since is left alone.
+ *    from Stripe first (the webhook-written `Subscription` row can lag). The flip and a metadata marker
+ *    (`rmh_deletion_stop`) go in ONE `update` call, so Stripe holds both or neither, and a crash before the hold
+ *    write cannot strand a subscription: the marker says whose flip it was. The hold records the ids flipped here
+ *    (and any marked one found already ending). A subscription the member had already set to cancel carries no
+ *    marker and is never recorded, so a restore never resumes it.
+ *  - `resumeBilling` resumes the union of the recorded ids and every marked candidate that Stripe still shows as
+ *    live and set to cancel at the period's end, flipping it back and removing the marker in ONE `update`; one the
+ *    member cancelled for themselves carries no marker and is left alone.
  *  - `cancelRemainingBilling` is the erasure pre-step: whatever is still active (listed from Stripe by the member's
  *    customer id as well as from the `Subscription` rows) is cancelled now, with no refund and no final invoice.
  *    It throws on a Stripe error, so an account that is still billed is never erased.
+ *
+ * `DeletionHold.billingSyncedAt` is a done-stamp: the request and the withdrawal null it, `syncBilling` sets it when
+ * it finishes with nothing left to do, and the hourly sweep (`deletion-billing-reconcile.server.ts`) queues the
+ * holds where it is still null.
  *
  * With Stripe unconfigured every step logs and returns. No Stripe key or id is ever logged.
  */
@@ -34,15 +41,30 @@ export interface BillingSubscription {
   status: string;
   cancel_at_period_end: boolean;
   cancel_at?: number | null;
+  metadata?: Record<string, string> | null;
 }
+
+/** The Stripe metadata key a stop writes in the same call that flips the subscription; its value is the hold's time. */
+export const DELETION_STOP_MARKER = 'rmh_deletion_stop';
+/** Subscriptions Stripe lists per page, and how many pages are read: past 1,000 the step throws. */
+const LIST_PAGE_SIZE = 100;
+const LIST_MAX_PAGES = 10;
 
 /** The part of the Stripe client these steps call. Tests pass a fake. */
 export interface BillingStripe {
   subscriptions: {
     retrieve(id: string): Promise<BillingSubscription>;
-    update(id: string, params: { cancel_at_period_end: boolean }): Promise<BillingSubscription>;
+    update(
+      id: string,
+      params: { cancel_at_period_end?: boolean; metadata?: Record<string, string> },
+    ): Promise<BillingSubscription>;
     cancel(id: string, params: { prorate: boolean; invoice_now: boolean }): Promise<BillingSubscription>;
-    list(params: { customer: string; status: 'all'; limit: number }): Promise<{ data: BillingSubscription[] }>;
+    list(params: {
+      customer: string;
+      status: 'all';
+      limit: number;
+      starting_after?: string;
+    }): Promise<{ data: BillingSubscription[]; has_more?: boolean }>;
   };
 }
 
@@ -50,6 +72,16 @@ export interface BillingStripe {
 const LIVE = new Set(['active', 'trialing', 'past_due']);
 /** One that has ended for good cannot be cancelled or resumed. */
 const ENDED = new Set(['canceled', 'incomplete_expired']);
+
+/** The marker value a stop for this hold writes: the hold's `createdAt` in milliseconds. */
+const markerFor = (createdAt: Date): string => String(createdAt.getTime());
+/**
+ * Whether THIS hold's stop flipped the subscription. Only an exact value match counts: a marker an older request
+ * left behind (its resume could not clear it) never makes a later cancellation the member chose look like ours.
+ */
+const isMarkedBy = (sub: BillingSubscription, marker: string | null): boolean =>
+  marker !== null && sub.metadata?.[DELETION_STOP_MARKER] === marker;
+const hasAnyMarker = (sub: BillingSubscription): boolean => !!sub.metadata?.[DELETION_STOP_MARKER];
 
 const defaultStripe = (): BillingStripe => getStripeClient() as unknown as BillingStripe;
 
@@ -78,6 +110,11 @@ async function readMember(userId: string): Promise<MemberBilling | null> {
 }
 
 /** Every Stripe subscription id that may belong to the member: the rows the plugin wrote, and Stripe's own list. */
+async function holdCreatedAt(userId: string): Promise<Date | null> {
+  const hold = await prisma.deletionHold.findUnique({ where: { userId }, select: { createdAt: true } });
+  return hold?.createdAt instanceof Date ? hold.createdAt : null;
+}
+
 async function candidateSubscriptions(
   stripe: BillingStripe,
   userId: string,
@@ -89,8 +126,24 @@ async function candidateSubscriptions(
   });
   const found = new Map<string, BillingSubscription>();
   if (customerId) {
-    const listed = await stripe.subscriptions.list({ customer: customerId, status: 'all', limit: 100 });
-    for (const s of listed.data) found.set(s.id, s);
+    let after: string | undefined;
+    for (let page = 1; ; page += 1) {
+      const listed = await stripe.subscriptions.list({
+        customer: customerId,
+        status: 'all',
+        limit: LIST_PAGE_SIZE,
+        ...(after ? { starting_after: after } : {}),
+      });
+      for (const s of listed.data) found.set(s.id, s);
+      const last = listed.data[listed.data.length - 1];
+      if (!listed.has_more || !last) break;
+      if (page >= LIST_MAX_PAGES) {
+        // Refuse rather than miss one: the job retries and the erasure does not finish.
+        log('too-many-subscriptions', { count: found.size });
+        throw new Error('billing: more subscriptions than the list reads');
+      }
+      after = last.id;
+    }
   }
   for (const row of Array.isArray(rows) ? rows : []) {
     const id = row.stripeSubscriptionId;
@@ -114,14 +167,40 @@ export async function stopBilling(userId: string, stripe: BillingStripe = defaul
   const member = await readMember(userId);
   if (!member || member.erased) return [];
   const subs = await candidateSubscriptions(stripe, userId, member.stripeCustomerId);
+  const toFlip = subs.filter((s) => LIVE.has(s.status) && !s.cancel_at_period_end && !s.cancel_at);
+  // The marker is the hold's `createdAt`, and the hold exists BEFORE the first flip: a crash between Stripe's answer
+  // and the hold write then still leaves a hold the withdrawal keeps and a marker its resume matches.
+  let createdAt = await holdCreatedAt(userId);
+  if (!createdAt && toFlip.length > 0) {
+    await prisma.$transaction(async (tx) => {
+      await lockKey(tx, `deletion-hold:${userId}`);
+      await tx.deletionHold.upsert({
+        where: { userId },
+        create: { userId, keyIds: [], webhookIds: [], subscriptionIds: [], createdAt: new Date() },
+        update: {},
+      });
+    });
+    createdAt = await holdCreatedAt(userId);
+  }
+  const marker = createdAt ? markerFor(createdAt) : null;
 
   const flipped: string[] = [];
   let failures = 0;
   for (const sub of subs) {
+    if (!LIVE.has(sub.status)) continue;
+    // A subscription an earlier, interrupted stop for this hold flipped carries its marker: record it now.
+    if (sub.cancel_at_period_end && isMarkedBy(sub, marker)) {
+      flipped.push(sub.id);
+      continue;
+    }
     // Stripe's word, not the row's: already ending (at the period's end or on a date the member chose) is theirs.
-    if (!LIVE.has(sub.status) || sub.cancel_at_period_end || sub.cancel_at) continue;
+    if (sub.cancel_at_period_end || sub.cancel_at || marker === null) continue;
     try {
-      const updated = await stripe.subscriptions.update(sub.id, { cancel_at_period_end: true });
+      // One call: Stripe holds the flip and the marker together or neither.
+      const updated = await stripe.subscriptions.update(sub.id, {
+        cancel_at_period_end: true,
+        metadata: { [DELETION_STOP_MARKER]: marker },
+      });
       if (updated.cancel_at_period_end) flipped.push(sub.id);
     } catch {
       failures += 1;
@@ -145,22 +224,39 @@ export async function stopBilling(userId: string, stripe: BillingStripe = defaul
   return flipped;
 }
 
-/** Resume what the hold recorded and Stripe still shows as ending, then drop those ids (and the hold when empty). */
+/**
+ * Resume every subscription the stop flipped: the recorded ids, plus any candidate that carries the stop's marker
+ * (a crash before the hold write recorded nothing). Each is read from Stripe first and resumed only while it is live
+ * and still set to cancel at the period's end; the flip back and the marker's removal are one `update`. One the
+ * member cancelled themselves has no marker and is not recorded, so it is never touched. Then the handled ids leave
+ * the hold, and the hold goes when nothing else is in it.
+ */
 export async function resumeBilling(
   userId: string,
   ids: readonly string[],
   stripe: BillingStripe = defaultStripe(),
 ): Promise<string[]> {
+  const member = await readMember(userId);
+  const candidates = await candidateSubscriptions(stripe, userId, member?.stripeCustomerId ?? null);
+  const byId = new Map(candidates.map((c) => [c.id, c]));
+  const createdAt = await holdCreatedAt(userId);
+  const marker = createdAt ? markerFor(createdAt) : null;
+
   const handled: string[] = [];
   const resumed: string[] = [];
   let failures = 0;
+  const act = async (id: string, sub: BillingSubscription) => {
+    if (LIVE.has(sub.status) && sub.cancel_at_period_end) {
+      await stripe.subscriptions.update(id, {
+        cancel_at_period_end: false,
+        metadata: { [DELETION_STOP_MARKER]: '' },
+      });
+      resumed.push(id);
+    }
+  };
   for (const id of ids) {
     try {
-      const sub = await stripe.subscriptions.retrieve(id);
-      if (LIVE.has(sub.status) && sub.cancel_at_period_end) {
-        await stripe.subscriptions.update(id, { cancel_at_period_end: false });
-        resumed.push(id);
-      }
+      await act(id, byId.get(id) ?? (await stripe.subscriptions.retrieve(id)));
       handled.push(id);
     } catch (err) {
       // Gone from Stripe: nothing to resume, and retrying would never clear it from the hold.
@@ -168,22 +264,70 @@ export async function resumeBilling(
       else failures += 1;
     }
   }
+  for (const sub of candidates) {
+    if (ids.includes(sub.id) || !LIVE.has(sub.status)) continue;
+    try {
+      if (sub.cancel_at_period_end) {
+        if (isMarkedBy(sub, marker)) await act(sub.id, sub);
+      } else if (hasAnyMarker(sub)) {
+        // Resumed elsewhere (the dashboard, the portal) while the request was pending: only the marker is removed,
+        // so it cannot later make a cancellation the member chooses look like ours. Nothing else is sent.
+        await stripe.subscriptions.update(sub.id, { metadata: { [DELETION_STOP_MARKER]: '' } });
+      }
+    } catch {
+      failures += 1;
+    }
+  }
 
-  if (handled.length > 0) {
+  // The handled ids always leave the hold; the hold itself goes only after a clean run, because a marked
+  // subscription that failed is not in the id list and the hold is what makes the retry (and the sweep) find it.
+  if (handled.length > 0 || failures === 0) {
     await prisma.$transaction(async (tx) => {
       await lockKey(tx, `deletion-hold:${userId}`);
       const hold = await tx.deletionHold.findUnique({ where: { userId } });
       if (!hold) return;
       const left = hold.subscriptionIds.filter((x) => !handled.includes(x));
-      if (left.length === 0 && hold.keyIds.length === 0 && hold.webhookIds.length === 0) {
+      const again = await tx.user.findUnique({ where: { id: userId }, select: { deletionScheduledAt: true } });
+      const requestedAgain = !!again && again.deletionScheduledAt instanceof Date;
+      if (
+        failures === 0 &&
+        left.length === 0 &&
+        hold.keyIds.length === 0 &&
+        hold.webhookIds.length === 0 &&
+        !requestedAgain
+      ) {
         await tx.deletionHold.deleteMany({ where: { userId } });
-      } else {
+      } else if (left.length !== hold.subscriptionIds.length) {
         await tx.deletionHold.updateMany({ where: { userId }, data: { subscriptionIds: left } });
       }
     });
   }
   if (failures > 0) throw new Error(`billing resume: ${failures} subscription call(s) failed`);
   return resumed;
+}
+
+/** Stamp the hold's done-stamp unconditionally (a no-op when there is no hold): Stripe unconfigured. */
+async function stampSynced(userId: string): Promise<void> {
+  await prisma.deletionHold.updateMany({ where: { userId }, data: { billingSyncedAt: new Date() } });
+}
+
+/**
+ * Stamp the done-stamp only if the member's choice is still the one this run synced. The stamp is written FIRST
+ * (taking the hold row's lock) and the choice read after it, in one transaction: a withdrawal commits its
+ * `deletionScheduledAt` before `restoreAfterCancel` nulls the stamp, and a request's schedule commits before
+ * `markBillingPending` nulls it, so either that null lands after this stamp, or the read here already sees the new
+ * choice and takes the stamp back. Resolves to false when it took it back (the caller queues another run).
+ */
+async function stampIfStill(userId: string, wasScheduled: boolean): Promise<boolean> {
+  return prisma.$transaction(async (tx) => {
+    await lockKey(tx, `deletion-hold:${userId}`);
+    const { count } = await tx.deletionHold.updateMany({ where: { userId }, data: { billingSyncedAt: new Date() } });
+    if (count === 0) return true;
+    const now = await tx.user.findUnique({ where: { id: userId }, select: { deletionScheduledAt: true } });
+    if (!now || now.deletionScheduledAt instanceof Date === wasScheduled) return true;
+    await tx.deletionHold.updateMany({ where: { userId }, data: { billingSyncedAt: null } });
+    return false;
+  });
 }
 
 export type BillingSyncOutcome = 'unconfigured' | 'skipped' | 'stopped' | 'resumed' | 'requeued';
@@ -198,6 +342,8 @@ export async function syncBilling(
 ): Promise<BillingSyncOutcome> {
   if (!stripeConfigured()) {
     log('unconfigured');
+    // Nothing will ever be left to do here, so the sweep does not queue this member every hour.
+    await stampSynced(userId);
     return 'unconfigured';
   }
   const member = await readMember(userId);
@@ -210,9 +356,11 @@ export async function syncBilling(
     await stopBilling(userId, stripe);
     outcome = 'stopped';
   } else {
+    // No hold means no request was ever recorded (or the resume already finished): nothing to undo, no Stripe call.
+    // A hold with an empty id list still resumes: a stop that crashed before recording left only the marker.
     const hold = await prisma.deletionHold.findUnique({ where: { userId } });
-    const ids = hold && Array.isArray(hold.subscriptionIds) ? hold.subscriptionIds : [];
-    if (ids.length === 0) return 'skipped';
+    if (!hold) return 'skipped';
+    const ids = Array.isArray(hold.subscriptionIds) ? hold.subscriptionIds : [];
     await resumeBilling(userId, ids, stripe);
     outcome = 'resumed';
   }
@@ -220,6 +368,10 @@ export async function syncBilling(
   // The member may have changed their mind while Stripe was being called: the latest choice wins.
   const after = await readMember(userId);
   if (after && !after.erased && (after.deletionScheduledAt !== null) !== wasScheduled) {
+    await (deps.enqueue ?? enqueueBillingSync)(userId);
+    return 'requeued';
+  }
+  if (!(await stampIfStill(userId, wasScheduled))) {
     await (deps.enqueue ?? enqueueBillingSync)(userId);
     return 'requeued';
   }

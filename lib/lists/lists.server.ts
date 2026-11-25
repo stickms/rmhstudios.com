@@ -7,6 +7,8 @@
  */
 import { previewTextFor } from '@/lib/feed/content-warning';
 import { prisma } from '@/lib/prisma.server';
+import { lockKey } from '@/lib/db/advisory-lock.server';
+import { isDeletedAccount } from '@/lib/account-lifecycle';
 import {
   feedSourceSelect,
   readFeedPage,
@@ -18,6 +20,23 @@ import { resolveUser, userDisplaySelect, type ResolvedUser } from '@/lib/user-di
 import { MAX_LISTS, MAX_MEMBERS, MAX_PINNED, type ListView } from '@/lib/lists/constants';
 
 export class ListError extends Error {}
+
+/** The lock a list's membership writes take: the cap, the leave check and the block check all happen under it. */
+export const listMembersLockKey = (listId: string) => `list-members:${listId}`;
+
+/** An account nobody may add to a list: erased, with a deletion scheduled, or banned now. */
+function unaddableAccount(u: {
+  id?: string;
+  banReason?: string | null;
+  bannedUntil?: Date | null;
+  deletionScheduledAt?: Date | null;
+}): boolean {
+  return (
+    isDeletedAccount(u) ||
+    u.deletionScheduledAt != null ||
+    (u.bannedUntil != null && u.bannedUntil.getTime() > Date.now())
+  );
+}
 
 export async function getUserLists(
   ownerId: string,
@@ -110,27 +129,54 @@ export async function deleteList(ownerId: string, listId: string): Promise<void>
   if (res.count === 0) throw new ListError('NOT_FOUND');
 }
 
+/**
+ * Add a member (the owner's write). The leave, block, ban and deletion checks and the cap all run inside one
+ * transaction under the list's membership lock, so a block or a leave that committed first always wins. Every reason
+ * for a refusal is the one `MEMBER_REFUSED`, so a refusal reveals nothing about which it was.
+ */
 export async function addMember(ownerId: string, listId: string, userId: string): Promise<void> {
   const list = await prisma.customFeed.findFirst({
     where: { id: listId, ownerId, kind: 'list' },
     select: { id: true },
   });
   if (!list) throw new ListError('NOT_FOUND');
-  const count = await prisma.customFeedMember.count({ where: { feedId: listId } });
-  if (count >= MAX_MEMBERS) throw new ListError('MEMBER_LIMIT');
-  await prisma.customFeedMember.upsert({
-    where: { feedId_userId: { feedId: listId, userId } },
-    create: { feedId: listId, userId },
-    update: {},
+  await prisma.$transaction(async (tx) => {
+    await lockKey(tx, listMembersLockKey(listId));
+    const left = await tx.listLeave.findUnique({
+      where: { feedId_userId: { feedId: listId, userId } },
+      select: { userId: true },
+    });
+    const block = await tx.userBlock.findFirst({
+      where: {
+        OR: [
+          { blockerId: ownerId, blockedId: userId },
+          { blockerId: userId, blockedId: ownerId },
+        ],
+      },
+      select: { id: true },
+    });
+    const user = await tx.user.findUnique({
+      where: { id: userId },
+      select: { id: true, banReason: true, bannedUntil: true, deletionScheduledAt: true },
+    });
+    if (left || block || !user || unaddableAccount(user)) throw new ListError('MEMBER_REFUSED');
+    const count = await tx.customFeedMember.count({ where: { feedId: listId } });
+    if (count >= MAX_MEMBERS) throw new ListError('MEMBER_LIMIT');
+    await tx.customFeedMember.upsert({
+      where: { feedId_userId: { feedId: listId, userId } },
+      create: { feedId: listId, userId },
+      update: {},
+    });
   });
 }
 
 /**
  * Replace a list's members with exactly `userIds` (the developer API's one list write). Ownership and kind are
- * checked here, the cap applies to the whole set, and `setFeedPeople` does the delete-and-insert. Who may be a
- * member (blocks, bans, deleted accounts) is the caller's decision: this only stores the ids it is given.
+ * checked here, the cap applies to the whole set, and `setFeedPeople` does the delete-and-insert. Members who left
+ * the list are dropped under the membership lock and returned (the caller reports them); who else may be a member
+ * (blocks, bans, deleted accounts) is the caller's decision: this only stores the ids it is given.
  */
-export async function replaceListMembers(ownerId: string, listId: string, userIds: string[]): Promise<void> {
+export async function replaceListMembers(ownerId: string, listId: string, userIds: string[]): Promise<string[]> {
   const list = await prisma.customFeed.findFirst({
     where: { id: listId, ownerId, kind: 'list' },
     select: { id: true },
@@ -138,7 +184,19 @@ export async function replaceListMembers(ownerId: string, listId: string, userId
   if (!list) throw new ListError('NOT_FOUND');
   const unique = [...new Set(userIds)];
   if (unique.length > MAX_MEMBERS) throw new ListError('MEMBER_LIMIT');
-  await setFeedPeople(listId, unique);
+  return prisma.$transaction(async (tx) => {
+    await lockKey(tx, listMembersLockKey(listId));
+    const left = unique.length
+      ? await tx.listLeave.findMany({ where: { feedId: listId, userId: { in: unique } }, select: { userId: true } })
+      : [];
+    const gone = new Set(left.map((l) => l.userId));
+    await setFeedPeople(
+      listId,
+      unique.filter((id) => !gone.has(id)),
+      tx,
+    );
+    return [...gone];
+  });
 }
 
 /** Remove a member. The list owner may remove anyone; a member may remove themselves. */
@@ -197,21 +255,6 @@ export async function getListDetail(
     },
     members: memberRows.map((m) => resolveUser(m.user)),
   };
-}
-
-export async function listsUserIsOn(
-  userId: string,
-): Promise<{ id: string; name: string; ownerHandle: string | null }[]> {
-  const rows = await prisma.customFeedMember.findMany({
-    where: { userId, feed: { kind: 'list' } },
-    select: { feed: { select: { id: true, name: true, owner: { select: { handle: true } } } } },
-    take: 100,
-  });
-  return rows.map((r) => ({
-    id: r.feed.id,
-    name: r.feed.name,
-    ownerHandle: r.feed.owner?.handle ?? null,
-  }));
 }
 
 export interface ListTimelinePost {

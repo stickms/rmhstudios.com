@@ -232,6 +232,7 @@ export function MessageRow({
                       content: msg.content,
                       createdAt: msg.createdAt,
                       deletedAt: msg.deletedAt ?? null,
+                      kind: msg.kind,
                     }}
                     viewerId={viewerId}
                     onEdit={() => setEditingId(msg.id)}

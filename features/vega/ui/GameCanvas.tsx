@@ -12,16 +12,19 @@ import { readJson, readString, removeKey, writeJson, writeString } from '@/lib/c
 import { motionStill } from '@/lib/appearance/prefs';
 import { useSession } from '@/components/session/session-context';
 import { useGameSession } from '@/hooks/useGameSession';
+import { useAssistRun } from '@/components/games/assist-run-island';
 import { submitVegaScoreApi } from '@features/vega/engine/vega.contract';
 import { getVegaLeaderboardApi } from '@/lib/game/leaderboard.contract';
 import { VegaGame } from '@features/vega/engine/VegaGame';
 import { useGameStore, type EndResult } from '@features/vega/engine/GameState';
+import { vegaAssistFlags, type VegaAssistFlags } from '@features/vega/engine/assist-profile';
 import { initialTutorial, TUTORIAL_KEY } from '@features/vega/engine/tutorial';
 import type { MapId } from '@features/vega/engine/data';
 import type { RunSave } from '@features/vega/engine/Simulation';
 import { GameCtx, SidePanel, TopBar } from './Hud';
 import { CaseLog, DossierCard, ManualDialog, PauseDialog, TutorialCard, VictoryDialog } from './Overlays';
 import { Menu, type BoardRow } from './Menu';
+import { PausedStrip, RunAssistBanner } from './AssistBits';
 import { EndScreen, type SubmitState } from './EndScreen';
 import { playSfx, setSfxVolume, unlockSfx } from './sfx';
 
@@ -47,13 +50,24 @@ export default function GameCanvas() {
   const victoryOpen = useGameStore((s) => s.victoryOpen);
   const tutorialStep = useGameStore((s) => s.tutorial.step);
   const result = useGameStore((s) => s.result);
+  const assist = useGameStore((s) => s.assist);
 
   const gameRef = useRef<VegaGame | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [save, setSave] = useState<RunSave | null>(null);
-  const [run, setRun] = useState<{ key: number; map: MapId; seed: number; save: RunSave | null } | null>(null);
+  const [run, setRun] = useState<{
+    key: number;
+    map: MapId;
+    seed: number;
+    save: RunSave | null;
+    assist: VegaAssistFlags;
+  } | null>(null);
+  // The server's answer on whether the finished run reached the board (null: unknown or not submitted).
+  const [ranked, setRanked] = useState<boolean | null>(null);
+  const starting = useRef(false);
+  const claimRun = useAssistRun('vega', !!session.data);
   const [submit, setSubmit] = useState<SubmitState>('idle');
   const [muted, setMuted] = useState(false);
   const [track, setTrack] = useState(1);
@@ -98,19 +112,36 @@ export default function GameCanvas() {
     if (a && a.paused && !muted) a.play().catch(() => {});
   }, [muted]);
 
+  // The run's profile comes from the server's claim, once, before the board mounts. Any failure is the plain game
+  // (the server still unranks on submit).
   const begin = useCallback(
-    (map: MapId, from: RunSave | null, tutorial: boolean) => {
-      const store = useGameStore.getState();
-      store.resetRun();
-      store.setMap(from?.map ?? map);
-      const done = readString(TUTORIAL_KEY) === '1';
-      store.setTutorial(tutorial ? initialTutorial(false) : initialTutorial(done || !!from));
-      setSubmit('idle');
-      setRun({ key: Date.now(), map: from?.map ?? map, seed: from?.seed ?? (Math.random() * 2 ** 31) | 0, save: from });
-      store.setScreen('play');
-      startMusic();
+    async (map: MapId, from: RunSave | null, tutorial: boolean) => {
+      if (starting.current) return;
+      starting.current = true;
+      try {
+        const flags = vegaAssistFlags(await claimRun());
+        const store = useGameStore.getState();
+        store.resetRun();
+        store.setAssist(flags);
+        store.setMap(from?.map ?? map);
+        const done = readString(TUTORIAL_KEY) === '1';
+        store.setTutorial(tutorial ? initialTutorial(false) : initialTutorial(done || !!from));
+        setSubmit('idle');
+        setRanked(null);
+        setRun({
+          key: Date.now(),
+          map: from?.map ?? map,
+          seed: from?.seed ?? (Math.random() * 2 ** 31) | 0,
+          save: from,
+          assist: flags,
+        });
+        store.setScreen('play');
+        startMusic();
+      } finally {
+        starting.current = false;
+      }
     },
-    [startMusic],
+    [claimRun, startMusic],
   );
 
   const finishTutorial = useCallback(() => {
@@ -145,7 +176,8 @@ export default function GameCanvas() {
             },
           },
         });
-        setSubmit(res.isRecord ? 'record' : 'saved');
+        setRanked(res.ranked);
+        setSubmit(res.ranked === false ? 'saved' : res.isRecord ? 'record' : 'saved');
         setBoardKey((k) => k + 1);
       } catch (e) {
         setSubmit(e instanceof HttpError ? 'refused' : 'offline');
@@ -161,6 +193,7 @@ export default function GameCanvas() {
       map: run.map,
       seed: run.seed,
       save: run.save,
+      assist: run.assist,
       container: boardRef.current,
       still: () => motionStill(),
       sfx: playSfx,
@@ -217,9 +250,9 @@ export default function GameCanvas() {
           <Menu
             save={save}
             board={board}
-            onStart={(m) => begin(m, null, false)}
-            onResume={() => save && begin(save.map, save, false)}
-            onTutorial={() => begin('intake', null, true)}
+            onStart={(m) => void begin(m, null, false)}
+            onResume={() => save && void begin(save.map, save, false)}
+            onTutorial={() => void begin('intake', null, true)}
           />
         )}
 
@@ -240,12 +273,22 @@ export default function GameCanvas() {
                       })}
                       onFocus={() => gameRef.current?.focusCursor()}
                     />
+                    <RunAssistBanner />
                     {tutorialStep !== 'done' && <TutorialCard bench={bench} onFinish={finishTutorial} />}
                   </div>
                   <DossierCard />
                   <CaseLog />
                 </div>
-                {paused && !manualOpen && (
+                {paused && !manualOpen && assist.pauseAnywhere && (
+                  <PausedStrip
+                    onQuit={quitToMenu}
+                    onAbandon={() => {
+                      useGameStore.getState().setPaused(false);
+                      gameRef.current?.abandon();
+                    }}
+                  />
+                )}
+                {paused && !manualOpen && !assist.pauseAnywhere && (
                   <PauseDialog
                     onQuit={quitToMenu}
                     onAbandon={() => {
@@ -264,7 +307,15 @@ export default function GameCanvas() {
         )}
 
         {screen === 'end' && result && (
-          <EndScreen result={result} submit={submit} board={board} onAgain={() => begin(result.map, null, false)} onMenu={quitToMenu} />
+          <EndScreen
+            result={result}
+            submit={submit}
+            ranked={ranked}
+            assisted={assist.active}
+            board={board}
+            onAgain={() => void begin(result.map, null, false)}
+            onMenu={quitToMenu}
+          />
         )}
 
         {manualOpen && (

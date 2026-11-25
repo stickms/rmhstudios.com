@@ -1,6 +1,8 @@
 import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState, useCallback, useRef } from'react';
 import { useTranslation } from'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
+import { RankedStanding, RANKED_STANDING_QUERY_KEY } from './RankedStanding';
 import { Swords, Trophy, Check, X, Flag } from'lucide-react';
 import { Button } from'@/components/ui/button';
 import { EmptyState } from'@/components/ui/empty-state';
@@ -94,6 +96,7 @@ export function RankedColumn({
 
  const { t } = useTranslation('feed');
  const refusalText = useRefusalText();
+ const queryClient = useQueryClient();
 
  // Challenge form
  const [game, setGame] = useState(initialData?.games?.[0]?.id ??'');
@@ -194,6 +197,8 @@ export function RankedColumn({
  if (message) toast.error(message);
  return;
  }
+ // A reported result moves ratings and places: read the standing again.
+ if (body.action ==='report') void queryClient.invalidateQueries({ queryKey: RANKED_STANDING_QUERY_KEY });
  await load();
  } finally {
  setBusy(null);
@@ -369,6 +374,8 @@ export function RankedColumn({
  )}
  </>
  )}
+
+ <RankedStanding signedIn={signedIn} />
 
  {/* Leaderboard */}
  <section>

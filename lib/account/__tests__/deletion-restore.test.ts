@@ -10,6 +10,7 @@ import { DELETION_REQUESTED, planRestore } from '@/lib/account/deletion-hold';
 const h = vi.hoisted(() => ({
   fake: null as unknown as ReturnType<typeof import('./deletion-hold-fake-db').makeDb>,
   notices: [] as Record<string, unknown>[],
+  queued: [] as string[],
 }));
 
 vi.mock('@/lib/prisma.server', () => ({
@@ -17,7 +18,12 @@ vi.mock('@/lib/prisma.server', () => ({
     return h.fake.db;
   },
 }));
-vi.mock('@/lib/account/deletion-billing-queue.server', () => ({ enqueueBillingSync: vi.fn(async () => true) }));
+vi.mock('@/lib/account/deletion-billing-queue.server', () => ({
+  enqueueBillingSync: vi.fn(async (userId: string) => {
+    h.queued.push(userId);
+    return true;
+  }),
+}));
 vi.mock('@/lib/notifications.server', () => ({
   createNotification: vi.fn(async (n: Record<string, unknown>) => {
     h.notices.push(n);
@@ -25,7 +31,7 @@ vi.mock('@/lib/notifications.server', () => ({
 }));
 vi.mock('@/lib/auth/security-log.server', () => ({ recordSecurityEvent: vi.fn(async () => undefined) }));
 
-import { restoreAfterCancel } from '@/lib/account/deletion-hold.server';
+import { pauseForDeletion, restoreAfterCancel } from '@/lib/account/deletion-hold.server';
 import { cancelDeletion } from '@/lib/account/deletion.server';
 
 const HOLD_AT = new Date('2026-11-30T12:00:00Z');
@@ -74,6 +80,7 @@ function seed(extra: Record<string, Record<string, unknown>[]> = {}) {
 beforeEach(() => {
   h.fake = seed();
   h.notices.length = 0;
+  h.queued.length = 0;
 });
 
 const byId = (name: string) => Object.fromEntries((h.fake.tables[name] ?? []).map((r) => [r.id as string, r]));
@@ -104,9 +111,34 @@ describe('restoreAfterCancel', () => {
     expect((hookWrite?.args.where as { id: { in: string[] } }).id.in).toEqual(['w-mine']);
   });
 
-  it('deletes the hold', async () => {
+  it('keeps the hold for the billing sync, clears its keys and webhooks, nulls the done-stamp and queues the sync', async () => {
+    h.fake.tables.deletionHold![0]!.billingSyncedAt = HOLD_AT;
     await restoreAfterCancel('u1', NOW);
-    expect(h.fake.tables.deletionHold).toEqual([]);
+    expect(h.fake.tables.deletionHold).toEqual([
+      { userId: 'u1', keyIds: [], webhookIds: [], createdAt: HOLD_AT, billingSyncedAt: null },
+    ]);
+    expect(h.queued).toEqual(['u1']);
+  });
+
+  it('keeps the hold and queues the sync even with no recorded subscription ids', async () => {
+    h.fake = makeDb({
+      deletionHold: [{ userId: 'u1', keyIds: [], webhookIds: [], subscriptionIds: [], createdAt: HOLD_AT }],
+    });
+    await restoreAfterCancel('u1', NOW);
+    expect(h.fake.tables.deletionHold).toHaveLength(1);
+    expect(h.queued).toEqual(['u1']);
+  });
+
+  it('a request nulls the done-stamp in the same write that records the hold, new hold or existing', async () => {
+    h.fake = makeDb({ user: [{ id: 'u1' }] });
+    await pauseForDeletion('u1', NOW);
+    expect(h.fake.tables.deletionHold).toEqual([
+      { subscriptionIds: [], userId: 'u1', keyIds: [], webhookIds: [], createdAt: NOW, billingSyncedAt: null },
+    ]);
+    h.fake.tables.deletionHold![0]!.billingSyncedAt = NOW;
+    await pauseForDeletion('u1', NOW);
+    expect(h.fake.tables.deletionHold![0]!.billingSyncedAt).toBeNull();
+    expect(h.queued).toEqual(['u1', 'u1']);
   });
 
   it('does nothing without a hold', async () => {
@@ -160,7 +192,7 @@ describe('cancelDeletion', () => {
     h.fake.tables.user = [{ id: 'u1', deletionScheduledAt: new Date('2026-12-30'), banReason: null }];
     expect(await cancelDeletion('u1')).toBe(true);
     expect(byId('developerApiKey')['k-mine']).toMatchObject({ suspendedAt: null });
-    expect(h.fake.tables.deletionHold).toEqual([]);
+    expect(h.fake.tables.deletionHold).toMatchObject([{ keyIds: [], webhookIds: [], billingSyncedAt: null }]);
 
     // Not scheduled: nothing to cancel, and a hold for a key that is no longer as the hold left it is cleared
     // without lifting anything.
@@ -178,7 +210,7 @@ describe('cancelDeletion', () => {
     expect(h.fake.tables.deletionHold).toHaveLength(1);
     // The deletion is no longer pending; the next sign-in finishes the restore.
     expect(await cancelDeletion('u1')).toBe(false);
-    expect(h.fake.tables.deletionHold).toEqual([]);
+    expect(h.fake.tables.deletionHold).toMatchObject([{ keyIds: [], webhookIds: [] }]);
     expect(byId('developerApiKey')['k-mine']).toMatchObject({ suspendedAt: null });
   });
 

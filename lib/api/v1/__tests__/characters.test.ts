@@ -49,6 +49,9 @@ const chip = (id: string) => ({ id, name: `Name ${id}`, handle: id, image: null 
 
 vi.mock('@/lib/prisma.server', () => ({
   prisma: {
+    // The party gate (`partyAccess`, `hiddenFrom`): nobody is banned or blocked in these tests.
+    user: { findUnique: vi.fn(async () => ({ bannedUntil: null })) },
+    userBlock: { findFirst: vi.fn(async () => null), findMany: vi.fn(async () => []) },
     rmhCharacter: {
       findMany: vi.fn(async (a: { where: Row; take?: number }) => {
         calls.characterWheres.push(a.where);

@@ -51,6 +51,22 @@ export const REPORT_ENTITY_TYPES = [
   'study-deck',
   'persona',
   'home-listing',
+
+  // Sprint 13 (docs/autonomous/sprint-13/plan.md §Anchors)
+  // s13-06 tube-chat-reports
+  // A message in an RMHTube room (the `RmhTubeChatMessage` id); only a member of the room may report it.
+  'tube-chat',
+
+  // s13-15 rideshare-safety
+  // A trip (the `Ride` id); only its rider or driver may report it, about the other party. Not removable.
+  'ride',
+
+  // s13-16 pack-reports
+  // A member's RMHBox prompt pack (the `RmhboxPack` id); a removal hides it for good (`moderatedAt`).
+  'rmhbox-pack',
+
+  // s13-17 dm-reports
+  // `dm` (above) is a message in a direct or group conversation; it is now filed from the message menu.
 ] as const;
 export type ReportEntityType = (typeof REPORT_ENTITY_TYPES)[number];
 
@@ -93,6 +109,18 @@ export const REMOVABLE_REPORT_ENTITY_TYPES: readonly ReportEntityType[] = [
   'study-deck',
   'persona',
   'home-listing',
+
+  // Sprint 13 (docs/autonomous/sprint-13/plan.md §Anchors)
+  // s13-06 tube-chat-reports
+  'tube-chat',
+
+  // s13-15 rideshare-safety
+
+  // s13-16 pack-reports
+  'rmhbox-pack',
+
+  // s13-17 dm-reports
+  'dm',
 ];
 
 /**

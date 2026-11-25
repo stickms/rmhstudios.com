@@ -46,6 +46,7 @@ import {
   UE_EDIT_TIMEOUT_SECONDS,
 } from './constants';
 import { RANKING_FILE_SETTINGS } from './ranking-file/settings';
+import { SEQUENCE_SAM_SETTINGS } from './sequence-sam/settings';
 
 // ─── Per-Minigame Settings Schemas ───────────────────────────────
 
@@ -652,21 +653,22 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
     tags: ['trivia', 'ranking'],
     settingsSchema: RANKING_FILE_SETTINGS,
   },
-  // 'sequence-sam': {
-  //   id: 'sequence-sam',
-  //   displayName: 'Sequence Sam',
-  //   description: 'Memorize and replicate increasingly complex sequences.',
-  //   category: 'action',
-  //   icon: '🧠',
-  //   minPlayers: 2,
-  //   maxPlayers: 10,
-  //   estimatedDurationSeconds: 120,
-  //   supportsTeams: false,
-  //   instructionDurationSeconds: 15,
-  //   preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
-  //   joinInProgressPolicy: 'spectate_only',
-  //   tags: ['action', 'memory'],
-  // },
+  'sequence-sam': {
+    id: 'sequence-sam',
+    displayName: 'Sequence Sam',
+    description: 'Watch four pads light up in order, then play the sequence back. Each round adds one step.',
+    category: 'action',
+    icon: 'grid-2x2',
+    minPlayers: 2,
+    maxPlayers: 10,
+    estimatedDurationSeconds: 240,
+    supportsTeams: false,
+    instructionDurationSeconds: 15,
+    preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
+    joinInProgressPolicy: 'spectate_only',
+    tags: ['action', 'memory'],
+    settingsSchema: SEQUENCE_SAM_SETTINGS,
+  },
   // 'human-keyboard': {
   //   id: 'human-keyboard',
   //   displayName: 'Human Keyboard',

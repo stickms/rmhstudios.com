@@ -157,8 +157,19 @@ describe('the honesty rule', () => {
       'neon-driftway',
       'nightrail',
       'synapse-storm',
+      'vega',
       'void-breaker',
     ]);
+  });
+
+  it('Vega honours four of the five settings (it has no held input) and claims all four features', () => {
+    expect(HONOURED_SETTINGS.vega).toEqual(['speedFloor', 'calmVisuals', 'colorSafe', 'noTimedInput']);
+    expect(GAME_CAPABILITIES.vega?.accessibility).toEqual(
+      expect.arrayContaining(['assist-mode', 'reduced-flashing', 'colorblind-safe', 'no-timed-input']),
+    );
+    // Hold to press alone costs a Vega player nothing: the run stays ranked.
+    expect(profileFor('vega', { ...ASSIST_DEFAULTS, holdToPress: true }).ranked).toBe(true);
+    expect(profileFor('vega', { ...ASSIST_DEFAULTS, speedFloor: 0.5 }).ranked).toBe(false);
   });
 
   it('every adopting game is a real game in the catalog', () => {

@@ -2,6 +2,7 @@
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { AdminQueueUser } from '@/lib/admin/admin-ops.contract';
+import type { DmReportView } from '@/lib/messages/dm-report';
 import type { GroupReliability, ReasonCount, ReporterTally } from '@/lib/moderation/triage';
 import type { decideGroupsBody, triageQuery } from '@/lib/moderation/triage-schema';
 
@@ -27,6 +28,8 @@ export interface ReportGroupRow {
   lastAt: string;
   /** A snippet of the reported post or reply; null for kinds with nothing safe to show. */
   preview: string | null;
+  /** s13-17: a reported message with its earlier versions; absent for every other kind. */
+  dm?: DmReportView | null;
   targetUser: AdminQueueUser | null;
   /** s03-04: moderator notes on the reported member (0 when there is no member). */
   targetNoteCount: number;

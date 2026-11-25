@@ -5,10 +5,12 @@ import type { JobActionValue } from '@/lib/rmhladder/server/actions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { InterviewReports } from './InterviewReports';
+import { OwnJobControls } from './OwnJobControls';
 import { PayBadge } from './PayBadge';
 import { RungMeter } from './RungMeter';
 import { formatRelativeTime } from '@/lib/i18n/relative-time';
 import { safeExternalUrl, sourceDomain, trackApplyClick } from './url';
+import { isOwnJob } from '@/lib/rmhladder/own-jobs';
 
 type JobDetailRow = Record<string, unknown>;
 
@@ -16,10 +18,16 @@ export function JobDetail({
   job,
   isAuthenticated,
   onAction,
+  onOwnJobChanged,
+  onOwnJobDeleted,
 }: {
   job: JobDetailRow;
   isAuthenticated: boolean;
   onAction: (action: JobActionValue) => Promise<void>;
+  /** After the owner edits their own job (the page reloads its data). */
+  onOwnJobChanged?: () => void;
+  /** After the owner deletes their own job (the page leaves). */
+  onOwnJobDeleted?: () => void;
 }) {
   const { t, i18n } = useTranslation('site');
   const company = job.company as {
@@ -34,9 +42,12 @@ export function JobDetail({
         status?: string;
       } | null
     )?.status ?? null;
+  // A job the member added themselves: no verification, no relevance score, no interview reports, no save or ignore.
+  const own = isOwnJob(job);
   const applyUrl = safeExternalUrl(job.originalPostingUrl);
   const location =
     [job.city, job.state].filter(Boolean).join(', ') ||
+    (typeof job.locationRaw === 'string' && job.locationRaw ? job.locationRaw : '') ||
     t('ladder.locationMissing', {
       defaultValue: 'Location not listed',
     });
@@ -46,7 +57,7 @@ export function JobDetail({
   const verificationCheckedAt = verification?.checkedAt as Date | string | undefined;
   const summary = typeof job.descriptionSummary === 'string' ? job.descriptionSummary : null;
 
-  const trackingActions = [
+  const allTrackingActions = [
     {
       value: 'saved' as const,
       label: t('ladder.save', {
@@ -75,22 +86,35 @@ export function JobDetail({
     },
   ];
 
+  const trackingActions = own ? allTrackingActions.filter((action) => action.value === 'applied') : allTrackingActions;
+
   return (
     <div className="max-w-3xl space-y-4">
       <div className="flex flex-col gap-5 py-5 text-site-text sm:py-6">
         <div className="grid items-start gap-4 px-5 sm:px-6">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="success">
-              <ShieldCheck aria-hidden />
-              {t('ladder.verifiedRole', {
-                defaultValue: 'Verified role',
-              })}
-            </Badge>
+            {own ? (
+              <OwnJobControls
+                job={job}
+                ownJobCount={0}
+                onChanged={() => onOwnJobChanged?.()}
+                onDeleted={() => onOwnJobDeleted?.()}
+              />
+            ) : (
+              <Badge variant="success">
+                <ShieldCheck aria-hidden />
+                {t('ladder.verifiedRole', {
+                  defaultValue: 'Verified role',
+                })}
+              </Badge>
+            )}
             {programType && <Badge variant="default">{programType.replaceAll('_', ' ')}</Badge>}
           </div>
           <div>
-            <div className="text-xl leading-snug font-semibold tracking-tight sm:text-2xl">{job.title as string}</div>
-            <p className="mt-2 font-medium text-site-text-muted">
+            <div className="text-xl leading-snug font-semibold tracking-tight sm:text-2xl" dir="auto">
+              {job.title as string}
+            </div>
+            <p className="mt-2 font-medium text-site-text-muted" dir="auto">
               {company?.name ??
                 t('ladder.unknownCompany', {
                   defaultValue: 'Unknown company',
@@ -105,20 +129,22 @@ export function JobDetail({
         </div>
 
         <div className="space-y-6 px-5 sm:px-6">
-          <section aria-labelledby="ladder-match-heading" className="surface-field rounded-site-sm p-4">
-            <h2 id="ladder-match-heading" className="site-section-label">
-              {t('ladder.roleRelevance', {
-                defaultValue: 'Role relevance',
-              })}
-            </h2>
-            <div className="mt-3 flex items-center gap-3">
-              <RungMeter score={score} size="lg" />
-              <span className="font-mono text-sm text-site-text">
-                {score}
-                /100
-              </span>
-            </div>
-          </section>
+          {!own && (
+            <section aria-labelledby="ladder-match-heading" className="surface-field rounded-site-sm p-4">
+              <h2 id="ladder-match-heading" className="site-section-label">
+                {t('ladder.roleRelevance', {
+                  defaultValue: 'Role relevance',
+                })}
+              </h2>
+              <div className="mt-3 flex items-center gap-3">
+                <RungMeter score={score} size="lg" />
+                <span className="font-mono text-sm text-site-text">
+                  {score}
+                  /100
+                </span>
+              </div>
+            </section>
+          )}
 
           {verification && (
             <section aria-labelledby="ladder-verification-heading">
@@ -151,24 +177,25 @@ export function JobDetail({
               <p className="mt-2 whitespace-pre-line text-sm leading-7 text-site-text-muted">{summary}</p>
             </section>
           )}
-          {(
-            company as {
-              id?: string;
-            } | null
-          )?.id && (
-            <InterviewReports
-              companyId={
-                (
-                  company as {
-                    id: string;
-                  }
-                ).id
-              }
-              companyName={company?.name ?? ''}
-              roleTitle={job.title as string}
-              isAuthenticated={isAuthenticated}
-            />
-          )}
+          {!own &&
+            (
+              company as {
+                id?: string;
+              } | null
+            )?.id && (
+              <InterviewReports
+                companyId={
+                  (
+                    company as {
+                      id: string;
+                    }
+                  ).id
+                }
+                companyName={company?.name ?? ''}
+                roleTitle={job.title as string}
+                isAuthenticated={isAuthenticated}
+              />
+            )}
         </div>
 
         <div className="flex flex-col items-stretch gap-3 border-t border-site-border px-5 pt-5 sm:flex-row sm:items-center sm:px-6 sm:pt-6">
@@ -187,6 +214,8 @@ export function JobDetail({
                 <ExternalLink aria-hidden />
               </a>
             </Button>
+          ) : own ? (
+            <span className="sm:mr-auto" />
           ) : (
             <p className="text-sm text-site-danger sm:mr-auto">
               {t('ladder.applyUnavailable', {

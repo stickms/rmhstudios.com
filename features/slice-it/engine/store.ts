@@ -192,6 +192,12 @@ interface SliceItState {
    * for a reason the player cannot see.
    */
   selectedChartId: string | null;
+  /**
+   * The chart the current run is playing, or `null` when it plays the generated one. Set by `startRun` once it has
+   * loaded a picked chart's notes; the results screen names it, and the run summary carries its id and note count.
+   * A `draft` is the author's playtest of their own chart: never submitted.
+   */
+  playingChart: PlayingChart | null;
   score: number;
   combo: number;
   maxCombo: number;
@@ -268,6 +274,7 @@ interface SliceItState {
   setNowPlaying: (nowPlaying: NowPlaying | null) => void;
   setRunToken: (token: string | null) => void;
   setSelectedChartId: (chartId: string | null) => void;
+  setPlayingChart: (chart: PlayingChart | null) => void;
   setScore: (score: number, combo: number, multiplier?: number) => void;
   setMaxCombo: (maxCombo: number) => void;
   setAccuracy: (accuracy: number) => void;
@@ -302,6 +309,16 @@ interface SliceItState {
   resetMultiplayer: () => void;
 }
 
+/** A picked chart the run is playing instead of the song's generated one. */
+export interface PlayingChart {
+  id: string;
+  name: string;
+  /** `public` or `ranked` for a published chart; `draft` for the author's own, played as a playtest. */
+  status: string;
+  /** How many notes the chart has, as loaded: the run's declared count, checked against the chart on the server. */
+  noteCount: number;
+}
+
 /** The track on the deck, as the margins show it. */
 export interface NowPlaying {
   title: string;
@@ -325,6 +342,7 @@ const runDefaults = {
   nowPlaying: null as NowPlaying | null,
   runToken: null,
   selectedChartId: null,
+  playingChart: null as PlayingChart | null,
   score: 0,
   combo: 0,
   maxCombo: 0,
@@ -556,6 +574,10 @@ export const useSliceItStore = create<SliceItState>()(
       setSelectedChartId: (selectedChartId) =>
         set({
           selectedChartId,
+        }),
+      setPlayingChart: (playingChart) =>
+        set({
+          playingChart,
         }),
       setScore: (score, combo, multiplier) =>
         set((state) => ({

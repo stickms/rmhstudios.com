@@ -1,5 +1,6 @@
 import { ensureCachedJobProfile, type JobProfilePrisma } from './job-profile.server';
 import { ladderAiProviderConfigured, type LadderAiProviderName } from './provider.server';
+import { catalogJobWhere } from '../own-jobs';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- structural Prisma boundary
 type AnyRow = Record<string, any>;
@@ -35,6 +36,7 @@ export async function enrichRecentLadderJobs(
 
   const limit = Math.min(Math.max(options.limit ?? 25, 1), 100);
   const baseWhere = {
+    ...catalogJobWhere(),
     status: 'active',
     earlyCareerClassification: { in: ['yes', 'probable'] },
     company: { enabled: true },

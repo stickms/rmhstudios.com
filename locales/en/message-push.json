@@ -1,0 +1,12 @@
+{
+  "error": "Could not change notifications for this conversation.",
+  "mute-1h": "For 1 hour",
+  "mute-7d": "For 1 week",
+  "mute-8h": "For 8 hours",
+  "mute-button": "Mute notifications",
+  "mute-forever": "Until I turn it back on",
+  "muted-button": "Notifications muted",
+  "muted-forever": "Muted until you turn it back on",
+  "muted-until": "Muted until {{time}}",
+  "unmute": "Turn notifications back on"
+}

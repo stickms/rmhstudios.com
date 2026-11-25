@@ -6,6 +6,7 @@ import { normalizeCompanyName } from './normalize';
 import { MAX_REPORTS_PER_COMPANY, REFERRAL_MAX_OPEN_OFFERS, REFERRAL_MAX_PENDING_REQUESTS } from './community';
 import { type createInterviewReportSchema, type createOfferSchema } from './community-schema';
 import type { z } from 'zod';
+import { catalogCompanyWhere } from './own-jobs';
 
 export type Result<T> = { ok: true; value: T } | { ok: false; status: number; error: string };
 const fail = (status: number, error: string): { ok: false; status: number; error: string } => ({
@@ -258,7 +259,8 @@ export async function respondToRequest(
 /* ── F8 · interview reports ──────────────────────────────────────────────── */
 
 export async function listInterviewReports(companyId: string) {
-  const where = { companyId, status: 'visible' };
+  // Reports hang from catalogue companies only: a member's own company has none, and none is ever listed for it.
+  const where = { companyId, status: 'visible', company: catalogCompanyWhere() };
   const [reports, agg] = await Promise.all([
     prisma.ladderInterviewReport.findMany({
       where,
@@ -292,8 +294,9 @@ export async function createInterviewReport(
   userId: string,
   input: z.infer<typeof createInterviewReportSchema>,
 ): Promise<Result<{ id: string }>> {
-  const company = await prisma.ladderCompany.findUnique({
-    where: { id: input.companyId },
+  // An own company ("a job found elsewhere") is not a company anyone can report on: it is "not found".
+  const company = await prisma.ladderCompany.findFirst({
+    where: { id: input.companyId, ...catalogCompanyWhere() },
     select: { id: true },
   });
   if (!company) return fail(404, 'Company not found.');

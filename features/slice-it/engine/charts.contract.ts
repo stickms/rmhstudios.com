@@ -7,6 +7,7 @@
 import { endpoint } from '@/lib/contract/endpoint';
 import type {
   ChartDto,
+  ChartMissesDto,
   ChartPatchInput,
   ChartRevisionDetailDto,
   ChartRevisionDto,
@@ -65,4 +66,20 @@ export const getChartRevisionApi = endpoint<{
 }>()({
   method: 'GET',
   path: '/api/slice-it/charts/$id/revisions/$revisionId',
+});
+
+/** One chart with its notes. A public chart to anyone; a draft to its author only (404 otherwise). */
+export const getChartApi = endpoint<{
+  res: ChartDto;
+}>()({
+  method: 'GET',
+  path: '/api/slice-it/charts/$id',
+});
+
+/** Where players miss this chart, over its current version. The author only (404 for anyone else). */
+export const getChartMissesApi = endpoint<{
+  res: ChartMissesDto;
+}>()({
+  method: 'GET',
+  path: '/api/slice-it/charts/$id/misses',
 });

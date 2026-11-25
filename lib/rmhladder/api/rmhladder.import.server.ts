@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { parseCsv } from '@/lib/rmhladder/csv';
 import { updateApplication, type ActionsPrisma } from '@/lib/rmhladder/server/actions';
+import { ownerOrCatalogJobWhere } from '@/lib/rmhladder/own-jobs';
 import { getClientIp, rateLimit } from '@/lib/rate-limit';
 import { readTextBodyLimited, RequestBodyTooLargeError } from '@/lib/http-body.server';
 
@@ -111,7 +112,8 @@ export const route = apiRoute('/api/rmhladder/import', {
     }
 
     const existingJobs = await prisma.ladderJob.findMany({
-      where: { id: { in: candidates.map((row) => row.jobId) } },
+      // Another member's own job is "does not exist" here, exactly as a missing id is.
+      where: { id: { in: candidates.map((row) => row.jobId) }, ...ownerOrCatalogJobWhere(session.user.id) },
       select: { id: true },
     });
     const existingIds = new Set(existingJobs.map((job) => job.id));

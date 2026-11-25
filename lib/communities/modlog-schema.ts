@@ -8,9 +8,9 @@ export const modLogQuery = z.object({
   group: z.enum(MOD_LOG_GROUPS).optional(),
   /** A moderator's user id. */
   actor: z.string().min(1).max(64).optional(),
-  /** The `nextCursor` of the previous page. */
+  /** The `nextCursor` of the previous page: `<ms>.<id>` (an old numeric one is read as "from the top"). */
   cursor: z
     .string()
-    .regex(/^\d{1,18}$/)
+    .regex(/^\d{1,18}(\.\d{1,19})?$/)
     .optional(),
 });

@@ -1359,6 +1359,72 @@ export interface GetMyPartyArgs {
 
 export type GetMyPartyResponse = { data: { id: string; name: string; system: string; role: string; gm: string; members: { userId: string; name: string; joinedAt: string; isGm: boolean; summary: { system: string; name: string; level: number; ancestry: string | null; classes: { name: string; level: number }[]; ac: number; hp: { current: number; max: number; temp: number }; conditions: string[]; perception: number; speed: number; initiative: number } | null }[]; order: { id: string; kind: string; userId: string | null; name: string; value: number }[]; turnIndex: number } };
 
+export interface ListMyLadderApplicationsArgs {
+  /** Page size, 1–50 (default 25). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+  /** Only applications in these statuses: one, or several separated by commas (`not_applied`, `planning`, `applied`, `networking`, `interviewing`, `final_round`, `rejected`, `offer`, `withdrawn`). */
+  status?: string;
+}
+
+export type ListMyLadderApplicationsResponse = { data: { id: string; status: string; appliedDate: string | null; followUpDate: string | null; interviewDates: string[]; notes: string | null; updatedAt: string; job: { id: string; title: string; company: string; location: string | null; remote: string; url: string | null; deadline: string | null; own: boolean } }[]; nextCursor: string | null };
+
+export interface GetMyLadderApplicationArgs {
+  /** The application id. */
+  id: string;
+}
+
+export type GetMyLadderApplicationResponse = { data: { id: string; status: string; appliedDate: string | null; followUpDate: string | null; interviewDates: string[]; notes: string | null; updatedAt: string; job: { id: string; title: string; company: string; location: string | null; remote: string; url: string | null; deadline: string | null; own: boolean }; events: { id: string; type: string; fromStatus: string | null; toStatus: string | null; fields: string[]; createdAt: string }[] } };
+
+export interface UpdateMyLadderApplicationBody {
+  /** `not_applied`, `planning`, `applied`, `networking`, `interviewing`, `final_round`, `rejected`, `offer` or `withdrawn`. */
+  status?: string;
+  /** A day (`2026-11-18`) or an ISO 8601 instant; `null` clears it. */
+  appliedDate?: string;
+  /** A day or an instant; `null` clears it. */
+  followUpDate?: string;
+  /** Up to 25 days or instants. Replaces the list; `[]` clears it. */
+  interviewDates?: string[];
+  /** Up to 2,000 characters; `null` clears it. */
+  notes?: string;
+}
+
+export interface UpdateMyLadderApplicationArgs {
+  /** The application id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: UpdateMyLadderApplicationBody;
+}
+
+export type UpdateMyLadderApplicationResponse = { data: { id: string; status: string; appliedDate: string | null; followUpDate: string | null; interviewDates: string[]; notes: string | null; updatedAt: string; job: { id: string; title: string; company: string; location: string | null; remote: string; url: string | null; deadline: string | null; own: boolean }; events: { id: string; type: string; fromStatus: string | null; toStatus: string | null; fields: string[]; createdAt: string }[] } };
+
+export interface CreateMyLadderOwnJobBody {
+  /** 1–160 characters. */
+  title?: string;
+  /** 1–120 characters. */
+  company?: string;
+  /** An http or https address, up to 2,000 characters. */
+  link?: string;
+  /** Up to 160 characters. */
+  location?: string;
+  /** `onsite` (default), `hybrid` or `remote_us`. */
+  remoteStatus?: string;
+  /** `internship` (default) or `full_time`. */
+  employmentType?: string;
+  /** A day, `2026-12-15`. */
+  deadline?: string;
+}
+
+export interface CreateMyLadderOwnJobArgs {
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: CreateMyLadderOwnJobBody;
+}
+
+export type CreateMyLadderOwnJobResponse = { data: { id: string; status: string; appliedDate: string | null; followUpDate: string | null; interviewDates: string[]; notes: string | null; updatedAt: string; job: { id: string; title: string; company: string; location: string | null; remote: string; url: string | null; deadline: string | null; own: boolean }; events: { id: string; type: string; fromStatus: string | null; toStatus: string | null; fields: string[]; createdAt: string }[] } };
+
 export class RmhClient {
   private apiKey: string;
   private baseUrl: string;
@@ -1988,5 +2054,25 @@ export class RmhClient {
   /** Get one of your parties (scope: read:characters) */
   getMyParty(args: GetMyPartyArgs): Promise<GetMyPartyResponse> {
     return this.request<GetMyPartyResponse>("GET", { path: "/api/v1/me/parties/{id}", pathParams: { id: args.id } });
+  }
+
+  /** List your applications (scope: read:ladder) */
+  listMyLadderApplications(args: ListMyLadderApplicationsArgs = {}): Promise<ListMyLadderApplicationsResponse> {
+    return this.request<ListMyLadderApplicationsResponse>("GET", { path: "/api/v1/me/ladder/applications", query: { limit: args.limit, cursor: args.cursor, status: args.status } });
+  }
+
+  /** Get one of your applications (scope: read:ladder) */
+  getMyLadderApplication(args: GetMyLadderApplicationArgs): Promise<GetMyLadderApplicationResponse> {
+    return this.request<GetMyLadderApplicationResponse>("GET", { path: "/api/v1/me/ladder/applications/{id}", pathParams: { id: args.id } });
+  }
+
+  /** Change one of your applications (scope: write:ladder) */
+  updateMyLadderApplication(args: UpdateMyLadderApplicationArgs): Promise<UpdateMyLadderApplicationResponse> {
+    return this.request<UpdateMyLadderApplicationResponse>("PATCH", { path: "/api/v1/me/ladder/applications/{id}", pathParams: { id: args.id }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Add a job you found elsewhere (scope: write:ladder) */
+  createMyLadderOwnJob(args: CreateMyLadderOwnJobArgs): Promise<CreateMyLadderOwnJobResponse> {
+    return this.request<CreateMyLadderOwnJobResponse>("POST", { path: "/api/v1/me/ladder/own-jobs", body: args.body, idempotencyKey: args.idempotencyKey });
   }
 }

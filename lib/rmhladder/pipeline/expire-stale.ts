@@ -1,3 +1,5 @@
+import { catalogJobWhere } from '../own-jobs';
+
 export const DEFAULT_JOB_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1_000; // 30 days
 
 export function resolveJobMaxAgeMs(
@@ -67,6 +69,7 @@ export async function expireStaleJobs(
   const cutoff = new Date(opts.now.getTime() - opts.maxAgeMs);
   const candidates = await prisma.ladderJob.findMany({
     where: {
+      ...catalogJobWhere(),
       status: 'active',
       OR: [
         {

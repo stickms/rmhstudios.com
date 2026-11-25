@@ -204,23 +204,24 @@ function asSlices(notes: unknown): Slice[] {
  * deliberately not done here — it is a second thing to calibrate, and shipping
  * it untested would put modifier runs into the ranking on a guess.
  *
- * ## Best per chart, not best per row
+ * ## Best per chart, not best per run
  *
- * A player can hold several `SongLeaderboard` rows for one chart — the board is
- * keyed by `(songId, difficulty, modPool, userId)` and a chart can be played at
- * more than one tier. Restricting to `modPool: 'none'` leaves at most one row
- * per (song, difficulty), and several difficulties can point at the same chart
- * row, so the reduce below still keys on `chartId` and keeps the best.
+ * A player can hold many `SliceRun` rows for one chart — every attempt is kept —
+ * so the reduce below keys on `chartId` and keeps the best.
  *
  * "Best" is by **contribution**, not by score. Score is not monotone in
  * contribution: a higher-scoring run with worse accuracy contributes less, and
  * taking the higher score would quietly under-rate the player.
  */
 export async function collectContributions(userId: string): Promise<SkillContribution[]> {
-  const rows = await prisma.songLeaderboard.findMany({
+  // Read from the player's RUNS, not the song's board: a run on a picked chart never writes `SongLeaderboard` (its key
+  // has no chart dimension), so the board no longer holds the player's chart bests. `[userId, chartId, createdAt]`
+  // serves it. Only a cleared run counts — a failed one never reached the end of the chart.
+  const rows = await prisma.sliceRun.findMany({
     where: {
       userId,
       modPool: 'none',
+      cleared: true,
       chartId: { not: null },
       chart: { rankStatus: 'ranked', rating: { not: null } },
     },
@@ -228,6 +229,9 @@ export async function collectContributions(userId: string): Promise<SkillContrib
     // Chart rating is the dominant term, so it is the right proxy — and unlike
     // the contribution itself it is a column the database can sort on.
     orderBy: [{ chart: { rating: 'desc' } }, { accuracy: 'desc' }],
+    // One row per chart, its most accurate: without it a player's many runs on one chart could crowd the others out
+    // of the take below.
+    distinct: ['chartId'],
     take: SKILL_CONTRIBUTION_CAP * 4,
     select: { chartId: true, accuracy: true, chart: { select: { rating: true } } },
   });
@@ -236,8 +240,6 @@ export async function collectContributions(userId: string): Promise<SkillContrib
   for (const row of rows) {
     const chartRating = row.chart?.rating;
     if (!row.chartId || typeof chartRating !== 'number') continue;
-    // A row written before `accuracy` was recorded has null. It is not zero —
-    // zero would be a claim the run was a total miss — so it is skipped.
     if (typeof row.accuracy !== 'number') continue;
 
     const candidate: SkillContribution = { chartRating, accuracy: row.accuracy };

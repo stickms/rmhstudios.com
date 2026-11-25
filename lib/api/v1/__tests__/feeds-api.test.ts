@@ -42,7 +42,10 @@ const h = vi.hoisted(() => ({
   pageIds: [] as string[],
   readCalls: [] as unknown[],
   setPeople: [] as { feedId: string; userIds: string[] }[],
+  left: [] as { feedId: string; userId: string }[],
 }));
+
+vi.mock('@/lib/db/advisory-lock.server', () => ({ lockKey: async () => undefined }));
 
 vi.mock('@/lib/api/developer-auth.server', async (orig) => ({
   ...(await orig<typeof import('@/lib/api/developer-auth.server')>()),
@@ -99,6 +102,13 @@ vi.mock('@/lib/prisma.server', () => {
           async ({ where }: { where: { id: string } }) => rows().find((r) => r.id === where.id) ?? null,
         ),
       },
+      $transaction: async (fn: (tx: unknown) => Promise<unknown>) =>
+        fn({
+          listLeave: {
+            findMany: async ({ where }: { where: { feedId: string; userId: { in: string[] } } }) =>
+              h.left.filter((l) => l.feedId === where.feedId && where.userId.in.includes(l.userId)),
+          },
+        }),
       customFeedMember: {
         findMany: vi.fn(async ({ where }: { where: { feedId: string } }) =>
           h.members.filter((m) => m.feedId === where.feedId).map((m) => ({ user: { handle: m.handle } })),
@@ -190,6 +200,7 @@ beforeEach(() => {
   h.pageIds = [];
   h.readCalls = [];
   h.setPeople = [];
+  h.left = [];
 });
 
 describe('GET /api/v1/me/feeds', () => {
@@ -360,6 +371,38 @@ describe('PUT /api/v1/me/feeds/{id}/members', () => {
       { handle: 'nobody', reason: 'not_found' },
     ]);
     expect(h.setPeople).toEqual([{ feedId: 'l1', userIds: ['u_ada'] }]);
+  });
+
+  it('skips a member who left the list as `left`, in the order asked, and never stores them', async () => {
+    h.feeds = [feed({ id: 'l1', kind: 'list' })];
+    h.users = [user('u_ada', 'Ada'), user('u_gus', 'gus'), user('u_blk', 'blocked')];
+    h.blocked = ['u_blk'];
+    h.left = [{ feedId: 'l1', userId: 'u_gus' }];
+    const res = await put(
+      routes.members.PUT!,
+      '/api/v1/me/feeds/l1/members',
+      { handles: ['blocked', 'gus', 'ada', 'nobody'] },
+      { id: 'l1' },
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.members).toEqual(['Ada']);
+    expect(body.memberCount).toBe(1);
+    expect(body.skipped).toEqual([
+      { handle: 'blocked', reason: 'blocked' },
+      { handle: 'gus', reason: 'left' },
+      { handle: 'nobody', reason: 'not_found' },
+    ]);
+    expect(h.setPeople).toEqual([{ feedId: 'l1', userIds: ['u_ada'] }]);
+  });
+
+  it('a left member on another list is not skipped here', async () => {
+    h.feeds = [feed({ id: 'l1', kind: 'list' })];
+    h.users = [user('u_gus', 'gus')];
+    h.left = [{ feedId: 'l2', userId: 'u_gus' }];
+    const res = await put(routes.members.PUT!, '/api/v1/me/feeds/l1/members', { handles: ['gus'] }, { id: 'l1' });
+    expect((await res.json()).skipped).toEqual([]);
+    expect(h.setPeople).toEqual([{ feedId: 'l1', userIds: ['u_gus'] }]);
   });
 
   it('clears a list with an empty array', async () => {

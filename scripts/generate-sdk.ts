@@ -140,7 +140,20 @@ const NULLABLE: Record<string, string> = {
   // s12-13 api-characters
   ancestry: 'string | null',
   userId: 'string | null',
+
+  // Sprint 13
+  // s13-10 api-ladder
+  appliedDate: 'string | null',
+  followUpDate: 'string | null',
+  notes: 'string | null',
+  url: 'string | null',
+  deadline: 'string | null',
+  fromStatus: 'string | null',
+  toStatus: 'string | null',
 };
+
+// Arrays whose example may be empty (an own job opens with no interview dates), so the element type is stated.
+const EMPTY_ARRAYS: Record<string, string> = { interviewDates: 'string[]' };
 
 const SCHEDULED_ROW_FIELDS: Record<string, string> = {
   scheduledAt: 'string | null',
@@ -156,7 +169,7 @@ const isPartySummary = (x: unknown): boolean =>
 
 function tsOf(v: unknown, k = ''): string {
   if (v === null) return NULLABLE[k] ?? 'unknown';
-  if (Array.isArray(v)) return v.length ? `${tsOf(v[0])}[]` : 'unknown[]';
+  if (Array.isArray(v)) return v.length ? `${tsOf(v[0])}[]` : (EMPTY_ARRAYS[k] ?? 'unknown[]');
   if (typeof v === 'object') {
     // A drafts/scheduled row (s08-03): `scheduledAt` is null on a draft and `poll` is the stored payload, not a post's poll.
     const row = 'held' in (v as Json) && 'postId' in (v as Json) && 'kind' in (v as Json);

@@ -133,6 +133,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/slice-it/admin/takedown` | `GET` `POST` | `features/slice-it/api/slice-it.admin.takedown.server.ts` |
 | `/api/slice-it/charts` | `GET` `POST` | `features/slice-it/api/slice-it.charts.server.ts` |
 | `/api/slice-it/charts/:id` | `DELETE` `GET` `PATCH` `POST` | `features/slice-it/api/slice-it.charts.$id.server.ts` |
+| `/api/slice-it/charts/:id/misses` | `GET` | `features/slice-it/api/slice-it.charts.$id.misses.server.ts` |
 | `/api/slice-it/charts/:id/reviews` | `DELETE` `GET` `PUT` | `features/slice-it/api/slice-it.charts.$id.reviews.server.ts` |
 | `/api/slice-it/charts/:id/revisions` | `GET` | `features/slice-it/api/slice-it.charts.$id.revisions.server.ts` |
 | `/api/slice-it/charts/:id/revisions/:revisionId` | `GET` | `features/slice-it/api/slice-it.charts.$id.revisions.$revisionId.server.ts` |

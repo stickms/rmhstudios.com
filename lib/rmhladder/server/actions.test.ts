@@ -19,7 +19,8 @@ type FakeArgs = any;
 /** Fake Prisma implementing only the shapes used by actions.ts (returned as any). */
 function makeFakePrisma() {
   const companies = new Map<string, AnyRow>();
-  const jobs = new Map<string, AnyRow>();
+  // job1 is a catalogue job (no owner): the guard on writes that take a jobId finds it.
+  const jobs = new Map<string, AnyRow>([['job1', { id: 'job1', ownerId: null }]]);
   const jobActions: AnyRow[] = [];
   const applications: AnyRow[] = [];
   const reviewTasks: AnyRow[] = [];

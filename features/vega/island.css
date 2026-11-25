@@ -13,6 +13,7 @@
 @import '../../app/globals.css';
 
 @source "./";
+@source "../../components/games/assist-run-island.tsx";
 @source "../../components/i18n/AppI18nProvider.tsx";
 @source "../../components/motion/LazyMotionProvider.tsx";
 @source "../../components/shared/GameErrorBoundary.tsx";

@@ -1302,6 +1302,99 @@ export const ERROR_CODES = {
     i18n: 'errors:apiKeyReasonReserved',
     text: 'That reason is reserved; write another one',
   },
+
+  // Sprint 13
+  // s13-07 tube-subscriptions
+  TUBE_SUBSCRIBE_SELF: {
+    http: 400,
+    i18n: 'errors:tubeSubscribeSelf',
+    text: 'You cannot subscribe to yourself',
+  },
+  TUBE_SUBSCRIBE_LIMIT: {
+    http: 409,
+    i18n: 'errors:tubeSubscribeLimit',
+    text: 'You can subscribe to up to {{max}} hosts. Unsubscribe from one first',
+  },
+
+  // s13-08 ladder-own-jobs
+  LADDER_OWN_JOB_LIMIT: {
+    http: 409,
+    i18n: 'errors:ladderOwnJobLimit',
+    text: 'You can track up to {{max}} jobs you added yourself. Delete one first',
+  },
+
+  // s13-11 lists-on
+  LIST_MEMBER_REFUSED: {
+    http: 409,
+    i18n: 'errors:listMemberRefused',
+    text: "That person can't be added to this list",
+  },
+
+  // s13-12 news-stories
+  NEWS_STORY_FOLLOW_LIMIT: {
+    http: 409,
+    i18n: 'errors:newsStoryFollowLimit',
+    text: 'You can follow up to {{max}} stories. Unfollow one first',
+  },
+
+  // s13-14 prediction-trades
+  PREDICTION_PRICE_MOVED: {
+    http: 409,
+    i18n: 'errors:predictionPriceMoved',
+    text: 'The price moved while you were trading. Check the new quote and try again',
+  },
+  PREDICTION_NOT_ENOUGH_SHARES: {
+    http: 409,
+    i18n: 'errors:predictionNotEnoughShares',
+    text: 'You do not hold that many shares',
+  },
+
+  // s13-15 rideshare-safety
+  RIDE_BLOCKED: {
+    http: 403,
+    i18n: 'errors:rideBlocked',
+    text: 'You cannot ride with this member',
+  },
+  RIDE_DRIVER_NOT_APPROVED: {
+    http: 403,
+    i18n: 'errors:rideDriverNotApproved',
+    text: 'You must be an approved driver',
+  },
+  RIDE_NOT_READY: {
+    http: 409,
+    i18n: 'errors:rideNotReady',
+    text: 'This trip is not ready for that yet',
+  },
+  RIDE_CLOSED: {
+    http: 409,
+    i18n: 'errors:rideClosed',
+    text: 'This trip is already closed',
+  },
+  RIDE_CHAT_CLOSED: {
+    http: 409,
+    i18n: 'errors:rideChatClosed',
+    text: 'Chat is off for this trip',
+  },
+  RIDE_ACTIVE: {
+    http: 409,
+    i18n: 'errors:rideActive',
+    text: 'You already have an active ride. Finish or cancel it first',
+  },
+  RIDE_SCHEDULE_TOO_SOON: {
+    http: 400,
+    i18n: 'errors:rideScheduleTooSoon',
+    text: 'Choose a pickup time at least 5 minutes from now',
+  },
+  RIDE_SCHEDULE_TOO_FAR: {
+    http: 400,
+    i18n: 'errors:rideScheduleTooFar',
+    text: 'You can schedule rides up to 30 days ahead',
+  },
+  RIDE_SCHEDULE_LIMIT: {
+    http: 409,
+    i18n: 'errors:rideScheduleLimit',
+    text: 'You can have up to {{max}} scheduled rides',
+  },
 } as const;
 
 export type ErrorCode = keyof typeof ERROR_CODES;

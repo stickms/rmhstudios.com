@@ -385,15 +385,17 @@ export async function editDirectMessage(args: {
   );
   if (!bodyOk.ok) return failure(bodyOk.reason);
 
-  // Snapshot BEFORE the overwrite, exactly as `RMHarkEdit` does for posts.
-  // Awaited so the window cannot close on a message whose prior text was never
-  // captured; it degrades to a no-op rather than throwing.
-  await recordPriorRevision(existing.id, existing.content, now).catch(() => {});
-
-  const updated = await prisma.chatMessage.update({
-    where: { id: existing.id },
-    data: { content, editedAt: now },
-    select: messageSelect,
+  // Snapshot BEFORE the overwrite, exactly as `RMHarkEdit` does for posts, and in the same transaction: the edit
+  // cannot land without its prior text, and a failed edit leaves no stray version. The text is re-read inside the
+  // transaction so two edits racing each other each snapshot what they actually replaced.
+  const updated = await prisma.$transaction(async (tx) => {
+    const current = await tx.chatMessage.findUnique({ where: { id: existing.id }, select: { content: true } });
+    await recordPriorRevision(tx, existing.id, current?.content ?? existing.content, now);
+    return tx.chatMessage.update({
+      where: { id: existing.id },
+      data: { content, editedAt: now },
+      select: messageSelect,
+    });
   });
 
   const mutation = await publishMutation('message-edited', {

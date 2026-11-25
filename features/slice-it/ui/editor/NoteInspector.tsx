@@ -28,6 +28,7 @@ import {
 } from '@features/slice-it/engine/editor/store';
 import type { SliceType } from '@features/slice-it/engine/editor/types';
 import { NoteIssues } from './NoteIssues';
+import { NoteMissRate } from './NoteMissRate';
 import { QUANT_LABELS } from './theme';
 
 export function NoteInspector() {
@@ -361,9 +362,7 @@ export function NoteInspector() {
         </div>
       )}
 
-      {/*
-        TODO(phase 8 — §4.4b): the note's aggregate miss rate, once O1 exists.
-      */}
+      {selection.length === 1 && first && <NoteMissRate time={first.time} />}
     </section>
   );
 }

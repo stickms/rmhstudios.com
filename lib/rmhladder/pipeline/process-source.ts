@@ -1,6 +1,7 @@
 import { getAdapter } from '../adapters/index';
 import { memoFetch } from './memo-fetch';
 import { assessJob } from './ingest';
+import { catalogJobWhere } from '../own-jobs';
 import type { VerificationStatus } from '../verification';
 
 // ── Public types ─────────────────────────────────────────────────────────────
@@ -245,6 +246,7 @@ export async function processSource(
         const possibleDuplicate = isNew
           ? await deps.prisma.ladderJob.findFirst({
               where: {
+                ...catalogJobWhere(),
                 dedupeHash: assessment.dedupeHash,
                 NOT: {
                   sourceId: source.id,

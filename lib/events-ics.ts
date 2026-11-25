@@ -55,6 +55,12 @@ export interface ICSEvent {
    * that started at this instant: a date the host moved (s06-10), published under the UID it always had.
    */
   recurrenceId?: Date | string;
+  /**
+   * An all-day entry on this calendar day (`YYYY-MM-DD`, the day the member sees): emitted as `DTSTART;VALUE=DATE`
+   * with the next day as `DTEND`, so it lands on the same day in every viewer's zone. `startsAt` is still required
+   * (the feed sorts and windows on it) but is not written.
+   */
+  allDay?: string;
   /** `EXDATE` (§3.8.5.1) — occurrence starts that do not happen: a date the host skipped (s06-10). */
   exdates?: (Date | string)[];
 }
@@ -97,6 +103,17 @@ function toUtcStamp(value: Date | string): string {
     .replace(/\.\d{3}Z$/, 'Z');
 }
 
+/** `YYYY-MM-DD` as the `YYYYMMDD` of an iCalendar DATE value. */
+function dateStamp(day: string): string {
+  return day.replace(/-/g, '');
+}
+
+/** The calendar day after `YYYY-MM-DD` (an all-day entry's exclusive end). */
+function nextDay(day: string): string {
+  const [y, m, d] = day.split('-').map(Number);
+  return new Date(Date.UTC(y!, m! - 1, d! + 1)).toISOString().slice(0, 10);
+}
+
 /**
  * Fold one logical content line into physical lines of at most 75 octets,
  * continuation lines prefixed with a single space. Iterates by codepoint so a
@@ -130,11 +147,12 @@ function veventLines(event: ICSEvent, dtstamp: string): string[] {
     'BEGIN:VEVENT',
     `UID:${event.id}@${UID_DOMAIN}`,
     `DTSTAMP:${dtstamp}`,
-    `DTSTART:${toUtcStamp(event.startsAt)}`,
+    event.allDay ? `DTSTART;VALUE=DATE:${dateStamp(event.allDay)}` : `DTSTART:${toUtcStamp(event.startsAt)}`,
   ];
   if (event.recurrenceId) lines.push(`RECURRENCE-ID:${toUtcStamp(event.recurrenceId)}`);
   if (event.exdates?.length) lines.push(`EXDATE:${event.exdates.map(toUtcStamp).join(',')}`);
-  if (event.endsAt) lines.push(`DTEND:${toUtcStamp(event.endsAt)}`);
+  if (event.allDay) lines.push(`DTEND;VALUE=DATE:${dateStamp(nextDay(event.allDay))}`);
+  else if (event.endsAt) lines.push(`DTEND:${toUtcStamp(event.endsAt)}`);
   lines.push(`SUMMARY:${escapeText(event.title)}`);
   if (event.description) lines.push(`DESCRIPTION:${escapeText(event.description)}`);
   if (event.location) lines.push(`LOCATION:${escapeText(event.location)}`);

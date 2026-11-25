@@ -68,6 +68,8 @@ export function applyChatUpdate<T extends PatchableMessage>(messages: T[], updat
             }
           : m,
       );
+    case 'removed':
+      return messages.filter((m) => m.id !== update.messageId);
     case 'read':
       // The other participant read the thread: everything we sent is now seen.
       return messages.map((m) =>

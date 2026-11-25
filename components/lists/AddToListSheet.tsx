@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import type { ListView } from '@/lib/lists/constants';
 import { api } from '@/lib/contract/client';
 import { addListMemberApi, getUserListsApi, removeListMemberApi } from '@/lib/lists/lists.contract';
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useArrival } from '@/components/ui/arrive';
 
 type ListRow = ListView & {
@@ -21,6 +22,7 @@ type ListRow = ListView & {
  */
 export function AddToListSheet({ targetUserId }: { targetUserId: string }) {
   const { t } = useTranslation('c-lists');
+  const refusalText = useRefusalText();
   const [open, setOpen] = useState(false);
   const [lists, setLists] = useState<ListRow[] | null>(null);
   const [pending, setPending] = useState<string | null>(null);
@@ -71,11 +73,13 @@ export function AddToListSheet({ targetUserId }: { targetUserId: string }) {
               : l,
           ) ?? null,
       );
-    } catch {
+    } catch (e) {
+      // A refused add (they left, a block, a ban, an erased account) is one sentence for every reason.
       toast.error(
-        t('error-add-to-list-sheet', {
-          defaultValue: "Couldn't update the list",
-        }),
+        refusalText.maybe(e) ||
+          t('error-add-to-list-sheet', {
+            defaultValue: "Couldn't update the list",
+          }),
       );
     } finally {
       setPending(null);

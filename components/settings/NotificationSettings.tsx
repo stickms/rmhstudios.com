@@ -58,6 +58,10 @@ function categoryLabel(t: TFunction, cat: NotifyCategory): string {
       return t('category-system', {
         defaultValue: 'System',
       });
+    case 'messages':
+      return t('category-messages', {
+        defaultValue: 'Messages',
+      });
   }
 }
 

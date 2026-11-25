@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
-import { FollowButton } from '@/components/reading/FollowButton';
+import { StoryFollowToggle } from '@/components/reading/StoryFollowToggle';
 import type { StoryPageData } from '@/lib/reading/schema';
 
 /** L5 — the story page: summary, then the articles in date order. */
@@ -20,7 +20,19 @@ export function StoryTimeline({ story }: { story: Pick<StoryPageData, 'slug' | '
       wrapTitle
     >
       <div className="pt-4 pb-12">
-        <FollowButton kind="news_story" target={story.slug} className="mb-4" />
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <StoryFollowToggle slug={story.slug} />
+          <a
+            href={`/news/stories/${story.slug}/rss.xml`}
+            className="t-meta text-site-text-muted underline"
+            type="application/rss+xml"
+          >
+            {t('rss', {
+              ns: 'news-stories',
+              defaultValue: 'RSS feed',
+            })}
+          </a>
+        </div>
         {story.articles.length === 0 ? (
           <EmptyState
             title={t('story-empty', {

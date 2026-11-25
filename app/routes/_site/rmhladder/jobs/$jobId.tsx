@@ -49,6 +49,15 @@ export const Route = createFileRoute('/_site/rmhladder/jobs/$jobId')({
         ],
       };
     }
+    // A member's own job is private to them: no canonical, no job-posting data, no link-preview card, no indexing.
+    if (job.ownerId) {
+      return {
+        meta: [
+          { title: `${job.title as string} | RMH Ladder` },
+          { name: 'robots', content: 'noindex, nofollow' },
+        ],
+      };
+    }
     const path = `/rmhladder/jobs/${params.jobId}`;
     const companyName = ((job.company as { name?: string } | null)?.name) ?? 'Company';
     const description = (job.descriptionSummary as string | null) ||
@@ -90,6 +99,8 @@ function JobDetailPage() {
     <JobDetail
       job={job}
       isAuthenticated={isAuthenticated}
+      onOwnJobChanged={() => void router.invalidate()}
+      onOwnJobDeleted={() => void router.navigate({ to: '/rmhladder/pipeline' })}
       onAction={async (action) => {
         await updateTracking({ data: { jobId: job.id as string, action } });
         await router.invalidate();

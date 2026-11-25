@@ -23,6 +23,7 @@ import {
   SONG_SORTS,
   SONG_TITLE_MAX,
 } from './constants';
+import { MISS_TIMES_MAX, NOTE_COUNT_MAX } from './miss-times';
 import { ModifiersZ } from './modifiers';
 import { MOD_POOLS } from './pools';
 import { SONG_GENRES, normaliseTags } from './taxonomy';
@@ -102,12 +103,32 @@ export const ScoreSubmissionZ = z.object({
   /**
    * Which `Chart` row was played (C2/C12).
    *
-   * Optional, and absent for every run today: nothing plays a `Chart` yet — the
-   * engine loads `Song.analysisData`, which has no identity. The server checks
-   * that the id belongs to the song being submitted and stores null if it does
-   * not, so this can never be used to attribute a run to somebody else's chart.
+   * Optional, and absent for a run of the generated chart (`Song.analysisData`
+   * has no identity). Sent when the player picked a published chart and played
+   * its notes. The server checks that the id is a published chart of the song
+   * being submitted and stores null if it is not, so this can never be used to
+   * attribute a run to somebody else's chart. A run that names a chart never
+   * writes the song's board, whether or not the id resolves.
    */
   chartId: z.string().uuid().optional(),
+  /**
+   * The times, in whole milliseconds, of the chart's notes this run missed — one entry per missed note, so two notes
+   * at the same instant can each appear. Only read for a cleared run on a published chart, and checked against that
+   * chart's own note times (`validateMissTimes`): an unknown time is dropped. A sampled statistic for the chart's
+   * author, never an input to a board, a rating or a reward.
+   */
+  missedNoteMs: z
+    .array(
+      z
+        .number()
+        .int()
+        .min(0)
+        .max(MAX_SONG_DURATION_SEC * 1000),
+    )
+    .max(MISS_TIMES_MAX)
+    .optional(),
+  /** How many notes the chart the run played has. A run whose count is not the chart's records no misses. */
+  noteCount: z.number().int().min(0).max(NOTE_COUNT_MAX).optional(),
   /**
    * Did the run reach the end without the gauge killing it (R9)?
    *

@@ -1,120 +1,146 @@
 /**
- * Prior revisions of an edited direct message, retained for the moderation
- * window and exposed to neither participant.
+ * What a direct or group message said before an edit replaced it (s13-17).
  *
- * ## Why this exists
+ * Posts work this way already: `RMHarkEdit` snapshots the previous body before `RMHark.content` is overwritten, so an
+ * edit is a new version rather than a silent rewrite. A message edit needs the same property for the same reason,
+ * otherwise "edit" is a way to make a report describe text that no longer exists anywhere.
  *
- * Posts already work this way: `RMHarkEdit` snapshots the previous body before
- * `RMHark.content` is overwritten (`lib/feed/api/rmharks.$id.server.ts`), so an edit
- * is a new version rather than a silent rewrite. A DM edit needs the same
- * property for the same reason — otherwise "edit" is a way to make a report
- * describe text that no longer exists anywhere.
- *
- * ## Why it is not a table (and what that costs)
- *
- * There is no `DirectMessageEdit` model, and this change was not permitted to
- * add one. So the snapshot lands in the Redis backplane with a TTL equal to the
- * moderation window, falling back to a bounded in-process map when Redis is not
- * configured (local dev, single instance).
- *
- * That is honestly weaker than `RMHarkEdit`:
- *
- * - Redis is optional, so on a deployment without it the retention is
- *   per-process and dies with the process.
- * - A TTL is not an audit log — it expires on its own rather than being purged
- *   with the message.
- *
- * It is enough to answer "what did this say when it was reported?" inside the
- * window, which is the case that matters, and it never returns anything to a
- * participant — the only reader is a moderator path. **The follow-up is a
- * `DirectMessageEdit` table shaped exactly like `RMHarkEdit`**; when it lands,
- * `recordPriorRevision` becomes an insert and this file goes away.
+ * - `recordPriorRevision(tx, …)` is an insert inside the edit's own transaction, so an edit can never lose its prior
+ *   text and a failed edit leaves no stray version.
+ * - `readPriorRevisions` is **moderation paths only**: it is never part of a participant-facing payload, which is why
+ *   the edit marker says only "edited".
+ * - `pruneMessageEdits` is the nightly sweep: versions older than the moderation window go, except those of a message
+ *   a `PENDING` or `REVIEWING` report names (they stay until the report is decided).
+ * - `messageEditErasureOps` is the erasure record: the model has no `User` relation, so the account's own operation
+ *   and `lib/account/__tests__/message-edits-erasure.test.ts` are the record of what happens to it.
  */
-
-import { redisEnabled, redisGetJSON, redisSetJSON } from '@/lib/redis.server';
+import type { PgBoss } from 'pg-boss';
+import type { Prisma } from '@prisma/client';
+import { prisma } from '@/lib/prisma.server';
 
 /** How long a prior revision stays readable. Matches the moderation window. */
 export const EDIT_HISTORY_TTL_MS = 30 * 24 * 60 * 60_000;
 
-/** Revisions kept per message — an edit war does not get unbounded storage. */
-const MAX_REVISIONS = 10;
+/** Revisions kept per message: an edit war does not get unbounded storage. */
+export const MAX_REVISIONS = 10;
 
-/** Cap on messages tracked by the in-process fallback (~a few hundred KB). */
-const MAX_TRACKED_MESSAGES = 2000;
+/** Rows deleted per statement by the nightly prune. */
+export const EDIT_PRUNE_BATCH = 1000;
+/** Upper bound on batches in one run, so a bug cannot loop forever. */
+const MAX_BATCHES = 1000;
+
+export const EDIT_PRUNE_QUEUE = 'messages.edit-prune';
+/** Daily at 04:43 UTC. */
+export const EDIT_PRUNE_CRON = '43 4 * * *';
 
 export interface PriorRevision {
   content: string;
-  /** When this text was replaced. */
+  /** When this text was replaced (ISO 8601). */
   replacedAt: string;
 }
 
-const historyKey = (messageId: string) => `dm:edits:${messageId}`;
+/** The slice of a transaction client the snapshot needs. */
+export type EditTx = Pick<Prisma.TransactionClient, 'chatMessageEdit'>;
 
 /**
- * Fallback store. A `Map` iterated in insertion order, trimmed from the front —
- * the oldest tracked message is evicted first, which is also the one most likely
- * to be past its window.
- */
-const localHistory = new Map<string, PriorRevision[]>();
-
-function localGet(messageId: string): PriorRevision[] {
-  return localHistory.get(messageId) ?? [];
-}
-
-function localSet(messageId: string, revisions: PriorRevision[]): void {
-  localHistory.delete(messageId);
-  localHistory.set(messageId, revisions);
-  while (localHistory.size > MAX_TRACKED_MESSAGES) {
-    const oldest = localHistory.keys().next();
-    if (oldest.done) break;
-    localHistory.delete(oldest.value);
-  }
-}
-
-/**
- * Snapshot the text a message had *before* an edit overwrites it.
- *
- * Best-effort by construction: a failure here must never block the edit itself,
- * because refusing to let someone fix a typo when Redis is down is a worse
- * outcome than a missing revision. Callers do not await the result for
- * correctness — only for ordering in tests.
+ * Snapshot the text a message had *before* an edit overwrites it. Call it inside the edit's transaction, right before
+ * the update, so the snapshot and the overwrite commit together. Keeps the newest `MAX_REVISIONS` versions.
  */
 export async function recordPriorRevision(
+  tx: EditTx,
   messageId: string,
   content: string,
   now: Date = new Date(),
 ): Promise<void> {
-  const revision: PriorRevision = { content, replacedAt: now.toISOString() };
-  try {
-    if (redisEnabled()) {
-      const existing = (await redisGetJSON<PriorRevision[]>(historyKey(messageId))) ?? [];
-      const next = [...existing, revision].slice(-MAX_REVISIONS);
-      await redisSetJSON(historyKey(messageId), next, EDIT_HISTORY_TTL_MS);
-      return;
-    }
-  } catch {
-    /* fall through to the in-process store */
+  await tx.chatMessageEdit.create({ data: { messageId, content, replacedAt: now } });
+  const stale = await tx.chatMessageEdit.findMany({
+    where: { messageId },
+    orderBy: [{ replacedAt: 'desc' }, { id: 'desc' }],
+    skip: MAX_REVISIONS,
+    select: { id: true },
+  });
+  if (stale.length > 0) {
+    await tx.chatMessageEdit.deleteMany({ where: { id: { in: stale.map((r) => r.id) } } });
   }
-  localSet(messageId, [...localGet(messageId), revision].slice(-MAX_REVISIONS));
+}
+
+/** The retained versions of a message, newest first, at most `MAX_REVISIONS`. **Moderation paths only.** */
+export async function readPriorRevisions(messageId: string): Promise<PriorRevision[]> {
+  const rows = await prisma.chatMessageEdit.findMany({
+    where: { messageId },
+    orderBy: [{ replacedAt: 'desc' }, { id: 'desc' }],
+    take: MAX_REVISIONS,
+    select: { content: true, replacedAt: true },
+  });
+  return rows.map((r) => ({ content: r.content, replacedAt: r.replacedAt.toISOString() }));
+}
+
+/** The retained versions of several messages at once, keyed by message id (newest first, at most `MAX_REVISIONS`). */
+export async function readPriorRevisionsFor(messageIds: readonly string[]): Promise<Map<string, PriorRevision[]>> {
+  const out = new Map<string, PriorRevision[]>();
+  if (messageIds.length === 0) return out;
+  const rows = await prisma.chatMessageEdit.findMany({
+    where: { messageId: { in: [...messageIds] } },
+    orderBy: [{ replacedAt: 'desc' }, { id: 'desc' }],
+    select: { messageId: true, content: true, replacedAt: true },
+  });
+  for (const r of rows) {
+    const list = out.get(r.messageId) ?? [];
+    if (list.length < MAX_REVISIONS) list.push({ content: r.content, replacedAt: r.replacedAt.toISOString() });
+    out.set(r.messageId, list);
+  }
+  return out;
 }
 
 /**
- * Read the retained revisions. **Moderation paths only** — this is never part of
- * a participant-facing payload, which is the entire reason the edit marker says
- * only "edited" and not "edited from X".
+ * One batch of the prune: versions replaced before `cutoff` whose message no open report names. Raw SQL on the real
+ * table (`"chat_message_edit"`, quoted columns), outside any transaction. Returns the number deleted.
  */
-export async function readPriorRevisions(messageId: string): Promise<PriorRevision[]> {
-  try {
-    if (redisEnabled()) {
-      return (await redisGetJSON<PriorRevision[]>(historyKey(messageId))) ?? [];
-    }
-  } catch {
-    /* fall through */
-  }
-  return localGet(messageId);
+async function pruneBatch(cutoff: Date, batch: number): Promise<number> {
+  const deleted = await prisma.$executeRaw`
+    DELETE FROM "chat_message_edit"
+     WHERE "id" IN (
+       SELECT e."id"
+         FROM "chat_message_edit" e
+        WHERE e."replacedAt" < ${cutoff}
+          AND NOT EXISTS (
+            SELECT 1
+              FROM "content_report" r
+             WHERE r."entityType" = 'dm'
+               AND r."entityId" = e."messageId"
+               AND r."status" IN ('PENDING', 'REVIEWING')
+          )
+        LIMIT ${batch}
+     )
+  `;
+  return Number(deleted);
 }
 
-/** Test seam — drops the in-process fallback. */
-export function __resetEditHistory(): void {
-  localHistory.clear();
+/** Delete the versions past the moderation window (batches of 1,000). Returns the number deleted. */
+export async function pruneMessageEdits(now: Date = new Date(), batch: number = EDIT_PRUNE_BATCH): Promise<number> {
+  const cutoff = new Date(now.getTime() - EDIT_HISTORY_TTL_MS);
+  let total = 0;
+  for (let i = 0; i < MAX_BATCHES; i++) {
+    const n = await pruneBatch(cutoff, batch);
+    total += n;
+    if (n < batch) break;
+  }
+  return total;
+}
+
+/**
+ * The erased member's edits: every earlier version of a message they sent. The messages stay under "Deleted user";
+ * what they once said before an edit goes with the account.
+ */
+export function messageEditErasureOps(userId: string) {
+  return [prisma.chatMessageEdit.deleteMany({ where: { message: { senderId: userId } } })];
+}
+
+/** Register the nightly prune. Called once from the jobs worker (only it can schedule). */
+export async function registerMessageEditPruneCron(boss: PgBoss): Promise<void> {
+  await boss.createQueue(EDIT_PRUNE_QUEUE);
+  await boss.schedule(EDIT_PRUNE_QUEUE, EDIT_PRUNE_CRON, {}, { tz: 'UTC' });
+  await boss.work(EDIT_PRUNE_QUEUE, async () => {
+    await pruneMessageEdits();
+  });
 }

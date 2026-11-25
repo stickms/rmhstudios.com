@@ -17,9 +17,9 @@
  * changed.
  */
 
-import { useState, useCallback, useRef, useEffect, useMemo, memo } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo, memo, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Send, Reply, Pin, X, SmilePlus, AtSign, Image as ImageIcon, ArrowDown, Clock } from 'lucide-react';
+import { Send, Reply, Pin, X, SmilePlus, AtSign, Image as ImageIcon, ArrowDown, Clock, Flag } from 'lucide-react';
 import { GifPicker } from '@/components/feed/GifPickerLazy';
 import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
 import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
@@ -37,6 +37,11 @@ import { useStickToBottom } from '@/hooks/useStickToBottom';
 import { SlowModeBar, useSlowModeBlock } from '@/components/safety/SlowModeBar';
 import { slowModeEvents } from '@/lib/safety/slow-mode-events';
 import ChatMediaEmbed, { parseMessageMedia } from './ChatMediaEmbed';
+
+// s13-06: the report dialog carries the report schema (zod), so it loads when a member opens it, not with the room.
+const ReportDialog = lazy(() =>
+  import('@/components/moderation/ReportDialog').then((m) => ({ default: m.ReportDialog })),
+);
 
 // ─── Helpers ──────────────────────────────────────────────────────
 
@@ -77,6 +82,37 @@ interface MessageRowProps {
   onReact: (messageId: string, emoji: string) => void;
   onContextMenu: (event: React.MouseEvent, msg: ChatMessage) => void;
   onSeek: (seconds: number) => void;
+  onReport: (msg: ChatMessage) => void;
+}
+
+/** The line a reply shows where the message it quoted was removed by a moderator. */
+function RemovedQuote() {
+  const { t } = useTranslation('tube-chat-reports');
+  return (
+    <div className="flex items-center gap-1 mb-0.5 pl-3">
+      <Reply className="h-3 w-3 text-app-text-dim rotate-180" aria-hidden />
+      <span className="text-xs text-app-text-dim">{t('message-removed', { defaultValue: 'Message removed' })}</span>
+    </div>
+  );
+}
+
+/** The "Report" item on another member's message. */
+function ReportMessageButton({ msg, onReport }: { msg: ChatMessage; onReport: (msg: ChatMessage) => void }) {
+  const { t } = useTranslation('tube-chat-reports');
+  const label = t('report-message', { defaultValue: 'Report message' });
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        onReport(msg);
+      }}
+      className="p-1 rounded-app-sm hover:bg-app-surface transition-colors"
+      title={label}
+      aria-label={label}
+    >
+      <Flag className="h-3.5 w-3.5 text-app-text-muted" aria-hidden />
+    </button>
+  );
 }
 
 /**
@@ -97,6 +133,7 @@ const MessageRow = memo(function MessageRow({
   onReact,
   onContextMenu,
   onSeek,
+  onReport,
 }: MessageRowProps) {
   const { t } = useTranslation('c-rmhtube');
   const [showActions, setShowActions] = useState(false);
@@ -123,6 +160,7 @@ const MessageRow = memo(function MessageRow({
       onMouseLeave={() => setShowActions(false)}
       onContextMenu={canPin ? (e) => onContextMenu(e, msg) : undefined}
     >
+      {msg.replyToRemoved && !msg.replyToUserName && <RemovedQuote />}
       {msg.replyToId && msg.replyToUserName && (
         <div className="flex items-center gap-1 mb-0.5 pl-3">
           <Reply className="h-3 w-3 text-app-text-dim rotate-180" aria-hidden />
@@ -224,6 +262,7 @@ const MessageRow = memo(function MessageRow({
           >
             <SmilePlus className="h-3.5 w-3.5 text-app-text-muted" aria-hidden />
           </button>
+          {msg.userId !== myUserId && <ReportMessageButton msg={msg} onReport={onReport} />}
         </div>
       )}
 
@@ -275,6 +314,7 @@ export default function ChatPanel() {
   const [attachTimestamp, setAttachTimestamp] = useState(false);
   const [showMentionDropdown, setShowMentionDropdown] = useState(false);
   const [mentionFilter, setMentionFilter] = useState('');
+  const [reporting, setReporting] = useState<string | null>(null);
   const [contextMenuMessage, setContextMenuMessage] = useState<ChatMessage | null>(null);
   const [contextMenuPos, setContextMenuPos] = useState<{
     x: number;
@@ -422,6 +462,8 @@ export default function ChatPanel() {
     setContextMenuPos(null);
   }, []);
 
+  const handleReport = useCallback((msg: ChatMessage) => setReporting(msg.id), []);
+
   const handleReply = useCallback((msg: ChatMessage) => {
     setReplyTo(msg);
     inputRef.current?.focus();
@@ -563,6 +605,7 @@ export default function ChatPanel() {
                     onReact={handleReaction}
                     onContextMenu={handleContextMenu}
                     onSeek={handleSeekTo}
+                    onReport={handleReport}
                   />
                 );
               })
@@ -768,6 +811,19 @@ export default function ChatPanel() {
             })}
           </button>
         </div>
+      )}
+
+      {reporting && (
+        <Suspense fallback={null}>
+          <ReportDialog
+            open
+            onOpenChange={(open) => {
+              if (!open) setReporting(null);
+            }}
+            entityType="tube-chat"
+            entityId={reporting}
+          />
+        </Suspense>
       )}
     </div>
   );

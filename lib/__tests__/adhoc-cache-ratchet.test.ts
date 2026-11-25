@@ -26,7 +26,7 @@ import { globSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 /** Lower this when you migrate files. Never raise it. */
-const BASELINE = 41;
+const BASELINE = 40;
 
 const MODULE_MAP = /^(?:export\s+)?(?:const|let)\s+\w+\s*(?::[^=\n]+)?=\s*new Map\b/m;
 // `ttl` only as a word or a camelCase part (`ttlMs`, `cacheTtl`, `CACHE_TTL`): a lowercase `ttl` inside a word is

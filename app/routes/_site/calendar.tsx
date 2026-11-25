@@ -47,6 +47,12 @@ export const Route = createFileRoute('/_site/calendar')({
   component: CalendarPage,
 });
 
+/** The time column of a whole-day entry (an RMHLadder follow-up or deadline): its day, not a made-up hour. */
+function AllDayLabel() {
+  const { t } = useTranslation('ladder-calendar');
+  return <>{t('grid.allDay', { defaultValue: 'All day' })}</>;
+}
+
 /** One week as rows on rules, a day per section. */
 function Week({ grid }: { grid: ScheduleGrid }) {
   const { t, i18n } = useTranslation('site');
@@ -63,7 +69,7 @@ function Week({ grid }: { grid: ScheduleGrid }) {
       {grid.next && (
         <section className="border-b border-site-border pb-4">
           <p className="t-label">{t('schedule-next', { defaultValue: 'Next up' })}</p>
-          <p className="t-heading mt-1 text-site-text">
+          <p dir="auto" className="t-heading mt-1 text-site-text">
             {grid.next.href ? (
               <Link to={grid.next.href} className="hover:underline">
                 {grid.next.title}
@@ -73,7 +79,8 @@ function Week({ grid }: { grid: ScheduleGrid }) {
             )}
           </p>
           <p className="t-meta mt-1">
-            {dayLabel(grid.next.startsAt)} · {time(grid.next.startsAt)}
+            {dayLabel(grid.next.startsAt)}
+            {grid.next.allDay ? '' : ` · ${time(grid.next.startsAt)}`}
           </p>
         </section>
       )}
@@ -91,8 +98,10 @@ function Week({ grid }: { grid: ScheduleGrid }) {
                   key={`${o.slotId}-${o.startsAt}`}
                   className="flex items-baseline gap-3 border-b border-site-border py-2.5"
                 >
-                  <span className="t-meta w-12 shrink-0 tabular-nums">{time(o.startsAt)}</span>
-                  <span className="t-body min-w-0 flex-1 text-site-text">
+                  <span className="t-meta w-16 shrink-0 tabular-nums">
+                    {o.allDay ? <AllDayLabel /> : time(o.startsAt)}
+                  </span>
+                  <span dir="auto" className="t-body min-w-0 flex-1 text-site-text">
                     {o.href ? (
                       <Link to={o.href} className="hover:underline">
                         {o.title}

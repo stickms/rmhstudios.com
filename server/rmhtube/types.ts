@@ -141,6 +141,8 @@ export interface ChatMessage {
   replyToId: string | null;
   replyToContent: string | null;
   replyToUserName: string | null;
+  /** s13-06: the message this one replied to was removed by a moderator. */
+  replyToRemoved?: boolean;
   mentions: string[];
   timestamp: number | null;
 }

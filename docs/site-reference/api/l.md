@@ -61,4 +61,6 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/lists` | `GET` `POST` | `lib/lists/api/lists.server.ts` |
 | `/api/lists/:id` | `DELETE` `GET` `PATCH` | `lib/lists/api/lists.$id.server.ts` |
 | `/api/lists/:id/feed` | `GET` | `lib/lists/api/lists.$id.feed.server.ts` |
+| `/api/lists/:id/leave` | `POST` | `lib/lists/api/lists.$id.leave.server.ts` |
 | `/api/lists/:id/members` | `DELETE` `PUT` | `lib/lists/api/lists.$id.members.server.ts` |
+| `/api/lists/on` | `GET` | `lib/lists/api/lists.on.server.ts` |

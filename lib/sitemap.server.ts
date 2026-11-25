@@ -20,6 +20,7 @@ import { prisma } from '@/lib/prisma.server';
 import { discoverableCommunityWhere } from '@/lib/communities/discovery';
 import { publishedLogWhere } from '@/lib/blog/publication';
 import { cachedSWR } from '@/lib/cached.server';
+import { catalogJobWhere } from '@/lib/rmhladder/own-jobs';
 import type { Prisma } from '@prisma/client';
 import { PUBLIC_POST_WHERE } from '@/lib/feed/rss.server';
 import {
@@ -526,6 +527,8 @@ export const SITEMAP_SECTIONS: Record<SitemapSectionName, Section> = {
 
 function ladderJobWhere(): Prisma.LadderJobWhereInput {
   return {
+    // A member's own job is never a public page, so it is never in the sitemap.
+    ...catalogJobWhere(),
     status: 'active',
     earlyCareerClassification: { in: ['yes', 'probable'] },
     company: { enabled: true },

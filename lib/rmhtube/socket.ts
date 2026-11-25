@@ -152,6 +152,7 @@ function registerHandlers(socket: Socket) {
   socket.on(S2C.PARTY_STATE, (state: PartyState) => usePartyStore.getState().setParty(state));
 
   // ─── Chat ─────────────────────────────────────────────────────────────
+  socket.on(S2C.CHAT_REMOVED, (data: { messageId: string }) => store().removeChatMessage(data.messageId));
   socket.on(S2C.CHAT_TYPING_INDICATOR, (data: { userId: string; userName: string }) => {
     const room = store().room;
     if (!room) return;

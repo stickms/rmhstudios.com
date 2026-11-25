@@ -33,6 +33,8 @@ import { RideMap } from '@/components/rideshare/RideMap';
 import { RideClassPicker } from '@/components/rideshare/RideClassPicker';
 import { FareBreakdown } from '@/components/rideshare/FareBreakdown';
 import { ActiveRidePanel } from '@/components/rideshare/ActiveRidePanel';
+import { ReportTripButton } from '@/components/rideshare/RideSafety';
+import { withinRideReportWindow } from '@/lib/rideshare/report-window';
 import { SavedPlaces } from '@/components/rideshare/SavedPlaces';
 import { estimateFareCents, formatDistance, formatUsd, type RidePlace } from '@/lib/rideshare/geo';
 import { RIDE_CLASSES, rideClassName, type RideClassId } from '@/lib/rideshare/classes';
@@ -78,6 +80,9 @@ interface Ride {
   durationSeconds: number | null;
   requestedAt: string;
   scheduledFor: string | null;
+  acceptedAt: string | null;
+  completedAt: string | null;
+  cancelledAt: string | null;
   driver: (RidePerson & { rideshareDriver: RideVehicle | null }) | null;
 }
 
@@ -585,6 +590,9 @@ function RequestRidePage() {
                       </span>
                     )}
                   </div>
+                  {ride.driver && ride.acceptedAt && withinRideReportWindow(ride.completedAt ?? ride.cancelledAt) && (
+                    <ReportTripButton rideId={ride.id} className="mt-2" />
+                  )}
                 </motion.li>
               ))}
             </ul>

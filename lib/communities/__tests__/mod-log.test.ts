@@ -1170,7 +1170,8 @@ describe('the full log and the export are for moderators', () => {
     expect(body.scope).toBe('full');
     expect(body.entries).toHaveLength(50);
     expect(body.entries[0]!.actor.name).toBe('Mod One');
-    expect(body.nextCursor).toBe('151');
+    // The cursor is the last row's (time, id): `<ms>.<id>`.
+    expect(body.nextCursor).toBe(`${Date.parse('2026-11-20T10:00:00Z')}.151`);
     expect(body.moderators).toHaveLength(1);
     const args = mock('communityModAction.findMany').mock.calls[0]![0] as {
       take: number;

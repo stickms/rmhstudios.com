@@ -22,6 +22,7 @@ import { lockKey } from '@/lib/db/advisory-lock.server';
 import { ERROR_CODES, refusalBody, type ErrorCode } from '@/lib/errors/codes';
 import { userChipSelect } from '@/lib/user-display';
 import { loadDnd5e, loadPf2e } from './data';
+import { hiddenFrom, partyAccess } from './party-access.server';
 import { normalizeCharacter } from './factory';
 import { PARTY_MAX_MEMBERS, PARTY_MAX_ORDER, PARTY_MAX_PLAYING, PARTY_MAX_RUN } from './party-limits';
 import { orderWithinLimits, turnEntry } from './party-schema';
@@ -112,11 +113,14 @@ export function stripSheet(c: Character): SharedSheet {
  * on; anything else is `null` (a 404), so the answer never tells whether the player is in the party.
  */
 export async function readPartySheet(partyId: string, gmId: string, memberUserId: string): Promise<SharedSheet | null> {
+  if (!(await partyAccess(gmId, { ownerId: gmId }))) return null;
   const member = await prisma.rmhCharacterPartyMember.findFirst({
     where: { partyId, userId: memberUserId, sheetShared: true, party: { ownerId: gmId } },
     select: { characterId: true },
   });
   if (!member) return null;
+  // A player the game master is blocked with (either way) is hidden, sheet included.
+  if ((await hiddenFrom(gmId, [memberUserId])).has(memberUserId)) return null;
   const row = (await readCharacterSheets([member.characterId])).get(member.characterId);
   if (!row || row.userId !== memberUserId) return null;
   return stripSheet(row.character);
@@ -140,18 +144,31 @@ export async function listParties(userId: string): Promise<PartyListItem[]> {
       _count: { select: { members: true } },
     },
   });
-  return rows.map((r) => ({
-    id: r.id,
-    name: r.name,
-    system: r.system as GameSystem,
-    role: r.ownerId === userId ? ('gm' as const) : ('player' as const),
-    gm: nameOf(r.owner),
-    players: r._count.members,
-  }));
+  // The list follows the same gate as the party itself: a ban shows nothing, and a party whose game master the viewer
+  // is blocked with (either way) is left out, so the list never names a party the page would 404.
+  if (rows.length === 0 || !(await partyAccess(userId, { ownerId: userId }))) return [];
+  const shut = await hiddenFrom(
+    userId,
+    rows.map((r) => r.ownerId),
+  );
+  return rows
+    .filter((r) => !shut.has(r.ownerId))
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      system: r.system as GameSystem,
+      role: r.ownerId === userId ? ('gm' as const) : ('player' as const),
+      gm: nameOf(r.owner),
+      players: r._count.members,
+    }));
 }
 
 /** Stored lines → the lines a reader sees: members named from the membership (a gone member is dropped). */
-function resolveOrder(stored: unknown, names: ReadonlyMap<string, string>): TurnLine[] {
+function resolveOrder(
+  stored: unknown,
+  names: ReadonlyMap<string, string>,
+  hidden: ReadonlySet<string> = new Set(),
+): TurnLine[] {
   const list: StoredEntry[] = [];
   if (Array.isArray(stored)) {
     for (const raw of stored) {
@@ -163,7 +180,14 @@ function resolveOrder(stored: unknown, names: ReadonlyMap<string, string>): Turn
   for (const e of list) {
     if (e.kind === 'extra') out.push({ id: e.id, kind: 'extra', userId: null, name: e.name, value: e.value });
     else if (names.has(e.userId))
-      out.push({ id: e.id, kind: 'member', userId: e.userId, name: names.get(e.userId) ?? '', value: e.value });
+      out.push({
+        id: e.id,
+        kind: 'member',
+        userId: e.userId,
+        name: names.get(e.userId) ?? '',
+        value: e.value,
+        ...(hidden.has(e.userId) ? { hidden: true } : {}),
+      });
   }
   return out;
 }
@@ -198,19 +222,27 @@ export async function getParty(partyId: string, userId: string): Promise<PartyDe
     },
   });
   if (!p) return null;
+  // A banned viewer, or one blocked either way with the game master, reads nothing: the same 404 as a stranger.
+  if (!(await partyAccess(userId, p))) return null;
   const isGm = p.ownerId === userId;
-  const summaries = await summariesFor(p.members);
-  const names = new Map(p.members.map((m) => [m.userId, nameOf(m.user)]));
+  // A block between two people hides each from the other inside the party: "A player", no summary, no sheet state.
+  const hidden = await hiddenFrom(
+    userId,
+    p.members.map((m) => m.userId),
+  );
+  const summaries = await summariesFor(p.members.filter((m) => !hidden.has(m.userId)));
+  const names = new Map(p.members.map((m) => [m.userId, hidden.has(m.userId) ? '' : nameOf(m.user)]));
   const members: PartyMemberView[] = p.members.map((m) => ({
     userId: m.userId,
-    name: nameOf(m.user),
+    name: names.get(m.userId) ?? '',
     joinedAt: m.joinedAt.getTime(),
     isGm: m.userId === p.ownerId,
     // Whether a player shares their sheet is for the game master and the player; the others read false.
-    sheetShared: (isGm || m.userId === userId) && m.sheetShared,
+    sheetShared: !hidden.has(m.userId) && (isGm || m.userId === userId) && m.sheetShared,
     summary: summaries.get(m.userId) ?? null,
+    hidden: hidden.has(m.userId),
   }));
-  const order = resolveOrder(p.initiative, names);
+  const order = resolveOrder(p.initiative, names, hidden);
   return {
     id: p.id,
     name: p.name,
@@ -363,9 +395,9 @@ export async function swapCharacter(
 ): Promise<{ ok: true } | Refused> {
   const mine = await prisma.rmhCharacterPartyMember.findFirst({
     where: { partyId, userId },
-    select: { party: { select: { system: true } } },
+    select: { party: { select: { system: true, ownerId: true } } },
   });
-  if (!mine) return refuse('NOT_FOUND');
+  if (!mine || !(await partyAccess(userId, mine.party))) return refuse('NOT_FOUND');
   const character = await prisma.rmhCharacter.findFirst({
     where: { id: characterId, userId },
     select: { system: true },
@@ -378,6 +410,11 @@ export async function swapCharacter(
 
 /** A player's own choice. `false` when they are not in the party. */
 export async function setSheetShared(partyId: string, userId: string, sheetShared: boolean): Promise<boolean> {
+  const party = await prisma.rmhCharacterParty.findFirst({
+    where: { id: partyId, OR: [{ ownerId: userId }, { members: { some: { userId } } }] },
+    select: { ownerId: true },
+  });
+  if (!party || !(await partyAccess(userId, party))) return false;
   const r = await prisma.rmhCharacterPartyMember.updateMany({ where: { partyId, userId }, data: { sheetShared } });
   return r.count > 0;
 }
@@ -400,7 +437,7 @@ export async function writeOrder(
       members: { select: { userId: true, user: { select: userChipSelect } } },
     },
   });
-  if (!p) return refuse('NOT_FOUND');
+  if (!p || !(await partyAccess(ownerId, { ownerId }))) return refuse('NOT_FOUND');
   if (p.orderVersion !== body.version) return refuse('PARTY_ORDER_CHANGED');
   const names = new Map(p.members.map((m) => [m.userId, nameOf(m.user)]));
 

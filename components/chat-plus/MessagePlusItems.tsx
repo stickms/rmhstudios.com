@@ -6,6 +6,7 @@ import { Forward, MessageSquareText, MoreHorizontal, Pin, PinOff } from 'lucide-
 import { toast } from '@/lib/toast';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem } from '@/components/ui/menu';
+import { ReportMenuRow } from '@/components/messages/ReportMessage';
 import { EditDescriptionsMenuItem } from '@/components/feed/EditDescriptionsMenuItem';
 import { cn } from '@/lib/utils';
 import { isPlainKind, type ChatRef } from '@/lib/chat-plus/types';
@@ -135,12 +136,15 @@ export function GroupMessageMenu({
   message,
   extra,
   onEditAlts,
+  onReport,
   className,
 }: {
   chat: ChatRef;
   message: PlusMessage;
   /** Extra rows from the host (e.g. Copy). */
   extra?: ReactNode;
+  /** s13-17: given only for another member's reportable message; opens the report dialog. */
+  onReport?: (() => void) | undefined;
   /** Open the image-description editor; given only while the sender may still change them (24 hours). */
   onEditAlts?: (() => void) | undefined;
   className?: string;
@@ -188,6 +192,14 @@ export function GroupMessageMenu({
           />
         )}
         {extra}
+        {onReport && (
+          <ReportMenuRow
+            onReport={() => {
+              setOpen(false);
+              onReport();
+            }}
+          />
+        )}
       </AnchoredMenu>
     </>
   );

@@ -8,6 +8,29 @@ import { csvCell } from '@/lib/admin/audit-query';
 /** Rows older than this are pruned by the monthly job and left out of the export. */
 export const MOD_LOG_RETENTION_DAYS = 365;
 export const MOD_LOG_PAGE_SIZE = 50;
+/**
+ * A page boundary is the last row's `(createdAt, id)`, one opaque string `<ms>.<id>`: the log is ordered by time and
+ * then id, so paging by id alone could skip or repeat a row whose id order differs from its time order (two
+ * transactions that commit out of order). The column is millisecond precision, so the cursor loses nothing.
+ */
+export interface ModLogCursor {
+  createdAt: Date;
+  id: bigint;
+}
+
+export function encodeModLogCursor(row: { createdAt: Date; id: bigint }): string {
+  return `${row.createdAt.getTime()}.${row.id}`;
+}
+
+/** `null` for anything that is not a cursor of this format, an old numeric one included: the list starts from the top. */
+export function decodeModLogCursor(cursor: string | undefined | null): ModLogCursor | null {
+  const m = cursor ? /^(\d{1,16})\.(\d{1,19})$/.exec(cursor) : null;
+  if (!m) return null;
+  const createdAt = new Date(Number(m[1]));
+  if (Number.isNaN(createdAt.getTime())) return null;
+  return { createdAt, id: BigInt(m[2]!) };
+}
+
 /** One export is bounded so a single request stays cheap. */
 export const MOD_LOG_EXPORT_MAX_ROWS = 20_000;
 export const MOD_LOG_REASON_MAX = 300;

@@ -93,6 +93,16 @@ const db = {
     findFirst: async ({ where }: { where: { OR: { blockerId: string; blockedId: string }[] } }) =>
       store.blocks.find((b) => where.OR.some((w) => w.blockerId === b.blockerId && w.blockedId === b.blockedId)) ??
       null,
+    findMany: async ({
+      where,
+    }: {
+      where: { OR: { blockerId: string | { in: string[] }; blockedId: string | { in: string[] } }[] };
+    }) => {
+      const is = (c: string | { in: string[] }, v: string) => (typeof c === 'string' ? c === v : c.in.includes(v));
+      return store.blocks.filter((b) =>
+        where.OR.some((w) => is(w.blockerId, b.blockerId) && is(w.blockedId, b.blockedId)),
+      );
+    },
   },
   rmhCharacterPartyRoll: {
     create: async ({ data }: { data: Omit<Roll, 'id' | 'createdAt'> }) => {
@@ -201,6 +211,15 @@ describe('who may roll', () => {
     expect(await listPartyRolls('p1', 'party-1')).toBeNull();
     expect(await listPartyRolls('p2', 'party-1')).toBeNull();
     expect(await listPartyRolls('gm', 'party-1')).not.toBeNull();
+  });
+
+  it('names a player the reader is blocked with as hidden, not by character', async () => {
+    await rollForParty('p2', 'party-1', body({ kind: 'initiative' }));
+    store.blocks = [{ blockerId: 'p1', blockedId: 'p2' }];
+    const seen = await listPartyRolls('p1', 'party-1');
+    expect(seen!.rolls.map((r) => r.who)).toEqual([{ kind: 'hidden' }]);
+    // The roller reads her own roll by her character's name (a viewer's own id is never hidden).
+    expect((await listPartyRolls('p2', 'party-1'))!.rolls[0]!.who.kind).toBe('character');
   });
 
   it('refuses a game master without a character a sheet roll, with the code', async () => {

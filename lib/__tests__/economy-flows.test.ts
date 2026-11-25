@@ -145,6 +145,16 @@ describe('the inventory is well formed', () => {
     expect(shape.transfers).toBeGreaterThan(0);
   });
 
+  it('classifies selling prediction shares as a faucet paired with the stake that bought them', () => {
+    const sale = COIN_FLOWS.find((f) => f.id === 'prediction-sale');
+    expect(sale).toMatchObject({
+      kind: 'faucet',
+      source: 'lib/predictions/predictions.server.ts',
+      pairsWith: 'prediction-stake',
+    });
+    expect(COIN_FLOWS.find((f) => f.id === 'prediction-stake')?.kind).toBe('sink');
+  });
+
   it('every unbounded faucet either names its sink or is a deliberate exception', () => {
     // The rule the file's header argues for: an unbounded faucet is fine when
     // the same activity takes coins on the way in, and worth a second look when

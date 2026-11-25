@@ -85,6 +85,7 @@ vi.mock('@/lib/feed/audience.server', () => ({
 vi.mock('@/lib/social/follow-graph.server', () => ({
   invalidateFollowingIds: () => {},
 }));
+vi.mock('@/lib/db/advisory-lock.server', () => ({ lockKey: async () => {} }));
 vi.mock('@/lib/moderation.server', () => ({
   invalidateHiddenAuthors: () => {},
 }));
@@ -299,6 +300,8 @@ vi.mock('@/lib/prisma.server', () => {
     // The block endpoint also clears the blocker's repost-mute row for the person (s05-07).
     repostMute: { deleteMany: () => lazy(() => ({ count: 0 })) },
     // ...and ends deck editing between the pair (s11-10).
+    customFeed: { findMany: async () => [] },
+    customFeedMember: { deleteMany: async () => ({ count: 0 }) },
     deckEditor: {
       deleteMany: (args: unknown) =>
         lazy(() => {

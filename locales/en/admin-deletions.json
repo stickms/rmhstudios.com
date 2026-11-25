@@ -1,9 +1,13 @@
 {
+  "billing-none": "Nothing to stop",
+  "billing-pending": "Not stopped yet",
+  "billing-stopped": "Stopped",
   "cancel": "Cancel",
   "card-description": "Accounts waiting out their grace period, deletions that are overdue or failing, and a way to try an overdue one again.",
   "card-title": "Account deletions",
   "col-actions": "Actions",
   "col-attempts": "Attempts",
+  "col-billing": "Billing",
   "col-due": "Due",
   "col-last-error": "Last error",
   "col-member": "Member",

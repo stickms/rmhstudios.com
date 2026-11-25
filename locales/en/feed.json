@@ -1537,6 +1537,7 @@
   "system-label-ride_message": "Ride message",
   "system-label-ride_request": "New ride request",
   "system-label-rmhtube_party": "RMHTube",
+  "system-label-news_story": "News story",
   "system-label-strike": "Site moderation",
   "system-label-study_due": "Study",
   "system-label-tournament_checkin": "Tournaments",
@@ -1969,6 +1970,8 @@
   "settings-nav-progress-hint": "XP, streaks, quests and achievements",
   "settings-nav-replays": "Replays",
   "settings-nav-replays-hint": "Your saved game replays: make one public or unlisted, or delete it",
+  "settings-nav-lists": "Lists you are on",
+  "settings-nav-lists-hint": "The public lists that include you, and leaving them",
   "settings-nav-blocked": "Blocked and muted",
   "settings-nav-blocked-hint": "Everyone you blocked or muted, with the date, and unblock or unmute them",
   "settings-nav-feedback": "Your feedback",
@@ -2078,5 +2081,6 @@
   "field-group-message": "Message",
   "field-message": "Message",
   "field-search-people": "Search people",
-  "field-poll-option": "Poll option {{index}}"
+  "field-poll-option": "Poll option {{index}}",
+  "system-label-dm": "Message"
 }

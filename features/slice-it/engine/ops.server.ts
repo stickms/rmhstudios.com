@@ -23,6 +23,7 @@ import {
   type NoteStat,
 } from './chart-health';
 import { BEATMAP_VERSION } from './beatmap';
+import { MIN_SAMPLED_RUNS } from './miss-times';
 import { SONG_AUDIO_PREFIX, TOTAL_STORAGE_LIMIT_BYTES } from './constants';
 
 /* ─── O1 — recording and reading the heatmap ─────────────────────────────── */
@@ -101,6 +102,46 @@ export async function chartHeatmap(
     select: { noteMs: true, attempts: true, misses: true },
   });
   return missHeatmap(rows as NoteStat[], durationSec, buckets);
+}
+
+/** What the chart's author reads: where players miss it, over its current version. */
+export interface ChartMisses {
+  chartHash: string;
+  /** The most runs any note was counted over: `attempts` is one per sampled run, for every note of the chart. */
+  sampledRuns: number;
+  buckets: HeatmapBucket[];
+  notes: { noteMs: number; rate: number }[];
+}
+
+/**
+ * The miss heat for one chart revision, from one indexed read (`SliceNoteStat` `[chartId, chartHash, noteMs]`).
+ *
+ * Under `MIN_SAMPLED_RUNS` the buckets and notes are empty: the count is still returned so the editor can say how far
+ * from showing anything it is. Rows of an earlier hash are never read — an edit starts a fresh histogram.
+ */
+export async function chartMisses(
+  chartId: string,
+  chartHash: string,
+  durationSec: number,
+  buckets = 64,
+): Promise<ChartMisses> {
+  const rows = await prisma.sliceNoteStat.findMany({
+    where: { chartId, chartHash },
+    orderBy: { noteMs: 'asc' },
+    select: { noteMs: true, attempts: true, misses: true },
+  });
+  let sampledRuns = 0;
+  for (const row of rows) sampledRuns = Math.max(sampledRuns, row.attempts);
+  if (sampledRuns < MIN_SAMPLED_RUNS) return { chartHash, sampledRuns, buckets: [], notes: [] };
+
+  return {
+    chartHash,
+    sampledRuns,
+    buckets: missHeatmap(rows as NoteStat[], durationSec, buckets),
+    notes: rows
+      .filter((row) => row.attempts > 0)
+      .map((row) => ({ noteMs: row.noteMs, rate: row.misses / row.attempts })),
+  };
 }
 
 /* ─── O2 — automatic bad-chart detection ─────────────────────────────────── */

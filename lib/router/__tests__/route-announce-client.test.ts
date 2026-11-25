@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { installRouteAnnouncer, MAIN_CONTENT_ID, ROUTE_ANNOUNCER_ID } from '@/lib/router/route-announce-client';
+import {
+  installRouteAnnouncer,
+  MAIN_CONTENT_ID,
+  ROUTE_ANNOUNCER_ALT_ID,
+  ROUTE_ANNOUNCER_ID,
+} from '@/lib/router/route-announce-client';
 
+type Before = { fromLocation?: { pathname: string }; toLocation: { pathname: string } };
 type Handler = (event: { fromLocation?: { pathname: string }; toLocation: { pathname: string } }) => void;
 
-function setup(opts: { appRoute?: boolean; activeIsBody?: boolean } = {}) {
+function setup(opts: { appRoute?: boolean; activeIsBody?: boolean; noAlt?: boolean; before?: Before } = {}) {
   const writes: string[] = [];
   const focused: Array<unknown> = [];
   const listeners = new Map<string, () => void>();
@@ -19,6 +25,17 @@ function setup(opts: { appRoute?: boolean; activeIsBody?: boolean } = {}) {
       return writes[writes.length - 1] ?? '';
     },
   };
+  const altWrites: string[] = [];
+  const alt = {
+    dataset: {} as Record<string, string | undefined>,
+    focus: () => {},
+    set textContent(v: string | null) {
+      altWrites.push(v ?? '');
+    },
+    get textContent() {
+      return altWrites[altWrites.length - 1] ?? '';
+    },
+  };
   const main = {
     textContent: '',
     focus: (o?: unknown) => {
@@ -30,7 +47,14 @@ function setup(opts: { appRoute?: boolean; activeIsBody?: boolean } = {}) {
     body,
     activeElement: opts.activeIsBody ? body : link,
     documentElement: { classList: { contains: (n: string) => n === 'app-route' && !!opts.appRoute } },
-    getElementById: (id: string) => (id === ROUTE_ANNOUNCER_ID ? region : id === MAIN_CONTENT_ID ? main : null),
+    getElementById: (id: string) =>
+      id === ROUTE_ANNOUNCER_ID
+        ? region
+        : id === ROUTE_ANNOUNCER_ALT_ID && !opts.noAlt
+          ? alt
+          : id === MAIN_CONTENT_ID
+            ? main
+            : null,
     addEventListener: (type: string, fn: () => void) => void listeners.set(type, fn),
     removeEventListener: (type: string) => void listeners.delete(type),
   };
@@ -44,9 +68,9 @@ function setup(opts: { appRoute?: boolean; activeIsBody?: boolean } = {}) {
       return () => {};
     },
   };
-  const uninstall = installRouteAnnouncer(router as never, doc as never);
+  const uninstall = installRouteAnnouncer(router as never, doc as never, opts.before);
   const go = (from: string, to: string) => resolved({ fromLocation: { pathname: from }, toLocation: { pathname: to } });
-  return { writes, focused, listeners, router, go, uninstall, doc };
+  return { writes, altWrites, focused, listeners, router, go, uninstall, doc };
 }
 
 describe('installRouteAnnouncer', () => {
@@ -59,6 +83,41 @@ describe('installRouteAnnouncer', () => {
     const { writes, go } = setup();
     go('/explore', '/settings');
     expect(writes).toEqual(['', 'Settings']);
+  });
+
+  it('alternates the two regions, so a repeated title is a fresh insertion into an emptied region', () => {
+    const { writes, altWrites, go } = setup();
+    go('/a', '/settings');
+    go('/settings', '/other-settings');
+    go('/other-settings', '/settings');
+    // First and third go to the first region, second to the alternate; the one not used is emptied each time.
+    // 1st: first region (alt emptied, then written). 2nd: alternate (first emptied). 3rd: first again.
+    expect(writes).toEqual(['', 'Settings', '', '', 'Settings']);
+    expect(altWrites).toEqual(['', '', 'Settings', '']);
+  });
+
+  it('works with the first region alone', () => {
+    const { writes, go } = setup({ noAlt: true });
+    go('/a', '/b');
+    go('/b', '/c');
+    expect(writes.filter((w) => w !== '')).toEqual(['Settings', 'Settings']);
+  });
+
+  it('announces a navigation made before install, once, on install', () => {
+    const { writes, altWrites, go } = setup({
+      before: { fromLocation: { pathname: '/a' }, toLocation: { pathname: '/b' } },
+    });
+    expect(writes.filter((w) => w !== '')).toEqual(['Settings']);
+    go('/b', '/c');
+    expect(altWrites.filter((w) => w !== '')).toEqual(['Settings']);
+  });
+
+  it('announces nothing on install when the earlier change kept the pathname or there was none', () => {
+    for (const before of [undefined, null, { fromLocation: { pathname: '/a' }, toLocation: { pathname: '/a' } }]) {
+      const t = setup({ before: before as Before | undefined });
+      expect(t.writes).toEqual([]);
+      expect(t.altWrites).toEqual([]);
+    }
   });
 
   it('falls back to the document title when no match names one', () => {

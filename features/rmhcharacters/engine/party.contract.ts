@@ -43,6 +43,8 @@ export interface TurnLine {
   userId: string | null;
   name: string;
   value: number;
+  /** True for a player the reader is blocked with: the name is empty and the reader's UI says "A player". */
+  hidden?: boolean;
 }
 
 export interface PartyMemberView {
@@ -55,6 +57,8 @@ export interface PartyMemberView {
   sheetShared: boolean;
   /** Null when the character could not be read (its rules data is gone). */
   summary: PartySummary | null;
+  /** True for a player the reader is blocked with: no name, summary or sheet state. */
+  hidden?: boolean;
 }
 
 export interface PartyDetail {

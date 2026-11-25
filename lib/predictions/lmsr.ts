@@ -85,3 +85,20 @@ export function pricePercent(qYes: number, qNo: number, b: number): number {
   const p = Math.round(priceYes(qYes, qNo, b) * 100);
   return Math.min(99, Math.max(1, p));
 }
+
+/**
+ * Coins paid out for selling `shares` of `side` back to the market maker.
+ *
+ * The exact amount is `C(q) − C(q with that side reduced by shares)`; the
+ * result is rounded **down** to a whole coin, so the remainder stays in the
+ * market and a buy followed by a sell never returns more than it cost. Returns
+ * 0 for a non-positive or non-finite share count.
+ */
+export function proceedsForShares(qYes: number, qNo: number, b: number, side: Side, shares: number): number {
+  if (!Number.isFinite(shares) || shares <= 0) return 0;
+  const before = cost(qYes, qNo, b);
+  const after = side === 'YES' ? cost(qYes - shares, qNo, b) : cost(qYes, qNo - shares, b);
+  const diff = before - after;
+  if (!Number.isFinite(diff) || diff <= 0) return 0;
+  return Math.floor(diff);
+}

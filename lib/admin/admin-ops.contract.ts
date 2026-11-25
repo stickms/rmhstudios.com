@@ -21,6 +21,7 @@ import type { ChartSeries, DeployMarker, RangeId } from '@/lib/ops/series';
 import type { qotdAddSchema } from '@/lib/posts-plus/schema';
 import type { BotWorkerSettingsInput } from '@/lib/rmhark-ai/bot-stats';
 import type { BotActivityStats, BotWorkerSettingsView } from '@/lib/rmhark-ai/bot-settings.server';
+import type { DmReportView } from '@/lib/messages/dm-report';
 
 /* ------------------------------ moderation ------------------------------ */
 
@@ -47,6 +48,8 @@ export interface AdminReportRow {
   targetUser: AdminQueueUser | null;
   /** s03-04: moderator notes on the reported member (0 when there is no member). */
   targetNoteCount: number;
+  /** s13-17: a reported message with its earlier versions; absent for every other kind. */
+  dm?: DmReportView | null;
 }
 
 /** The moderation queue for one status (default PENDING) plus per-status counts. */

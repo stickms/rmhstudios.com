@@ -70,7 +70,8 @@ export function makeDb(seed: Record<string, Row[]> = {}) {
       calls.push({ model: name, op: 'upsert', args });
       const found = rows(name).find((r) => matches(r, args.where as Row));
       if (found) Object.assign(found, args.update);
-      else rows(name).push({ ...(args.create as Row) });
+      // The column defaults the schema gives (`@default([])`), so a created hold reads like a real one.
+      else rows(name).push({ ...(name === 'deletionHold' ? { subscriptionIds: [] } : {}), ...(args.create as Row) });
       return {};
     }),
   });

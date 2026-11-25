@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react';
-import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
+import { createFileRoute, Link, redirect, useRouter } from '@tanstack/react-router';
 import { noindexHead } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
@@ -20,8 +20,10 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { prisma } from '@/lib/prisma.server';
-import { getSettings, type QueriesPrisma } from '@/lib/rmhladder/server/queries';
+import { invalidateLadderCalendarFeed } from '@/lib/rmhladder/calendar-entries.server';
+import { getSettings, listWatchlistCompanies, type QueriesPrisma } from '@/lib/rmhladder/server/queries';
 import {
   updatePrefs,
   upsertKeyword,
@@ -49,12 +51,7 @@ const fetchSettings = createServerFn({ method: 'GET' }).handler(async () => {
     throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/settings' } });
   const [settings, companies, savedSearches] = await Promise.all([
     getSettings(queriesPrisma, session.user.id),
-    prisma.ladderCompany.findMany({
-      where: { enabled: true },
-      select: { id: true, name: true },
-      orderBy: { name: 'asc' },
-      take: 500,
-    }),
+    listWatchlistCompanies(queriesPrisma),
     prisma.ladderSavedSearch.findMany({
       where: { userId: session.user.id },
       select: { id: true, name: true, filters: true, alertsOn: true, updatedAt: true },
@@ -73,10 +70,12 @@ const doUpdatePrefs = createServerFn({ method: 'POST' })
     if (!session?.user)
       throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/settings' } });
     try {
-      return {
-        ok: true as const,
-        prefs: await updatePrefs(actionsPrisma, session.user.id, data as PrefsPatch),
-      };
+      const prefs = await updatePrefs(actionsPrisma, session.user.id, data as PrefsPatch);
+      // s13-09 — the switch or the zone changed what the private feed holds: drop its 60-second cache.
+      const patch = data as PrefsPatch;
+      if (patch.calendarInFeed !== undefined || patch.timezone !== undefined)
+        await invalidateLadderCalendarFeed(session.user.id);
+      return { ok: true as const, prefs };
     } catch (err) {
       return { ok: false as const, error: err instanceof Error ? err.message : String(err) };
     }
@@ -116,6 +115,35 @@ const PROGRAM_TYPES = [
   'mba',
   'other',
 ] as const;
+
+/** "Show on my calendar" (s13-09): interviews, follow-ups and deadlines on /calendar and in the private feed. */
+function CalendarSetting({ checked, onChange }: { checked: boolean; onChange: (on: boolean) => void }) {
+  const { t } = useTranslation('ladder-calendar');
+  return (
+    <div className="flex flex-col gap-2 border-t border-site-border pt-4">
+      <div className="flex items-center justify-between gap-3">
+        <span id="rl-calendar-label" className="text-sm font-medium text-site-text">
+          {t('setting.label', { defaultValue: 'Show on my calendar' })}
+        </span>
+        <Switch
+          checked={checked}
+          onCheckedChange={onChange}
+          aria-labelledby="rl-calendar-label"
+          aria-describedby="rl-calendar-hint"
+        />
+      </div>
+      <p id="rl-calendar-hint" className="text-sm text-site-text-muted">
+        {t('setting.hint', {
+          defaultValue:
+            'Adds your interviews, follow-up dates and application deadlines to your week on the calendar and to your private calendar feed. Notes, contacts and pay are never included.',
+        })}{' '}
+        <Link to="/calendar" className="underline">
+          {t('setting.link', { defaultValue: 'Open the calendar' })}
+        </Link>
+      </p>
+    </div>
+  );
+}
 
 function SettingsPage() {
   const { t } = useTranslation('site');
@@ -459,6 +487,11 @@ function SettingsPage() {
                 'Use boost keywords below to prioritize companies, skills, and role families.',
             })}
           </p>
+
+          <CalendarSetting
+            checked={prefs.calendarInFeed === true}
+            onChange={(on) => void patchPrefs({ calendarInFeed: on })}
+          />
         </section>
 
         <section className={`${sectionCls} md:col-span-2`} aria-labelledby="rl-set-keywords">

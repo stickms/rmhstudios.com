@@ -12,6 +12,8 @@ import { isCardKind, isLineKind, type ChatRef } from '@/lib/chat-plus/types';
 import { MessageAltsDialog } from '../MessageAltsDialog';
 import { MessageImages } from '../MessageImages';
 import { canEditImageAlts } from '@/lib/messages/image-alts';
+import { canReportMessage } from '@/lib/messages/dm-report';
+import { ReportMessageDialog } from '@/components/messages/ReportMessage';
 import { SpineItem, SpineStation } from '@/components/ui/spine';
 import { cn } from '@/lib/utils';
 import { memberDisplayName } from './group-chat-state';
@@ -69,6 +71,8 @@ export function GroupMessageRow({
   const mine = m.sender.id === currentUserId;
   // The sender's "Edit descriptions": the saved list shows at once, whether or not the realtime event arrives.
   const [altsEditing, setAltsEditing] = useState(false);
+  // s13-17: "Report message" in the message menu opens the report dialog for this message.
+  const [reporting, setReporting] = useState(false);
   const [savedAlts, setSavedAlts] = useState<string[] | null>(null);
   const imageAlts = savedAlts ?? m.imageAlts;
   const newDay =
@@ -177,9 +181,15 @@ export function GroupMessageRow({
                 ? () => setAltsEditing(true)
                 : undefined
             }
+            onReport={
+              canReportMessage({ senderId: m.sender.id, kind: m.kind }, currentUserId) && !m.id.startsWith('temp-')
+                ? () => setReporting(true)
+                : undefined
+            }
             className="-my-2 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
           />
         </div>
+        {reporting && <ReportMessageDialog messageId={m.id} onClose={() => setReporting(false)} />}
         {altsEditing && m.imageUrls && (
           <MessageAltsDialog
             chatId={groupId}

@@ -14,6 +14,7 @@ export default defineFeature({
     'features/slice-it/api/slice-it.admin.takedown.server.ts',
     'features/slice-it/api/slice-it.charts.server.ts',
     'features/slice-it/api/slice-it.charts.$id.server.ts',
+    'features/slice-it/api/slice-it.charts.$id.misses.server.ts',
     'features/slice-it/api/slice-it.charts.$id.reviews.server.ts',
     'features/slice-it/api/slice-it.charts.$id.revisions.server.ts',
     'features/slice-it/api/slice-it.charts.$id.revisions.$revisionId.server.ts',
@@ -55,7 +56,7 @@ export default defineFeature({
     'app/routes/slice-it/index.tsx',
     'app/routes/slice-it/player.$handle.tsx',
   ],
-  namespaces: ['r-slice-it', 'chart-history'],
+  namespaces: ['r-slice-it', 'chart-history', 'chart-misses'],
   catalog: 'features/slice-it/catalog.ts',
   listed: true,
 });

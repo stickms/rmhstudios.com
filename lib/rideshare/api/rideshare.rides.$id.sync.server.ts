@@ -2,6 +2,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/rideshare/rideshare.contract';
 import { prisma } from '@/lib/prisma.server';
+import { refuse, rideChatClosed } from '@/lib/rideshare/safety.server';
 
 /**
  * Lightweight snapshot of a single ride for the live trip panel: status, the
@@ -68,19 +69,20 @@ export const route = apiRoute('/api/rideshare/rides/$id/sync', {
     });
 
     if (!ride) {
-      return Response.json({ error: 'Ride not found' }, { status: 404 });
+      return refuse('NOT_FOUND');
     }
     const isRider = ride.riderId === userId;
     const isDriver = ride.driverId === userId;
     if (!isRider && !isDriver) {
-      return Response.json({ error: 'Not your ride.' }, { status: 403 });
+      return refuse('FORBIDDEN');
     }
 
+    const chatClosed = await rideChatClosed(ride, userId);
     const { riderId, driverId, ...rest } = ride;
     void riderId;
     void driverId;
     return Response.json({
-      ride: rest,
+      ride: { ...rest, chatClosed },
       role: isRider ? 'rider' : 'driver',
     });
   }),

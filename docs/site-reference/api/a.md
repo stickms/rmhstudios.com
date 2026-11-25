@@ -233,6 +233,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/altair/run/finish` | `POST` | `features/altair/api/altair.run.finish.server.ts` |
 | `/api/altair/run/start` | `POST` | `features/altair/api/altair.run.start.server.ts` |
 | `/api/altair/run/status` | `GET` | `features/altair/api/altair.run.status.server.ts` |
+| `/api/altair/runs` | `GET` | `features/altair/api/altair.runs.server.ts` |
 | `/api/altair/score` | `POST` | `features/altair/api/altair.score.server.ts` |
 
 ## `/api/analytics`

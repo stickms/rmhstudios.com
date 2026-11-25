@@ -7,12 +7,14 @@ import { invalidateFollowingIds } from '@/lib/social/follow-graph.server';
 import { invalidateAudience, recordFollowEvent } from '@/lib/social/follow-events.server';
 import { clearRepostMuteForBlock, invalidateRepostMutes } from '@/lib/feed/repost-mutes.server';
 import { endEditingBetween } from '@/lib/study/deck-editors.server';
+import { lockKey } from '@/lib/db/advisory-lock.server';
+import { listMembersLockKey } from '@/lib/lists/lists.server';
 import { toggleAction } from '@/lib/moderation/blocked-muted-schema';
 import { z } from 'zod';
 
 /**
  * POST /api/moderation/block — toggle a block on another user.
- * Blocking also removes any follow relationship in both directions.
+ * Blocking also removes any follow relationship in both directions, and each member from the other's lists (s13-11).
  * An explicit `block` boolean (the settings list, s05-14) says which way to go, so a stale list never blocks someone it
  * meant to unblock; absent flips the current state.
  * GET — list the ids the current user has blocked.
@@ -68,7 +70,22 @@ export const route = apiRoute('/api/moderation/block', {
       // Create the block and tear down follows both ways in one transaction. Each follow the
       // block removes is logged as `blocked` in the same transaction.
       await prisma.$transaction(async (tx) => {
+        // Lists either member owns: take their membership locks first (in id order, so two blocks never deadlock), so an
+        // add that is mid-flight finishes before the memberships go and one that starts later sees the block.
+        const lists = await tx.customFeed.findMany({
+          where: { kind: 'list', ownerId: { in: [blockerId, blockedId] } },
+          select: { id: true },
+          orderBy: { id: 'asc' },
+        });
+        for (const l of lists) await lockKey(tx, listMembersLockKey(l.id));
         await tx.userBlock.create({ data: { blockerId, blockedId } });
+        // Each is off the other's lists, and only those: a third member's list naming both is untouched.
+        await tx.customFeedMember.deleteMany({
+          where: { userId: blockedId, feed: { kind: 'list', ownerId: blockerId } },
+        });
+        await tx.customFeedMember.deleteMany({
+          where: { userId: blockerId, feed: { kind: 'list', ownerId: blockedId } },
+        });
         // A block already hides everything, so the blocker's "reposts off" row for this person is dead weight.
         await clearRepostMuteForBlock(tx, blockerId, blockedId);
         await endEditingBetween(tx, blockerId, blockedId);

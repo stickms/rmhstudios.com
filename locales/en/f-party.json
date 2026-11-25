@@ -94,8 +94,6 @@
   "rated": "Thanks for rating.",
   "report": "Report",
   "report-desc": "Packs with several reports are hidden until a moderator reviews them.",
-  "report-title": "Report this pack?",
-  "reported": "Thanks, reported.",
   "schedule-daily": "Schedule as daily",
   "schedule-failed": "Could not schedule (past date?).",
   "scheduled": "Scheduled as the daily for {{d}}.",

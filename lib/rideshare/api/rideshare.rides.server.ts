@@ -7,6 +7,8 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { isValidLatLng, estimateFareCents } from '@/lib/rideshare/geo';
 import { routeEstimate } from '@/lib/rideshare/osm.server';
 import { notifyAvailableDrivers } from '@/lib/rideshare/notify.server';
+import { blockedRiderFilter, refuse } from '@/lib/rideshare/safety.server';
+import { getBlockedAuthorIds } from '@/lib/moderation.server';
 
 const ACTIVE_STATUSES = ['REQUESTED', 'ACCEPTED', 'IN_PROGRESS'] as const;
 
@@ -69,15 +71,18 @@ export const route = apiRoute('/api/rideshare/rides', {
         select: { status: true },
       });
       if (!driver || driver.status !== 'APPROVED') {
-        return Response.json({ error: 'You must be an approved driver.' }, { status: 403 });
+        return refuse('RIDE_DRIVER_NOT_APPROVED');
       }
       if (scope === 'available') {
         // Open immediate requests, plus scheduled rides that are now
         // within the lead window so drivers can claim them ahead of time.
+        // A rider who has blocked this driver, or whom this driver blocked, is left out in the query itself, so a
+        // page of 50 stays full. A failed block lookup fails the request.
+        const blocked = await getBlockedAuthorIds(userId);
         const rides = await prisma.ride.findMany({
           where: {
             driverId: null,
-            riderId: { not: userId },
+            ...blockedRiderFilter(blocked, userId),
             OR: [
               { status: 'REQUESTED' },
               {
@@ -116,8 +121,7 @@ export const route = apiRoute('/api/rideshare/rides', {
     {
       body: createRideBody,
       // Keep the route's own message: the first zod issue, as before.
-      invalid: (error) =>
-        Response.json({ error: error.issues[0]?.message ?? 'Invalid request' }, { status: 400 }),
+      invalid: () => refuse('INVALID_INPUT'),
     },
     async ({ request, session, body }) => {
       const userId = session.user.id;
@@ -129,16 +133,13 @@ export const route = apiRoute('/api/rideshare/rides', {
         prefix: 'rideshare-ride-create',
       });
       if (!allowed) {
-        return Response.json(
-          { error: 'Too many requests. Please slow down.' },
-          { status: 429, headers: { 'Retry-After': String(retryAfter) } },
-        );
+        return refuse('RATE_LIMITED', undefined, { 'Retry-After': String(retryAfter) });
       }
 
       const pickup = { lat: body.pickupLat, lng: body.pickupLng };
       const dropoff = { lat: body.dropoffLat, lng: body.dropoffLng };
       if (!isValidLatLng(pickup) || !isValidLatLng(dropoff)) {
-        return Response.json({ error: 'Invalid coordinates' }, { status: 400 });
+        return refuse('INVALID_INPUT');
       }
 
       // Validate the scheduled time, if booking for later.
@@ -147,16 +148,10 @@ export const route = apiRoute('/api/rideshare/rides', {
         const when = new Date(body.scheduledFor);
         const delta = when.getTime() - Date.now();
         if (Number.isNaN(when.getTime()) || delta < MIN_SCHEDULE_AHEAD_MS) {
-          return Response.json(
-            { error: 'Please choose a pickup time at least 5 minutes from now.' },
-            { status: 400 },
-          );
+          return refuse('RIDE_SCHEDULE_TOO_SOON');
         }
         if (delta > MAX_SCHEDULE_AHEAD_MS) {
-          return Response.json(
-            { error: 'You can schedule rides up to 30 days ahead.' },
-            { status: 400 },
-          );
+          return refuse('RIDE_SCHEDULE_TOO_FAR');
         }
         scheduledFor = when;
       }
@@ -166,10 +161,7 @@ export const route = apiRoute('/api/rideshare/rides', {
           where: { riderId: userId, status: 'SCHEDULED' },
         });
         if (upcoming >= MAX_UPCOMING_SCHEDULED) {
-          return Response.json(
-            { error: `You can have up to ${MAX_UPCOMING_SCHEDULED} scheduled rides.` },
-            { status: 409 },
-          );
+          return refuse('RIDE_SCHEDULE_LIMIT', { max: MAX_UPCOMING_SCHEDULED });
         }
       } else {
         // Immediate rides are limited to one active at a time.
@@ -178,10 +170,7 @@ export const route = apiRoute('/api/rideshare/rides', {
           select: { id: true },
         });
         if (active) {
-          return Response.json(
-            { error: 'You already have an active ride. Finish or cancel it first.' },
-            { status: 409 },
-          );
+          return refuse('RIDE_ACTIVE');
         }
       }
 

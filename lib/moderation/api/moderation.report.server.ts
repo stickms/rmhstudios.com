@@ -117,6 +117,26 @@ async function resolveTargetUser(entityType: string, entityId: string): Promise<
       case 'home-listing':
         // A scraped listing has no member author, so it resolves to null and is not reportable.
         return await (await import('@/lib/homes/listings.server')).listingReportAuthor(entityId);
+      // Sprint 13 (docs/autonomous/sprint-13/plan.md §Anchors)
+      // s13-06 tube-chat-reports
+      case 'tube-chat':
+        // The author, with no membership check: the report route itself checks the reporter's.
+        return await (await import('@/lib/rmhtube/chat-reports.server')).chatMessageAuthor(entityId);
+
+      // s13-15 rideshare-safety
+      case 'ride':
+        // The other party depends on who reports, so the report route resolves it (memberItemAuthor below).
+        return null;
+
+      // s13-16 pack-reports
+      case 'rmhbox-pack':
+        return await (await import('@/lib/party/pack-moderation.server')).packReportAuthor(entityId);
+
+      // s13-17 dm-reports
+      case 'dm':
+        // The sender, with no membership check: the report route itself checks the reporter's.
+        return await (await import('@/lib/messages/dm-reports.server')).dmMessageAuthor(entityId);
+
       case 'music-score':
       case 'music-share':
         // RMH Music Phase 6: the learner whose Daily score (or shared result) it is.
@@ -205,6 +225,65 @@ export const route = apiRoute('/api/moderation/report', {
         if (!author || author === session.user.id) {
           return Response.json(refusalBody(author ? 'FORBIDDEN' : 'NOT_FOUND'), { status: author ? 403 : 404 });
         }
+      }
+
+      // Sprint 13 (docs/autonomous/sprint-13/plan.md §Anchors)
+      // s13-06 tube-chat-reports
+      // s13-06: only a member of the message's room (present or past), and never its author, may report it. Unknown,
+      // pruned and never-joined all give the same answer, so message ids cannot be probed.
+      if (entityType === 'tube-chat') {
+        const author = await (
+          await import('@/lib/rmhtube/chat-reports.server')
+        ).chatReportAuthor(entityId, session.user.id);
+        if (!author) return Response.json(refusalBody('NOT_FOUND'), { status: 404 });
+        memberItemAuthor = author;
+      }
+
+      // s13-15 rideshare-safety
+      // Only the rider or the driver of an accepted trip, up to 30 days after it ended, and about the other party.
+      // Unknown, not-yours, never-accepted and too-old all give the same answer, so trip ids cannot be probed.
+      if (entityType === 'ride') {
+        const author = await (await import('@/lib/rideshare/safety.server')).rideReportAuthor(entityId, session.user.id);
+        if (!author) return Response.json(refusalBody('NOT_FOUND'), { status: 404 });
+        memberItemAuthor = author;
+      }
+
+      // s13-16 pack-reports
+      // Only a pack that exists and has not been removed, and never one's own: the same answer for a missing pack and
+      // a removed one. The report is filed with the auto-hide count in one transaction, so it does not use the create
+      // below.
+      if (entityType === 'rmhbox-pack') {
+        const author = await resolveTargetUser(entityType, entityId);
+        if (!author || author === session.user.id) {
+          return Response.json(refusalBody(author ? 'FORBIDDEN' : 'NOT_FOUND'), { status: author ? 403 : 404 });
+        }
+        const filed = await (
+          await import('@/lib/party/pack-moderation.server')
+        ).filePackReport({
+          reporterId: session.user.id,
+          packId: entityId,
+          reason,
+          details: details?.trim() || null,
+        });
+        if (!filed.ok) return Response.json(refusalBody('NOT_FOUND'), { status: 404 });
+        if (filed.duplicate) return Response.json({ success: true, alreadyReported: true });
+        void notifyAdminsOfReview({ notice: notice('admin-review-report', { kind: entityType }), kind: 'reports' });
+        return Response.json({ success: true });
+      }
+
+      // s13-17 dm-reports
+      // Only a member of the message's conversation (direct or group), and never its sender, may report it. Unknown,
+      // unsent, expired, a system line and not-yours all give the same answer, so message ids cannot be probed.
+      if (entityType === 'dm') {
+        const target = await (
+          await import('@/lib/messages/dm-reports.server')
+        ).dmReportTarget(entityId, session.user.id);
+        if (!target.ok) {
+          return Response.json(refusalBody(target.reason === 'own' ? 'FORBIDDEN' : 'NOT_FOUND'), {
+            status: target.reason === 'own' ? 403 : 404,
+          });
+        }
+        memberItemAuthor = target.authorId;
       }
 
       // One open report per (reporter, entity) — silently succeed if it exists.

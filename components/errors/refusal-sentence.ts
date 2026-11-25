@@ -842,6 +842,87 @@ function sentence(t: Translate, code: ErrorCode, p: Record<string, string | numb
         defaultValue: 'That reason is reserved; write another one',
         ...p,
       });
+
+    // Sprint 13
+    // s13-07 tube-subscriptions
+    case 'TUBE_SUBSCRIBE_SELF':
+      return t('tubeSubscribeSelf', {
+        ns: 'errors',
+        defaultValue: 'You cannot subscribe to yourself',
+        ...p,
+      });
+    case 'TUBE_SUBSCRIBE_LIMIT':
+      return t('tubeSubscribeLimit', {
+        ns: 'errors',
+        defaultValue: 'You can subscribe to up to {{max}} hosts. Unsubscribe from one first',
+        ...p,
+      });
+
+    // s13-08 ladder-own-jobs
+    case 'LADDER_OWN_JOB_LIMIT':
+      return t('ladderOwnJobLimit', {
+        ns: 'errors',
+        defaultValue: 'You can track up to {{max}} jobs you added yourself. Delete one first',
+        ...p,
+      });
+
+    // s13-11 lists-on
+    case 'LIST_MEMBER_REFUSED':
+      return t('listMemberRefused', {
+        ns: 'errors',
+        defaultValue: "That person can't be added to this list",
+        ...p,
+      });
+
+    // s13-12 news-stories
+    case 'NEWS_STORY_FOLLOW_LIMIT':
+      return t('newsStoryFollowLimit', {
+        ns: 'errors',
+        defaultValue: 'You can follow up to {{max}} stories. Unfollow one first',
+        ...p,
+      });
+
+    // s13-14 prediction-trades
+    case 'PREDICTION_PRICE_MOVED':
+      return t('predictionPriceMoved', {
+        ns: 'errors',
+        defaultValue: 'The price moved while you were trading. Check the new quote and try again',
+        ...p,
+      });
+    case 'PREDICTION_NOT_ENOUGH_SHARES':
+      return t('predictionNotEnoughShares', { ns: 'errors', defaultValue: 'You do not hold that many shares', ...p });
+
+    // s13-15 rideshare-safety
+    case 'RIDE_BLOCKED':
+      return t('rideBlocked', { ns: 'errors', defaultValue: 'You cannot ride with this member', ...p });
+    case 'RIDE_DRIVER_NOT_APPROVED':
+      return t('rideDriverNotApproved', { ns: 'errors', defaultValue: 'You must be an approved driver', ...p });
+    case 'RIDE_NOT_READY':
+      return t('rideNotReady', { ns: 'errors', defaultValue: 'This trip is not ready for that yet', ...p });
+    case 'RIDE_CLOSED':
+      return t('rideClosed', { ns: 'errors', defaultValue: 'This trip is already closed', ...p });
+    case 'RIDE_CHAT_CLOSED':
+      return t('rideChatClosed', { ns: 'errors', defaultValue: 'Chat is off for this trip', ...p });
+    case 'RIDE_ACTIVE':
+      return t('rideActive', {
+        ns: 'errors',
+        defaultValue: 'You already have an active ride. Finish or cancel it first',
+        ...p,
+      });
+    case 'RIDE_SCHEDULE_TOO_SOON':
+      return t('rideScheduleTooSoon', {
+        ns: 'errors',
+        defaultValue: 'Choose a pickup time at least 5 minutes from now',
+        ...p,
+      });
+    case 'RIDE_SCHEDULE_TOO_FAR':
+      return t('rideScheduleTooFar', {
+        ns: 'errors',
+        defaultValue: 'You can schedule rides up to 30 days ahead',
+        ...p,
+      });
+    case 'RIDE_SCHEDULE_LIMIT':
+      return t('rideScheduleLimit', { ns: 'errors', defaultValue: 'You can have up to {{max}} scheduled rides', ...p });
   }
 }
 

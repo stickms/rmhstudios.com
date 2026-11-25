@@ -141,6 +141,13 @@ export const STATIC_CARDS: StaticCard[] = [
     subtitle: 'Releases, write-ups and announcements from RMH Studios.',
   },
   {
+    path: '/news/stories',
+    file: 'news-stories',
+    eyebrow: 'News',
+    title: 'Stories that keep going.',
+    subtitle: 'Related articles kept together on one dated timeline, with a follow for the ones you want to track.',
+  },
+  {
     path: '/rmhladder',
     file: 'rmhladder',
     eyebrow: 'RMH Ladder',

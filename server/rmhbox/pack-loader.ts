@@ -1,6 +1,6 @@
 /**
  * RMHbox — community prompt packs (R2). Loads a pack's prompts by share code for
- * a minigame about to start. Returns null for an unknown, hidden or wrong-game code.
+ * a minigame about to start. Returns null for an unknown, hidden, removed or wrong-game code.
  */
 import { getPrismaClient } from './prisma-client';
 import { logger } from './logger';
@@ -15,6 +15,8 @@ export async function loadPackPrompts(rawCode: string, game: string): Promise<st
         code,
         game,
         hidden: false,
+        // s13-16: a pack a moderator removed is never loaded, whatever its owner does with `hidden`.
+        moderatedAt: null,
       },
       select: {
         prompts: true,

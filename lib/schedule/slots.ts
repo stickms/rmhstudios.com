@@ -64,6 +64,8 @@ export interface Occurrence {
   href: string | null;
   startsAt: Date;
   endsAt: Date;
+  /** A whole-day entry (an RMHLadder follow-up or deadline): shown as its day, never as a time. */
+  allDay?: boolean;
 }
 
 const DAY_MS = 86_400_000;

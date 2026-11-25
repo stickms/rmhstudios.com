@@ -281,6 +281,16 @@ export const NOTICE_TEMPLATES = {
   'admin-review-redemption': 'New {{kind}} redemption for {{count}} coins',
   'admin-review-music-score': 'A Daily board score asks for a look (automated check)',
   'admin-review-market': 'Marketplace listing held for review: {{count}} coins (≥10× median)',
+
+  // Sprint 13 notices (docs/autonomous/sprint-13/plan.md §Anchors)
+  // s13-07 tube-subscriptions
+  'tube-party-scheduled': '{{host}} scheduled a watch party: {{title}} on {{startsAt}}',
+
+  // s13-12 news-stories
+  'news-story-article': '{{story}}: {{title}}',
+
+  // s13-20 message-push
+  'dm-received': '{{name}} sent you a message',
 } as const;
 
 export type NoticeKey = keyof typeof NOTICE_TEMPLATES;
@@ -567,6 +577,16 @@ export interface NoticeParamTypes {
   'admin-review-redemption': { kind: string | number; count: string | number };
   'admin-review-music-score': Record<string, never>;
   'admin-review-market': { count: string | number };
+
+  // Sprint 13 notices (docs/autonomous/sprint-13/plan.md §Anchors)
+  // s13-07 tube-subscriptions
+  'tube-party-scheduled': { host: string | number; title: string | number; startsAt: string | Date };
+
+  // s13-12 news-stories
+  'news-story-article': { story: string | number; title: string | number };
+
+  // s13-20 message-push
+  'dm-received': { name: string | number };
 }
 
 export type NoticeParamValue = string | number;

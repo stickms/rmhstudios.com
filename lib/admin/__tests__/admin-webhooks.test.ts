@@ -126,8 +126,12 @@ vi.mock('@/lib/prisma.server', () => {
         h.hold = null;
         return { count: 1 };
       }),
-      // Sprint 12 (18): a hold that still records stopped subscriptions is kept; this one records none.
-      updateMany: vi.fn(async () => ({ count: 0 })),
+      // Sprint 13 (18): the restore keeps the hold for the billing sync and clears its keys, hooks and done-stamp.
+      updateMany: vi.fn(async (a: Row) => {
+        if (!h.hold) return { count: 0 };
+        Object.assign(h.hold, a.data as Row);
+        return { count: 1 };
+      }),
     },
     developerApiKey: { findMany: vi.fn(async () => []), updateMany: vi.fn(async () => ({ count: 0 })) },
     scheduledPost: { count: vi.fn(async () => 0) },
@@ -507,6 +511,6 @@ describe('writers of `enabled` that must not clear an admin disable', () => {
     await restoreAfterCancel('u1', new Date('2026-12-02T00:00:00Z'));
     expect(h.endpoints.find((r) => r.id === 'w-admin')).toMatchObject({ enabled: false });
     expect(h.endpoints.find((r) => r.id === 'w-plain')).toMatchObject({ enabled: true, failureCount: 0 });
-    expect(h.hold).toBeNull();
+    expect(h.hold).toMatchObject({ keyIds: [], webhookIds: [], billingSyncedAt: null });
   });
 });

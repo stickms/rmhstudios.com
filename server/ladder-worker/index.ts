@@ -27,6 +27,7 @@ import {
 } from '../../lib/rmhladder/pipeline/probe-sources';
 import { seedLadder, type SeedPrisma } from '../../lib/rmhladder/seed/run-seed';
 import { isScrapeStale, resolveLadderCron } from '../../lib/rmhladder/scheduler';
+import { catalogCompanyWhere, catalogJobWhere } from '../../lib/rmhladder/own-jobs';
 import {
   enrichRecentLadderJobs,
   type JobEnrichmentPrisma,
@@ -291,7 +292,7 @@ async function bootstrap(): Promise<boolean> {
   running = true;
   let runImmediately = false;
   try {
-    const companyCount = await prisma.ladderCompany.count();
+    const companyCount = await prisma.ladderCompany.count({ where: catalogCompanyWhere() });
     if (companyCount === 0) {
       console.log('[ladder-worker] Bootstrap: empty database — seeding companies/sources/rules');
       const seeded = await seedLadder(prisma as unknown as SeedPrisma);
@@ -305,7 +306,7 @@ async function bootstrap(): Promise<boolean> {
       orderBy: { finishedAt: 'desc' },
       select: { finishedAt: true },
     });
-    const activeJobs = await prisma.ladderJob.count({ where: { status: 'active' } });
+    const activeJobs = await prisma.ladderJob.count({ where: { ...catalogJobWhere(), status: 'active' } });
     runImmediately = activeJobs === 0 || isScrapeStale(latestCompletedRun?.finishedAt);
 
     if (runImmediately) {

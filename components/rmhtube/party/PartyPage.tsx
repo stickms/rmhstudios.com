@@ -25,6 +25,7 @@ import {
 } from '@/lib/rmhtube/parties.contract';
 import { canJoin, partyPath } from '@/lib/rmhtube/parties';
 import ScheduleDialog from './ScheduleDialog';
+import SubscribeButton from './SubscribeButton';
 import { formatPartyTime, formatRelativeStart } from './party-format';
 
 export default function PartyPage() {
@@ -192,12 +193,15 @@ export default function PartyPage() {
           {party && (
             <article className={arrive}>
               <h1 className="mb-1 text-2xl font-semibold">{party.name}</h1>
-              <p className="mb-4 text-sm text-app-text-muted">
-                {t('hosted-by', {
-                  defaultValue: 'Hosted by {{name}}',
-                  name: party.host.name ?? '',
-                })}
-              </p>
+              <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <p className="text-sm text-app-text-muted">
+                  {t('hosted-by', {
+                    defaultValue: 'Hosted by {{name}}',
+                    name: party.host.name ?? '',
+                  })}
+                </p>
+                <SubscribeButton hostId={party.host.id} hostName={party.host.name} isSelf={party.viewerIsHost} />
+              </div>
               <p className="text-base text-app-text">
                 <time dateTime={party.scheduledFor}>{formatPartyTime(party.scheduledFor, i18n.language)}</time>
               </p>

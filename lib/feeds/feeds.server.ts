@@ -192,7 +192,12 @@ export async function readFeedPage(
 }
 
 /** Replace a feed's people. */
-export async function setFeedPeople(feedId: string, userIds: string[]): Promise<void> {
+export async function setFeedPeople(feedId: string, userIds: string[], tx?: Prisma.TransactionClient): Promise<void> {
+  if (tx) {
+    await tx.customFeedMember.deleteMany({ where: { feedId, userId: { notIn: userIds } } });
+    await tx.customFeedMember.createMany({ data: userIds.map((userId) => ({ feedId, userId })), skipDuplicates: true });
+    return;
+  }
   await prisma.$transaction([
     prisma.customFeedMember.deleteMany({ where: { feedId, userId: { notIn: userIds } } }),
     prisma.customFeedMember.createMany({

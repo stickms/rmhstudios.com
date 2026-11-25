@@ -28,12 +28,15 @@ import { useSliceItStore } from './store';
 import { api } from '@/lib/contract/client';
 import { recordSongPlayApi } from './slice-it.contract';
 import { getSliceSongApi } from './play.contract';
+import { getChartApi } from './charts.contract';
+import { toEditorNotes, toSlices } from './editor/types';
+import { HttpError } from '@/lib/http';
 import { reportLoaded } from './net/client';
 
 /** How long a song gets to decode before the run is abandoned. */
 const DECODE_TIMEOUT_MS = 20_000;
 import type { GameEngine } from './engine';
-import type { BeatMap } from './types';
+import type { BeatMap, Slice } from './types';
 
 import { patchSongAnalysisApi } from '@features/slice-it/engine/play.contract';
 export interface StartRunOptions {
@@ -125,8 +128,25 @@ export function useStartRun(engine: GameEngine | null) {
           }),
         ]).finally(() => clearTimeout(decodeTimer));
 
+        // The picked chart, when it can be played: its notes replace the generated ones.
+        const picked = options.multiplayer ? null : await loadPickedChart(store.selectedChartId, song.id);
+        store.setPlayingChart(
+          picked ? { id: picked.id, name: picked.name, status: picked.status, noteCount: picked.slices.length } : null,
+        );
+
         let map: BeatMap;
-        if (song.analysisData && !isStaleAnalysis(song.analysisData)) {
+        if (picked) {
+          store.setLoadingProgress(70);
+          store.setLoadingProgressText('LOADING CHART…');
+          map = {
+            id: song.id,
+            name: song.title,
+            artist: song.artist,
+            audioUrl: song.audioUrl,
+            bpm: song.bpm > 0 ? song.bpm : 120,
+            slices: picked.slices,
+          };
+        } else if (song.analysisData && !isStaleAnalysis(song.analysisData)) {
           store.setLoadingProgress(70);
           store.setLoadingProgressText('RETRIEVING SPECTRAL ANALYSIS…');
           map = song.analysisData;
@@ -195,6 +215,34 @@ export function useStartRun(engine: GameEngine | null) {
   return {
     startRun,
     isLoading,
+  };
+}
+
+/**
+ * Read the chart the player picked, or `null` when the generated one is to be played.
+ *
+ * `null` for nothing picked, for a chart of another song, for an empty chart, and for a chart that is gone or no
+ * longer visible (the read answers 404): a pick that cannot be played falls back to the generated chart rather than
+ * stopping the run. Any other failure (the network) is thrown, like the song read next to it.
+ */
+async function loadPickedChart(
+  chartId: string | null,
+  songId: string,
+): Promise<{ id: string; name: string; status: string; slices: Slice[] } | null> {
+  if (!chartId) return null;
+  let chart;
+  try {
+    chart = await api(getChartApi, { params: { id: chartId }, timeoutMs: 60_000 });
+  } catch (error) {
+    if (error instanceof HttpError && (error.status === 404 || error.status === 403)) return null;
+    throw error;
+  }
+  if (chart.songId !== songId || !chart.notes || chart.notes.length === 0) return null;
+  return {
+    id: chart.id,
+    name: chart.name,
+    status: chart.status,
+    slices: toSlices(toEditorNotes(chart.notes as Slice[], false)),
   };
 }
 

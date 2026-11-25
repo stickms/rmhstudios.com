@@ -580,6 +580,7 @@ model NewsStory {
 
   createdBy User?              @relation("NewsStoryAuthor", fields: [createdById], references: [id], onDelete: SetNull)
   articles  NewsStoryArticle[]
+  follows   NewsStoryFollow[]
 
   @@map("news_story")
 }
@@ -596,6 +597,20 @@ model NewsStoryArticle {
 
   @@index([storyId])
   @@map("news_story_article")
+}
+
+/// s13-12 — a member follows a news story and is told once when an admin links a published article to it.
+model NewsStoryFollow {
+  storyId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  story NewsStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  user  User      @relation("NewsStoryFollows", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([storyId, userId])
+  @@index([userId])
+  @@map("news_story_follow")
 }
 
 /// L6 — an admin-managed lore glossary term. `aliases` also auto-link.

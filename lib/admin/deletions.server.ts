@@ -20,6 +20,7 @@ import {
   DELETIONS_LIST_LIMIT,
   FINISHED_DAYS,
   NO_HOLD,
+  billingState,
   OVERDUE_AFTER_MS,
   isOverdue,
   type AdminDeletions,
@@ -80,7 +81,14 @@ export async function listDeletions(now: Date = new Date()): Promise<AdminDeleti
     ids.length
       ? prisma.deletionHold.findMany({
           where: { userId: { in: ids } },
-          select: { userId: true, keyIds: true, webhookIds: true, subscriptionIds: true, createdAt: true },
+          select: {
+            userId: true,
+            keyIds: true,
+            webhookIds: true,
+            subscriptionIds: true,
+            billingSyncedAt: true,
+            createdAt: true,
+          },
         })
       : [],
     overdueUsers.length
@@ -103,6 +111,7 @@ export async function listDeletions(now: Date = new Date()): Promise<AdminDeleti
       requestedAt: (hold?.createdAt ?? new Date(due.getTime() - GRACE_MS)).toISOString(),
       dueAt: due.toISOString(),
       held: holdCounts(hold),
+      billing: billingState(hold),
     };
   };
 

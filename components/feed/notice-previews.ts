@@ -1438,6 +1438,31 @@ export function noticeText(
         ...values,
       });
 
+    // Sprint 13 notices (docs/autonomous/sprint-13/plan.md §Anchors)
+    // s13-07 tube-subscriptions
+    case 'tube-party-scheduled':
+      return t('notice-tube-party-scheduled', {
+        ns: 'notice-language',
+        defaultValue: '{{host}} scheduled a watch party: {{title}} on {{startsAt}}',
+        ...values,
+      });
+
+    // s13-12 news-stories
+    case 'news-story-article':
+      return t('notice-news-story-article', {
+        ns: 'notice-language',
+        defaultValue: '{{story}}: {{title}}',
+        ...values,
+      });
+
+    // s13-20 message-push
+    case 'dm-received':
+      return t('notice-dm-received', {
+        ns: 'notice-language',
+        defaultValue: '{{name}} sent you a message',
+        ...values,
+      });
+
     default:
       return null;
   }

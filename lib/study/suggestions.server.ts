@@ -85,9 +85,11 @@ export async function createSuggestion(
 ): Promise<SuggestResult<{ id: string }>> {
   const deck = await prisma.flashcardDeck.findUnique({
     where: { id: deckId },
-    select: { id: true, userId: true, title: true, isPublic: true, acceptsSuggestions: true },
+    select: { id: true, userId: true, title: true, isPublic: true, acceptsSuggestions: true, moderatedAt: true },
   });
   if (!deck) return refuse(404, 'not-found');
+  // A deck a moderator took down takes no suggestions, even from someone who holds a copy (their copy is untouched).
+  if (deck.moderatedAt) return refuse(404, 'not-found');
   if (deck.userId === userId) return refuse(403, 'own-deck');
   // An editor edits the deck directly: a suggestion from one is refused like the author's (s11-10).
   if ((await deckRole(userId, deckId)) === 'editor') return refuse(403, 'own-deck');

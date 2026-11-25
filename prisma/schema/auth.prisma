@@ -759,6 +759,17 @@ model User {
   // s12-08 deck-ratings
   deckRatings DeckRating[] @relation("DeckRatings")
 
+  // Sprint 13 back-relations (one block per feature, docs/autonomous/sprint-13/plan.md)
+  // s13-08 ladder-own-jobs
+  ladderOwnJobs      LadderJob[]     @relation("LadderOwnJobs")
+  ladderOwnCompanies LadderCompany[] @relation("LadderOwnCompanies")
+
+  // s13-11 lists-on
+  listLeaves ListLeave[]
+
+  // s13-12 news-stories
+  newsStoryFollows NewsStoryFollow[] @relation("NewsStoryFollows")
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the nightly finalize-deletion sweep; partial in effect since the

@@ -29,6 +29,9 @@ import {
   STAGE_LABELS,
 } from '@/components/rmhladder/PipelineLadder';
 import { OfferForm, type OfferTarget } from '@/components/rmhladder/OfferForm';
+import { AddOwnJobButton } from '@/components/rmhladder/AddOwnJobButton';
+import { OwnJobControls } from '@/components/rmhladder/OwnJobControls';
+import { isOwnJob } from '@/lib/rmhladder/own-jobs';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
@@ -104,6 +107,7 @@ function PipelinePage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [recording, setRecording] = useState<OfferTarget | null>(null);
+  const ownJobCount = apps.filter((a) => isOwnJob(a.job as AnyRow | undefined)).length;
   const liveRef = useRef<HTMLParagraphElement>(null);
 
   const prevRef = useRef(applications);
@@ -161,6 +165,7 @@ function PipelinePage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap justify-end gap-2">
+        <AddOwnJobButton ownJobCount={ownJobCount} onAdded={() => void router.invalidate()} />
         <Button asChild size="sm" variant="default" className="min-h-11">
           <a href="/api/rmhladder/export?kind=applications" download>
             <Download aria-hidden />{' '}
@@ -206,6 +211,12 @@ function PipelinePage() {
               resumeVersions={resumeVersions}
               onPatch={(patch) => void applyPatch(selected, patch)}
               onRecordOffer={() => setRecording(offerTargetOf(selected))}
+              ownJobCount={ownJobCount}
+              onJobChanged={() => void router.invalidate()}
+              onJobDeleted={() => {
+                setSelectedId(null);
+                void router.invalidate();
+              }}
               onClose={() => setSelectedId(null)}
             />
           )}
@@ -239,6 +250,9 @@ function ApplicationEditor({
   resumeVersions,
   onPatch,
   onRecordOffer,
+  ownJobCount,
+  onJobChanged,
+  onJobDeleted,
   onClose,
 }: {
   app: AnyRow;
@@ -250,6 +264,9 @@ function ApplicationEditor({
   }>;
   onPatch: (patch: ApplicationPatch) => void;
   onRecordOffer: () => void;
+  ownJobCount: number;
+  onJobChanged: () => void;
+  onJobDeleted: () => void;
   onClose: () => void;
 }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation(['site', 'ladder-offers']);
@@ -299,11 +316,11 @@ function ApplicationEditor({
     >
       <div className="rl-app-editor__head">
         <div>
-          <p className="rl-label">
+          <p className="rl-label" dir="auto">
             {((job?.company as AnyRow | undefined)?.name as string) ??
               t('ladder.pipeline.application', { defaultValue: 'Application' })}
           </p>
-          <h2 className="site-section-label rl-app-editor__title">
+          <h2 className="site-section-label rl-app-editor__title" dir="auto">
             {(job?.title as string) ?? t('ladder.pipeline.untitled', { defaultValue: 'Untitled role' })}
           </h2>
         </div>
@@ -317,6 +334,10 @@ function ApplicationEditor({
           <X aria-hidden />
         </Button>
       </div>
+
+      {job && isOwnJob(job) && (
+        <OwnJobControls job={job} ownJobCount={ownJobCount} onChanged={onJobChanged} onDeleted={onJobDeleted} />
+      )}
 
       <label className="rl-field" htmlFor="rl-app-status">
         <span className="rl-label">{t('ladder.pipeline.stage', { defaultValue: 'Stage' })}</span>

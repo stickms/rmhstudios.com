@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { tradePredictionApi } from '@/lib/predictions/predictions.contract';
@@ -20,9 +21,11 @@ export const route = apiRoute('/api/predictions/$id/trade', {
           predictionId: params.id,
           side: body.side,
           amount: body.amount,
+          minShares: body.minShares,
         });
       } catch (error) {
         if (error instanceof PredictionError) {
+          if (error.refusal) return Response.json({ ...refusalBody(error.refusal) }, { status: error.status });
           return Response.json({ error: error.message }, { status: error.status });
         }
         throw error;

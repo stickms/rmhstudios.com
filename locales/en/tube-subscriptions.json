@@ -1,0 +1,11 @@
+{
+  "error-toggle": "Could not update your subscription. Try again.",
+  "hosts-empty": "Subscribe to a host from a party page and you will hear when they schedule the next one.",
+  "hosts-error": "Could not load your subscriptions.",
+  "hosts-loading": "Loading hosts",
+  "hosts-retry": "Try again",
+  "hosts-title": "Hosts you follow",
+  "subscribe": "Subscribe",
+  "subscribed": "Subscribed",
+  "unsubscribe": "Unsubscribe"
+}

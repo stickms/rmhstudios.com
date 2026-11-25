@@ -51,6 +51,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/games/collections/item` | `POST` | `lib/games/api/games.collections.item.server.ts` |
 | `/api/games/collections/rename` | `POST` | `lib/games/api/games.collections.rename.server.ts` |
 | `/api/games/customize` | `POST` | `lib/cards/api/games.customize.server.ts` |
+| `/api/games/friends/activity` | `GET` | `lib/games/api/games.friends.activity.server.ts` |
 | `/api/games/gems/buy` | `POST` | `lib/games/api/games.gems.buy.server.ts` |
 | `/api/games/gems/pack` | `POST` | `lib/games/api/games.gems.pack.server.ts` |
 | `/api/games/gems/unpack` | `POST` | `lib/cards/api/games.gems.unpack.server.ts` |

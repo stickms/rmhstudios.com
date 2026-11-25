@@ -14,6 +14,7 @@
 
 import { getAdapter } from '../adapters/index';
 import { memoFetch } from './memo-fetch';
+import { catalogJobWhere } from '../own-jobs';
 import type { NormalizedJob } from '../adapters/types';
 
 // ── Pure decision core ────────────────────────────────────────────────────────
@@ -125,6 +126,8 @@ export async function recheckSource(
     id: string;
     externalId: string | null;
     failedCheckCount: number;
+    /** Set on a member's own job, which has no board to be checked against and is never rechecked. */
+    ownerId?: string | null;
   }>,
 ): Promise<{
   struck: number;
@@ -175,7 +178,7 @@ export async function recheckSource(
   };
 
   const planned: JobWithDecision[] = activeJobs.map((job) => {
-    if (job.externalId === null) {
+    if (job.externalId === null || (job.ownerId ?? null) !== catalogJobWhere().ownerId) {
       return {
         job,
         decision: {

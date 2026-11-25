@@ -6,13 +6,14 @@ import { rideActionBody } from '@/lib/rideshare/rideshare-schema';
 import { prisma } from '@/lib/prisma.server';
 import { notifyRider, notifyDriver } from '@/lib/rideshare/notify.server';
 import { formatUsd } from '@/lib/rideshare/geo';
+import { refuse, rideBlockedWith } from '@/lib/rideshare/safety.server';
 
 export const route = apiRoute('/api/rideshare/rides/$id', {
   POST: implement(
     C.rideActionApi,
     {
       body: rideActionBody,
-      invalid: () => Response.json({ error: 'Invalid action' }, { status: 400 }),
+      invalid: () => refuse('INVALID_INPUT'),
     },
     async ({ params, session, body }) => {
       const userId = session.user.id;
@@ -32,19 +33,27 @@ export const route = apiRoute('/api/rideshare/rides/$id', {
         },
       });
       if (!ride) {
-        return Response.json({ error: 'Ride not found' }, { status: 404 });
+        return refuse('NOT_FOUND');
       }
 
       if (action === 'accept') {
         if (ride.riderId === userId) {
-          return Response.json({ error: 'You cannot accept your own ride.' }, { status: 400 });
+          return refuse('FORBIDDEN');
         }
-        const driver = await prisma.rideshareDriver.findUnique({
-          where: { userId },
-          select: { status: true },
-        });
+        const [driver, account] = await Promise.all([
+          prisma.rideshareDriver.findUnique({ where: { userId }, select: { status: true } }),
+          prisma.user.findUnique({ where: { id: userId }, select: { bannedUntil: true } }),
+        ]);
         if (!driver || driver.status !== 'APPROVED') {
-          return Response.json({ error: 'You must be an approved driver.' }, { status: 403 });
+          return refuse('RIDE_DRIVER_NOT_APPROVED');
+        }
+        // A banned driver cannot accept, whatever their approval says.
+        if (account?.bannedUntil && account.bannedUntil.getTime() > Date.now()) {
+          return refuse('RIDE_DRIVER_NOT_APPROVED');
+        }
+        // Blocked either way: one sentence, whoever blocked whom. A failed lookup fails the request.
+        if (await rideBlockedWith(ride.riderId, userId)) {
+          return refuse('RIDE_BLOCKED');
         }
         // Guard against races: only claim if still open. Scheduled rides
         // are claimable once they enter the 60-minute lead window.
@@ -58,10 +67,7 @@ export const route = apiRoute('/api/rideshare/rides/$id', {
           data: { driverId: userId, status: 'ACCEPTED', acceptedAt: new Date() },
         });
         if (result.count === 0) {
-          return Response.json(
-            { error: 'This ride isn’t available to accept yet.' },
-            { status: 409 },
-          );
+          return refuse('RIDE_NOT_READY');
         }
         const me = await prisma.user.findUnique({
           where: { id: userId },
@@ -75,26 +81,26 @@ export const route = apiRoute('/api/rideshare/rides/$id', {
         );
       } else if (action === 'start') {
         if (ride.driverId !== userId) {
-          return Response.json({ error: 'Only the assigned driver can do that.' }, { status: 403 });
+          return refuse('FORBIDDEN');
         }
         const result = await prisma.ride.updateMany({
           where: { id: rideId, driverId: userId, status: 'ACCEPTED' },
           data: { status: 'IN_PROGRESS' },
         });
         if (result.count === 0) {
-          return Response.json({ error: 'Ride is not ready to start.' }, { status: 409 });
+          return refuse('RIDE_NOT_READY');
         }
         await notifyRider(ride.riderId, userId, ride, notice('ride-started', {}));
       } else if (action === 'complete') {
         if (ride.driverId !== userId) {
-          return Response.json({ error: 'Only the assigned driver can do that.' }, { status: 403 });
+          return refuse('FORBIDDEN');
         }
         const result = await prisma.ride.updateMany({
           where: { id: rideId, driverId: userId, status: { in: ['ACCEPTED', 'IN_PROGRESS'] } },
           data: { status: 'COMPLETED', completedAt: new Date() },
         });
         if (result.count === 0) {
-          return Response.json({ error: 'Ride cannot be completed.' }, { status: 409 });
+          return refuse('RIDE_NOT_READY');
         }
         await notifyRider(
           ride.riderId,
@@ -106,10 +112,10 @@ export const route = apiRoute('/api/rideshare/rides/$id', {
         const isRider = ride.riderId === userId;
         const isDriver = ride.driverId === userId;
         if (!isRider && !isDriver) {
-          return Response.json({ error: 'Not your ride.' }, { status: 403 });
+          return refuse('FORBIDDEN');
         }
         if (ride.status === 'COMPLETED' || ride.status === 'CANCELLED') {
-          return Response.json({ error: 'Ride is already closed.' }, { status: 409 });
+          return refuse('RIDE_CLOSED');
         }
         // CAS on the open states: a cancel racing `complete` cannot turn a
         // COMPLETED trip back into CANCELLED. A driver may only cancel while
@@ -123,7 +129,7 @@ export const route = apiRoute('/api/rideshare/rides/$id', {
           data: { status: 'CANCELLED', cancelledAt: new Date() },
         });
         if (result.count === 0) {
-          return Response.json({ error: 'Ride is already closed.' }, { status: 409 });
+          return refuse('RIDE_CLOSED');
         }
         // Tell the other party, if there is one.
         if (isRider && ride.driverId) {
@@ -138,20 +144,20 @@ export const route = apiRoute('/api/rideshare/rides/$id', {
         }
       } else if (action === 'tip') {
         if (ride.riderId !== userId) {
-          return Response.json({ error: 'Only the rider can add a tip.' }, { status: 403 });
+          return refuse('FORBIDDEN');
         }
         if (ride.status !== 'COMPLETED') {
-          return Response.json({ error: 'You can only tip a completed trip.' }, { status: 409 });
+          return refuse('RIDE_NOT_READY');
         }
         if (!ride.driverId) {
-          return Response.json({ error: 'This trip has no driver to tip.' }, { status: 409 });
+          return refuse('RIDE_NOT_READY');
         }
         if (ride.tipCents > 0) {
-          return Response.json({ error: 'You already tipped this trip.' }, { status: 409 });
+          return refuse('CONFLICT');
         }
         const tipCents = body.tipCents ?? 0;
         if (tipCents <= 0) {
-          return Response.json({ error: 'Enter a tip amount.' }, { status: 400 });
+          return refuse('INVALID_INPUT');
         }
         // Guard against double-tipping under races: only set if still zero.
         const result = await prisma.ride.updateMany({
@@ -159,7 +165,7 @@ export const route = apiRoute('/api/rideshare/rides/$id', {
           data: { tipCents },
         });
         if (result.count === 0) {
-          return Response.json({ error: 'You already tipped this trip.' }, { status: 409 });
+          return refuse('CONFLICT');
         }
         await notifyDriver(
           ride.driverId,

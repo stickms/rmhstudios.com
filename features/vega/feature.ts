@@ -8,7 +8,7 @@ export default defineFeature({
   delivery: 'island',
   routes: ['lib/game/api/vega.leaderboard.server.ts', 'features/vega/api/vega.score.server.ts', 'app/routes/vega.tsx'],
   // The game's strings, the way back to the games library included.
-  namespaces: ['c-vega'],
+  namespaces: ['c-vega', 'vega-assists', 'game-assists'],
   catalog: 'features/vega/catalog.ts',
   listed: true,
 });

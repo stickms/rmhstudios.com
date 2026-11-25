@@ -28,12 +28,26 @@ export interface HoldCounts {
 
 export const NO_HOLD: HoldCounts = { keys: 0, webhooks: 0, subscriptions: 0 };
 
+/**
+ * Whether the membership has stopped billing (s13-18), from the hold alone: `stopped` (the billing sync finished and
+ * recorded subscriptions), `pending` (not finished, or no hold at all), `none` (finished, nothing to stop).
+ */
+export type BillingState = 'stopped' | 'pending' | 'none';
+
+export function billingState(
+  hold: { billingSyncedAt: Date | null; subscriptionIds: readonly string[] } | undefined,
+): BillingState {
+  if (!hold || !(hold.billingSyncedAt instanceof Date)) return 'pending';
+  return hold.subscriptionIds.length > 0 ? 'stopped' : 'none';
+}
+
 export interface WaitingDeletionRow {
   userId: string;
   handle: string | null;
   requestedAt: string;
   dueAt: string;
   held: HoldCounts;
+  billing: BillingState;
 }
 
 export interface OverdueDeletionRow extends WaitingDeletionRow {

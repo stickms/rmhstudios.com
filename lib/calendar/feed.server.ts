@@ -23,6 +23,7 @@ import { feedEntries } from './feed-entries';
 import { liveWhere, myEventInputs } from './my-events.server';
 import { applyOverrides } from '@/lib/events/occurrences';
 import { overridesForEvents } from '@/lib/events/occurrences.server';
+import { ladderCalendarFor } from '@/lib/rmhladder/calendar-entries.server';
 import type { CalendarFeedView } from './types';
 
 const PAST_DAYS = 7;
@@ -163,7 +164,7 @@ async function buildFeed(userId: string): Promise<string> {
   const to = new Date(now.getTime() + FUTURE_DAYS * DAY_MS);
   const events: ICSEvent[] = [];
 
-  const [mine, entrants, matches] = await Promise.all([
+  const [mine, entrants, matches, ladder] = await Promise.all([
     myEventInputs(userId, from, to),
     prisma.tournamentEntrant.findMany({
       where: { userId, tournament: { startsAt: { gte: from, lte: to } } },
@@ -175,6 +176,8 @@ async function buildFeed(userId: string): Promise<string> {
       take: 50,
       select: { id: true, subject: true, startsAt: true, endsAt: true, roomCode: true },
     }),
+    // s13-09 — RMHLadder interviews, follow-ups and deadlines, only for a member who switched them on.
+    ladderCalendarFor(userId, from, to),
   ]);
 
   // ── Events (one-off and repeating), office hours, polls, platform slots ──
@@ -208,9 +211,25 @@ async function buildFeed(userId: string): Promise<string> {
     });
   }
 
+  // ── RMHLadder (opt-in): a title and a link, never a note, contact, referral or pay ──
+  for (const e of ladder.entries) {
+    events.push({
+      id: e.uid,
+      title: e.title,
+      startsAt: e.startsAt,
+      endsAt: e.endsAt,
+      ...(e.allDay ? { allDay: e.allDay } : {}),
+      url: `${SITE_URL}${e.href}`,
+      categories: ['RMHLadder'],
+      sequence: e.sequence,
+    });
+  }
+
   return calendarFeedICS(events, {
     name: 'RMH Studios',
-    description: 'Your RSVPs, tournaments, office hours, locked-in polls and game nights.',
+    description: ladder.enabled
+      ? 'Your RSVPs, tournaments, office hours, locked-in polls, game nights and RMHLadder interviews and deadlines.'
+      : 'Your RSVPs, tournaments, office hours, locked-in polls and game nights.',
     refreshMinutes: 60,
   });
 }

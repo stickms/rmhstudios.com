@@ -11,6 +11,7 @@ import { ChatHeaderPlus } from '@/components/chat-plus/ChatHeaderPlus';
 import { ChatPinnedBar } from '@/components/chat-plus/ChatPinnedBar';
 import { SavedMessagesHeader } from '@/components/chat-plus/SavedMessagesRow';
 import { AutomatedBadge } from '@/components/feed/AutomatedBadge';
+import { MuteConversationControl, MutedUntilHeaderLine } from '@/components/messages/MuteConversationControl';
 import type { OtherUser } from './conversation-state';
 
 // P4 — "It's 2:14 AM for Ana": a tiny lazy chunk, fetched after the header is idle.
@@ -71,6 +72,7 @@ export function ConversationHeader({
                 <DmLocalTime userId={otherUser.id} name={otherUser.name || 'Unknown'} />
                 <AwayLine userId={otherUser.id} context="header" />
               </ArrivalSuspense>
+              <MutedUntilHeaderLine conversationId={conversationId} />
             </div>
           </Link>
         )}
@@ -78,6 +80,7 @@ export function ConversationHeader({
             authority on whether this person accepts calls from you. */}
         {otherUser && !isSavedChat && (
           <div className="ms-auto flex gap-2">
+            <MuteConversationControl conversationId={conversationId} />
             <CallButton
               user={{
                 id: otherUser.id,

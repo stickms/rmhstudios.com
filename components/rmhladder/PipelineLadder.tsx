@@ -10,6 +10,8 @@
 import type { KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { isOwnJob } from '@/lib/rmhladder/own-jobs';
+import { YoursLabel } from './YoursLabel';
 
 type AnyRow = Record<string, unknown>;
 
@@ -86,8 +88,9 @@ function ApplicationCard({
         stage: STAGE_LABELS[app.status as string],
       })}
     >
-      <span className="rl-app-card__company">{company ?? '—'}</span>
-      <span className="rl-app-card__title">{(job?.title as string) ?? t('ladder.pipeline.untitled', { defaultValue: 'Untitled role' })}</span>
+      <span className="rl-app-card__company" dir="auto">{company ?? '—'}</span>
+      <span className="rl-app-card__title" dir="auto">{(job?.title as string) ?? t('ladder.pipeline.untitled', { defaultValue: 'Untitled role' })}</span>
+      {isOwnJob(job) ? <YoursLabel /> : null}
       {app.appliedDate ? (
         <span className="rl-mono rl-app-card__date">
           {fmt.date(new Date(app.appliedDate as Date), {

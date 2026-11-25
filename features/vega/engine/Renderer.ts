@@ -8,9 +8,14 @@
  * Motion rules: effects are responses to play and end within 360 ms except stains (a slow fade); the scan sweep
  * and the membrane wobble are the only ambient motion and both stop under `still` (Globe motion: Still). Nothing
  * flashes: a leak darkens the edge in 150 ms and fades over 600 ms, at most once a second.
+ *
+ * Assists (`assist-profile.ts`, read once per run by `setAssist`): calm visuals drop the leak edge, the stains and
+ * the bright shot effects (arcs, white tracers, hit flashes); a colour-safe run draws both rosters from the safe
+ * palette with each specimen's outline glyph.
  */
 import { BOARD, TOWERS, type TowerType } from './data';
-import { P, drawBiohazard, drawInstrument, drawSpecimen, roundRect, SPECIMEN_LOOK } from './art';
+import { P, drawBiohazard, drawInstrument, drawSpecimen, paletteFor, roundRect, SPECIMEN_LOOK } from './art';
+import { NO_VEGA_ASSIST, type VegaAssistFlags } from './assist-profile';
 import type { SimEvent, Simulation } from './Simulation';
 import type { Tower } from './Entities';
 
@@ -55,6 +60,8 @@ export class Renderer {
   private leakCooldown = 0;
   private sweep = -1;
   private seed = 1;
+  private assist: VegaAssistFlags = NO_VEGA_ASSIST;
+  private pal = paletteFor('default');
 
   constructor(ctx: CanvasRenderingContext2D) {
     this.ctx = ctx;
@@ -62,6 +69,12 @@ export class Renderer {
 
   public setContext(ctx: CanvasRenderingContext2D) {
     this.ctx = ctx;
+  }
+
+  /** The run's assist flags. Set once, before the first frame. */
+  public setAssist(flags: VegaAssistFlags) {
+    this.assist = flags;
+    this.pal = paletteFor(flags.palette);
   }
 
   /** Drop the cached backdrop (fonts arrived, or the map changed). */
@@ -81,7 +94,12 @@ export class Renderer {
       switch (e.t) {
         case 'fire': {
           const from = e.from;
-          if (e.tower === 'DEFIBRILLATOR') {
+          if (this.assist.calm) {
+            // No muzzle flash: one thin, dim line shows where the shot went.
+            for (const to of e.to.slice(0, 1)) {
+              this.push({ k: 'tracer', x1: from.x, y1: from.y, x2: to.x, y2: to.y, age: 0, life: 0.1, color: P.mintDim, w: 1 });
+            }
+          } else if (e.tower === 'DEFIBRILLATOR') {
             const pts = [from, ...e.to].flatMap((p, i, arr) => {
               if (i === 0) return [p];
               const a = arr[i - 1]!;
@@ -106,15 +124,17 @@ export class Renderer {
         case 'kill': {
           const look = SPECIMEN_LOOK[e.enemy];
           this.push({ k: 'drops', x: e.x, y: e.y, color: look.body, seeds: this.seeds(e.boss ? 16 : reduced ? 4 : 8), age: 0, life: e.boss ? 0.36 : 0.28, big: e.boss });
-          this.stains.push({ x: e.x, y: e.y, r: look.r * (e.boss ? 1.8 : 1.3), color: P.bloodDark, age: 0, seed: this.rand() * 1000 });
-          if (this.stains.length > 90) this.stains.shift();
+          if (!this.assist.calm) {
+            this.stains.push({ x: e.x, y: e.y, r: look.r * (e.boss ? 1.8 : 1.3), color: P.bloodDark, age: 0, seed: this.rand() * 1000 });
+            if (this.stains.length > 90) this.stains.shift();
+          }
           if (e.boss || e.bounty >= 12) {
             this.push({ k: 'text', x: e.x, y: e.y - 14, text: `+${e.bounty}`, age: 0, life: 0.36, color: P.mint });
           }
           break;
         }
         case 'leak':
-          if (this.leakCooldown <= 0) {
+          if (this.leakCooldown <= 0 && !this.assist.calm) {
             this.leakGlow = 1;
             this.leakCooldown = 1;
           }
@@ -225,6 +245,7 @@ export class Renderer {
       drawInstrument(ctx, tw.type, tw.x, tw.y, size, {
         aim: tw.aim,
         tier: tw.tier,
+        palette: this.assist.palette,
         t: opts.still ? 0 : t,
         stunned: tw.stunTimer > 0,
         buffed: tw.buffDamage > 0,
@@ -248,6 +269,8 @@ export class Renderer {
         hitAge: e.hitAge,
         burning: e.burnTimer > 0,
         slowed: e.slow > 0,
+        palette: this.assist.palette,
+        calm: this.assist.calm,
       });
       if (e.cloaked && !e.revealed) continue;
       // HP bar: a thin mint line on a dark track, wider for bosses.
@@ -257,7 +280,7 @@ export class Renderer {
       const by = e.y - look.r - (e.def.boss ? 14 : 8);
       ctx.fillStyle = P.ink;
       ctx.fillRect(e.x - w / 2 - 1, by - 1, w + 2, e.def.boss ? 5 : 4);
-      ctx.fillStyle = frac > 0.35 ? P.mint : P.blood;
+      ctx.fillStyle = frac > 0.35 ? this.pal.mint : this.pal.blood;
       ctx.fillRect(e.x - w / 2, by, w * frac, e.def.boss ? 3 : 2);
     }
 
@@ -394,7 +417,7 @@ export class Renderer {
       const range = TOWERS[cursor.build].tiers[0].range * c;
       if (cursor.valid) {
         this.rangeRing(x + c / 2, y + c / 2, range, P.mint);
-        drawInstrument(ctx, cursor.build, x + c / 2, y + c / 2, c * 0.78, { ghost: true });
+        drawInstrument(ctx, cursor.build, x + c / 2, y + c / 2, c * 0.78, { ghost: true, palette: this.assist.palette });
       } else {
         ctx.save();
         ctx.strokeStyle = P.blood;

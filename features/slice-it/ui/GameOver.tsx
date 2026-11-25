@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { useSliceItStore } from '@features/slice-it/engine/store';
 import type { GameEngine } from '@features/slice-it/engine/engine';
 import { useRunSummary, useSubmitScore } from '@features/slice-it/engine/useSubmitScore';
+import { ChartRunNote } from './ChartRunNote';
 import { gradeFor } from '@features/slice-it/engine/scoring';
 import { JUDGEMENT_ORDER } from '@features/slice-it/engine/constants';
 import { unrankedReason } from '@features/slice-it/engine/modifiers';
@@ -121,6 +122,7 @@ export function GameOver({ onRetry, engine }: GameOverProps) { const fmt = useLo
               {t('not-uploaded', { defaultValue: 'Score not uploaded' })}
             </div>
           )}
+          <ChartRunNote />
           {/* Full-combo and all-marvellous lamps, in the genre's escalation. */}
           {stats && stats.notesResolved > 0 && (stats.isFullCombo || stats.isPerfect) && (
             <div className="slice-label mt-3 text-slice-primary">

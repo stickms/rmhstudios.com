@@ -12,6 +12,7 @@ import type {
   moderateSchema,
   predictionListQuery,
   resolveSchema,
+  sellSchema,
   tradeSchema,
 } from '@/lib/predictions/predictions-schema';
 import type { SerializedMarket } from '@/lib/predictions/predictions.server';
@@ -73,6 +74,21 @@ export const tradePredictionApi = endpoint<{
 }>()({
   method: 'POST',
   path: '/api/predictions/$id/trade',
+});
+
+/** Sell shares back before resolution. `replayed` is true when the key was already used (nothing moved). */
+export const sellPredictionApi = endpoint<{
+  body: z.infer<typeof sellSchema>;
+  res: {
+    market: SerializedMarket;
+    sharesSold: number;
+    proceeds: number;
+    newBalance: number;
+    replayed: boolean;
+  };
+}>()({
+  method: 'POST',
+  path: '/api/predictions/$id/sell',
 });
 
 /** An AI argument for the side the caller does not hold. 400 when they hold it; 503 when unavailable. */

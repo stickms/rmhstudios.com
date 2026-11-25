@@ -203,6 +203,38 @@ export const USER_TEXT_RENDERERS: readonly UserTextRenderer[] = [
   // s12-14 admin-deletions
 
   // s12-16 member-reports
+
+  // Sprint 13 (docs/autonomous/sprint-13/plan.md §Anchors)
+  // s13-03 altair-runs
+  { file: 'features/altair/ui/screens/RunsScreen.tsx', kind: 'inline' },
+
+  // s13-05 games-friends
+
+  // s13-06 tube-chat-reports
+
+  // s13-07 tube-subscriptions
+  { file: 'components/rmhtube/party/HostsYouFollow.tsx', kind: 'inline' },
+  { file: 'components/rmhtube/party/SubscribeButton.tsx', kind: 'inline' },
+
+  // s13-08 ladder-own-jobs
+  { file: 'components/rmhladder/OwnJobDialog.tsx', kind: 'input' },
+  { file: 'components/rmhladder/PipelineLadder.tsx', kind: 'inline' },
+
+  // s13-09 ladder-calendar
+  { file: 'app/routes/_site/calendar.tsx', kind: 'inline' },
+
+  // s13-11 lists-on
+  { file: 'components/settings/ListsOnSection.tsx', kind: 'block' },
+
+  // s13-12 news-stories
+
+  // s13-15 rideshare-safety
+
+  // s13-16 pack-reports
+  { file: 'components/party/PacksPage.tsx', kind: 'block' },
+
+  // s13-17 dm-reports
+  { file: 'components/moderation/DmReportMessage.tsx', kind: 'block' },
 ];
 
 /**

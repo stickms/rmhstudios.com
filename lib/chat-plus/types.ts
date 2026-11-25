@@ -219,6 +219,11 @@ export type ChatUpdate = {
       imageAlts: string[];
     }
   | {
+      /** A moderator removed a group message (s13-17): open clients drop it from their list. */
+      op: 'removed';
+      messageId: string;
+    }
+  | {
       /**
        * A group's name, member list or owner changed (s04-10). `removed` also names the member who lost access: their
        * client drops the chat and the server closes their stream. Clients that predate it fall through `default`.

@@ -8,6 +8,7 @@
  */
 import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
+import { lockKey } from '@/lib/db/advisory-lock.server';
 import { cancelBulkOperation } from '@/lib/bulk/bulk.server';
 import { createNotification } from '@/lib/notifications.server';
 import { enqueueBillingSync } from '@/lib/account/deletion-billing-queue.server';
@@ -99,10 +100,12 @@ export async function pauseForDeletion(userId: string, now: Date = new Date()): 
     const existing = await tx.deletionHold.findUnique({ where: { userId } });
     await tx.deletionHold.upsert({
       where: { userId },
-      create: { userId, keyIds, webhookIds, createdAt: now },
+      // A request clears the done-stamp in the same write: the hourly sweep queues the sync if the queue was down.
+      create: { userId, keyIds, webhookIds, createdAt: now, billingSyncedAt: null },
       update: {
         keyIds: mergeIds(existing?.keyIds ?? [], keyIds),
         webhookIds: mergeIds(existing?.webhookIds ?? [], webhookIds),
+        billingSyncedAt: null,
       },
     });
   });
@@ -113,9 +116,35 @@ export async function pauseForDeletion(userId: string, now: Date = new Date()): 
 }
 
 /**
- * Signing back in cancelled the deletion: lift what the hold paused and is still as the hold left it, delete the
- * hold, and tell the member once when scheduled posts came due while the account was set to be deleted. Sessions,
- * tokens and the calendar URL are not restored. No hold means nothing to do.
+ * The request's schedule has committed: clear the billing done-stamp again and queue the sync (s13-18).
+ *
+ * `pauseForDeletion` queues the sync BEFORE `scheduleDeletion` writes `deletionScheduledAt`, so a sync that runs in
+ * between reads "not scheduled", takes the resume branch and may stamp the hold done (or delete an empty one).
+ * Clearing the stamp after the schedule, under the hold's lock, puts the hold back where the hourly sweep finds it,
+ * and the job queued here runs against the committed choice. The hold is recreated when that sync removed it.
+ * Never throws: the request has already been scheduled.
+ */
+export async function markBillingPending(userId: string, now: Date = new Date()): Promise<void> {
+  try {
+    await prisma.$transaction(async (tx) => {
+      await lockKey(tx, `deletion-hold:${userId}`);
+      await tx.deletionHold.upsert({
+        where: { userId },
+        create: { userId, keyIds: [], webhookIds: [], subscriptionIds: [], createdAt: now, billingSyncedAt: null },
+        update: { billingSyncedAt: null },
+      });
+    });
+  } catch {
+    console.error('[account] billing done-stamp could not be cleared after the schedule; the queued sync still runs');
+  }
+  await enqueueBillingSync(userId);
+}
+
+/**
+ * Signing back in cancelled the deletion: lift what the hold paused and is still as the hold left it, keep the
+ * hold until the billing sync has resumed the membership, and tell the member once when scheduled posts
+ * came due while the account was set to be deleted. Sessions, tokens and the calendar URL are not restored. No hold
+ * means nothing to do.
  */
 export async function restoreAfterCancel(userId: string, now: Date = new Date()): Promise<void> {
   const hold = await prisma.deletionHold.findUnique({ where: { userId } });
@@ -144,17 +173,16 @@ export async function restoreAfterCancel(userId: string, now: Date = new Date())
       where: { userId, id: { in: plan.webhookIds }, enabled: false, adminDisabledAt: null },
       data: { enabled: true, failureCount: 0 },
     }),
-    // The hold goes with the restore unless a membership the request ended is still waiting to be resumed: the
-    // billing sync deletes it after resuming. The conditions are repeated in the writes, so a sync that recorded
-    // an id since the read above is not lost.
-    prisma.deletionHold.deleteMany({ where: { userId, subscriptionIds: { isEmpty: true } } }),
+    // The hold stays with its subscription ids, even when empty: a stop that crashed before recording left only a
+    // marker on Stripe, and the billing sync is what finds it. The sync deletes the hold once it has resumed. The
+    // done-stamp is cleared so the hourly sweep queues the sync if the queue is down now (s13-18).
     prisma.deletionHold.updateMany({
-      where: { userId, subscriptionIds: { isEmpty: false } },
-      data: { keyIds: [], webhookIds: [] },
+      where: { userId },
+      data: { keyIds: [], webhookIds: [], billingSyncedAt: null },
     }),
   ]);
-  // Resume what the request stopped: queued after the commit, never inside it.
-  if (plan.keepHold) await enqueueBillingSync(userId);
+  // Resume what the request stopped: always queued, after the commit, never inside it.
+  await enqueueBillingSync(userId);
 
   const waited = await prisma.scheduledPost.count({
     where: { userId, publishedId: null, scheduledAt: { not: null, gte: hold.createdAt, lte: now } },

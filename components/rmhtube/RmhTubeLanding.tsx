@@ -18,6 +18,7 @@ import type { PublicRoomInfo, RoomHistoryStatus } from '@/lib/rmhtube/types';
 import { useRouter } from '@tanstack/react-router';
 import { ScheduleButton } from '@/components/rmhtube/party/ScheduleDialog';
 import UpcomingParties from '@/components/rmhtube/party/UpcomingParties';
+import HostsYouFollow from '@/components/rmhtube/party/HostsYouFollow';
 import WatchStatsPanel from '@/components/rmhtube/WatchStatsPanel';
 import { useTranslation } from "react-i18next";
 
@@ -215,6 +216,8 @@ export default function RmhTubeLanding() {
           </div>
 
           <UpcomingParties />
+
+          <HostsYouFollow />
 
           <WatchStatsPanel />
 

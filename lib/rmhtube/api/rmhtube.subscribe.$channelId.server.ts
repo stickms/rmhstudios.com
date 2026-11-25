@@ -1,35 +1,34 @@
 import { apiRoute } from '@/lib/api/route.server';
-import { defineHandler } from '@/lib/api/handler.server';
-import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { implement } from '@/lib/api/implement.server';
+import { refusalBody } from '@/lib/errors/codes';
+import { subscribeApi, unsubscribeApi } from '@/lib/rmhtube/subscriptions.contract';
+import { subscribeToHost, unsubscribeFromHost } from '@/lib/rmhtube/subscriptions.server';
 
-/** POST /api/rmhtube/subscribe/$channelId — toggle a channel subscription. */
+/** PUT subscribes to a host's watch parties, DELETE stops. Both are idempotent (s13-07). */
 export const route = apiRoute('/api/rmhtube/subscribe/$channelId', {
-  POST: defineHandler({}, async ({ request, params, session }) => {
-    const subscriberId = session.user.id;
-    const channelId = params.channelId;
-
-    if (channelId === subscriberId)
-      return Response.json({ error: "You can't subscribe to yourself" }, { status: 400 });
-
-    const ip = getClientIp(request);
-    const { allowed } = rateLimit(ip, { limit: 30, windowMs: 60_000, prefix: 'tube-sub' });
-    if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
-
-    const existing = await prisma.rmhTubeSubscription.findUnique({
-      where: { subscriberId_channelId: { subscriberId, channelId } },
-      select: { id: true },
-    });
-    if (existing) {
-      await prisma.rmhTubeSubscription.delete({ where: { id: existing.id } });
-      return Response.json({ success: true, subscribed: false });
-    }
-    const channel = await prisma.user.findUnique({
-      where: { id: channelId },
-      select: { id: true },
-    });
-    if (!channel) return Response.json({ error: 'Channel not found' }, { status: 404 });
-    await prisma.rmhTubeSubscription.create({ data: { subscriberId, channelId } });
-    return Response.json({ success: true, subscribed: true });
-  }),
+  PUT: implement(
+    subscribeApi,
+    {
+      rateLimit: 'write',
+    },
+    async ({ userId, params }) => {
+      const result = await subscribeToHost(userId, params.channelId ?? '');
+      if (result.ok) return { subscribed: true };
+      if (result.code === 'TUBE_SUBSCRIBE_LIMIT')
+        return Response.json(refusalBody('TUBE_SUBSCRIBE_LIMIT', { max: result.max }), { status: 409 });
+      if (result.code === 'TUBE_SUBSCRIBE_SELF')
+        return Response.json(refusalBody('TUBE_SUBSCRIBE_SELF'), { status: 400 });
+      return Response.json(refusalBody('NOT_FOUND'), { status: 404 });
+    },
+  ),
+  DELETE: implement(
+    unsubscribeApi,
+    {
+      rateLimit: 'write',
+    },
+    async ({ userId, params }) => {
+      await unsubscribeFromHost(userId, params.channelId ?? '');
+      return { subscribed: false };
+    },
+  ),
 });

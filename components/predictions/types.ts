@@ -10,6 +10,10 @@ export interface Market {
   /** In-app deep link to the subject of an auto market. */
   subjectUrl: string | null;
   yesPercent: number;
+  /** Public LMSR state; the card quotes a trade from it. */
+  qYes: number;
+  qNo: number;
+  b: number;
   volume: number;
   closesAt: string | null;
   resolvedAt: string | null;
@@ -24,6 +28,7 @@ export interface Market {
     yesShares: number;
     noShares: number;
     spent: number;
+    received: number;
     settled: boolean;
   } | null;
 }

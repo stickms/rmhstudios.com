@@ -19,7 +19,7 @@ import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
 /** Lower this when you convert call sites. Never raise it. */
-const BASELINE = 18;
+const BASELINE = 17;
 
 const HOOK = 'components/errors/useRefusalText.ts';
 

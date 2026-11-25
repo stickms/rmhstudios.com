@@ -9,10 +9,10 @@ Three wildcards are accepted and stored literally on the key:
 | Wildcard | Grants |
 | -------- | ------ |
 | `*` | Everything except explicit scopes (below). |
-| `read:*` | Every read scope. |
+| `read:*` | Every read scope except explicit scopes (below). |
 | `write:*` | Every write scope (likewise `manage:*`, except explicit scopes). |
 
-**Explicit scopes.** A scope marked explicit is granted only when a key lists it by name: `*` and `manage:*` do not include it. `manage:moderation` and `write:study-reviews` are the explicit scopes. The first lets a key time out and ban members; the second lets a key grade your flashcard reviews, which changes your review schedule and statistics, and is the one way a flashcard review is written through the API (`write:study` still cannot). A key made before they existed, or made with "All" selected, never gains either; the key-creation page shows them unticked and says so.
+**Explicit scopes.** A scope marked explicit is granted only when a key lists it by name: `*` and `manage:*` do not include it. `manage:moderation`, `write:study-reviews`, `read:ladder` and `write:ladder` are the explicit scopes. The first lets a key time out and ban members; the second lets a key grade your flashcard reviews, which changes your review schedule and statistics, and is the one way a flashcard review is written through the API (`write:study` still cannot). `read:ladder` and `write:ladder` open your RMHLadder job search: the first reads your applications and their timelines, the second moves an application along and adds a job you found yourself; neither ever reaches offers, pay, resumes or contacts. A key made before they existed, or made with "All" selected, never gains any of them; a new key's default grant leaves them out too; the key-creation page shows them unticked and says so.
 
 Grant the least privilege an integration needs. A key that only reads the public feed should carry `read:feed` and nothing else — if it leaks, that is the whole blast radius.
 
@@ -66,6 +66,8 @@ A request whose key lacks the required scope fails with `403 insufficient_scope`
 | `write:rmhtube` | RMHTube | Add to and remove from Watch later, and say whether you are going to a watch party. |
 | `write:study-reviews` | Study | Grade your flashcard reviews from your own tools; they count on your schedule and statistics. Not included in `*` or `write:*`: a key must list it itself. |
 | `read:characters` | RMHCharacters | Read your characters and the summaries of your parties. |
+| `read:ladder` | RMHLadder | Read your RMHLadder applications, their dates and notes, and their timelines. Never offers, pay, resumes or contacts. Not included in `*` or `read:*`, and not in a new key’s default grant: a key must list it itself. |
+| `write:ladder` | RMHLadder | Change an application’s status, dates and notes, and add a job you found yourself. Not included in `*` or `write:*`: a key must list it itself. |
 
 <!-- END GENERATED: scopes -->
 

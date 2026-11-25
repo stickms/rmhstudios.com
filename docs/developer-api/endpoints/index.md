@@ -5,7 +5,7 @@
 
 # Endpoint reference
 
-Every endpoint in the public `v1` API — 119 across 22 groups. Paths are relative to `https://rmhstudios.com`. The same registry generates the [OpenAPI 3.1 document](https://rmhstudios.com/api/v1/openapi.json), so the two never disagree.
+Every endpoint in the public `v1` API — 123 across 23 groups. Paths are relative to `https://rmhstudios.com`. The same registry generates the [OpenAPI 3.1 document](https://rmhstudios.com/api/v1/openapi.json), so the two never disagree.
 
 | Group | Endpoints | Covers |
 | ----- | --------- | ------ |
@@ -31,6 +31,7 @@ Every endpoint in the public `v1` API — 119 across 22 groups. Paths are relati
 | [Moderation](./moderation.md) | 5 | `manage:moderation` |
 | [RMHTube](./rmhtube.md) | 7 | `read:rmhtube`, `write:rmhtube` |
 | [RMHCharacters](./rmhcharacters.md) | 4 | `read:characters` |
+| [RMHLadder](./rmhladder.md) | 4 | `read:ladder`, `write:ladder` |
 
 ```{toctree}
 :maxdepth: 2
@@ -58,4 +59,5 @@ practice
 moderation
 rmhtube
 rmhcharacters
+rmhladder
 ```

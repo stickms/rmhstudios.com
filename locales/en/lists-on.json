@@ -1,0 +1,23 @@
+{
+  "added": "Added {{date}}",
+  "by": "By",
+  "confirm-action": "Leave this list",
+  "confirm-description": "You come off the list and stay off it: the owner cannot add you again, and is not told.",
+  "confirm-title": "Leave {{name}}?",
+  "description": "Public and unlisted lists that include you. Leave one and the owner cannot add you again. Private lists are never shown.",
+  "empty": "Lists that other members make public or share by link, and that include you, appear here.",
+  "empty-title": "You are not on any public lists",
+  "leave": "Leave this list",
+  "leave-failed": "Could not leave this list",
+  "leave-named": "Leave {{name}}",
+  "left": "You left the list",
+  "load-failed": "Could not load your lists.",
+  "load-more": "Load more",
+  "load-more-failed": "Couldn't load more.",
+  "page-description": "The public and unlisted lists other members have put you on, and leaving them.",
+  "page-title": "Lists you are on",
+  "retry": "Try again",
+  "settings": "Settings",
+  "signed-out": "Sign in to see the lists you are on.",
+  "someone": "a member"
+}

@@ -3,13 +3,14 @@ import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/rideshare/rideshare.contract';
 import { rateRideBody } from '@/lib/rideshare/rideshare-schema';
 import { prisma } from '@/lib/prisma.server';
+import { refuse } from '@/lib/rideshare/safety.server';
 
 export const route = apiRoute('/api/rideshare/rides/$id/rate', {
   POST: implement(
     C.rateRideApi,
     {
       body: rateRideBody,
-      invalid: () => Response.json({ error: 'Rating must be 1–5.' }, { status: 400 }),
+      invalid: () => refuse('INVALID_INPUT'),
     },
     async ({ params, session, body }) => {
       const userId = session.user.id;
@@ -28,20 +29,20 @@ export const route = apiRoute('/api/rideshare/rides/$id/rate', {
         },
       });
       if (!ride) {
-        return Response.json({ error: 'Ride not found' }, { status: 404 });
+        return refuse('NOT_FOUND');
       }
       if (ride.status !== 'COMPLETED') {
-        return Response.json({ error: 'You can only rate completed trips.' }, { status: 409 });
+        return refuse('RIDE_NOT_READY');
       }
       const isRider = ride.riderId === userId;
       const isDriver = ride.driverId === userId;
       if (!isRider && !isDriver) {
-        return Response.json({ error: 'Not your ride.' }, { status: 403 });
+        return refuse('FORBIDDEN');
       }
 
       if (isRider) {
         if (ride.ratingByRider != null) {
-          return Response.json({ error: 'You already rated this trip.' }, { status: 409 });
+          return refuse('CONFLICT');
         }
         // Record the rider's rating and roll it into the driver's aggregate.
         await prisma.$transaction([
@@ -57,7 +58,7 @@ export const route = apiRoute('/api/rideshare/rides/$id/rate', {
         ]);
       } else {
         if (ride.ratingByDriver != null) {
-          return Response.json({ error: 'You already rated this trip.' }, { status: 409 });
+          return refuse('CONFLICT');
         }
         await prisma.ride.update({ where: { id: ride.id }, data: { ratingByDriver: rating } });
       }

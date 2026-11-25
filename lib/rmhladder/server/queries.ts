@@ -11,6 +11,7 @@
 
 import { computeUserBoost, finalRelevance, type ScorableJob } from '../scoring';
 import type { ProgramType } from '../classifiers/early-career';
+import { catalogCompanyWhere, catalogJobWhere, ownerOrCatalogJobWhere } from '../own-jobs';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- structural prisma rows
 type AnyRow = Record<string, any>;
@@ -164,13 +165,16 @@ export async function listJobs(
   const now = new Date();
   // non-US rows persist with status 'unknown' (see process-source mapJobStatus);
   // include them only when the toggle is on.
+  // Own jobs (a member's "found elsewhere" rows) are never in the shared catalogue's search, matches or alerts.
   const where: AnyRow = filters.includeNonUS
     ? {
+        ...catalogJobWhere(),
         status: { in: ['active', 'unknown'] },
         earlyCareerClassification: { in: PUBLIC_EARLY_CAREER_CLASSES },
         company: { enabled: true },
       }
     : {
+        ...catalogJobWhere(),
         status: 'active',
         earlyCareerClassification: { in: PUBLIC_EARLY_CAREER_CLASSES },
         company: { enabled: true },
@@ -312,13 +316,19 @@ export async function listJobs(
   return { rows: page, nextCursor };
 }
 
+/**
+ * One job. A catalogue job is shown under the public rules; an own job (a member's job found elsewhere) only to its
+ * owner, whatever its status, and never to a viewer of `null`. `options.where` narrows the read further (the Open Graph
+ * card passes `catalogJobWhere()`, so the card of an own job is a 404 whoever asks).
+ */
 export async function getJobDetail(
   prisma: QueriesPrisma,
   userId: string | null,
   jobId: string,
+  options: { where?: AnyRow } = {},
 ): Promise<AnyRow | null> {
   const job = await prisma.ladderJob.findUnique({
-    where: { id: jobId },
+    where: { id: jobId, ...options.where },
     include: {
       company: { select: PUBLIC_COMPANY_SELECT },
       verifications: { orderBy: { checkedAt: 'desc' } },
@@ -331,6 +341,16 @@ export async function getJobDetail(
     },
   });
   if (!job) return null;
+  if (job.ownerId) {
+    // Defence in depth over the owner check in `where`: the owner sees their own job, nobody else does.
+    if (!userId || job.ownerId !== userId) return null;
+    const own = (job.actions as AnyRow[] | undefined)?.[0]?.action as string | undefined;
+    return {
+      ...toPublicJob(job),
+      userAction: own === 'saved' || own === 'ignored' ? own : null,
+      application: (job.applications as AnyRow[] | undefined)?.[0] ?? null,
+    };
+  }
   const latest = (job.verifications as AnyRow[] | undefined)?.[0];
   if (
     job.status !== 'active' ||
@@ -358,6 +378,7 @@ export async function getOverview(
   const [activeJobs, openTasks, runs, actions, applications] = await Promise.all([
     prisma.ladderJob.findMany({
       where: {
+        ...catalogJobWhere(),
         status: 'active',
         earlyCareerClassification: { in: PUBLIC_EARLY_CAREER_CLASSES },
         company: { enabled: true },
@@ -439,12 +460,15 @@ export async function listCompanies(
   prisma: QueriesPrisma,
   filters: { q?: string; enabledOnly?: boolean } = {},
 ) {
-  const where: AnyRow = {};
+  const where: AnyRow = { ...catalogCompanyWhere() };
   if (filters.enabledOnly) where.enabled = true;
   if (filters.q) where.OR = [{ name: { contains: filters.q, mode: 'insensitive' } }];
   const companies = await prisma.ladderCompany.findMany({
     where,
-    include: { sources: true, _count: { select: { jobs: { where: { status: 'active' } } } } },
+    include: {
+      sources: true,
+      _count: { select: { jobs: { where: { status: 'active', ...catalogJobWhere() } } } },
+    },
     orderBy: [{ name: 'asc' }],
   });
   return companies.map((c) => ({
@@ -489,8 +513,19 @@ export async function getSettings(prisma: QueriesPrisma, userId: string) {
 /** All of a user's applications with job + company context, for the pipeline ladder. */
 export async function listApplications(prisma: QueriesPrisma, userId: string) {
   return prisma.ladderApplication.findMany({
-    where: { userId },
+    // The member's applications: catalogue jobs and their own jobs, never another member's.
+    where: { userId, job: ownerOrCatalogJobWhere(userId) },
     include: { job: { include: { company: true } }, offer: { select: { id: true } } },
+  });
+}
+
+/** The companies the settings page offers for the watchlist: the shared catalogue's, never a member's own. */
+export async function listWatchlistCompanies(prisma: QueriesPrisma) {
+  return prisma.ladderCompany.findMany({
+    where: { ...catalogCompanyWhere(), enabled: true },
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+    take: 500,
   });
 }
 

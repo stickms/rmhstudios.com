@@ -6,6 +6,7 @@
  */
 
 import { z } from 'zod';
+import { assertJobUsable, catalogCompanyWhere } from '../own-jobs';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- structural prisma rows
 type AnyRow = Record<string, any>;
@@ -34,7 +35,10 @@ export interface ActionsPrisma {
     update(args: AnyRow): Promise<AnyRow | undefined>;
   };
   ladderVerification: { create(args: AnyRow): Promise<AnyRow> };
-  ladderCompany: { update(args: AnyRow): Promise<AnyRow | undefined> };
+  ladderCompany: {
+    update(args: AnyRow): Promise<AnyRow | undefined>;
+    findUnique?(args: AnyRow): Promise<AnyRow | null>;
+  };
   ladderKeyword: {
     upsert(args: AnyRow): Promise<AnyRow>;
     delete(args: AnyRow): Promise<unknown>;
@@ -55,6 +59,8 @@ export async function setJobAction(
   jobId: string,
   action: JobActionValue,
 ) {
+  // A job id comes from the client: another member's own job answers as a job that does not exist.
+  await assertJobUsable(prisma, userId, jobId);
   if (action === 'applied') {
     await prisma.ladderUserPrefs.upsert({
       where: { userId },
@@ -140,6 +146,7 @@ export async function updateApplication(
   patch: ApplicationPatch,
 ) {
   const validated = applicationPatchSchema.parse(patch);
+  await assertJobUsable(prisma, userId, jobId);
   if (validated.resumeVersionId) {
     if (!prisma.ladderResumeVersion) throw new Error('Resume ownership validation is unavailable');
     const ownedVersion = await prisma.ladderResumeVersion.findFirst({
@@ -276,7 +283,7 @@ export async function setCompanyEnabled(
   companyId: string,
   enabled: boolean,
 ) {
-  return prisma.ladderCompany.update({ where: { id: companyId }, data: { enabled } });
+  return prisma.ladderCompany.update({ where: { id: companyId, ...catalogCompanyWhere() }, data: { enabled } });
 }
 
 export async function setCompanyPriority(
@@ -286,7 +293,7 @@ export async function setCompanyPriority(
 ) {
   const clamped = Math.max(1, Math.min(5, Math.round(priorityLevel)));
   return prisma.ladderCompany.update({
-    where: { id: companyId },
+    where: { id: companyId, ...catalogCompanyWhere() },
     data: { priorityLevel: clamped },
   });
 }
@@ -360,6 +367,7 @@ const prefsPatchSchema = z.object({
   quietHoursStart: z.number().int().min(0).max(23).nullable().optional(),
   quietHoursEnd: z.number().int().min(0).max(23).nullable().optional(),
   resumeMatchThreshold: z.number().int().min(0).max(100).nullable().optional(),
+  calendarInFeed: z.boolean().optional(),
 });
 
 export type PrefsPatch = z.infer<typeof prefsPatchSchema>;
@@ -391,6 +399,11 @@ export async function toggleWatchlist(
   companyId: string,
   on: boolean,
 ): Promise<{ isWatchlisted: boolean }> {
+  if (on && prisma.ladderCompany.findUnique) {
+    // Only the shared catalogue's companies can be watched; a member's own company is not one.
+    const company = await prisma.ladderCompany.findUnique({ where: { id: companyId, ...catalogCompanyWhere() } });
+    if (!company) throw new Error('Company not found');
+  }
   const existing = await prisma.ladderWatchlistEntry.findUnique({
     where: { userId_companyId: { userId, companyId } },
   });

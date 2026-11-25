@@ -193,7 +193,7 @@ export type ReplaceMembersResult =
   | {
       ok: true;
       members: string[];
-      skipped: { handle: string; reason: 'not_found' | 'blocked' }[];
+      skipped: { handle: string; reason: 'not_found' | 'blocked' | 'left' }[];
     }
   | { ok: false; reason: 'not_found' | 'too_many' };
 
@@ -231,23 +231,35 @@ export async function replaceMembersForKey(
   const blockedSet = new Set(blocked);
   const byHandle = new Map(users.filter((u) => u.handle).map((u) => [(u.handle as string).toLowerCase(), u]));
 
-  const ids: string[] = [];
-  const members: string[] = [];
-  const skipped: { handle: string; reason: 'not_found' | 'blocked' }[] = [];
+  const candidates: { handle: string; id: string; canonical: string }[] = [];
+  const skippedAt = new Map<string, 'not_found' | 'blocked' | 'left'>();
   for (const h of handles) {
     const u = byHandle.get(h.toLowerCase());
-    if (!u || isHiddenAccount(u)) skipped.push({ handle: h, reason: 'not_found' });
-    else if (blockedSet.has(u.id)) skipped.push({ handle: h, reason: 'blocked' });
-    else {
-      ids.push(u.id);
-      members.push(u.handle as string);
-    }
+    if (!u || isHiddenAccount(u)) skippedAt.set(h, 'not_found');
+    else if (blockedSet.has(u.id)) skippedAt.set(h, 'blocked');
+    else candidates.push({ handle: h, id: u.id, canonical: u.handle as string });
   }
+  let left: string[];
   try {
-    await replaceListMembers(userId, listId, ids);
+    left = await replaceListMembers(
+      userId,
+      listId,
+      candidates.map((c) => c.id),
+    );
   } catch (e) {
     if (e instanceof ListError) return { ok: false, reason: e.message === 'MEMBER_LIMIT' ? 'too_many' : 'not_found' };
     throw e;
   }
+  // Members who left this list are dropped under the list's lock; they are reported, in the order asked for.
+  const gone = new Set(left);
+  const members: string[] = [];
+  for (const c of candidates) {
+    if (gone.has(c.id)) skippedAt.set(c.handle, 'left');
+    else members.push(c.canonical);
+  }
+  const skipped = handles.flatMap((h) => {
+    const reason = skippedAt.get(h);
+    return reason ? [{ handle: h, reason }] : [];
+  });
   return { ok: true, members, skipped };
 }
