@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { ArrowRight, type LucideIcon } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 /**
  * One destination on a hub page (/services, /ventures): icon, name, one line,
@@ -28,7 +28,7 @@ export function HubLinkRow({
   description: string;
 }) {
   const className =
-'row-hover group flex items-start gap-4 py-2';
+'row-hover hub-link-row group flex min-w-0 flex-1 items-start gap-4 py-2';
   const body = (
     <>
       <span className="flex size-11 shrink-0 items-center justify-center rounded-site-sm text-site-accent">
@@ -40,10 +40,6 @@ export function HubLinkRow({
         </span>
         <span className="mt-1 block text-sm text-site-text-muted">{description}</span>
       </span>
-      <ArrowRight
-        className="mt-1 size-4 shrink-0 text-site-text-muted transition-transform group-hover:translate-x-0.5 rtl:-scale-x-100"
-        aria-hidden
-      />
     </>
   );
 

@@ -151,7 +151,7 @@ function VenturesPage() {
     >
       <Cells columns={2} className="pt-4 pb-12">
         {VENTURES.map((v) => (
-          <li key={v.id}>
+          <li key={v.id} className="flex">
             <HubLinkRow
               href={v.href}
               external={v.external}
