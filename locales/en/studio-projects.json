@@ -64,6 +64,7 @@
   "saved-account": "Saved to your account.",
   "saved-as": "Saved as {{name}}.",
   "saved-when": "Saved {{when}}",
+  "shared-audio-track": "Audio track {{n}}",
   "state-error": "Not saved",
   "state-saved": "Saved",
   "state-saving": "Saving…",

@@ -48,6 +48,7 @@ model RmhCharacterParty {
   updatedAt    DateTime @updatedAt
 
   members RmhCharacterPartyMember[]
+  rolls   RmhCharacterPartyRoll[]
 
   @@index([ownerId])
   @@map("rmh_character_party")
@@ -67,4 +68,37 @@ model RmhCharacterPartyMember {
   @@index([userId])
   @@index([characterId])
   @@map("rmh_character_party_member")
+}
+
+// ─── RMHCharacters table rolls (sprint 12, feature 01) ─────
+//
+// A roll a member made "for the table". The server rolls it: the request names what to roll, the server reads the
+// member's own character in that party, computes the modifier with the rules engine and rolls on node:crypto, so no
+// client ever sends a modifier or a result. The newest 200 rolls per party are kept (older ones are trimmed in the
+// transaction that inserts a new one). `characterId` has no relation on purpose: a character that leaves keeps no tie,
+// and a roll stores no name; the view joins the character's current name. `label` is a rules key (`stealth`, `a0`),
+// never free text. `visibility`: table (every member), gm (the roller and the game master), secret (the game master).
+
+model RmhCharacterPartyRoll {
+  id          String            @id @default(cuid())
+  partyId     String
+  party       RmhCharacterParty @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User              @relation("RmhCharacterPartyRolls", fields: [userId], references: [id], onDelete: Cascade)
+  characterId String?
+  kind        String            @db.VarChar(12)
+  label       String            @db.VarChar(40)
+  notation    String            @db.VarChar(64)
+  dice        Int[]
+  modifier    Int
+  total       Int
+  mode        String            @db.VarChar(12)
+  visibility  String            @db.VarChar(6)
+  dc          Int?
+  degree      String?           @db.VarChar(16)
+  createdAt   DateTime          @default(now())
+
+  @@index([partyId, createdAt])
+  @@index([userId])
+  @@map("rmh_character_party_roll")
 }

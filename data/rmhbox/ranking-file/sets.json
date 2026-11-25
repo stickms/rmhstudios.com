@@ -1,0 +1,2432 @@
+[
+  {
+    "id": "planets-diameter",
+    "category": "science",
+    "prompt": "Largest to smallest by equatorial diameter",
+    "unit": "km",
+    "items": [
+      {
+        "label": "Jupiter",
+        "value": 142984
+      },
+      {
+        "label": "Saturn",
+        "value": 120536
+      },
+      {
+        "label": "Uranus",
+        "value": 51118
+      },
+      {
+        "label": "Neptune",
+        "value": 49528
+      },
+      {
+        "label": "Earth",
+        "value": 12756
+      },
+      {
+        "label": "Venus",
+        "value": 12104
+      },
+      {
+        "label": "Mars",
+        "value": 6792
+      },
+      {
+        "label": "Mercury",
+        "value": 4879
+      }
+    ],
+    "source": "NASA Planetary Fact Sheet"
+  },
+  {
+    "id": "planets-distance",
+    "category": "science",
+    "prompt": "Farthest to nearest from the Sun, by average distance",
+    "unit": "million km",
+    "items": [
+      {
+        "label": "Neptune",
+        "value": 4495.1
+      },
+      {
+        "label": "Uranus",
+        "value": 2872.5
+      },
+      {
+        "label": "Saturn",
+        "value": 1433.5
+      },
+      {
+        "label": "Jupiter",
+        "value": 778.5
+      },
+      {
+        "label": "Mars",
+        "value": 227.9
+      },
+      {
+        "label": "Earth",
+        "value": 149.6
+      },
+      {
+        "label": "Venus",
+        "value": 108.2
+      },
+      {
+        "label": "Mercury",
+        "value": 57.9
+      }
+    ],
+    "source": "NASA Planetary Fact Sheet"
+  },
+  {
+    "id": "planets-year",
+    "category": "science",
+    "prompt": "Longest to shortest year, by orbital period",
+    "unit": "Earth days",
+    "items": [
+      {
+        "label": "Neptune",
+        "value": 60190
+      },
+      {
+        "label": "Uranus",
+        "value": 30687
+      },
+      {
+        "label": "Saturn",
+        "value": 10747
+      },
+      {
+        "label": "Jupiter",
+        "value": 4333
+      },
+      {
+        "label": "Mars",
+        "value": 687
+      },
+      {
+        "label": "Earth",
+        "value": 365.25
+      },
+      {
+        "label": "Venus",
+        "value": 224.7
+      },
+      {
+        "label": "Mercury",
+        "value": 88
+      }
+    ],
+    "source": "NASA Planetary Fact Sheet"
+  },
+  {
+    "id": "planets-mass",
+    "category": "science",
+    "prompt": "Heaviest to lightest by mass",
+    "unit": "Earth masses",
+    "items": [
+      {
+        "label": "Jupiter",
+        "value": 317.8
+      },
+      {
+        "label": "Saturn",
+        "value": 95.2
+      },
+      {
+        "label": "Neptune",
+        "value": 17.1
+      },
+      {
+        "label": "Uranus",
+        "value": 14.5
+      },
+      {
+        "label": "Earth",
+        "value": 1
+      },
+      {
+        "label": "Venus",
+        "value": 0.815
+      },
+      {
+        "label": "Mars",
+        "value": 0.107
+      },
+      {
+        "label": "Mercury",
+        "value": 0.055
+      }
+    ],
+    "source": "NASA Planetary Fact Sheet"
+  },
+  {
+    "id": "moons-diameter",
+    "category": "science",
+    "prompt": "Largest to smallest moon by diameter",
+    "unit": "km",
+    "items": [
+      {
+        "label": "Ganymede",
+        "value": 5268
+      },
+      {
+        "label": "Titan",
+        "value": 5149
+      },
+      {
+        "label": "Callisto",
+        "value": 4821
+      },
+      {
+        "label": "Io",
+        "value": 3643
+      },
+      {
+        "label": "The Moon",
+        "value": 3475
+      },
+      {
+        "label": "Europa",
+        "value": 3122
+      },
+      {
+        "label": "Triton",
+        "value": 2707
+      }
+    ],
+    "source": "NASA Solar System Exploration"
+  },
+  {
+    "id": "elements-atomic-number",
+    "category": "science",
+    "prompt": "Highest to lowest atomic number",
+    "unit": "atomic number",
+    "items": [
+      {
+        "label": "Uranium",
+        "value": 92
+      },
+      {
+        "label": "Lead",
+        "value": 82
+      },
+      {
+        "label": "Gold",
+        "value": 79
+      },
+      {
+        "label": "Silver",
+        "value": 47
+      },
+      {
+        "label": "Iron",
+        "value": 26
+      },
+      {
+        "label": "Oxygen",
+        "value": 8
+      },
+      {
+        "label": "Carbon",
+        "value": 6
+      },
+      {
+        "label": "Helium",
+        "value": 2
+      }
+    ],
+    "source": "IUPAC Periodic Table of the Elements"
+  },
+  {
+    "id": "elements-melting-point",
+    "category": "science",
+    "prompt": "Highest to lowest melting point",
+    "unit": "°C",
+    "items": [
+      {
+        "label": "Tungsten",
+        "value": 3422
+      },
+      {
+        "label": "Iron",
+        "value": 1538
+      },
+      {
+        "label": "Copper",
+        "value": 1085
+      },
+      {
+        "label": "Gold",
+        "value": 1064
+      },
+      {
+        "label": "Aluminium",
+        "value": 660
+      },
+      {
+        "label": "Lead",
+        "value": 327.5
+      },
+      {
+        "label": "Tin",
+        "value": 231.9
+      },
+      {
+        "label": "Mercury",
+        "value": -38.8
+      }
+    ],
+    "source": "CRC Handbook of Chemistry and Physics"
+  },
+  {
+    "id": "elements-density",
+    "category": "science",
+    "prompt": "Densest to lightest at room temperature",
+    "unit": "g/cm³",
+    "items": [
+      {
+        "label": "Osmium",
+        "value": 22.59
+      },
+      {
+        "label": "Gold",
+        "value": 19.32
+      },
+      {
+        "label": "Lead",
+        "value": 11.34
+      },
+      {
+        "label": "Silver",
+        "value": 10.49
+      },
+      {
+        "label": "Copper",
+        "value": 8.96
+      },
+      {
+        "label": "Iron",
+        "value": 7.87
+      },
+      {
+        "label": "Aluminium",
+        "value": 2.7
+      },
+      {
+        "label": "Lithium",
+        "value": 0.534
+      }
+    ],
+    "source": "CRC Handbook of Chemistry and Physics"
+  },
+  {
+    "id": "liquids-boiling-point",
+    "category": "science",
+    "prompt": "Highest to lowest boiling point at sea level",
+    "unit": "°C",
+    "items": [
+      {
+        "label": "Water",
+        "value": 100
+      },
+      {
+        "label": "Ethanol",
+        "value": 78.4
+      },
+      {
+        "label": "Methanol",
+        "value": 64.7
+      },
+      {
+        "label": "Acetone",
+        "value": 56.1
+      },
+      {
+        "label": "Diethyl ether",
+        "value": 34.6
+      },
+      {
+        "label": "Oxygen",
+        "value": -183
+      },
+      {
+        "label": "Nitrogen",
+        "value": -195.8
+      },
+      {
+        "label": "Helium",
+        "value": -268.9
+      }
+    ],
+    "source": "CRC Handbook of Chemistry and Physics"
+  },
+  {
+    "id": "mohs-hardness",
+    "category": "science",
+    "prompt": "Hardest to softest on the Mohs scale",
+    "unit": "Mohs hardness",
+    "items": [
+      {
+        "label": "Diamond",
+        "value": 10
+      },
+      {
+        "label": "Corundum",
+        "value": 9
+      },
+      {
+        "label": "Topaz",
+        "value": 8
+      },
+      {
+        "label": "Quartz",
+        "value": 7
+      },
+      {
+        "label": "Orthoclase feldspar",
+        "value": 6
+      },
+      {
+        "label": "Apatite",
+        "value": 5
+      },
+      {
+        "label": "Fluorite",
+        "value": 4
+      },
+      {
+        "label": "Calcite",
+        "value": 3
+      }
+    ],
+    "source": "Encyclopaedia Britannica, Mohs hardness scale"
+  },
+  {
+    "id": "si-prefixes",
+    "category": "science",
+    "prompt": "Largest to smallest SI prefix",
+    "unit": "power of ten",
+    "items": [
+      {
+        "label": "tera",
+        "value": 12
+      },
+      {
+        "label": "giga",
+        "value": 9
+      },
+      {
+        "label": "mega",
+        "value": 6
+      },
+      {
+        "label": "kilo",
+        "value": 3
+      },
+      {
+        "label": "milli",
+        "value": -3
+      },
+      {
+        "label": "micro",
+        "value": -6
+      },
+      {
+        "label": "nano",
+        "value": -9
+      },
+      {
+        "label": "pico",
+        "value": -12
+      }
+    ],
+    "source": "BIPM, The International System of Units (SI Brochure)"
+  },
+  {
+    "id": "geologic-periods",
+    "category": "science",
+    "prompt": "Oldest to most recent geological period, by when it began",
+    "unit": "million years ago",
+    "items": [
+      {
+        "label": "Cambrian",
+        "value": 539
+      },
+      {
+        "label": "Ordovician",
+        "value": 485
+      },
+      {
+        "label": "Silurian",
+        "value": 444
+      },
+      {
+        "label": "Devonian",
+        "value": 419
+      },
+      {
+        "label": "Carboniferous",
+        "value": 359
+      },
+      {
+        "label": "Permian",
+        "value": 299
+      },
+      {
+        "label": "Triassic",
+        "value": 252
+      },
+      {
+        "label": "Jurassic",
+        "value": 201
+      }
+    ],
+    "source": "International Commission on Stratigraphy, rounded"
+  },
+  {
+    "id": "beaufort-scale",
+    "category": "science",
+    "prompt": "Strongest to calmest wind on the Beaufort scale",
+    "unit": "Beaufort force",
+    "items": [
+      {
+        "label": "Hurricane",
+        "value": 12
+      },
+      {
+        "label": "Storm",
+        "value": 10
+      },
+      {
+        "label": "Gale",
+        "value": 8
+      },
+      {
+        "label": "Strong breeze",
+        "value": 6
+      },
+      {
+        "label": "Moderate breeze",
+        "value": 4
+      },
+      {
+        "label": "Gentle breeze",
+        "value": 3
+      },
+      {
+        "label": "Light air",
+        "value": 1
+      },
+      {
+        "label": "Calm",
+        "value": 0
+      }
+    ],
+    "source": "Met Office, Beaufort wind force scale"
+  },
+  {
+    "id": "animals-speed",
+    "category": "science",
+    "prompt": "Fastest to slowest top speed",
+    "unit": "km/h",
+    "items": [
+      {
+        "label": "Peregrine falcon (in a dive)",
+        "value": 389
+      },
+      {
+        "label": "Cheetah",
+        "value": 104
+      },
+      {
+        "label": "Pronghorn",
+        "value": 88
+      },
+      {
+        "label": "Lion",
+        "value": 80
+      },
+      {
+        "label": "Usain Bolt",
+        "value": 44.7
+      },
+      {
+        "label": "African elephant",
+        "value": 40
+      }
+    ],
+    "source": "Guinness World Records and Encyclopaedia Britannica"
+  },
+  {
+    "id": "animals-mass",
+    "category": "science",
+    "prompt": "Heaviest to lightest typical adult",
+    "unit": "kg",
+    "items": [
+      {
+        "label": "Blue whale",
+        "value": 150000
+      },
+      {
+        "label": "African elephant",
+        "value": 6000
+      },
+      {
+        "label": "Hippopotamus",
+        "value": 1500
+      },
+      {
+        "label": "Polar bear",
+        "value": 450
+      },
+      {
+        "label": "Lion",
+        "value": 190
+      },
+      {
+        "label": "Grey wolf",
+        "value": 45
+      },
+      {
+        "label": "Red fox",
+        "value": 6
+      }
+    ],
+    "source": "National Geographic and Encyclopaedia Britannica, typical adult male"
+  },
+  {
+    "id": "rivers-length",
+    "category": "geography",
+    "prompt": "Longest to shortest river",
+    "unit": "km",
+    "items": [
+      {
+        "label": "Nile",
+        "value": 6650
+      },
+      {
+        "label": "Yangtze",
+        "value": 6300
+      },
+      {
+        "label": "Congo",
+        "value": 4700
+      },
+      {
+        "label": "Volga",
+        "value": 3530
+      },
+      {
+        "label": "Danube",
+        "value": 2850
+      },
+      {
+        "label": "Rhine",
+        "value": 1230
+      },
+      {
+        "label": "Thames",
+        "value": 346
+      }
+    ],
+    "source": "Encyclopaedia Britannica"
+  },
+  {
+    "id": "mountains-height",
+    "category": "geography",
+    "prompt": "Highest to lowest mountain, by height above sea level",
+    "unit": "m",
+    "items": [
+      {
+        "label": "Mount Everest",
+        "value": 8849
+      },
+      {
+        "label": "K2",
+        "value": 8611
+      },
+      {
+        "label": "Denali",
+        "value": 6190
+      },
+      {
+        "label": "Kilimanjaro",
+        "value": 5895
+      },
+      {
+        "label": "Mont Blanc",
+        "value": 4806
+      },
+      {
+        "label": "Matterhorn",
+        "value": 4478
+      },
+      {
+        "label": "Mount Fuji",
+        "value": 3776
+      },
+      {
+        "label": "Ben Nevis",
+        "value": 1345
+      }
+    ],
+    "source": "Encyclopaedia Britannica"
+  },
+  {
+    "id": "lakes-area",
+    "category": "geography",
+    "prompt": "Largest to smallest lake by surface area",
+    "unit": "km²",
+    "items": [
+      {
+        "label": "Caspian Sea",
+        "value": 371000
+      },
+      {
+        "label": "Lake Superior",
+        "value": 82100
+      },
+      {
+        "label": "Lake Victoria",
+        "value": 68800
+      },
+      {
+        "label": "Lake Huron",
+        "value": 59600
+      },
+      {
+        "label": "Lake Tanganyika",
+        "value": 32600
+      },
+      {
+        "label": "Lake Baikal",
+        "value": 31700
+      },
+      {
+        "label": "Lake Erie",
+        "value": 25700
+      }
+    ],
+    "source": "Encyclopaedia Britannica, rounded"
+  },
+  {
+    "id": "lakes-depth",
+    "category": "geography",
+    "prompt": "Deepest to shallowest lake, by greatest depth",
+    "unit": "m",
+    "items": [
+      {
+        "label": "Lake Baikal",
+        "value": 1642
+      },
+      {
+        "label": "Lake Tanganyika",
+        "value": 1470
+      },
+      {
+        "label": "Caspian Sea",
+        "value": 1025
+      },
+      {
+        "label": "Great Slave Lake",
+        "value": 614
+      },
+      {
+        "label": "Crater Lake",
+        "value": 594
+      },
+      {
+        "label": "Lake Superior",
+        "value": 406
+      },
+      {
+        "label": "Lake Geneva",
+        "value": 310
+      },
+      {
+        "label": "Loch Ness",
+        "value": 230
+      }
+    ],
+    "source": "Encyclopaedia Britannica"
+  },
+  {
+    "id": "deserts-area",
+    "category": "geography",
+    "prompt": "Largest to smallest desert",
+    "unit": "million km²",
+    "items": [
+      {
+        "label": "Sahara",
+        "value": 9.2
+      },
+      {
+        "label": "Arabian Desert",
+        "value": 2.3
+      },
+      {
+        "label": "Gobi",
+        "value": 1.3
+      },
+      {
+        "label": "Kalahari",
+        "value": 0.9
+      },
+      {
+        "label": "Patagonian Desert",
+        "value": 0.67
+      },
+      {
+        "label": "Great Victoria Desert",
+        "value": 0.42
+      },
+      {
+        "label": "Mojave",
+        "value": 0.065
+      }
+    ],
+    "source": "Encyclopaedia Britannica, rounded"
+  },
+  {
+    "id": "continents-area",
+    "category": "geography",
+    "prompt": "Largest to smallest continent by area",
+    "unit": "million km²",
+    "items": [
+      {
+        "label": "Asia",
+        "value": 44.6
+      },
+      {
+        "label": "Africa",
+        "value": 30.4
+      },
+      {
+        "label": "North America",
+        "value": 24.7
+      },
+      {
+        "label": "South America",
+        "value": 17.8
+      },
+      {
+        "label": "Antarctica",
+        "value": 14.2
+      },
+      {
+        "label": "Europe",
+        "value": 10.2
+      },
+      {
+        "label": "Oceania",
+        "value": 8.5
+      }
+    ],
+    "source": "Encyclopaedia Britannica, rounded"
+  },
+  {
+    "id": "countries-area",
+    "category": "geography",
+    "prompt": "Largest to smallest country by total area",
+    "unit": "km²",
+    "items": [
+      {
+        "label": "Russia",
+        "value": 17098246
+      },
+      {
+        "label": "Canada",
+        "value": 9984670
+      },
+      {
+        "label": "Brazil",
+        "value": 8515767
+      },
+      {
+        "label": "Australia",
+        "value": 7692024
+      },
+      {
+        "label": "India",
+        "value": 3287263
+      },
+      {
+        "label": "Argentina",
+        "value": 2780400
+      },
+      {
+        "label": "Algeria",
+        "value": 2381741
+      },
+      {
+        "label": "Mexico",
+        "value": 1964375
+      }
+    ],
+    "source": "United Nations Statistics Division"
+  },
+  {
+    "id": "small-countries-area",
+    "category": "geography",
+    "prompt": "Largest to smallest of these small countries, by area",
+    "unit": "km²",
+    "items": [
+      {
+        "label": "Malta",
+        "value": 316
+      },
+      {
+        "label": "Maldives",
+        "value": 298
+      },
+      {
+        "label": "Liechtenstein",
+        "value": 160
+      },
+      {
+        "label": "San Marino",
+        "value": 61
+      },
+      {
+        "label": "Tuvalu",
+        "value": 26
+      },
+      {
+        "label": "Nauru",
+        "value": 21
+      },
+      {
+        "label": "Monaco",
+        "value": 2.02
+      },
+      {
+        "label": "Vatican City",
+        "value": 0.44
+      }
+    ],
+    "source": "United Nations Statistics Division"
+  },
+  {
+    "id": "africa-countries-area",
+    "category": "geography",
+    "prompt": "Largest to smallest African country by area",
+    "unit": "km²",
+    "items": [
+      {
+        "label": "Algeria",
+        "value": 2381741
+      },
+      {
+        "label": "Democratic Republic of the Congo",
+        "value": 2344858
+      },
+      {
+        "label": "Sudan",
+        "value": 1861484
+      },
+      {
+        "label": "Libya",
+        "value": 1759540
+      },
+      {
+        "label": "Chad",
+        "value": 1284000
+      },
+      {
+        "label": "Niger",
+        "value": 1267000
+      }
+    ],
+    "source": "United Nations Statistics Division"
+  },
+  {
+    "id": "capitals-latitude",
+    "category": "geography",
+    "prompt": "Furthest north to furthest south capital city",
+    "unit": "degrees latitude",
+    "items": [
+      {
+        "label": "Reykjavik",
+        "value": 64.15
+      },
+      {
+        "label": "Oslo",
+        "value": 59.91
+      },
+      {
+        "label": "London",
+        "value": 51.51
+      },
+      {
+        "label": "Rome",
+        "value": 41.9
+      },
+      {
+        "label": "Cairo",
+        "value": 30.04
+      },
+      {
+        "label": "Nairobi",
+        "value": -1.29
+      },
+      {
+        "label": "Canberra",
+        "value": -35.28
+      },
+      {
+        "label": "Wellington",
+        "value": -41.29
+      }
+    ],
+    "source": "GeoNames gazetteer"
+  },
+  {
+    "id": "cities-elevation",
+    "category": "geography",
+    "prompt": "Highest to lowest city, by elevation above sea level",
+    "unit": "m",
+    "items": [
+      {
+        "label": "La Paz",
+        "value": 3640
+      },
+      {
+        "label": "Quito",
+        "value": 2850
+      },
+      {
+        "label": "Bogotá",
+        "value": 2640
+      },
+      {
+        "label": "Addis Ababa",
+        "value": 2355
+      },
+      {
+        "label": "Mexico City",
+        "value": 2240
+      },
+      {
+        "label": "Nairobi",
+        "value": 1795
+      },
+      {
+        "label": "Denver",
+        "value": 1609
+      },
+      {
+        "label": "Madrid",
+        "value": 667
+      }
+    ],
+    "source": "Encyclopaedia Britannica"
+  },
+  {
+    "id": "waterfalls-height",
+    "category": "geography",
+    "prompt": "Tallest to shortest waterfall",
+    "unit": "m",
+    "items": [
+      {
+        "label": "Angel Falls",
+        "value": 979
+      },
+      {
+        "label": "Yosemite Falls",
+        "value": 739
+      },
+      {
+        "label": "Reichenbach Falls",
+        "value": 250
+      },
+      {
+        "label": "Victoria Falls",
+        "value": 108
+      },
+      {
+        "label": "Iguazu Falls",
+        "value": 82
+      },
+      {
+        "label": "Niagara Falls",
+        "value": 51
+      },
+      {
+        "label": "Gullfoss",
+        "value": 32
+      }
+    ],
+    "source": "World Waterfall Database and Encyclopaedia Britannica"
+  },
+  {
+    "id": "islands-area",
+    "category": "geography",
+    "prompt": "Largest to smallest island by area",
+    "unit": "thousand km²",
+    "items": [
+      {
+        "label": "Greenland",
+        "value": 2166
+      },
+      {
+        "label": "New Guinea",
+        "value": 786
+      },
+      {
+        "label": "Borneo",
+        "value": 748
+      },
+      {
+        "label": "Madagascar",
+        "value": 587
+      },
+      {
+        "label": "Baffin Island",
+        "value": 507
+      },
+      {
+        "label": "Honshu",
+        "value": 227
+      },
+      {
+        "label": "Great Britain",
+        "value": 209
+      },
+      {
+        "label": "Ireland",
+        "value": 84
+      }
+    ],
+    "source": "Encyclopaedia Britannica, rounded"
+  },
+  {
+    "id": "us-states-area",
+    "category": "geography",
+    "prompt": "Largest to smallest US state by total area",
+    "unit": "sq mi",
+    "items": [
+      {
+        "label": "Alaska",
+        "value": 665384
+      },
+      {
+        "label": "Texas",
+        "value": 268596
+      },
+      {
+        "label": "California",
+        "value": 163695
+      },
+      {
+        "label": "Montana",
+        "value": 147040
+      },
+      {
+        "label": "New York",
+        "value": 54555
+      },
+      {
+        "label": "Ohio",
+        "value": 44826
+      },
+      {
+        "label": "Hawaii",
+        "value": 10932
+      },
+      {
+        "label": "Rhode Island",
+        "value": 1545
+      }
+    ],
+    "source": "US Census Bureau"
+  },
+  {
+    "id": "volcanoes-height",
+    "category": "geography",
+    "prompt": "Highest to lowest volcano above sea level",
+    "unit": "m",
+    "items": [
+      {
+        "label": "Ojos del Salado",
+        "value": 6893
+      },
+      {
+        "label": "Cotopaxi",
+        "value": 5897
+      },
+      {
+        "label": "Popocatépetl",
+        "value": 5426
+      },
+      {
+        "label": "Mauna Kea",
+        "value": 4207
+      },
+      {
+        "label": "Mount Fuji",
+        "value": 3776
+      },
+      {
+        "label": "Teide",
+        "value": 3715
+      },
+      {
+        "label": "Mount St. Helens",
+        "value": 2549
+      },
+      {
+        "label": "Vesuvius",
+        "value": 1281
+      }
+    ],
+    "source": "Smithsonian Global Volcanism Program"
+  },
+  {
+    "id": "inventions-year",
+    "category": "history",
+    "prompt": "Most recent to oldest invention or first working version",
+    "unit": "year",
+    "items": [
+      {
+        "label": "World Wide Web proposal",
+        "value": 1989
+      },
+      {
+        "label": "Transistor",
+        "value": 1947
+      },
+      {
+        "label": "Powered aeroplane flight",
+        "value": 1903
+      },
+      {
+        "label": "Practical electric light bulb",
+        "value": 1879
+      },
+      {
+        "label": "Telephone",
+        "value": 1876
+      },
+      {
+        "label": "Newcomen steam engine",
+        "value": 1712
+      },
+      {
+        "label": "Telescope",
+        "value": 1608
+      },
+      {
+        "label": "Printing press with movable type",
+        "value": 1440
+      }
+    ],
+    "source": "Encyclopaedia Britannica"
+  },
+  {
+    "id": "us-presidents-inauguration",
+    "category": "history",
+    "prompt": "Most recent to earliest first inauguration",
+    "unit": "year",
+    "items": [
+      {
+        "label": "Barack Obama",
+        "value": 2009
+      },
+      {
+        "label": "Ronald Reagan",
+        "value": 1981
+      },
+      {
+        "label": "John F. Kennedy",
+        "value": 1961
+      },
+      {
+        "label": "Franklin D. Roosevelt",
+        "value": 1933
+      },
+      {
+        "label": "Theodore Roosevelt",
+        "value": 1901
+      },
+      {
+        "label": "Abraham Lincoln",
+        "value": 1861
+      },
+      {
+        "label": "Thomas Jefferson",
+        "value": 1801
+      },
+      {
+        "label": "George Washington",
+        "value": 1789
+      }
+    ],
+    "source": "Library of Congress and whitehouse.gov"
+  },
+  {
+    "id": "events-year",
+    "category": "history",
+    "prompt": "Most recent to oldest event",
+    "unit": "year",
+    "items": [
+      {
+        "label": "Moon landing of Apollo 11",
+        "value": 1969
+      },
+      {
+        "label": "Start of the First World War",
+        "value": 1914
+      },
+      {
+        "label": "Start of the American Civil War",
+        "value": 1861
+      },
+      {
+        "label": "Fall of the Bastille",
+        "value": 1789
+      },
+      {
+        "label": "Columbus reaches the Americas",
+        "value": 1492
+      },
+      {
+        "label": "Magna Carta sealed",
+        "value": 1215
+      },
+      {
+        "label": "Battle of Hastings",
+        "value": 1066
+      },
+      {
+        "label": "Last Western Roman emperor deposed",
+        "value": 476
+      }
+    ],
+    "source": "Encyclopaedia Britannica"
+  },
+  {
+    "id": "space-firsts-year",
+    "category": "history",
+    "prompt": "Most recent to oldest space milestone",
+    "unit": "year",
+    "items": [
+      {
+        "label": "First module of the International Space Station launched",
+        "value": 1998
+      },
+      {
+        "label": "Hubble Space Telescope launched",
+        "value": 1990
+      },
+      {
+        "label": "First Space Shuttle flight",
+        "value": 1981
+      },
+      {
+        "label": "Voyager 1 launched",
+        "value": 1977
+      },
+      {
+        "label": "First crewed Moon landing",
+        "value": 1969
+      },
+      {
+        "label": "First human in space",
+        "value": 1961
+      },
+      {
+        "label": "Sputnik 1 launched",
+        "value": 1957
+      }
+    ],
+    "source": "NASA History Office"
+  },
+  {
+    "id": "roman-rulers-year",
+    "category": "history",
+    "prompt": "Most recent to earliest start of reign",
+    "unit": "year",
+    "items": [
+      {
+        "label": "Justinian I",
+        "value": 527
+      },
+      {
+        "label": "Constantine the Great",
+        "value": 306
+      },
+      {
+        "label": "Diocletian",
+        "value": 284
+      },
+      {
+        "label": "Marcus Aurelius",
+        "value": 161
+      },
+      {
+        "label": "Trajan",
+        "value": 98
+      },
+      {
+        "label": "Nero",
+        "value": 54
+      },
+      {
+        "label": "Augustus",
+        "value": -27
+      }
+    ],
+    "source": "Encyclopaedia Britannica"
+  },
+  {
+    "id": "landmarks-completed",
+    "category": "history",
+    "prompt": "Most recent to oldest landmark, by completion",
+    "unit": "year",
+    "items": [
+      {
+        "label": "Empire State Building",
+        "value": 1931
+      },
+      {
+        "label": "Eiffel Tower",
+        "value": 1889
+      },
+      {
+        "label": "Statue of Liberty",
+        "value": 1886
+      },
+      {
+        "label": "Taj Mahal",
+        "value": 1653
+      },
+      {
+        "label": "Hagia Sophia",
+        "value": 537
+      },
+      {
+        "label": "Colosseum",
+        "value": 80
+      },
+      {
+        "label": "Parthenon",
+        "value": -432
+      },
+      {
+        "label": "Great Pyramid of Giza",
+        "value": -2560
+      }
+    ],
+    "source": "Encyclopaedia Britannica, approximate for the ancient sites"
+  },
+  {
+    "id": "explorers-year",
+    "category": "history",
+    "prompt": "Most recent to oldest expedition",
+    "unit": "year",
+    "items": [
+      {
+        "label": "Hillary and Tenzing reach the summit of Everest",
+        "value": 1953
+      },
+      {
+        "label": "Amundsen reaches the South Pole",
+        "value": 1911
+      },
+      {
+        "label": "Lewis and Clark set out",
+        "value": 1804
+      },
+      {
+        "label": "Cook's first voyage sails",
+        "value": 1768
+      },
+      {
+        "label": "Magellan sets out",
+        "value": 1519
+      },
+      {
+        "label": "Vasco da Gama reaches India",
+        "value": 1498
+      },
+      {
+        "label": "Columbus sails west",
+        "value": 1492
+      }
+    ],
+    "source": "Encyclopaedia Britannica"
+  },
+  {
+    "id": "revolutions-year",
+    "category": "history",
+    "prompt": "Most recent to oldest revolutionary event",
+    "unit": "year",
+    "items": [
+      {
+        "label": "The Shah leaves Iran",
+        "value": 1979
+      },
+      {
+        "label": "Fidel Castro takes Havana",
+        "value": 1959
+      },
+      {
+        "label": "People's Republic of China proclaimed",
+        "value": 1949
+      },
+      {
+        "label": "Storming of the Winter Palace",
+        "value": 1917
+      },
+      {
+        "label": "Fall of the Bastille",
+        "value": 1789
+      },
+      {
+        "label": "Declaration of Independence adopted",
+        "value": 1776
+      },
+      {
+        "label": "The Glorious Revolution",
+        "value": 1688
+      }
+    ],
+    "source": "Encyclopaedia Britannica"
+  },
+  {
+    "id": "births-year",
+    "category": "history",
+    "prompt": "Most recent to oldest birth year",
+    "unit": "year",
+    "items": [
+      {
+        "label": "Alan Turing",
+        "value": 1912
+      },
+      {
+        "label": "Marie Curie",
+        "value": 1867
+      },
+      {
+        "label": "Charles Darwin",
+        "value": 1809
+      },
+      {
+        "label": "Napoleon Bonaparte",
+        "value": 1769
+      },
+      {
+        "label": "Wolfgang Amadeus Mozart",
+        "value": 1756
+      },
+      {
+        "label": "Galileo Galilei",
+        "value": 1564
+      },
+      {
+        "label": "Leonardo da Vinci",
+        "value": 1452
+      }
+    ],
+    "source": "Encyclopaedia Britannica"
+  },
+  {
+    "id": "wars-start-year",
+    "category": "history",
+    "prompt": "Most recent to oldest war, by the year it began",
+    "unit": "year",
+    "items": [
+      {
+        "label": "Falklands War",
+        "value": 1982
+      },
+      {
+        "label": "Korean War",
+        "value": 1950
+      },
+      {
+        "label": "Franco-Prussian War",
+        "value": 1870
+      },
+      {
+        "label": "Crimean War",
+        "value": 1853
+      },
+      {
+        "label": "Napoleonic Wars",
+        "value": 1803
+      },
+      {
+        "label": "Seven Years' War",
+        "value": 1756
+      },
+      {
+        "label": "Thirty Years' War",
+        "value": 1618
+      },
+      {
+        "label": "Hundred Years' War",
+        "value": 1337
+      }
+    ],
+    "source": "Encyclopaedia Britannica"
+  },
+  {
+    "id": "philosophers-birth",
+    "category": "history",
+    "prompt": "Most recent to oldest philosopher, by approximate birth year",
+    "unit": "year",
+    "items": [
+      {
+        "label": "Aristotle",
+        "value": -384
+      },
+      {
+        "label": "Plato",
+        "value": -428
+      },
+      {
+        "label": "Socrates",
+        "value": -470
+      },
+      {
+        "label": "Confucius",
+        "value": -551
+      },
+      {
+        "label": "Pythagoras",
+        "value": -570
+      },
+      {
+        "label": "Thales",
+        "value": -624
+      }
+    ],
+    "source": "Encyclopaedia Britannica"
+  },
+  {
+    "id": "battles-year",
+    "category": "history",
+    "prompt": "Most recent to oldest battle",
+    "unit": "year",
+    "items": [
+      {
+        "label": "Battle of Stalingrad",
+        "value": 1942
+      },
+      {
+        "label": "Battle of Gettysburg",
+        "value": 1863
+      },
+      {
+        "label": "Battle of Waterloo",
+        "value": 1815
+      },
+      {
+        "label": "Battle of Trafalgar",
+        "value": 1805
+      },
+      {
+        "label": "Defeat of the Spanish Armada",
+        "value": 1588
+      },
+      {
+        "label": "Battle of Bosworth Field",
+        "value": 1485
+      },
+      {
+        "label": "Battle of Agincourt",
+        "value": 1415
+      },
+      {
+        "label": "Battle of Hastings",
+        "value": 1066
+      }
+    ],
+    "source": "Encyclopaedia Britannica"
+  },
+  {
+    "id": "discoveries-year",
+    "category": "history",
+    "prompt": "Most recent to oldest scientific landmark",
+    "unit": "year",
+    "items": [
+      {
+        "label": "Structure of DNA described",
+        "value": 1953
+      },
+      {
+        "label": "Penicillin discovered",
+        "value": 1928
+      },
+      {
+        "label": "Special relativity published",
+        "value": 1905
+      },
+      {
+        "label": "Electron discovered",
+        "value": 1897
+      },
+      {
+        "label": "Periodic table published",
+        "value": 1869
+      },
+      {
+        "label": "On the Origin of Species published",
+        "value": 1859
+      },
+      {
+        "label": "Principia Mathematica published",
+        "value": 1687
+      },
+      {
+        "label": "Copernicus publishes De revolutionibus",
+        "value": 1543
+      }
+    ],
+    "source": "Encyclopaedia Britannica"
+  },
+  {
+    "id": "us-states-admitted",
+    "category": "history",
+    "prompt": "Most recent to earliest admission to the Union",
+    "unit": "year",
+    "items": [
+      {
+        "label": "Hawaii",
+        "value": 1959
+      },
+      {
+        "label": "Arizona",
+        "value": 1912
+      },
+      {
+        "label": "Colorado",
+        "value": 1876
+      },
+      {
+        "label": "California",
+        "value": 1850
+      },
+      {
+        "label": "Texas",
+        "value": 1845
+      },
+      {
+        "label": "Ohio",
+        "value": 1803
+      },
+      {
+        "label": "Virginia",
+        "value": 1788
+      },
+      {
+        "label": "Delaware",
+        "value": 1787
+      }
+    ],
+    "source": "US National Archives"
+  },
+  {
+    "id": "empires-fall",
+    "category": "history",
+    "prompt": "Most recent to oldest fall of an empire",
+    "unit": "year",
+    "items": [
+      {
+        "label": "Soviet Union dissolved",
+        "value": 1991
+      },
+      {
+        "label": "Ottoman Empire abolished",
+        "value": 1922
+      },
+      {
+        "label": "Austria-Hungary dissolved",
+        "value": 1918
+      },
+      {
+        "label": "Qing dynasty ends",
+        "value": 1912
+      },
+      {
+        "label": "Mughal Empire ends",
+        "value": 1857
+      },
+      {
+        "label": "Aztec capital falls",
+        "value": 1521
+      },
+      {
+        "label": "Constantinople falls",
+        "value": 1453
+      },
+      {
+        "label": "Western Roman Empire ends",
+        "value": 476
+      }
+    ],
+    "source": "Encyclopaedia Britannica"
+  },
+  {
+    "id": "british-monarchs-accession",
+    "category": "history",
+    "prompt": "Most recent to earliest accession to the throne",
+    "unit": "year",
+    "items": [
+      {
+        "label": "Charles III",
+        "value": 2022
+      },
+      {
+        "label": "Elizabeth II",
+        "value": 1952
+      },
+      {
+        "label": "Victoria",
+        "value": 1837
+      },
+      {
+        "label": "George III",
+        "value": 1760
+      },
+      {
+        "label": "Charles I",
+        "value": 1625
+      },
+      {
+        "label": "Elizabeth I",
+        "value": 1558
+      },
+      {
+        "label": "Henry VIII",
+        "value": 1509
+      },
+      {
+        "label": "William I",
+        "value": 1066
+      }
+    ],
+    "source": "Royal.uk, the royal household's history of the monarchy"
+  },
+  {
+    "id": "films-year",
+    "category": "culture",
+    "prompt": "Most recent to oldest film release",
+    "unit": "year",
+    "items": [
+      {
+        "label": "Inception",
+        "value": 2010
+      },
+      {
+        "label": "The Matrix",
+        "value": 1999
+      },
+      {
+        "label": "Titanic",
+        "value": 1997
+      },
+      {
+        "label": "Jurassic Park",
+        "value": 1993
+      },
+      {
+        "label": "Star Wars",
+        "value": 1977
+      },
+      {
+        "label": "2001: A Space Odyssey",
+        "value": 1968
+      },
+      {
+        "label": "Casablanca",
+        "value": 1942
+      },
+      {
+        "label": "Metropolis",
+        "value": 1927
+      }
+    ],
+    "source": "American Film Institute catalog"
+  },
+  {
+    "id": "pixar-films-year",
+    "category": "culture",
+    "prompt": "Most recent to oldest Pixar film release",
+    "unit": "year",
+    "items": [
+      {
+        "label": "Coco",
+        "value": 2017
+      },
+      {
+        "label": "Inside Out",
+        "value": 2015
+      },
+      {
+        "label": "Up",
+        "value": 2009
+      },
+      {
+        "label": "WALL-E",
+        "value": 2008
+      },
+      {
+        "label": "Ratatouille",
+        "value": 2007
+      },
+      {
+        "label": "Finding Nemo",
+        "value": 2003
+      },
+      {
+        "label": "A Bug's Life",
+        "value": 1998
+      },
+      {
+        "label": "Toy Story",
+        "value": 1995
+      }
+    ],
+    "source": "Pixar Animation Studios filmography"
+  },
+  {
+    "id": "novels-year",
+    "category": "culture",
+    "prompt": "Most recent to oldest novel, by first publication",
+    "unit": "year",
+    "items": [
+      {
+        "label": "Harry Potter and the Philosopher's Stone",
+        "value": 1997
+      },
+      {
+        "label": "Lord of the Flies",
+        "value": 1954
+      },
+      {
+        "label": "Nineteen Eighty-Four",
+        "value": 1949
+      },
+      {
+        "label": "The Hobbit",
+        "value": 1937
+      },
+      {
+        "label": "Dracula",
+        "value": 1897
+      },
+      {
+        "label": "Moby-Dick",
+        "value": 1851
+      },
+      {
+        "label": "Frankenstein",
+        "value": 1818
+      },
+      {
+        "label": "Pride and Prejudice",
+        "value": 1813
+      }
+    ],
+    "source": "Encyclopaedia Britannica"
+  },
+  {
+    "id": "paintings-year",
+    "category": "culture",
+    "prompt": "Most recent to oldest painting",
+    "unit": "year",
+    "items": [
+      {
+        "label": "Guernica",
+        "value": 1937
+      },
+      {
+        "label": "The Persistence of Memory",
+        "value": 1931
+      },
+      {
+        "label": "The Kiss (Klimt)",
+        "value": 1908
+      },
+      {
+        "label": "The Scream",
+        "value": 1893
+      },
+      {
+        "label": "The Starry Night",
+        "value": 1889
+      },
+      {
+        "label": "Girl with a Pearl Earring",
+        "value": 1665
+      },
+      {
+        "label": "The Night Watch",
+        "value": 1642
+      },
+      {
+        "label": "The Birth of Venus",
+        "value": 1485
+      }
+    ],
+    "source": "Encyclopaedia Britannica, approximate for the older works"
+  },
+  {
+    "id": "composers-birth",
+    "category": "culture",
+    "prompt": "Most recent to oldest composer, by birth year",
+    "unit": "year",
+    "items": [
+      {
+        "label": "Igor Stravinsky",
+        "value": 1882
+      },
+      {
+        "label": "Claude Debussy",
+        "value": 1862
+      },
+      {
+        "label": "Pyotr Tchaikovsky",
+        "value": 1840
+      },
+      {
+        "label": "Frédéric Chopin",
+        "value": 1810
+      },
+      {
+        "label": "Ludwig van Beethoven",
+        "value": 1770
+      },
+      {
+        "label": "Joseph Haydn",
+        "value": 1732
+      },
+      {
+        "label": "Johann Sebastian Bach",
+        "value": 1685
+      },
+      {
+        "label": "Antonio Vivaldi",
+        "value": 1678
+      }
+    ],
+    "source": "Encyclopaedia Britannica"
+  },
+  {
+    "id": "albums-year",
+    "category": "culture",
+    "prompt": "Most recent to oldest album release",
+    "unit": "year",
+    "items": [
+      {
+        "label": "21 (Adele)",
+        "value": 2011
+      },
+      {
+        "label": "OK Computer (Radiohead)",
+        "value": 1997
+      },
+      {
+        "label": "Nevermind (Nirvana)",
+        "value": 1991
+      },
+      {
+        "label": "Thriller (Michael Jackson)",
+        "value": 1982
+      },
+      {
+        "label": "Back in Black (AC/DC)",
+        "value": 1980
+      },
+      {
+        "label": "Rumours (Fleetwood Mac)",
+        "value": 1977
+      },
+      {
+        "label": "The Dark Side of the Moon (Pink Floyd)",
+        "value": 1973
+      },
+      {
+        "label": "Abbey Road (The Beatles)",
+        "value": 1969
+      }
+    ],
+    "source": "Official Charts Company and Billboard"
+  },
+  {
+    "id": "video-games-year",
+    "category": "culture",
+    "prompt": "Most recent to oldest video game release",
+    "unit": "year",
+    "items": [
+      {
+        "label": "Minecraft (full release)",
+        "value": 2011
+      },
+      {
+        "label": "Half-Life",
+        "value": 1998
+      },
+      {
+        "label": "Doom",
+        "value": 1993
+      },
+      {
+        "label": "The Legend of Zelda",
+        "value": 1986
+      },
+      {
+        "label": "Super Mario Bros.",
+        "value": 1985
+      },
+      {
+        "label": "Pac-Man",
+        "value": 1980
+      },
+      {
+        "label": "Pong",
+        "value": 1972
+      }
+    ],
+    "source": "Guinness World Records and the publishers' release notes"
+  },
+  {
+    "id": "symphonies-count",
+    "category": "culture",
+    "prompt": "Most to fewest numbered symphonies",
+    "unit": "symphonies",
+    "items": [
+      {
+        "label": "Joseph Haydn",
+        "value": 104
+      },
+      {
+        "label": "Wolfgang Amadeus Mozart",
+        "value": 41
+      },
+      {
+        "label": "Dmitri Shostakovich",
+        "value": 15
+      },
+      {
+        "label": "Ludwig van Beethoven",
+        "value": 9
+      },
+      {
+        "label": "Jean Sibelius",
+        "value": 7
+      },
+      {
+        "label": "Pyotr Tchaikovsky",
+        "value": 6
+      },
+      {
+        "label": "Johannes Brahms",
+        "value": 4
+      }
+    ],
+    "source": "Encyclopaedia Britannica"
+  },
+  {
+    "id": "alphabets-letters",
+    "category": "culture",
+    "prompt": "Most to fewest letters in the alphabet",
+    "unit": "letters",
+    "items": [
+      {
+        "label": "Russian",
+        "value": 33
+      },
+      {
+        "label": "Arabic",
+        "value": 28
+      },
+      {
+        "label": "English",
+        "value": 26
+      },
+      {
+        "label": "Greek",
+        "value": 24
+      },
+      {
+        "label": "Hebrew",
+        "value": 22
+      },
+      {
+        "label": "Rotokas",
+        "value": 12
+      }
+    ],
+    "source": "Omniglot and Guinness World Records"
+  },
+  {
+    "id": "sport-surfaces-length",
+    "category": "culture",
+    "prompt": "Longest to shortest playing surface",
+    "unit": "m",
+    "items": [
+      {
+        "label": "Football pitch",
+        "value": 105
+      },
+      {
+        "label": "Ice hockey rink",
+        "value": 60.96
+      },
+      {
+        "label": "Basketball court",
+        "value": 28.65
+      },
+      {
+        "label": "Tennis court",
+        "value": 23.77
+      },
+      {
+        "label": "Cricket pitch",
+        "value": 20.12
+      },
+      {
+        "label": "Volleyball court",
+        "value": 18
+      },
+      {
+        "label": "Badminton court",
+        "value": 13.4
+      },
+      {
+        "label": "Table tennis table",
+        "value": 2.74
+      }
+    ],
+    "source": "The sports' governing bodies' rules (FIFA, NHL, FIBA, ITF, MCC, FIVB, BWF, ITTF)"
+  },
+  {
+    "id": "race-distances",
+    "category": "culture",
+    "prompt": "Longest to shortest standard race distance",
+    "unit": "m",
+    "items": [
+      {
+        "label": "Marathon",
+        "value": 42195
+      },
+      {
+        "label": "Half marathon",
+        "value": 21097.5
+      },
+      {
+        "label": "10,000 metres",
+        "value": 10000
+      },
+      {
+        "label": "5,000 metres",
+        "value": 5000
+      },
+      {
+        "label": "1,500 metres",
+        "value": 1500
+      },
+      {
+        "label": "800 metres",
+        "value": 800
+      },
+      {
+        "label": "400 metres",
+        "value": 400
+      },
+      {
+        "label": "100 metres",
+        "value": 100
+      }
+    ],
+    "source": "World Athletics rules"
+  },
+  {
+    "id": "team-sizes",
+    "category": "culture",
+    "prompt": "Largest to smallest team on the field or court at once",
+    "unit": "players",
+    "items": [
+      {
+        "label": "Rugby union",
+        "value": 15
+      },
+      {
+        "label": "Association football",
+        "value": 11
+      },
+      {
+        "label": "Baseball (fielding side)",
+        "value": 9
+      },
+      {
+        "label": "Water polo",
+        "value": 7
+      },
+      {
+        "label": "Volleyball",
+        "value": 6
+      },
+      {
+        "label": "Basketball",
+        "value": 5
+      },
+      {
+        "label": "Doubles tennis",
+        "value": 2
+      }
+    ],
+    "source": "The sports' governing bodies' rules"
+  },
+  {
+    "id": "statues-height",
+    "category": "culture",
+    "prompt": "Tallest to shortest statue",
+    "unit": "m",
+    "items": [
+      {
+        "label": "Statue of Unity",
+        "value": 182
+      },
+      {
+        "label": "Spring Temple Buddha",
+        "value": 128
+      },
+      {
+        "label": "The Motherland Calls",
+        "value": 85
+      },
+      {
+        "label": "Christ the Redeemer",
+        "value": 38
+      },
+      {
+        "label": "Great Sphinx of Giza",
+        "value": 20
+      },
+      {
+        "label": "Michelangelo's David",
+        "value": 5.17
+      },
+      {
+        "label": "The Little Mermaid, Copenhagen",
+        "value": 1.25
+      }
+    ],
+    "source": "Encyclopaedia Britannica and the monuments' own records"
+  },
+  {
+    "id": "towers-height",
+    "category": "culture",
+    "prompt": "Tallest to shortest tower",
+    "unit": "m",
+    "items": [
+      {
+        "label": "Tokyo Skytree",
+        "value": 634
+      },
+      {
+        "label": "CN Tower",
+        "value": 553
+      },
+      {
+        "label": "Tokyo Tower",
+        "value": 333
+      },
+      {
+        "label": "Sydney Tower",
+        "value": 309
+      },
+      {
+        "label": "Space Needle",
+        "value": 184
+      },
+      {
+        "label": "Elizabeth Tower (Big Ben)",
+        "value": 96
+      },
+      {
+        "label": "Leaning Tower of Pisa",
+        "value": 56
+      }
+    ],
+    "source": "Encyclopaedia Britannica and the towers' own records"
+  },
+  {
+    "id": "bridges-main-span",
+    "category": "culture",
+    "prompt": "Longest to shortest main span",
+    "unit": "m",
+    "items": [
+      {
+        "label": "Akashi Kaikyō Bridge",
+        "value": 1991
+      },
+      {
+        "label": "Humber Bridge",
+        "value": 1410
+      },
+      {
+        "label": "Golden Gate Bridge",
+        "value": 1280
+      },
+      {
+        "label": "Forth Road Bridge",
+        "value": 1006
+      },
+      {
+        "label": "Brooklyn Bridge",
+        "value": 486
+      },
+      {
+        "label": "Tower Bridge",
+        "value": 61
+      }
+    ],
+    "source": "Encyclopaedia Britannica and the bridges' own records"
+  },
+  {
+    "id": "world-cups-year",
+    "category": "culture",
+    "prompt": "Most recent to oldest men's FIFA World Cup, by its host nation (each hosted once)",
+    "unit": "year",
+    "items": [
+      {
+        "label": "Qatar",
+        "value": 2022
+      },
+      {
+        "label": "South Africa",
+        "value": 2010
+      },
+      {
+        "label": "Japan and South Korea",
+        "value": 2002
+      },
+      {
+        "label": "Spain",
+        "value": 1982
+      },
+      {
+        "label": "Argentina",
+        "value": 1978
+      },
+      {
+        "label": "England",
+        "value": 1966
+      },
+      {
+        "label": "Uruguay",
+        "value": 1930
+      }
+    ],
+    "source": "FIFA"
+  }
+]

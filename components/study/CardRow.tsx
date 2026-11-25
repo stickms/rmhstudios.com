@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { MessageSquarePlus, Pencil, Trash2 } from 'lucide-react';
+import { History, MessageSquarePlus, Pencil, Trash2 } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { IconButton } from '@/components/ui/icon-button';
 import { CardForm, type CardFormValue } from '@/components/study/CardForm';
 import { CardPicture } from '@/components/study/CardPicture';
 import { CardSound } from '@/components/study/CardSound';
+import { CardHistoryDialog } from '@/components/study/CardHistoryDialog';
 import { SuggestFixDialog } from '@/components/study/SuggestFixDialog';
 import type { CardImage } from '@/lib/study/card-images';
 import type { CardSound as CardSoundValue } from '@/lib/study/card-sound';
@@ -50,6 +51,7 @@ export function CardRow({
   const { t: ts } = useTranslation('flashcard-types');
   const [editing, setEditing] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   if (editing) {
     return (
@@ -150,6 +152,17 @@ export function CardRow({
       {card.suggestTarget && suggesting && (
         <SuggestFixDialog open onOpenChange={setSuggesting} target={card.suggestTarget} card={card} />
       )}
+      {/* Authored cloze and occlusion rows are never reviewed; their generated cards are. */}
+      {card.kind !== 'cloze' && card.kind !== 'occlusion' && (
+        <IconButton
+          icon={History}
+          variant="ghost"
+          size="icon-sm"
+          label={t('card-history', { ns: 'card-history', defaultValue: 'History of card {{front}}', front: label })}
+          onClick={() => setHistoryOpen(true)}
+        />
+      )}
+      {historyOpen && <CardHistoryDialog cardId={card.id} label={label} open onOpenChange={setHistoryOpen} />}
       <IconButton
         icon={Pencil}
         variant="ghost"

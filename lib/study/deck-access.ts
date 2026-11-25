@@ -97,10 +97,6 @@ export const DECK_ACCESS_PATHS: Record<string, DeckAccessEntry> = {
     access: 'role',
     reason: "An editor reviews the deck on their own schedule; sounds are the owner's only.",
   },
-  'lib/study/api/study.cards.$id.review.server.ts': {
-    access: 'role',
-    reason: 'An editor grades a card of a deck they edit on their own FlashcardReview row.',
-  },
   'lib/history/resume.server.ts': {
     access: 'role',
     reason:
@@ -109,7 +105,7 @@ export const DECK_ACCESS_PATHS: Record<string, DeckAccessEntry> = {
   'lib/api/v1/study.server.ts': {
     access: 'owner-only',
     reason:
-      "The developer API lists and edits the key owner's own decks. Reads and card lookups filter by the deck's `userId`, creating cards checks `deckRole` is \"owner\" first, and keyed upserts are owner-only inside `deckEditor.server`, so an editor's key reads and writes nothing of a deck it only edits.",
+      "The developer API lists and edits the key owner's own decks. Reads and card lookups filter by the deck's `userId`, creating cards checks `deckRole` is \"owner\" first, and keyed upserts are owner-only inside `deckEditor.server`, so an editor's key reads and writes nothing of a deck it only edits. The exception is reviewing (s12-12: `reviewQueueFor`, `gradeFor`): the queue and `reviewCard` study a deck on the key owner's own FlashcardReview rows through `canReadDeck`, as the site does.",
   },
   'lib/account/api/account.export.server.ts': {
     access: 'owner-only',
@@ -148,5 +144,46 @@ export const DECK_ACCESS_PATHS: Record<string, DeckAccessEntry> = {
     access: 'owner-only',
     reason:
       "A sound is heard by its recorder only. Recording, claiming, the cap, playback and the export all read the recorder's own decks; an editor has none of it.",
+  },
+
+  // Sprint 12 (docs/autonomous/sprint-12/plan.md §Anchors)
+  // s12-08 deck-ratings
+  'lib/study/deck-ratings.server.ts': {
+    access: 'owner-only',
+    reason:
+      "A rating is the rater's own: the owner of a deck and an accepted editor are refused (they made it), and the rater is the holder of a copy (`userId` and `clonedFromId` name the copy). The deck's counters and the export read only the member's own ratings.",
+  },
+
+  // s12-09 card-history
+  'lib/study/card-history.server.ts': {
+    access: 'role',
+    reason:
+      "A card's history and start-over: a member who may read the deck (canReadDeck), on their own FlashcardReview and log rows only; an editor's or cloner's history is their own and the owner never sees it.",
+  },
+
+  // s12-12 api-reviews
+  'lib/study/review.server.ts': {
+    access: 'role',
+    reason:
+      'reviewCard, the one grading path of the site route and the developer API: an editor grades a card of a deck they edit on their own FlashcardReview row, and a card of a deck the member may not read is not found.',
+  },
+
+  // s12-16 member-reports
+  'lib/moderation/my-reports.server.ts': {
+    access: 'owner-only',
+    reason:
+      "A reporter's view of a public deck they reported (its title and link, never its cards): looked up by id, public and not removed, with the deck's author filtered only by the reporter's blocks. No editor is ever the condition.",
+  },
+  'lib/study/deck-moderation.server.ts': {
+    access: 'owner-only',
+    reason:
+      "A moderator's takedown of a public deck by its id (an admin action, never a member's), and the report route's lookup of who owns a public deck: the deck's `userId` is the condition, so an editor is never the reported author. The takedown makes the deck private for its owner and editors alike.",
+  },
+
+  // s12-07 profile-made
+  'lib/profile/made.server.ts': {
+    access: 'owner-only',
+    reason:
+      "A profile's \"Made here\" list shows the public, unremoved decks the profile's member authored (`userId` is the author), with title and card count only. A deck they only edit is someone else's work and is not listed.",
   },
 };

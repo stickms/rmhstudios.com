@@ -30,6 +30,7 @@ import { Button } from '@/components/ui/button';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { Spinner } from '@/components/ui/spinner';
 import { ListingGrid } from '@/components/homes/ListingGrid';
+import { SavedShelf } from '@/components/homes/SavedShelf';
 import { WatchManager } from '@/components/homes/WatchManager';
 import type { Listing } from '@/lib/homes/types';
 import { api } from '@/lib/contract/client';
@@ -212,14 +213,7 @@ function HomesManagePage() {
             id="homes-manage-panel-saved"
             aria-labelledby="homes-manage-tab-saved"
           >
-            <ListingShelf
-              scope="favorites"
-              dropOnUnfavorite
-              emptyTitle={t('homes-empty-saved-title', { defaultValue: 'No saved listings yet' })}
-              emptyDescription={t('homes-empty-saved-desc', {
-                defaultValue: 'Tap the heart on any listing to save it here.',
-              })}
-            />
+            <SavedShelf />
           </div>
         )}
         {tab === 'alerts' && (

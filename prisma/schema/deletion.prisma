@@ -1,14 +1,35 @@
 /// What a deletion request paused (s09-14), so signing back in restores exactly that and nothing the member or an
 /// admin had already switched off. Ids only. One row per member; erased with the account.
 model DeletionHold {
-  userId     String   @id
+  userId          String   @id
   /// API keys this request suspended (reason `DELETION_REQUESTED`).
-  keyIds     String[] @default([])
+  keyIds          String[] @default([])
   /// Webhook endpoints this request disabled.
-  webhookIds String[] @default([])
-  createdAt  DateTime @default(now())
+  webhookIds      String[] @default([])
+  /// Stripe subscription ids this request set to cancel at the period's end (s12-18); only ids its own call flipped.
+  subscriptionIds String[] @default([])
+  createdAt       DateTime @default(now())
 
   user User @relation("UserDeletionHold", fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("deletion_hold")
+}
+
+/// One try at erasing a scheduled account (s12-14): `schedule` for the nightly sweep, `admin` for an admin's
+/// "Try again now". It is also the claim that keeps one erasure at a time per account: an attempt with no
+/// `finishedAt` younger than 15 minutes blocks another. `errorName` is the error's class or Prisma code, never its
+/// message, which can carry data. No relation to `User` on purpose: the row outlives the person as a tombstone id, the
+/// way audit rows do. Erasure rule: deleted after 90 days by the same sweep (`finalizeDueDeletions`).
+model AccountErasureAttempt {
+  id         BigInt    @id @default(autoincrement())
+  userId     String
+  trigger    String    @db.VarChar(8)
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  ok         Boolean?
+  errorName  String?   @db.VarChar(120)
+
+  @@index([userId, startedAt])
+  @@index([startedAt])
+  @@map("account_erasure_attempt")
 }

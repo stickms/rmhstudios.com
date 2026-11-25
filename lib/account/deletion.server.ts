@@ -39,7 +39,10 @@ import { jamThemeErasureOps } from '@/lib/competitive/jam-themes.server';
 import { eventOverrideErasureOps } from '@/lib/events/occurrences.server';
 import { eventUpdateErasureOps } from '@/lib/events/updates.server';
 import { groupInviteErasureOps } from '@/lib/group-chat/invites.server';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
+import { lockKey } from '@/lib/db/advisory-lock.server';
+import { erasureErrorName } from '@/lib/admin/deletions';
 import { removeMemberFromFlagLists } from '@/lib/flags/targeting.server';
 import { musicErasureOps } from '@/lib/rmhmusic/learn/account-data.server';
 import { partyErasureOps } from '@/lib/rmhtube/parties.server';
@@ -87,6 +90,7 @@ import { runAfterErasureInline } from '@/lib/account/after-erasure-jobs.server';
 import { recurringThreadErasureOps } from '@/lib/communities/recurring.server';
 import { readAlongErasureOps, readAlongHandoverTargets } from '@/lib/communities/read-along.server';
 import { restoreAfterCancel } from '@/lib/account/deletion-hold.server';
+import { cancelRemainingBilling } from '@/lib/account/deletion-billing.server';
 
 /**
  * How long a scheduled deletion can be undone. 30 days is the window the major
@@ -214,6 +218,94 @@ export interface FinalizeResult {
   due: number;
   /** Accounts actually anonymised this run. */
   finalized: number;
+  /** Accounts another run already held the claim for (the admin's "Try again now", or an overlapping sweep). */
+  skipped?: number;
+}
+
+/** An unfinished attempt blocks another for this long; a crashed attempt stops blocking after it (s12-14). */
+export const ERASURE_CLAIM_WINDOW_MS = 15 * 60 * 1000;
+/** Attempt rows are kept this long (their erasure rule: they hold only an id, times and an error name). */
+export const ERASURE_ATTEMPT_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
+
+export type ErasureTrigger = 'schedule' | 'admin';
+
+/**
+ * Claim the erasure of one account (s12-14): the claim IS the attempt row.
+ *
+ * `lockKey` is a transaction-scoped advisory lock, and `anonymizeAccount` runs its own batch transaction plus
+ * pre-steps, so no lock can span the erasure. One short transaction under `erasure:<userId>` therefore refuses when
+ * an attempt for the account has no `finishedAt` and began inside {@link ERASURE_CLAIM_WINDOW_MS}, and otherwise
+ * inserts the attempt row; the erasure then runs outside any transaction and {@link finishErasureAttempt} stamps the
+ * row. Returns the attempt's id, or null when another run holds the claim.
+ *
+ * `inTx` runs inside the claim's transaction after the claim is free and before the row is written: the admin retry
+ * checks the account is overdue and writes its audit row there, so both stand or fall with the attempt row. A throw
+ * from it rolls everything back and reaches the caller.
+ */
+export async function claimErasure(
+  userId: string,
+  trigger: ErasureTrigger,
+  opts: { now?: Date; inTx?: (tx: Prisma.TransactionClient) => Promise<void> } = {},
+): Promise<bigint | null> {
+  const now = opts.now ?? new Date();
+  return prisma.$transaction(async (tx) => {
+    await lockKey(tx, `erasure:${userId}`);
+    const held = await tx.accountErasureAttempt.findFirst({
+      where: {
+        userId,
+        finishedAt: null,
+        startedAt: { gt: new Date(now.getTime() - ERASURE_CLAIM_WINDOW_MS) },
+      },
+      select: { id: true },
+    });
+    if (held) return null;
+    if (opts.inTx) await opts.inTx(tx);
+    const row = await tx.accountErasureAttempt.create({
+      data: { userId, trigger, startedAt: now },
+      select: { id: true },
+    });
+    return row.id;
+  });
+}
+
+/** Stamp a claimed attempt: `ok`, and on a failure the error's NAME (never its message). */
+export async function finishErasureAttempt(
+  id: bigint,
+  outcome: { ok: true } | { ok: false; error: unknown },
+  now: Date = new Date(),
+): Promise<void> {
+  await prisma.accountErasureAttempt.update({
+    where: { id },
+    data: {
+      finishedAt: now,
+      ok: outcome.ok,
+      errorName: outcome.ok ? null : erasureErrorName(outcome.error),
+    },
+  });
+}
+
+/**
+ * Run one claimed erasure: `anonymizeAccount`, then stamp the attempt. A failure leaves `deletionScheduledAt` set
+ * (the next sweep retries) and is recorded by name; it is returned, not thrown, so one bad account never aborts a sweep.
+ */
+export async function runClaimedErasure(
+  id: bigint,
+  userId: string,
+): Promise<{ ok: true } | { ok: false; errorName: string }> {
+  try {
+    await anonymizeAccount(userId);
+  } catch (err) {
+    // The message and stack stay out of the database and the response; the log keeps them for whoever fixes it.
+    console.error(`[account] finalize failed for ${userId}:`, err);
+    await finishErasureAttempt(id, { ok: false, error: err }).catch((e) =>
+      console.error(`[account] could not record the failed attempt for ${userId}:`, e),
+    );
+    return { ok: false, errorName: erasureErrorName(err) };
+  }
+  await finishErasureAttempt(id, { ok: true }).catch((e) =>
+    console.error(`[account] could not record the finished attempt for ${userId}:`, e),
+  );
+  return { ok: true };
 }
 
 /**
@@ -245,18 +337,30 @@ export async function finalizeDueDeletions(
   });
 
   let finalized = 0;
+  let skipped = 0;
   for (const { id } of due) {
-    try {
-      await anonymizeAccount(id);
-      finalized += 1;
-    } catch (err) {
-      // One bad row must not abort the sweep — the next run retries it, because
-      // a failed finalisation leaves `deletionScheduledAt` set.
-      console.error(`[account] finalize failed for ${id}:`, err);
+    // s12-14: one attempt row per account per run, and the claim that keeps two runs off one account. The claim reads the
+    // clock afresh (not the sweep's start): a long sweep must not stamp a live attempt as already stale to a later run.
+    const attemptId = await claimErasure(id, 'schedule', { now: opts.now ?? new Date() }).catch((err) => {
+      console.error(`[account] could not claim the erasure of ${id}:`, err);
+      return null;
+    });
+    if (attemptId === null) {
+      skipped += 1;
+      continue;
     }
+    // One bad row must not abort the sweep: a failed finalisation leaves `deletionScheduledAt` set, so the next
+    // run retries it, and the attempt row says why it failed.
+    const out = await runClaimedErasure(attemptId, id);
+    if (out.ok) finalized += 1;
   }
 
-  return { due: due.length, finalized };
+  // Attempt rows are kept 90 days.
+  await prisma.accountErasureAttempt
+    .deleteMany({ where: { startedAt: { lt: new Date(now.getTime() - ERASURE_ATTEMPT_RETENTION_MS) } } })
+    .catch((err) => console.error('[account] could not delete old erasure attempts:', err));
+
+  return { due: due.length, finalized, skipped };
 }
 
 /**
@@ -295,6 +399,9 @@ export async function anonymizeAccount(userId: string): Promise<void> {
   const listingImageUrls = await readListingImageUrls(userId);
   // s11-09 read-alongs (hand-over reads before the transaction)
   const readAlongCommunities = await readAlongHandoverTargets(userId);
+  // s12-18 deletion-billing (billing stop before the transaction)
+  // Stripe is called here, outside any transaction; a failure throws, so the account stays scheduled and is retried.
+  await cancelRemainingBilling(userId);
 
   // RMH Med Schools: the anonymous events of the member's shared milestones are found only through the milestone ids,
   // which the transaction below deletes, so they go first (idempotent; they usually went at the request). A throw
@@ -712,6 +819,20 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     // Subtitle tracks the member added (to their own items or, as host, to others'). The queue item they hang from is
     // shared room content and stays; its row of this member's subtitles goes.
     prisma.rmhTubeSubtitle.deleteMany({ where: { addedById: userId } }),
+
+    // Sprint 12 erasures (docs/autonomous/sprint-12/plan.md §Anchors): each feature adds its operations under its own line.
+    // s12-01 party-rolls
+    // The member's rolls in any party and every roll in a party they run, before the parties go (the rows also cascade
+    // from the party, but account deletion anonymises in place and never relies on a cascade).
+    ...(await import('@features/rmhcharacters/engine/party-rolls.server')).partyRollErasureOps(userId),
+
+    // s12-06 connections-maker
+    // Unpublished drafts only: a published grid is content other members use and stays under "Deleted user" (rule 3).
+    prisma.connectionsGrid.deleteMany({ where: { authorId: userId, draft: true } }),
+
+    // s12-08 deck-ratings
+    // The member's ratings, and each rated deck's sum and count corrected by what is removed (the decks stay, so no copyCount moves).
+    ...(await (await import('@/lib/study/deck-ratings.server')).deckRatingErasureOps(userId)),
 
     // med-schools-phase-4 tracker, lists, preferences (the shared anonymous events go in a pre-step, plan Task 6)
     ...medschoolsErasureOps(userId),

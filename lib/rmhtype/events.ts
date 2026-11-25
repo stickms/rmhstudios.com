@@ -1,6 +1,7 @@
 /**
- * RMH Type — WebSocket Event Name Constants
+ * RMH Type — WebSocket Event Name Constants and the payloads the scored events carry
  */
+import type { RunReason } from '@/lib/rmhtype/run-check';
 
 // ─── Client → Server Events ─────────────────────────────────────
 
@@ -48,3 +49,42 @@ export const S2C = {
   PEERS_WAITING: 'rmhtype:peers:waiting',
   ERROR: 'rmhtype:error',
 } as const;
+
+// ─── Scored-run payloads ────────────────────────────────────────
+
+/**
+ * `C2S.SOLO_FINISH` and `C2S.GAME_FINISH`: the client's claim about its run. The server clamps `position` and
+ * `errors`, times the run itself and checks `samples` (the coarse progress curve, `buildSamples`) against that time
+ * (`evaluateFinish`, `run-check.ts`); a claim that fails is not ranked. `samples` holds at most `MAX_GHOST_SAMPLES`
+ * whole numbers.
+ */
+export interface RunFinishPayload {
+  position?: number;
+  errors?: number;
+  samples?: number[];
+}
+
+/** `S2C.SOLO_RESULT`: the run as the server scored it. `scorePosted` is kept for older clients and equals `ranked`. */
+export interface SoloResultPayload {
+  wpm: number;
+  accuracy: number;
+  timeMs: number;
+  timedOut: boolean;
+  ranked: boolean;
+  scorePosted: boolean;
+  practice: boolean;
+  /** Why the check did not rank the run; absent when it passed. */
+  reason?: RunReason;
+}
+
+/** `S2C.GAME_PLAYER_FINISHED`: a room finish; `didNotFinish` and `reason` are set when the check failed. */
+export interface PlayerFinishedPayload {
+  userId: string;
+  userName: string;
+  wpm: number;
+  accuracy: number;
+  timeMs: number;
+  rank: number;
+  didNotFinish?: boolean;
+  reason?: RunReason;
+}

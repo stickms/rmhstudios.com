@@ -15,6 +15,7 @@
 
 import type { LevelId, RemoteCar } from './types';
 import { NEON_DRIFTWAY_GHOST_VERSION } from '@/lib/game/replay-meta';
+import { readJson, readString, writeJson, writeString } from '@/lib/core/persist';
 
 export const GHOST_VERSION = NEON_DRIFTWAY_GHOST_VERSION;
 export const GHOST_SAMPLE_MS = 100;
@@ -29,26 +30,67 @@ export interface GhostTrace {
   samples: GhostSample[];
 }
 
-export type GhostMode = 'off' | 'pb' | 'top';
-export const GHOST_MODES: GhostMode[] = ['off', 'pb', 'top'];
+export type GhostMode = 'off' | 'pb' | 'top' | 'friend';
+export const GHOST_MODES: GhostMode[] = ['off', 'pb', 'top', 'friend'];
 
 const MODE_KEY = 'ndw-ghost-mode';
+const FRIEND_KEY = 'ndw-ghost-friend';
+
+/** The mode after `mode` in the cycle off, your best, world #1, a friend. */
+export function nextGhostMode(mode: GhostMode): GhostMode {
+  return GHOST_MODES[(GHOST_MODES.indexOf(mode) + 1) % GHOST_MODES.length];
+}
+
+/** A stored value as a mode. Earlier values stay valid; anything else is the default, your best. */
+export function parseGhostMode(value: string | null): GhostMode {
+  return value === 'pb' || value === 'top' || value === 'off' || value === 'friend' ? value : 'pb';
+}
 
 export function readGhostMode(): GhostMode {
-  try {
-    const v = localStorage.getItem(MODE_KEY);
-    return v === 'pb' || v === 'top' || v === 'off' ? v : 'pb';
-  } catch {
-    return 'pb';
-  }
+  return parseGhostMode(readString(MODE_KEY));
 }
 
 export function writeGhostMode(mode: GhostMode): void {
-  try {
-    localStorage.setItem(MODE_KEY, mode);
-  } catch {
-    /* storage blocked — the choice lasts for this page */
+  // Storage blocked: the choice lasts for this page.
+  writeString(MODE_KEY, mode);
+}
+
+/** The friend remembered for one level: who, and the name to show if they stop qualifying. */
+export interface GhostFriend {
+  userId: string;
+  name: string;
+}
+
+type FriendMemory = Partial<Record<LevelId, GhostFriend>>;
+
+const LEVEL_IDS: readonly LevelId[] = [1, 2, 3];
+
+/** Keeps only well-formed entries of the stored value, so a hand-edited or old value never reaches the request. */
+export function parseFriendMemory(value: unknown): FriendMemory | undefined {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return undefined;
+  const out: FriendMemory = {};
+  for (const level of LEVEL_IDS) {
+    const entry = (value as Record<string, unknown>)[String(level)];
+    if (typeof entry !== 'object' || entry === null) continue;
+    const { userId, name } = entry as Record<string, unknown>;
+    if (typeof userId === 'string' && userId.length > 0 && userId.length <= 64) {
+      out[level] = { userId, name: typeof name === 'string' ? name.slice(0, 80) : '' };
+    }
   }
+  return out;
+}
+
+/** The friend chosen for `level` on this device, if any. */
+export function readGhostFriend(level: LevelId): GhostFriend | null {
+  return readJson<FriendMemory>(FRIEND_KEY, {}, { validate: parseFriendMemory })[level] ?? null;
+}
+
+/** Remember `friend` for `level` (null forgets it). The other levels keep theirs. */
+export function writeGhostFriend(level: LevelId, friend: GhostFriend | null): void {
+  const memory = { ...readJson<FriendMemory>(FRIEND_KEY, {}, { validate: parseFriendMemory }) };
+  if (friend) memory[level] = friend;
+  else delete memory[level];
+  writeJson(FRIEND_KEY, memory);
 }
 
 /** Records the player's own run. Allocation only at 10 Hz, never per frame. */

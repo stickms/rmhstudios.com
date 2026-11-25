@@ -29,6 +29,8 @@ const h = vi.hoisted(() => {
     {
       get: (_t, key: string) => {
         if (key === 'then') return undefined;
+        // The public log picks its page's ids in SQL (the event visibility is in the query).
+        if (key === '$queryRaw') return fn('$queryRaw');
         if (key === '$transaction') {
           return async (arg: unknown) =>
             Array.isArray(arg) ? Promise.all(arg) : (arg as (tx: unknown) => unknown)(db);
@@ -1328,6 +1330,7 @@ describe('the public log', () => {
       publicModLog: true,
     });
     mock('communityModAction.findMany').mockResolvedValue(publicRows);
+    mock('$queryRaw').mockResolvedValue([{ id: 5n }]);
     const res = await (
       await load('modlog', 'GET')
     )(
@@ -1362,9 +1365,11 @@ describe('the public log', () => {
         action: {
           in: string[];
         };
+        id: { in: bigint[] };
       };
       select: Record<string, boolean>;
     };
+    expect(args.where.id.in).toEqual([5n]);
     expect(args.where.action.in).toEqual([
       'content_removed',
       'content_approved',
@@ -1382,7 +1387,7 @@ describe('the public log', () => {
     expect(mock('user.findMany')).not.toHaveBeenCalled();
   });
 
-  it('leaves out event rows whose event is not public or is gone, and keeps them in the moderators log', async () => {
+  it('leaves event rows whose event is not public or is gone out in the query, and keeps them in the moderators log', async () => {
     const evRow = (id: bigint, action: string, targetId: string) => ({
       id,
       action,
@@ -1392,25 +1397,25 @@ describe('the public log', () => {
       reason: null,
       createdAt: new Date('2026-11-20T10:00:00Z'),
     });
-    const rows = [
-      evRow(9n, 'event_hosted', 'ev-private'),
-      evRow(8n, 'event_cancelled', 'ev-gone'),
-      evRow(7n, 'event_hosted', 'ev-public'),
-      ...publicRows,
-    ];
+    const hidden = [evRow(9n, 'event_hosted', 'ev-private'), evRow(8n, 'event_cancelled', 'ev-gone')];
     community('MEMBER', { publicModLog: true });
-    mock('communityModAction.findMany').mockResolvedValue(rows);
-    mock('event.findMany').mockResolvedValue([{ id: 'ev-public' }]);
+    // The query answers only the public rows; the second read loads exactly those.
+    mock('$queryRaw').mockResolvedValue([{ id: 7n }, { id: 5n }]);
+    mock('communityModAction.findMany').mockResolvedValue([evRow(7n, 'event_hosted', 'ev-public'), ...publicRows]);
     const res = await (await load('modlog', 'GET'))(ctx({ userId: 'member1', query: { scope: 'public' } }));
     const body = (await res.json()) as { entries: { id: string }[] };
     expect(body.entries.map((e) => e.id)).toEqual(['7', '5']);
-    const q = mock('event.findMany').mock.calls[0]![0] as { where: { id: { in: string[] }; visibility: string } };
-    expect(q.where.visibility).toBe('PUBLIC');
-    expect([...q.where.id.in].sort()).toEqual(['ev-gone', 'ev-private', 'ev-public']);
+    // No second visibility lookup: the exclusion is the query's.
+    expect(mock('event.findMany')).not.toHaveBeenCalled();
+    const [strings] = mock('$queryRaw').mock.calls[0]! as [TemplateStringsArray];
+    const sql = strings.join('?');
+    expect(sql).toMatch(/FROM community_mod_action m/);
+    expect(sql).toMatch(/FROM event e WHERE e\."id" = m\."targetId" AND e\."visibility" = 'PUBLIC'/);
+    expect(sql).toMatch(/ORDER BY m\."createdAt" DESC, m\."id" DESC/);
 
     // The moderators' log reads every row, with no visibility filter.
     community('MOD');
-    mock('communityModAction.findMany').mockResolvedValue(rows.slice(0, 2));
+    mock('communityModAction.findMany').mockResolvedValue(hidden);
     mock('user.findMany').mockResolvedValue([]);
     mock('communityMember.findMany').mockResolvedValue([]);
     const full = await (await load('modlog', 'GET'))(ctx({ query: { scope: 'full' } }));

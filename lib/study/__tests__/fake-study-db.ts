@@ -132,6 +132,10 @@ function matches(db: FakeDb, row: Row, where: Row | undefined): boolean {
       const rows = (db.editors ?? []).filter((e) => e.deckId === row.id);
       if (spec.some && !rows.some((e) => matches(db, e as unknown as Row, spec.some))) return false;
       if (spec.none && rows.some((e) => matches(db, e as unknown as Row, spec.none))) return false;
+    } else if (key === 'user') {
+      // `user: { … }` on an editor row: the member it names (the ban condition of `activeEditorWhere`).
+      const member = (db.users ?? []).find((u) => u.id === row.userId);
+      if (!member || !matches(db, member as unknown as Row, want as Row)) return false;
     } else if (key === 'deck') {
       const deck = db.decks.find((d) => d.id === row.deckId);
       if (!deck || !matches(db, deck as unknown as Row, want as Row)) return false;
@@ -144,6 +148,9 @@ function matches(db: FakeDb, row: Row, where: Row | undefined): boolean {
         if (((have as Date | null) ?? new Date()).getTime() < floor.getTime()) return false;
       } else if (want !== null && typeof want === 'object' && 'startsWith' in (want as Row)) {
         if (typeof have !== 'string' || !have.startsWith((want as { startsWith: string }).startsWith)) return false;
+      } else if (want !== null && typeof want === 'object' && (want as { lte?: unknown }).lte instanceof Date) {
+        const ceiling = (want as { lte: Date }).lte;
+        if (!(have instanceof Date) || have.getTime() > ceiling.getTime()) return false;
       } else if (want !== null && typeof want === 'object' && 'lte' in (want as Row)) {
         if (typeof have !== 'number' || have > (want as { lte: number }).lte) return false;
       } else if (want !== null && typeof want === 'object' && 'in' in (want as Row)) {

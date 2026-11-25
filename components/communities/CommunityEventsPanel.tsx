@@ -4,7 +4,7 @@
  * chunk, fetched when the tab opens; one request, the past list only when someone wants it.
  */
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
@@ -16,13 +16,29 @@ import { apiQuery } from '@/lib/contract/client';
 import { communityEventsApi } from '@/lib/communities/events.contract';
 import type { EventDTO } from '@/lib/events.server';
 
+/**
+ * A row's key: the event and what the server says about it. The card keeps its own RSVP counts once it has mounted, so
+ * a list read again after a refused RSVP remounts the row to show the server's counts, not the card's.
+ */
+export const eventRowKey = (
+  event: Pick<EventDTO, 'id' | 'goingCount' | 'maybeCount' | 'waitlistCount' | 'viewerRsvp'>,
+): string => [event.id, event.goingCount, event.maybeCount, event.waitlistCount, event.viewerRsvp ?? 'none'].join(':');
+
 /** The rows of one list: each event is its own card, divided by a rule. */
-export function CommunityEventRows({ events, className }: { events: EventDTO[]; className?: string | undefined }) {
+export function CommunityEventRows({
+  events,
+  className,
+  onRsvpRefused,
+}: {
+  events: EventDTO[];
+  className?: string | undefined;
+  onRsvpRefused?: (() => void) | undefined;
+}) {
   return (
     <ul className={className}>
       {events.map((event) => (
-        <li key={event.id} className="border-b border-site-border">
-          <EventCard event={event} />
+        <li key={eventRowKey(event)} className="border-b border-site-border">
+          <EventCard event={event} {...(onRsvpRefused ? { onRsvpRefused } : {})} />
         </li>
       ))}
     </ul>
@@ -39,6 +55,7 @@ export function CommunityEventsView({
   past,
   pastLoading,
   pastFailed,
+  onRsvpRefused,
 }: {
   events: EventDTO[];
   isMod: boolean;
@@ -48,6 +65,8 @@ export function CommunityEventsView({
   past: EventDTO[] | undefined;
   pastLoading: boolean;
   pastFailed: boolean;
+  /** An RSVP was refused: read the lists again. */
+  onRsvpRefused?: (() => void) | undefined;
 }) {
   const { t } = useTranslation('community-events');
   return (
@@ -76,7 +95,7 @@ export function CommunityEventsView({
           }
         />
       ) : (
-        <CommunityEventRows events={events} />
+        <CommunityEventRows events={events} onRsvpRefused={onRsvpRefused} />
       )}
 
       <section aria-label={t('past-label', { defaultValue: 'Past events' })} className="border-t border-site-border">
@@ -103,7 +122,7 @@ export function CommunityEventsView({
             {t('past-empty', { defaultValue: 'No past events.' })}
           </p>
         )}
-        {pastOpen && past && past.length > 0 && <CommunityEventRows events={past} />}
+        {pastOpen && past && past.length > 0 && <CommunityEventRows events={past} onRsvpRefused={onRsvpRefused} />}
       </section>
     </div>
   );
@@ -123,6 +142,11 @@ export default function CommunityEventsPanel({
   const { t } = useTranslation('community-events');
   const [composerOpen, setComposerOpen] = useState(false);
   const [pastOpen, setPastOpen] = useState(false);
+
+  const queryClient = useQueryClient();
+  // An RSVP that was refused (a full event, a ban) means the card's counts may not be the server's: the lists are read
+  // again, and a row whose counts changed is remounted (`eventRowKey`).
+  const refreshEvents = () => void queryClient.invalidateQueries({ queryKey: [communityEventsApi.path] });
 
   const upcoming = useQuery(apiQuery(communityEventsApi, { params: { slug }, query: { when: 'upcoming' } }));
   const pastQuery = useQuery({
@@ -163,6 +187,7 @@ export default function CommunityEventsPanel({
         past={pastQuery.data?.events}
         pastLoading={pastQuery.isPending && pastQuery.fetchStatus !== 'idle'}
         pastFailed={pastQuery.isError}
+        onRsvpRefused={refreshEvents}
       />
       {isMod && composerOpen && (
         <EventComposer

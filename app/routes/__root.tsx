@@ -32,6 +32,7 @@ import { ROOT_LINKS, ROOT_META } from '@/lib/root-head';
 import { legacyRedirectFor } from '@/lib/route/legacy-redirects';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { prisma } from '@/lib/prisma.server';
+import { RouteAnnouncer } from '@/components/shell/RouteAnnouncer';
 import { cachedNullable } from '@/lib/cached.server';
 import { appearanceSeedKey } from '@/lib/appearance/seed-cache.server';
 import { accountAppearanceSeed, type AppearanceSeed } from '@/lib/appearance/account-seed';
@@ -651,6 +652,7 @@ function RootComponent() {
       saveData={saveData}
     >
       <NavigationProgress />
+      <RouteAnnouncer />
       <TwemojiProvider portals>
         <Outlet />
       </TwemojiProvider>

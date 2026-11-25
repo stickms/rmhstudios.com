@@ -77,10 +77,14 @@ export interface Listing {
   favorited: boolean;
   /** Whether the requesting user is the author (can edit/delete). */
   isOwner: boolean;
+  /** s12-16: set on the author's own view when a moderator removed the listing (it cannot be reactivated). */
+  removedByModerator?: boolean;
   /** Cents the price fell by, when the last change in the last 30 days was a drop (the "Reduced" line). */
   reducedByCents?: number;
   /** The viewer's "Tell me if the price drops" switch on their favourite (present when signed in). */
   priceAlerts?: boolean;
+  /** The viewer's own private note on their saved listing (s12 10); never present in anyone else's read. */
+  note?: string | null;
 }
 
 export type SortOrder = 'newest' | 'price_asc' | 'price_desc';

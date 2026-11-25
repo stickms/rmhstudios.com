@@ -8,6 +8,7 @@ import { prisma } from '@/lib/prisma.server';
 import { adminUserUpdateSchema } from '@/lib/admin/schemas';
 import { changeHandle } from '@/lib/handles/history.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
+import { isDeletedAccount } from '@/lib/account-lifecycle';
 import { activeStrikeWhere } from '@/lib/moderation/standing.server';
 import { activeRestrictionWhere } from '@/lib/moderation/restrictions.server';
 
@@ -74,6 +75,8 @@ export const route = apiRoute('/api/admin/users', {
         isBot: true,
         createdAt: true,
         bannedUntil: true,
+        // Read only to tell a deletion tombstone from a live account; never sent (the row carries `deleted`).
+        banReason: true,
         profile: { select: { coins: true } },
         _count: {
           select: {
@@ -109,8 +112,9 @@ export const route = apiRoute('/api/admin/users', {
       : [[], []];
     const strikesBy = new Map(strikeCounts.map((r) => [r.userId, r._count._all]));
     const restrictionsBy = new Map(restrictionCounts.map((r) => [r.userId, r._count._all]));
-    const items = page.map((u) => ({
+    const items = page.map(({ banReason, ...u }) => ({
       ...u,
+      deleted: isDeletedAccount({ id: u.id, banReason }),
       activeStrikes: strikesBy.get(u.id) ?? 0,
       activeRestrictions: restrictionsBy.get(u.id) ?? 0,
       banned: !!u.bannedUntil && u.bannedUntil.getTime() > now.getTime(),

@@ -16,11 +16,23 @@ export const submitReplayBody = z.object({
   visibility: z.enum(['public', 'unlisted']).optional(),
 });
 
-/** GET /api/replays/ghost?game=neon-driftway&level=1&vs=pb|top */
-export const getGhostQuery = z.object({
+/** GET /api/replays/ghost?game=neon-driftway&level=1&vs=pb|top|friend[&friend=<userId>] */
+export const getGhostQuery = z
+  .object({
+    game: z.literal('neon-driftway'),
+    level: z.coerce.number().int().min(1).max(3),
+    vs: z.enum(['pb', 'top', 'friend']).default('pb'),
+    friend: z.string().min(1).max(64).optional(),
+  })
+  .refine((q) => q.vs !== 'friend' || q.friend !== undefined, {
+    message: 'friend is required when vs is friend',
+    path: ['friend'],
+  });
+
+/** GET /api/replays/ghost/friends?game=neon-driftway&level=1 */
+export const friendGhostsQuery = z.object({
   game: z.literal('neon-driftway'),
   level: z.coerce.number().int().min(1).max(3),
-  vs: z.enum(['pb', 'top']).default('pb'),
 });
 
 /** POST /api/replays/ghost */

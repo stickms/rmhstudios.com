@@ -40,6 +40,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/design` | Spatial Minimalism | public | `app/routes/design.tsx` |
 | `/discord` | RMHBox | public | `app/routes/discord/index.tsx` |
 | `/discord/lights-out` | — | public | `app/routes/discord/lights-out.tsx` |
-| `/discord/rmhbox` | — | public | `app/routes/discord/rmhbox.tsx` |
+| `/discord/rmhbox` | RMHBox — RMH Studios | public | `app/routes/discord/rmhbox.tsx` |
 | `/dream-rift` | — | public | `app/routes/dream-rift.tsx` |
 | `/dunesday` | Dunesday | public | `app/routes/dunesday.tsx` |

@@ -19,6 +19,7 @@ import { verifyDailyPuzzle } from '@/lib/daily-puzzles/replay.server';
 import { getGameAdapter } from '@/lib/game/adapters.server';
 import { userChipSelect, userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
 import { getBlockedAuthorIds } from '@/lib/moderation.server';
+import { friendGhost, ghostReplayWhere } from '@/lib/game/friend-ghosts.server';
 import { BOARD_SIZE, MY_REPLAYS_PAGE } from '@/lib/game/replay-library-schema';
 import {
   GHOST_GAME_IDS,
@@ -426,11 +427,7 @@ export interface GhostView {
   owner: { id: string; name: string | null; handle: string | null; image: string | null };
 }
 
-const ghostWhere = (game: string, level: number) => ({
-  game,
-  version: getReplayable(game)?.version,
-  data: { path: ['level'], equals: level },
-});
+const ghostWhere = ghostReplayWhere;
 
 /**
  * Save a ghost and drop the same player's older ghosts for that level, so a
@@ -466,6 +463,7 @@ export async function saveGhost(input: {
  * The ghost to race.
  *
  * - `pb`: the caller's own best ghost on this level.
+ * - `friend`: one mutual follow's ghost, only when it passes the same board-score bound (`friendGhost`).
  * - `top`: the best ghost among the top of the VALIDATED leaderboard. A ghost's
  *   own score is client-reported, so ranking ghosts by it would let a forged
  *   upload become everyone's "world #1"; instead the owner must hold a real
@@ -474,10 +472,17 @@ export async function saveGhost(input: {
 export async function getGhost(input: {
   game: string;
   level: number;
-  vs: 'pb' | 'top';
+  vs: 'pb' | 'top' | 'friend';
+  /** The friend to race, for `vs: 'friend'`. */
+  friend?: string | undefined;
   viewerId: string | null;
 }): Promise<GhostView | null> {
   if (!GHOST_GAMES.has(input.game)) return null;
+  // A friend's ghost has its own rules (mutual, not blocked, validated score): see friend-ghosts.server.ts.
+  if (input.vs === 'friend') {
+    if (!input.viewerId || !input.friend) return null;
+    return friendGhost(input.viewerId, input.game, input.level, input.friend);
+  }
   const select = {
     id: true,
     data: true,

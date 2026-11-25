@@ -45,6 +45,7 @@ import {
   UE_WRITE_TIMEOUT_SECONDS,
   UE_EDIT_TIMEOUT_SECONDS,
 } from './constants';
+import { RANKING_FILE_SETTINGS } from './ranking-file/settings';
 
 // ─── Per-Minigame Settings Schemas ───────────────────────────────
 
@@ -629,6 +630,28 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
     tags: ['word', 'creative', 'speed', 'movies', 'guessing'],
     settingsSchema: EMOJI_CINEMA_SETTINGS,
   },
+  'ranking-file': {
+    id: 'ranking-file',
+    displayName: 'Ranking File',
+    description:
+      'Put five things in order, from planets by size to inventions by year. The closest to the official order wins.',
+    category: 'trivia',
+    icon: 'list-ordered',
+    minPlayers: 3,
+    maxPlayers: 12,
+    estimatedDurationSeconds: 240,
+    supportsTeams: false,
+    instructionDurationSeconds: 15,
+    preloadAssets: {
+      images: [],
+      sounds: [],
+      data: [],
+      estimatedSizeBytes: 0,
+    },
+    joinInProgressPolicy: 'join_next_subround',
+    tags: ['trivia', 'ranking'],
+    settingsSchema: RANKING_FILE_SETTINGS,
+  },
   // 'sequence-sam': {
   //   id: 'sequence-sam',
   //   displayName: 'Sequence Sam',
@@ -703,21 +726,6 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
   //   preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
   //   joinInProgressPolicy: 'spectate_only',
   //   tags: ['word', 'deduction'],
-  // },
-  // 'ranking-file': {
-  //   id: 'ranking-file',
-  //   displayName: 'Ranking File',
-  //   description: 'Rank items in the correct order — closest to the official ranking wins.',
-  //   category: 'trivia',
-  //   icon: '📊',
-  //   minPlayers: 3,
-  //   maxPlayers: 12,
-  //   estimatedDurationSeconds: 120,
-  //   supportsTeams: false,
-  //   instructionDurationSeconds: 15,
-  //   preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
-  //   joinInProgressPolicy: 'join_next_subround',
-  //   tags: ['trivia', 'ranking'],
   // },
   // 'pixel-pushers': {
   //   id: 'pixel-pushers',

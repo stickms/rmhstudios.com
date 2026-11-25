@@ -2,6 +2,8 @@
 import { Dices } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
+import type { SheetRequest } from '@features/rmhcharacters/engine/party-rolls';
+import { ABILITIES } from '@features/rmhcharacters/engine/types';
 import { useRollsContext } from './useRolls';
 
 const BUTTON =
@@ -19,9 +21,43 @@ export interface RollButtonProps {
   damage?: string;
   /** PF2e strike: which attack of the turn this button is. */
   step?: 1 | 2 | 3;
+  /**
+   * What the table roll names: the skill's id, the ability (or save) key, or the position of the attack or Strike in
+   * the sheet's list. A table roll sends this, never the modifier; without it the button rolls on the device.
+   */
+  which?: string | number;
   /** The visible text, usually the signed modifier. */
   children: React.ReactNode;
   className?: string;
+}
+
+const SAVE_KEYS = [...ABILITIES, 'fortitude', 'reflex', 'will'] as const;
+
+/** The table request a sheet line stands for, or `null` when the line cannot name what it rolls. */
+function tableRequest(kind: RollKind, which: string | number | undefined, step: 1 | 2 | 3): SheetRequest | null {
+  const key = typeof which === 'string' ? which : '';
+  const index = typeof which === 'number' ? which : -1;
+  switch (kind) {
+    case 'initiative':
+    case 'perception':
+      return { kind };
+    case 'skill':
+      return key ? { kind, key } : null;
+    case 'check': {
+      const ability = ABILITIES.find((a) => a === key);
+      return ability ? { kind, ability } : null;
+    }
+    case 'save': {
+      const ability = SAVE_KEYS.find((a) => a === key);
+      return ability ? { kind, ability } : null;
+    }
+    case 'attack':
+      return index >= 0 ? { kind, index } : null;
+    case 'damage':
+      return index >= 0 ? { kind, index, critical: false } : null;
+    case 'strike':
+      return index >= 0 ? { kind, index, map: (step - 1) as 0 | 1 | 2 } : null;
+  }
 }
 
 export function RollButton({
@@ -30,6 +66,7 @@ export function RollButton({
   bonus = 0,
   damage = '',
   step = 1,
+  which,
   children,
   className,
 }: RollButtonProps) {
@@ -65,7 +102,9 @@ export function RollButton({
       what = name;
   }
 
+  const request = tableRequest(kind, which, step);
   const onRoll = () => {
+    if (rolls.table?.on && request) return rolls.table.send(request);
     if (kind === 'damage') rolls.damage(what, damage, false);
     else rolls.d20(what, bonus, kind === 'attack' || kind === 'strike' ? { name, damage } : undefined);
   };

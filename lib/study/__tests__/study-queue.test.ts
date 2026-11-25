@@ -114,6 +114,7 @@ vi.mock('@/lib/study/reminders.server', () => ({
 const queue = await import('@/lib/study/queue.server');
 const { saveReview } = await import('@/lib/study/review-log.server');
 const { ACTIVE_REVIEW_WHERE } = await import('@/lib/study/card-query.server');
+const { activeEditorWhere } = await import('@/lib/study/deck-access.server');
 
 const card = (id: string, deckId: string, extra: Record<string, unknown> = {}) => ({
   id,
@@ -201,7 +202,7 @@ describe('reviewQueue', () => {
         {
           userId: 'me',
         },
-        { editors: { some: { userId: 'me', status: 'accepted' } } },
+        { editors: { some: activeEditorWhere('me', expect.any(Date)) } },
       ],
     });
     expect(args.where.card.NOT).toEqual({
@@ -225,7 +226,7 @@ describe('reviewQueue', () => {
     expect(args.take).toBe(20);
     // The member's own decks and the ones they edit (s11-10).
     expect(args.where.deck).toEqual({
-      OR: [{ userId: 'me' }, { editors: { some: { userId: 'me', status: 'accepted' } } }],
+      OR: [{ userId: 'me' }, { editors: { some: activeEditorWhere('me', expect.any(Date)) } }],
     });
     expect(args.where.reviews).toEqual({
       none: {

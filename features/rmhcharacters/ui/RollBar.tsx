@@ -4,8 +4,15 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Input } from '@/components/ui/input';
-import type { Degree, FreeRollError, RollMode } from '@features/rmhcharacters/engine/rolls';
+import { parseDice } from '@/lib/toolbox/dice';
+import {
+  withinSheetLimits,
+  type Degree,
+  type FreeRollError,
+  type RollMode,
+} from '@features/rmhcharacters/engine/rolls';
 import { RollLog } from './RollLog';
+import { TableRollControls } from './TableRollControls';
 import { type RollsApi } from './useRolls';
 
 export function RollBar({ rolls }: { rolls: RollsApi }) {
@@ -55,6 +62,14 @@ export function RollBar({ rolls }: { rolls: RollsApi }) {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (rolls.table?.on) {
+      // For the table the server rolls: check the notation here only to say what is wrong, then send it.
+      const parsed = parseDice(input);
+      const problem = parsed.ok ? withinSheetLimits(parsed.terms) : parsed.error;
+      setError(problem);
+      if (!problem) rolls.table.send({ kind: 'free', notation: input.trim() });
+      return;
+    }
     setError(rolls.free(input));
   };
 
@@ -67,6 +82,7 @@ export function RollBar({ rolls }: { rolls: RollsApi }) {
       className="rmhc-noprint flex flex-col gap-3 border-b border-app-border py-4"
       aria-label={t('bar.title', { defaultValue: 'Dice' })}
     >
+      {rolls.table ? <TableRollControls rolls={rolls} table={rolls.table} /> : null}
       <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
         {rolls.system === '5e' ? (
           <fieldset className="flex flex-wrap items-center gap-2">
@@ -95,7 +111,7 @@ export function RollBar({ rolls }: { rolls: RollsApi }) {
               {t('mode.pin', { defaultValue: 'Keep this mode' })}
             </label>
           </fieldset>
-        ) : (
+        ) : rolls.table?.on && rolls.table.role === 'player' ? null : (
           <label className="flex flex-col gap-1 text-sm">
             <span className="font-medium text-app-text-muted">{t('dc.label', { defaultValue: 'Target DC' })}</span>
             <Input

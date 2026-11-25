@@ -228,6 +228,7 @@ export function Timeline() {
   const snap = useEditorStore((s) => s.snap);
   const tool = useEditorStore((s) => s.tool);
   const preview = useEditorStore((s) => s.preview);
+  const versionPreview = useEditorStore((s) => s.versionPreview);
   const playtesting = useEditorStore((s) => s.playtesting);
   const artefacts = useEditorStore((s) => s.artefacts);
   const showGhosts = useEditorStore((s) => s.showGhosts);
@@ -295,6 +296,7 @@ export function Timeline() {
     snap,
     tool,
     preview,
+    versionPreview,
     playtesting,
     artefacts,
     showGhosts,
@@ -328,7 +330,9 @@ export function Timeline() {
         hover: hoverRef.current,
         drag: dragRef.current,
         duration: state.song?.duration ?? 0,
-        preview: state.preview?.byDifficulty[state.active] ?? null,
+        preview:
+          state.preview?.byDifficulty[state.active] ??
+          (state.versionPreview?.difficulty === state.active ? state.versionPreview : null),
         loop: state.loop,
         artefacts: state.artefacts,
         showGhosts: state.showGhosts,

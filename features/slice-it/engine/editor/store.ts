@@ -28,7 +28,7 @@ import {
   type EditContext,
   type Outcome,
 } from './clipboard';
-import type { GeneratePlan } from './generate';
+import type { DifficultyPlan, GeneratePlan } from './generate';
 import { EMPTY_LINT, type LintResult } from './lint';
 import { singleTimingPoint } from './types';
 import type {
@@ -131,6 +131,11 @@ interface EditorState {
    * will never press again.
    */
   preview: GeneratePlan | null;
+  /**
+   * A saved version being previewed (Versions panel), uncommitted. Drawn in the same ghost layer as `preview`, but it is
+   * its own field so the AUTO panel never mistakes it for a regenerate it could Apply. Any edit, undo or redo clears it.
+   */
+  versionPreview: DifficultyPlan | null;
 
   /* ── Analysis artefacts (§6) ──────────────────────────────────────────── */
   /**
@@ -215,6 +220,7 @@ interface EditorState {
   ) => void;
   setPlaytesting: (playtesting: boolean) => void;
   setPreview: (preview: GeneratePlan | null) => void;
+  setVersionPreview: (plan: DifficultyPlan | null) => void;
   setTimingPoints: (points: TimingPoint[]) => void;
   setSvPoints: (points: SvPoint[]) => void;
   setArtefacts: (artefacts: EditorArtefacts | null) => void;
@@ -313,6 +319,7 @@ const initial = {
   loop: null,
   playtesting: false,
   preview: null as GeneratePlan | null,
+  versionPreview: null as DifficultyPlan | null,
   artefacts: null as EditorArtefacts | null,
   showGhosts: true,
   lint: EMPTY_LINT,
@@ -387,6 +394,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       lint: EMPTY_LINT,
       lintFocus: null,
       artefacts: null,
+      versionPreview: null,
     }),
 
   fail: (message) =>
@@ -425,6 +433,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         redoStack: [],
         revision: state.revision + 1,
         preview: null,
+        versionPreview: null,
       };
     }),
 
@@ -439,6 +448,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         redoStack: [...state.redoStack, command],
         revision: state.revision + 1,
         preview: null,
+        versionPreview: null,
       };
     }),
 
@@ -453,6 +463,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         redoStack: state.redoStack.slice(0, -1),
         revision: state.revision + 1,
         preview: null,
+        versionPreview: null,
       };
     }),
 
@@ -504,6 +515,10 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   setPreview: (preview) =>
     set({
       preview,
+    }),
+  setVersionPreview: (versionPreview) =>
+    set({
+      versionPreview,
     }),
   /**
    * Timing and SV edits (§4.2, phase 8).

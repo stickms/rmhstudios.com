@@ -12,12 +12,13 @@ import { getPrismaClient } from '../prisma-client';
 import { logger } from '../logger';
 import { awardAppProgress } from '../economy';
 import { PresenceGrace } from '../../shared/presence-grace';
-import { S2C } from '../../../lib/rmhtype/events';
+import { S2C, type RunFinishPayload } from '../../../lib/rmhtype/events';
 import { saveGhostIfBest, type GhostDb } from '../../../lib/rmhtype/ghost-save.server';
 import { PASSAGES, type Passage } from '../../../lib/rmhtype/passages';
 import { generateTypingPassage } from '../../../lib/ai/text.server';
 import { parseSoloSource, pickCodeSnippet, extractLorePassage } from '../../../lib/rmhtype/sources';
-import { challengePassage, clampRunCounts, evaluateFinish } from '../../../lib/rmhtype/challenges';
+import { challengePassage } from '../../../lib/rmhtype/challenges';
+import { clampProgress, clampRunCounts, evaluateFinish, type RunReason } from '../../../lib/rmhtype/run-check';
 import { MAX_WPM } from '../../../lib/rmhtype/typing-run';
 import {
   claimChallengeRace,
@@ -55,6 +56,10 @@ interface TypePlayer {
   finished: boolean;
   finishTime: number | null;
   finishRank: number;
+  /** When the last progress event was taken (ms), so a step is capped by the time it took. */
+  lastProgressAt: number;
+  /** Why the finish failed the server's check (`run-check.ts`): the player is placed "Did not finish" and unranked. */
+  dnfReason: RunReason | null;
 }
 
 interface BannedUser {
@@ -308,6 +313,8 @@ function createPlayer(
     finished: false,
     finishTime: null,
     finishRank: 0,
+    lastProgressAt: 0,
+    dnfReason: null,
   };
 }
 
@@ -320,6 +327,8 @@ function resetPlayersForRound(room: TypeRoom): void {
     player.finished = false;
     player.finishTime = null;
     player.finishRank = 0;
+    player.lastProgressAt = 0;
+    player.dnfReason = null;
   }
   room.finishOrder = 0;
 }
@@ -423,6 +432,9 @@ function calculateRoundResults(room: TypeRoom): {
   const rankings = Array.from(room.players.values())
     .filter((p) => p.isConnected || p.finished)
     .sort((a, b) => {
+      // A finish that failed the server's check ("Did not finish") sorts below everyone, whatever it claimed.
+      if (a.dnfReason && !b.dnfReason) return 1;
+      if (!a.dnfReason && b.dnfReason) return -1;
       // Finished players first, then by finishTime (faster = better)
       if (a.finished && !b.finished) return -1;
       if (!a.finished && b.finished) return 1;
@@ -430,9 +442,11 @@ function calculateRoundResults(room: TypeRoom): {
       return b.currentPosition - a.currentPosition;
     })
     .map((p, index) => {
-      const rank = p.finished ? p.finishRank : index + 1;
-      const positionBonus = calculatePositionBonus(rank);
-      const roundScore = Math.round(p.wpm * (p.accuracy / 100) * 10) + positionBonus;
+      const didNotFinish = p.dnfReason !== null;
+      const rank = p.finished && !didNotFinish ? p.finishRank : index + 1;
+      // A "Did not finish" scores nothing: no speed, no accuracy, no position bonus.
+      const positionBonus = didNotFinish ? 0 : calculatePositionBonus(rank);
+      const roundScore = didNotFinish ? 0 : Math.round(p.wpm * (p.accuracy / 100) * 10) + positionBonus;
 
       // Add to cumulative score
       p.score += roundScore;
@@ -441,12 +455,13 @@ function calculateRoundResults(room: TypeRoom): {
         userId: p.userId,
         userName: p.userName,
         rank,
-        wpm: Math.round(p.wpm * 100) / 100,
-        accuracy: Math.round(p.accuracy * 100) / 100,
+        wpm: didNotFinish ? 0 : Math.round(p.wpm * 100) / 100,
+        accuracy: didNotFinish ? 0 : Math.round(p.accuracy * 100) / 100,
         finishTime: p.finishTime,
         roundScore,
         totalScore: p.score,
         positionBonus,
+        reason: p.dnfReason,
       };
     });
 
@@ -486,11 +501,19 @@ function calculateFinalResults(room: TypeRoom) {
                 100,
             ) / 100
           : 0,
+      // Every round this player took part in failed the server's check ("Did not finish"): not ranked at all.
+      unranked: (() => {
+        const mine = room.roundResults.flatMap((rr) =>
+          rr.rankings.filter((r: { userId?: string }) => r.userId === p.userId),
+        );
+        return mine.length > 0 && mine.every((r: { reason?: unknown }) => Boolean(r.reason));
+      })(),
     }));
 
+  const firstRanked = standings.find((st) => !st.unranked);
   return {
     standings,
-    winnerUserId: standings.length > 0 ? standings[0].userId : null,
+    winnerUserId: firstRanked ? firstRanked.userId : null,
     totalRounds: room.totalRounds,
     roundResults: room.roundResults,
   };
@@ -564,6 +587,8 @@ function endRound(io: Server, room: TypeRoom): void {
       timeMs: r.finishTime ?? 0,
       score: r.roundScore,
       rank: r.rank,
+      // "Did not finish": the finish failed the server's check (`reason`) and the run is not ranked.
+      ...(r.reason ? { didNotFinish: true, reason: r.reason } : {}),
     })),
     isLastRound,
   });
@@ -738,10 +763,12 @@ async function persistMatchResults(room: TypeRoom, finalResults: any): Promise<v
     for (const standing of finalResults.standings) {
       const player = room.players.get(standing.userId);
       if (!player) continue;
+      // Every round failed the server's check: nothing of this player's reaches a profile or a board.
+      if (standing.unranked) continue;
 
       // Upsert profile (per-difficulty)
       const difficulty = room.settings.difficulty;
-      const qualifies = standing.avgAccuracy >= MIN_LEADERBOARD_ACCURACY;
+      const qualifies = standing.avgAccuracy >= MIN_LEADERBOARD_ACCURACY && standing.avgWpm <= MAX_WPM;
       const profile = await (prisma as any).rmhTypeProfile.upsert({
         where: {
           userId_difficulty: {
@@ -856,12 +883,12 @@ async function persistMatchResults(room: TypeRoom, finalResults: any): Promise<v
 const MIN_LEADERBOARD_ACCURACY = 90;
 
 /**
- * Whether a solo run posts to the leaderboard: accurate enough, and no faster than {@link MAX_WPM}, the ceiling every
- * other RMHType score (challenges, the daily, ghosts) already holds. The hub's own clock times the run, so a finish
- * sent early with the whole passage claimed scores above the ceiling and is kept as a match but not posted.
+ * Whether a solo run posts to the leaderboard: the server's check passed (the end reached, at most {@link MAX_WPM},
+ * a believable curve: `evaluateFinish`), and the run was accurate enough. `checked` is that verdict. A run that fails
+ * the check is shown but never ranked: no match, no best, no ghost.
  */
-function soloQualifies(wpm: number, accuracy: number): boolean {
-  return accuracy >= MIN_LEADERBOARD_ACCURACY && Number.isFinite(wpm) && wpm <= MAX_WPM;
+function soloQualifies(wpm: number, accuracy: number, checked = true): boolean {
+  return checked && accuracy >= MIN_LEADERBOARD_ACCURACY && Number.isFinite(wpm) && wpm <= MAX_WPM;
 }
 
 async function persistSoloResult(
@@ -1594,14 +1621,25 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
     const player = room.players.get(userId);
     if (!player || player.finished) return;
 
-    // Clamped to the passage: live progress feeds the timeout result and the race standings.
-    const { position, errors } = clampRunCounts(payload?.position, payload?.errors, room.passage?.length ?? 0);
+    // Live progress feeds the timeout result and the race standings, so it is made safe first: within the passage
+    // (`clampRunCounts`), never backwards, and no faster per step than a person can type (`clampProgress`).
+    const now = Date.now();
+    const passageLength = room.passage?.length ?? 0;
+    const counts = clampRunCounts(payload?.position, payload?.errors, passageLength);
+    const position = clampProgress(
+      player.currentPosition,
+      counts.position,
+      passageLength,
+      now - (player.lastProgressAt || room.roundStartTime),
+    );
+    const errors = Math.min(counts.errors, position);
+    player.lastProgressAt = now;
 
     player.currentPosition = position;
     player.errors = errors;
 
     // Calculate WPM: (characters / 5) / (elapsed minutes)
-    const elapsedMs = Date.now() - room.roundStartTime;
+    const elapsedMs = now - room.roundStartTime;
     if (elapsedMs > 0 && position > 0) {
       player.wpm = position / 5 / (elapsedMs / 60000);
       player.accuracy = ((position - errors) / position) * 100;
@@ -1609,7 +1647,7 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
     }
   });
 
-  socket.on('rmhtype:game:finish', () => {
+  socket.on('rmhtype:game:finish', (payload?: RunFinishPayload) => {
     const roomId = socketRoomMap.get(socket.id);
     if (!roomId) return;
 
@@ -1621,15 +1659,28 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
 
     player.finished = true;
     player.finishTime = Date.now() - room.roundStartTime;
-    room.finishOrder++;
-    player.finishRank = room.finishOrder;
 
-    // Calculate final WPM and accuracy
-    if (player.finishTime > 0 && player.currentPosition > 0) {
-      player.wpm = player.currentPosition / 5 / (player.finishTime / 60000);
-      player.accuracy =
-        player.currentPosition > 0 ? ((player.currentPosition - player.errors) / player.currentPosition) * 100 : 100;
-      if (player.accuracy < 0) player.accuracy = 0;
+    // The finish is scored from the server's clock and the passage, as a solo run is: the position the client sends
+    // (or, with none, the last progress) is clamped, and the run must reach the end at no more than MAX_WPM along a
+    // believable curve. One that does not is "Did not finish" for the round and not ranked; nobody else's result moves.
+    const figures = evaluateFinish({
+      passageLength: room.passage?.length ?? 0,
+      position: typeof payload?.position === 'number' ? payload.position : player.currentPosition,
+      errors: typeof payload?.errors === 'number' ? payload.errors : player.errors,
+      timeMs: player.finishTime,
+      samples: payload?.samples,
+    });
+    player.currentPosition = figures.position;
+    player.errors = figures.errors;
+    if (figures.reason) {
+      player.dnfReason = figures.reason;
+      player.wpm = 0;
+      player.accuracy = 0;
+    } else {
+      room.finishOrder++;
+      player.finishRank = room.finishOrder;
+      player.wpm = figures.wpm;
+      player.accuracy = Math.max(0, figures.accuracy);
     }
 
     io.to(`rmhtype:${roomId}`).emit('rmhtype:game:playerFinished', {
@@ -1639,6 +1690,7 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
       accuracy: Math.round(player.accuracy * 100) / 100,
       timeMs: player.finishTime,
       rank: player.finishRank,
+      ...(figures.reason ? { didNotFinish: true, reason: figures.reason } : {}),
     });
 
     // Check if all connected players finished
@@ -1923,7 +1975,9 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
                 accuracy: Math.round(soloPlayer.accuracy * 100) / 100,
                 timeMs: ROUND_TIMEOUT_MS,
                 timedOut: true,
-                scorePosted: !aiPassage && soloQualifies(soloPlayer.wpm, soloPlayer.accuracy),
+                // A run that timed out never ranks: it did not reach the end of the passage.
+                ranked: false,
+                scorePosted: false,
                 practice: aiPassage,
               });
               cleanupSoloRoom(soloRoomId, socket);
@@ -1941,7 +1995,7 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
     },
   );
 
-  socket.on('rmhtype:solo:finish', (payload?: { position?: number; errors?: number; samples?: unknown }) => {
+  socket.on('rmhtype:solo:finish', (payload?: RunFinishPayload) => {
     const roomId = socketRoomMap.get(socket.id);
     if (!roomId || !roomId.startsWith('solo-')) return;
 
@@ -1951,43 +2005,52 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
     const player = room.players.get(userId);
     if (!player || player.finished) return;
 
-    // The client's figures are clamped as a challenge's are (`clampRunCounts`): an inflated position cannot raise
-    // the stored speed past the passage, and accuracy stays within 0 to 100.
-    const { position, errors } = clampRunCounts(
-      typeof payload?.position === 'number' ? payload.position : player.currentPosition,
-      typeof payload?.errors === 'number' ? payload.errors : player.errors,
-      room.passage?.length ?? 0,
-    );
-
-    player.currentPosition = position;
-    player.errors = errors;
     player.finished = true;
     player.finishTime = Date.now() - room.roundStartTime;
 
+    // One check for every scored run (`run-check.ts`): the figures come from the server's clock and a position
+    // clamped to the passage, never from the client's say-so. A run that did not reach the end, computes above
+    // MAX_WPM or has no believable curve is still shown (from the clamped figures) but is not ranked.
+    const figures = evaluateFinish({
+      passageLength: room.passage?.length ?? 0,
+      position: typeof payload?.position === 'number' ? payload.position : player.currentPosition,
+      errors: typeof payload?.errors === 'number' ? payload.errors : player.errors,
+      timeMs: player.finishTime,
+      samples: payload?.samples,
+    });
+    const { position, errors } = figures;
+    player.currentPosition = position;
+    player.errors = errors;
+
     // Calculate final WPM and accuracy
     if (player.finishTime > 0 && position > 0) {
-      player.wpm = position / 5 / (player.finishTime / 60000);
-      player.accuracy = ((position - errors) / position) * 100;
-      if (player.accuracy < 0) player.accuracy = 0;
+      player.wpm = figures.wpm;
+      player.accuracy = Math.max(0, figures.accuracy);
     } else {
       player.wpm = 0;
       player.accuracy = 100;
     }
 
+    const ranked = !room.aiPassage && soloQualifies(player.wpm, player.accuracy, figures.finished);
     const result: Record<string, any> = {
       wpm: Math.round(player.wpm * 100) / 100,
       accuracy: Math.round(player.accuracy * 100) / 100,
       timeMs: player.finishTime,
       timedOut: false,
-      scorePosted: !room.aiPassage && soloQualifies(player.wpm, player.accuracy),
+      ranked,
+      // Kept for older clients: always equal to `ranked`.
+      scorePosted: ranked,
       practice: Boolean(room.aiPassage),
+      // Why a checked run was not ranked. A practice run has its own note and needs none.
+      ...(figures.reason && !room.aiPassage ? { reason: figures.reason } : {}),
     };
 
     socket.emit('rmhtype:solo:result', result);
 
-    // Persist solo result to DB — except on a generated passage, which is
-    // practice by design (see `TypeRoom.aiPassage`).
-    if (!room.aiPassage) {
+    // Persist solo result to DB — except on a generated passage, which is practice by design (see
+    // `TypeRoom.aiPassage`), and a run that failed the server's check, which writes nothing (no match, no profile
+    // figures, no experience).
+    if (!room.aiPassage && figures.finished) {
       persistSoloResult(
         userId,
         userName,
@@ -2012,13 +2075,6 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
     // solo run is. `done` first, so the room's removal below does not also settle it as left.
     if (room.challenge && !room.challenge.done) {
       room.challenge.done = true;
-      const figures = evaluateFinish({
-        passageLength: room.passage?.length ?? 0,
-        position: payload?.position,
-        errors: payload?.errors,
-        timeMs: player.finishTime,
-        samples: payload?.samples,
-      });
       settleAndNotify(getPrismaClient() as unknown as ChallengeDb, room.challenge.id, figures, userId)
         .then((settled) => {
           if (settled) socket.emit(S2C.SOLO_CHALLENGE_RESULT, challengeResultPayload(settled));
@@ -2034,7 +2090,8 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
     saveGhostIfBest(getPrismaClient() as unknown as GhostDb, {
       userId,
       passageId: room.passageId,
-      aiPassage: Boolean(room.aiPassage),
+      // A run that failed the check keeps no ghost.
+      aiPassage: Boolean(room.aiPassage) || !figures.finished,
       passageLength: room.passage?.length ?? 0,
       wpm: player.wpm,
       accuracy: player.accuracy,

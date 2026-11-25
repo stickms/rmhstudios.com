@@ -8,6 +8,8 @@ import { Button } from'@/components/ui/button';
 import { EmptyState } from'@/components/ui/empty-state';
 import { useConfirm } from'@/components/ui/confirm-dialog';
 import { useTranslation } from'react-i18next';
+import { lazy, Suspense } from 'react';
+import { Flag } from 'lucide-react';
 import { deckGradeLabels } from '@/components/feed/deck-grade-labels';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
@@ -26,6 +28,8 @@ import { ExportMenu } from '@/components/study/ExportMenu';
 import { DeckPageFolderMenu } from '@/components/study/MoveToFolderMenu';
 import { DeckStatsSummary } from '@/components/study/DeckStatsSummary';
 import { DeckPace } from '@/components/study/DeckPace';
+import { DeckRatingBlock } from '@/components/study/DeckRating';
+import type { RatingDisplay } from '@/lib/study/deck-ratings';
 import { ListenControls } from '@/components/study/ListenControls';
 import { useCardListen } from '@/components/study/useCardListen';
 import { useReviewKeys } from '@/components/study/useReviewKeys';
@@ -41,11 +45,18 @@ import type { DeckInvitation } from '@/lib/study/deck-editors';
 import type { DeckRole } from '@/lib/study/deck-access';
 import { isReverseCard } from '@/lib/study/card-types';
 import type { DeckCard as Card } from '@/lib/study.server';
+// s12-16 member-reports: the dialog carries a zod schema, so it loads only when a member opens it.
+const ReportDialog = lazy(() =>
+ import('@/components/moderation/ReportDialog').then((m) => ({ default: m.ReportDialog })),
+);
+
 interface Deck {
  id: string;
  title: string;
  description: string | null;
  isPublic: boolean;
+ /** A moderator took this deck down (only its owner and editors load it). */
+ removedByModerator?: boolean;
  isOwner: boolean;
  /** `owner`, `editor` (an accepted editor: cards and study, nothing of the settings) or null (s11-10). */
  role?: DeckRole | null;
@@ -59,6 +70,9 @@ interface Deck {
  backLang?: string | null;
  /** A public deck's owner and its number of editors, no names. */
  byline?: { owner: { name: string; handle: string | null }; editors: number };
+ /** A public deck's ratings and copies (s12-08): the aggregate only. */
+ rating?: RatingDisplay;
+ copyCount?: number;
 }
 
 const GRADES: { grade: number; cls: string }[] = [
@@ -91,6 +105,7 @@ export function DeckStudyColumn({
  const { t } = useTranslation('feed');
  const { t: ts } = useTranslation('flashcard-types');
  const gradeLabels = deckGradeLabels(t);
+ const [reporting, setReporting] = useState(false);
  const confirm = useConfirm();
  const navigate = useNavigate();
  // Seed from the loader when it ran (even a `null`result is a resolved
@@ -436,6 +451,17 @@ export function DeckStudyColumn({
  {!canEdit && cards.length > 0 && (
  <ExportMenu deck={{ title: deck.title, description: deck.description ?? null, cards }} />
  )}
+ {signedIn && !canEdit && deck.isPublic && (
+ <button
+ type="button"
+ onClick={() => setReporting(true)}
+ className="text-site-text-muted hover:text-site-text"
+ title={t('report-deck', { ns: 'member-reports', defaultValue: 'Report this deck'})}
+ aria-label={t('report-deck', { ns: 'member-reports', defaultValue: 'Report this deck'})}
+ >
+ <Flag className="h-4 w-4"/>
+ </button>
+ )}
  {deck.isOwner && (
  <button
  onClick={deleteDeck}
@@ -449,6 +475,16 @@ export function DeckStudyColumn({
  </header>
 
  <div className="space-y-4 p-4">
+ {deck.removedByModerator && (
+ <p className="t-body border-b border-site-border pb-3 text-site-text-muted">
+ {t('removed-deck', { ns: 'member-reports', defaultValue: 'Removed by a moderator. It is private and cannot be made public again; you can still study it.'})}
+ </p>
+ )}
+ {reporting && (
+ <Suspense fallback={null}>
+ <ReportDialog open onOpenChange={setReporting} entityType="study-deck" entityId={deckId}/>
+ </Suspense>
+ )}
  {invitation && role === null && (
  <DeckInvitationLine
  invitation={invitation}
@@ -456,6 +492,14 @@ export function DeckStudyColumn({
  if (accepted) void load();
  else setInvitation(null);
  }}
+ />
+ )}
+ {deck.isPublic && deck.rating && (
+ <DeckRatingBlock
+ deckId={deckId}
+ rating={deck.rating}
+ copyCount={deck.copyCount ?? 0}
+ viewerCanRate={signedIn && role === null}
  />
  )}
  {role === 'owner' && !deck.isCopy && <DeckEditors deckId={deckId} perspective="owner"/>}

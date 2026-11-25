@@ -10,6 +10,7 @@
  */
 import type { TFunction } from 'i18next';
 import { NOTICE_TEMPLATES, isNoticeKey, noticeParamNames } from '@/lib/notifications/notice-keys';
+import { isolate, reportKindLabel } from '@/components/feed/report-kind-label';
 
 /** Writes an ISO instant as the reader's local date and time (`useLocaleFormat().dateTime`). */
 export type NoticeInstantFormatter = (iso: string) => string;
@@ -1301,6 +1302,139 @@ export function noticeText(
       return t('notice-home-price-drop', {
         ns: 'notice-language',
         defaultValue: '{{title}} in {{city}}, {{state}} dropped from ${{was}} to ${{now}}',
+        ...values,
+      });
+
+    // Sprint 12 notices (docs/autonomous/sprint-12/plan.md §Anchors)
+    // s12-16 member-reports
+
+    // s12-19 notice-helpers
+    case 'ladder-match':
+      return t('notice-ladder-match', {
+        ns: 'notice-language',
+        defaultValue: '{{title}} at {{company}} is a {{relevance}}% preference match.',
+        ...values,
+      });
+    case 'ladder-matches':
+      return t('notice-ladder-matches', {
+        ns: 'notice-language',
+        defaultValue: '{{count}} new verified roles match your preferences.',
+        ...values,
+      });
+    case 'ladder-matches-one':
+      return t('notice-ladder-matches-one', {
+        ns: 'notice-language',
+        defaultValue: '1 new verified role matches your preferences.',
+        ...values,
+      });
+    case 'ladder-search-match':
+      return t('notice-ladder-search-match', {
+        ns: 'notice-language',
+        defaultValue: '{{title}} at {{company}} matches your saved search “{{search}}”.',
+        ...values,
+      });
+    case 'ladder-search-matches':
+      return t('notice-ladder-search-matches', {
+        ns: 'notice-language',
+        defaultValue: '{{count}} new verified roles match your saved search “{{search}}”.',
+        ...values,
+      });
+    case 'ladder-search-matches-one':
+      return t('notice-ladder-search-matches-one', {
+        ns: 'notice-language',
+        defaultValue: '1 new verified role matches your saved search “{{search}}”.',
+        ...values,
+      });
+    case 'ladder-follow-up':
+      return t('notice-ladder-follow-up', {
+        ns: 'notice-language',
+        defaultValue: 'Follow up on {{title}} at {{company}}.',
+        ...values,
+      });
+    case 'ladder-interview':
+      return t('notice-ladder-interview', {
+        ns: 'notice-language',
+        defaultValue: 'Interview for {{title}} at {{company}} is {{interviewAt}}.',
+        ...values,
+      });
+    case 'ladder-closing':
+      return t('notice-ladder-closing', {
+        ns: 'notice-language',
+        defaultValue: '{{title}} at {{company}} closes in {{count}} days.',
+        ...values,
+      });
+    case 'ladder-closing-one':
+      return t('notice-ladder-closing-one', {
+        ns: 'notice-language',
+        defaultValue: '{{title}} at {{company}} closes in 1 day.',
+        ...values,
+      });
+    case 'api-key-suspended':
+      return t('notice-api-key-suspended', {
+        ns: 'notice-language',
+        defaultValue: 'Your API key {{name}} was suspended: {{reason}}',
+        ...values,
+      });
+    case 'api-key-restored':
+      return t('notice-api-key-restored', {
+        ns: 'notice-language',
+        defaultValue: 'Your API key {{name}} works again',
+        ...values,
+      });
+    case 'report-decision':
+      return t('notice-report-decision', {
+        ns: 'notice-language',
+        defaultValue: 'A moderator reviewed a report about your content: {{message}}',
+        ...values,
+      });
+    case 'recipe-message':
+      return t('notice-recipe-message', {
+        ns: 'notice-language',
+        defaultValue: '{{recipe}}: {{message}}',
+        ...values,
+      });
+    case 'admin-review-impersonation':
+      return t('notice-admin-review-impersonation', {
+        ns: 'notice-language',
+        defaultValue: 'New impersonation report needs review',
+        ...values,
+      });
+    case 'admin-review-report':
+      return t('notice-admin-review-report', {
+        ns: 'notice-language',
+        defaultValue: 'New {{kind}} report needs review',
+        ...values,
+        kind: isolate(reportKindLabel(t, given.kind)),
+      });
+    case 'admin-review-automod':
+      return t('notice-admin-review-automod', {
+        ns: 'notice-language',
+        defaultValue: 'Automated screening flagged a {{kind}} ({{category}})',
+        ...values,
+        kind: isolate(reportKindLabel(t, given.kind)),
+      });
+    case 'admin-review-appeal':
+      return t('notice-admin-review-appeal', {
+        ns: 'notice-language',
+        defaultValue: 'A user has appealed a moderation strike.',
+        ...values,
+      });
+    case 'admin-review-redemption':
+      return t('notice-admin-review-redemption', {
+        ns: 'notice-language',
+        defaultValue: 'New {{kind}} redemption for {{count}} coins',
+        ...values,
+      });
+    case 'admin-review-music-score':
+      return t('notice-admin-review-music-score', {
+        ns: 'notice-language',
+        defaultValue: 'A Daily board score asks for a look (automated check)',
+        ...values,
+      });
+    case 'admin-review-market':
+      return t('notice-admin-review-market', {
+        ns: 'notice-language',
+        defaultValue: 'Marketplace listing held for review: {{count}} coins (≥10× median)',
         ...values,
       });
 

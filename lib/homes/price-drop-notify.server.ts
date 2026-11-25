@@ -71,6 +71,8 @@ export async function notifyPriceDrop(
       where: {
         listingId: drop.listingId,
         priceAlerts: true,
+        // s12-16: a listing that is not live (or that a moderator removed) tells nobody about its price.
+        listing: { status: 'ACTIVE', moderatedAt: null },
         ...claimable,
         ...(drop.authorId ? { userId: { not: drop.authorId } } : {}),
         user: { OR: [{ bannedUntil: null }, { bannedUntil: { lte: now } }] },

@@ -88,6 +88,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/profile/:id/guestbook/:entryId` | `DELETE` `PATCH` | `lib/guestbook/api/profile.$id.guestbook.$entryId.server.ts` |
 | `/api/profile/:id/kudos` | `GET` `POST` | `lib/profile/api/profile.$id.kudos.server.ts` |
 | `/api/profile/:id/likes` | `GET` | `lib/profile/api/profile.$id.likes.server.ts` |
+| `/api/profile/:id/made` | `GET` | `lib/profile/api/profile.$id.made.server.ts` |
 | `/api/profile/:id/membership` | `DELETE` `POST` | `lib/profile/api/profile.$id.membership.server.ts` |
 | `/api/profile/:id/plus` | `GET` | `lib/profile/api/profile.$id.plus.server.ts` |
 | `/api/profile/:id/pronunciation` | `GET` | `lib/profile/api/profile.$id.pronunciation.server.ts` |

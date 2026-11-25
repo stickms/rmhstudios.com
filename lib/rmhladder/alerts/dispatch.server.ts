@@ -1,4 +1,13 @@
 import { createNotification } from '@/lib/notifications.server';
+import {
+  NOTICE_TEMPLATES,
+  isNoticeKey,
+  noticeParamNames,
+  notice,
+  type NoticeKey,
+  type NoticeParamTypes,
+  type NoticePreview,
+} from '@/lib/notifications/notice-keys';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
@@ -40,6 +49,47 @@ const savedSearchFiltersSchema = z.object({
     .optional(),
   sort: z.enum(['relevance', 'posted', 'deadline']).optional(),
 });
+
+type LadderNoticeKey =
+  | 'ladder-match'
+  | 'ladder-matches'
+  | 'ladder-matches-one'
+  | 'ladder-search-match'
+  | 'ladder-search-matches'
+  | 'ladder-search-matches-one'
+  | 'ladder-follow-up'
+  | 'ladder-interview'
+  | 'ladder-closing'
+  | 'ladder-closing-one';
+
+/**
+ * What every alert kind stores in its payload (sprint 12, feature 19): the English `text` for the e-mail and Discord
+ * channels, which are English today, and the notice key and params the in-app channel renders in the reader's language.
+ * Job titles, employers and search names are member or employer text, so they are params and never translated.
+ */
+export function ladderAlertContent<K extends LadderNoticeKey>(
+  key: K,
+  params: NoticeParamTypes[K],
+  text: string,
+): { text: string; noticeKey: K; noticeParams: NoticeParamTypes[K] } {
+  return { text, noticeKey: key, noticeParams: params };
+}
+
+/**
+ * The in-app preview of a stored alert: its notice when the payload has a key whose params fill the template, else the
+ * stored `text` (an alert queued before the key existed drains as it always did).
+ */
+export function ladderAlertPreview(payload: Record<string, unknown>, text: string): string | NoticePreview {
+  const { noticeKey, noticeParams } = payload;
+  if (!isNoticeKey(noticeKey) || typeof noticeParams !== 'object' || noticeParams === null) return text;
+  const given = noticeParams as Record<string, unknown>;
+  const filled = noticeParamNames(NOTICE_TEMPLATES[noticeKey]).every((name) => {
+    const v = given[name];
+    return typeof v === 'string' || typeof v === 'number';
+  });
+  if (!filled) return text;
+  return notice(noticeKey as NoticeKey, given as never);
+}
 
 function escapeHtml(value: string): string {
   return value.replace(
@@ -200,7 +250,7 @@ export async function deliverPendingLadderAlerts(
           type: 'SYSTEM',
           entityType: 'ladder_job',
           entityId: delivery.alert.jobId,
-          preview: text,
+          preview: ladderAlertPreview(payload, text),
           link: `${notificationUrl.pathname}${notificationUrl.search}`,
           dedupeUnread: true,
         });
@@ -308,7 +358,11 @@ export async function generateLadderMatchAlerts(now = new Date()): Promise<numbe
           payload: {
             title,
             company,
-            text: `${title} at ${company} is a ${row.finalRelevance}% preference match.`,
+            ...ladderAlertContent(
+              'ladder-match',
+              { title, company, relevance: row.finalRelevance },
+              `${title} at ${company} is a ${row.finalRelevance}% preference match.`,
+            ),
             link: `/rmhladder/jobs/${jobId}`,
             relevance: row.finalRelevance,
             resumeMatch: resumeMatch?.score ?? null,
@@ -320,6 +374,7 @@ export async function generateLadderMatchAlerts(now = new Date()): Promise<numbe
       }
     } else if (matchRows.length > 0) {
       const period = localDateKey(now, prefs.timezone);
+      const text = `${matchRows.length} new verified role${matchRows.length === 1 ? '' : 's'} match your preferences.`;
       await ensureEvent({
         userId: prefs.userId,
         type,
@@ -329,7 +384,9 @@ export async function generateLadderMatchAlerts(now = new Date()): Promise<numbe
             type === 'daily_digest'
               ? 'Your daily RMHLadder digest'
               : 'Your weekly RMHLadder digest',
-          text: `${matchRows.length} new verified role${matchRows.length === 1 ? '' : 's'} match your preferences.`,
+          ...(matchRows.length === 1
+            ? ladderAlertContent('ladder-matches-one', {}, text)
+            : ladderAlertContent('ladder-matches', { count: matchRows.length }, text)),
           link: '/rmhladder/jobs?preset=new',
           jobs: matchRows.slice(0, 20).map(({ row }) => ({ id: row.id, title: row.title })),
           discordUserId: linkedDiscordId,
@@ -355,13 +412,16 @@ export async function generateLadderMatchAlerts(now = new Date()): Promise<numbe
         (row) => new Date(row.discoveredAt as Date).getTime() >= now.getTime() - 7 * 86_400_000,
       );
       if (prefs.digestFrequency !== 'immediate' && recent.length > 0) {
+        const searchText = `${recent.length} new verified role${recent.length === 1 ? '' : 's'} match your saved search “${search.name}”.`;
         await ensureEvent({
           userId: prefs.userId,
           type: 'saved_search',
           fingerprint: `${search.id}:${localDateKey(now, prefs.timezone)}`,
           payload: {
             title: search.name,
-            text: `${recent.length} new verified role${recent.length === 1 ? '' : 's'} match your saved search “${search.name}”.`,
+            ...(recent.length === 1
+              ? ladderAlertContent('ladder-search-matches-one', { search: search.name }, searchText)
+              : ladderAlertContent('ladder-search-matches', { search: search.name, count: recent.length }, searchText)),
             link: '/rmhladder/jobs?preset=new',
             jobs: recent.slice(0, 20).map((row) => ({ id: row.id, title: row.title })),
             savedSearchId: search.id,
@@ -384,7 +444,11 @@ export async function generateLadderMatchAlerts(now = new Date()): Promise<numbe
           payload: {
             title,
             company,
-            text: `${title} at ${company} matches your saved search “${search.name}”.`,
+            ...ladderAlertContent(
+              'ladder-search-match',
+              { title, company, search: search.name },
+              `${title} at ${company} matches your saved search “${search.name}”.`,
+            ),
             link: `/rmhladder/jobs/${jobId}`,
             savedSearchId: search.id,
             discordUserId: linkedDiscordId,
@@ -453,7 +517,14 @@ export async function generateLadderPipelineReminders(now = new Date()): Promise
         jobId: application.jobId,
         type: 'follow_up',
         fingerprint: `follow_up:${application.id}:${application.followUpDate.toISOString()}`,
-        payload: { ...basePayload, text: `Follow up on ${label}.` },
+        payload: {
+          ...basePayload,
+          ...ladderAlertContent(
+            'ladder-follow-up',
+            { title: application.job.title, company: application.job.company.name },
+            `Follow up on ${label}.`,
+          ),
+        },
         channels,
       });
       generated++;
@@ -469,7 +540,11 @@ export async function generateLadderPipelineReminders(now = new Date()): Promise
         fingerprint: `interview:24h:${application.id}:${interview.toISOString()}`,
         payload: {
           ...basePayload,
-          text: `Interview for ${label} is ${formatInUserTimezone(interview, prefs.timezone)}.`,
+          ...ladderAlertContent(
+            'ladder-interview',
+            { title: application.job.title, company: application.job.company.name, interviewAt: interview.toISOString() },
+            `Interview for ${label} is ${formatInUserTimezone(interview, prefs.timezone)}.`,
+          ),
         },
         channels,
       });
@@ -479,6 +554,8 @@ export async function generateLadderPipelineReminders(now = new Date()): Promise
     const deadlineHorizon = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
     if (deadline && deadline >= now && deadline <= deadlineHorizon) {
       const days = Math.max(0, Math.ceil((deadline.getTime() - now.getTime()) / 86_400_000));
+      const closingParams = { title: application.job.title, company: application.job.company.name };
+      const closingText = `${label} closes in ${days} day${days === 1 ? '' : 's'}.`;
       await ensureEvent({
         userId: application.userId,
         jobId: application.jobId,
@@ -486,7 +563,9 @@ export async function generateLadderPipelineReminders(now = new Date()): Promise
         fingerprint: `deadline:3d:${application.jobId}:${deadline.toISOString()}`,
         payload: {
           ...basePayload,
-          text: `${label} closes in ${days} day${days === 1 ? '' : 's'}.`,
+          ...(days === 1
+            ? ladderAlertContent('ladder-closing-one', closingParams, closingText)
+            : ladderAlertContent('ladder-closing', { ...closingParams, count: days }, closingText)),
         },
         channels,
       });

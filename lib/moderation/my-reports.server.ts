@@ -109,11 +109,80 @@ async function targetsFor(viewerId: string, rows: Row[]): Promise<Map<string, Re
   // s11-05 lights-out-maker
   // s11-07 studio-share
 
+  // s12-16 member-reports
+  // A reported grid, deck, persona or listing shows its title while the reporter can still open it; once a moderator
+  // removed it (or its author made it private) it is "no longer available", which is how the reporter sees the outcome.
+  const gridIds = ids(rows, 'connections-grid');
+  const deckIds = ids(rows, 'study-deck');
+  const personaIds = ids(rows, 'persona');
+  const listingIds = ids(rows, 'home-listing');
+  const memberItems = gridIds.length || deckIds.length || personaIds.length || listingIds.length;
+  const blockedAuthors = memberItems ? new Set(await getBlockedAuthorIds(viewerId)) : new Set<string>();
+  const notBlocked = (authorField: 'authorId' | 'userId' | 'ownerId') => ({
+    [authorField]: { notIn: [...blockedAuthors] },
+  });
+  if (gridIds.length) {
+    const grids = await prisma.connectionsGrid.findMany({
+      where: { id: { in: gridIds }, hidden: false, draft: false, ...notBlocked('authorId') },
+      select: { id: true, title: true },
+    });
+    for (const g of grids) {
+      set('connections-grid', g.id, {
+        kind: 'connections-grid',
+        available: true,
+        name: snippet(g.title),
+        href: `/connections/u/${g.id}`,
+      });
+    }
+  }
+  if (deckIds.length) {
+    const decks = await prisma.flashcardDeck.findMany({
+      where: { id: { in: deckIds }, isPublic: true, moderatedAt: null, ...notBlocked('userId') },
+      select: { id: true, title: true },
+    });
+    for (const d of decks) {
+      set('study-deck', d.id, { kind: 'study-deck', available: true, name: snippet(d.title), href: `/study/${d.id}` });
+    }
+  }
+  if (personaIds.length) {
+    const personas = await prisma.aiPersona.findMany({
+      where: { id: { in: personaIds }, isPublic: true, moderatedAt: null, ...notBlocked('ownerId') },
+      select: { id: true, name: true },
+    });
+    for (const p of personas) {
+      set('persona', p.id, { kind: 'persona', available: true, name: snippet(p.name), href: `/personas/${p.id}` });
+    }
+  }
+  if (listingIds.length) {
+    const listings = await prisma.homeListing.findMany({
+      where: { id: { in: listingIds }, moderatedAt: null, ...notBlocked('authorId') },
+      select: { id: true, title: true },
+    });
+    for (const l of listings) {
+      set('home-listing', l.id, {
+        kind: 'home-listing',
+        available: true,
+        name: snippet(l.title),
+        href: `/homes/listing/${l.id}`,
+      });
+    }
+  }
+
   return out;
 }
 
 /** Types whose content is looked up above; any other type shows only its kind. */
-const LOOKED_UP: ReadonlySet<string> = new Set(['rmhark', 'comment', 'user', 'build']);
+const LOOKED_UP: ReadonlySet<string> = new Set([
+  'rmhark',
+  'comment',
+  'user',
+  'build',
+  // s12-16 member-reports
+  'connections-grid',
+  'study-deck',
+  'persona',
+  'home-listing',
+]);
 
 export async function listMyReports(
   userId: string,

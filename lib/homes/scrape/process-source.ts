@@ -71,15 +71,24 @@ export interface ProcessPrisma {
     createMany(args: { data: Record<string, unknown>[] }): Promise<{ count: number }>;
   };
   homeSource: {
-    update(args: {
-      where: {
-        id: string;
-      };
-      data: Record<string, unknown>;
-    }): Promise<{
-      id: string;
-    }>;
+    updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
   };
+}
+
+/**
+ * Record the outcome on the source row. An admin's pause (`DISABLED`, /admin/homes) must survive a run in flight, so
+ * the status, the error text and the timestamps go in one `updateMany` that skips a disabled source. A source paused
+ * while it was being fetched only has its run times written: the pause stays and `lastError` is not replaced.
+ */
+async function writeSourceOutcome(
+  prisma: ProcessPrisma,
+  id: string,
+  data: { status: 'ACTIVE' | 'ERROR' | 'BLOCKED'; lastRunAt: Date; lastSuccessAt?: Date; lastError: string | null },
+): Promise<void> {
+  const { count } = await prisma.homeSource.updateMany({ where: { id, status: { not: 'DISABLED' } }, data });
+  if (count > 0) return;
+  const { status: _status, lastError: _lastError, ...times } = data;
+  await prisma.homeSource.updateMany({ where: { id }, data: times });
 }
 
 const ZERO: Omit<SourceRunStats, 'newListingIds' | 'priceDrops'> = {
@@ -132,15 +141,10 @@ export async function processSource(
     // 1. Respect robots.txt before touching the feed.
     const allowed = await checkRobots(feedUrl, deps.fetchImpl);
     if (!allowed) {
-      await deps.prisma.homeSource.update({
-        where: {
-          id: source.id,
-        },
-        data: {
-          status: 'BLOCKED',
-          lastRunAt: now,
-          lastError: 'robots.txt disallows this feed',
-        },
+      await writeSourceOutcome(deps.prisma, source.id, {
+        status: 'BLOCKED',
+        lastRunAt: now,
+        lastError: 'robots.txt disallows this feed',
       });
       return {
         ...stats,
@@ -161,15 +165,10 @@ export async function processSource(
     // crucially we do NOT expire (a transient fetch failure must not wipe the
     // source's inventory).
     if (stats.discovered === 0) {
-      await deps.prisma.homeSource.update({
-        where: {
-          id: source.id,
-        },
-        data: {
-          status: 'ACTIVE',
-          lastRunAt: now,
-          lastError: 'no listings discovered',
-        },
+      await writeSourceOutcome(deps.prisma, source.id, {
+        status: 'ACTIVE',
+        lastRunAt: now,
+        lastError: 'no listings discovered',
       });
       return {
         ...stats,
@@ -303,31 +302,21 @@ export async function processSource(
     stats.expired = expired.count;
 
     // 5. Mark the source healthy.
-    await deps.prisma.homeSource.update({
-      where: {
-        id: source.id,
-      },
-      data: {
-        status: 'ACTIVE',
-        lastRunAt: now,
-        lastSuccessAt: now,
-        lastError: null,
-      },
+    await writeSourceOutcome(deps.prisma, source.id, {
+      status: 'ACTIVE',
+      lastRunAt: now,
+      lastSuccessAt: now,
+      lastError: null,
     });
 
     return stats;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     try {
-      await deps.prisma.homeSource.update({
-        where: {
-          id: source.id,
-        },
-        data: {
-          status: 'ERROR',
-          lastRunAt: now,
-          lastError: message.slice(0, 500),
-        },
+      await writeSourceOutcome(deps.prisma, source.id, {
+        status: 'ERROR',
+        lastRunAt: now,
+        lastError: message.slice(0, 500),
       });
     } catch {
       // ignore secondary error

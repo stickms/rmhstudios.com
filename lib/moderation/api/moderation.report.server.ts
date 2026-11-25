@@ -2,12 +2,15 @@ import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { notifyAdminsOfReview } from '@/lib/admin-review.server';
+import { notice } from '@/lib/notifications/notice-keys';
 import { musicReportOwner } from '@/lib/rmhmusic/learn/moderation.server';
 // The reason taxonomy and the length cap live in a client-safe module so the
 // report dialog validates against the same declaration this route enforces.
 import { reportDetailsWithSnapshot } from '@/lib/competitive/jam-feedback';
 import { reportSchema } from '@/lib/moderation/report-schema';
 import { issueVisibleTo, issuesReadable } from '@/lib/builds/issues';
+import { refusalBody } from '@/lib/errors/codes';
+import { MEMBER_ITEM_REPORT_TYPES } from '@/lib/moderation/report-constants';
 
 /**
  * POST /api/moderation/report — file a content report for admin review.
@@ -104,6 +107,16 @@ async function resolveTargetUser(entityType: string, entityId: string): Promise<
         const share = await prisma.studioProjectShare.findUnique({ where: { token: entityId }, select: { userId: true } });
         return share?.userId ?? null;
       }
+      // s12-16 member-reports
+      case 'connections-grid':
+        return await (await import('@/lib/party/connections.server')).gridReportAuthor(entityId);
+      case 'study-deck':
+        return await (await import('@/lib/study/deck-moderation.server')).deckReportAuthor(entityId);
+      case 'persona':
+        return await (await import('@/lib/personas/moderation.server')).personaReportAuthor(entityId);
+      case 'home-listing':
+        // A scraped listing has no member author, so it resolves to null and is not reportable.
+        return await (await import('@/lib/homes/listings.server')).listingReportAuthor(entityId);
       case 'music-score':
       case 'music-share':
         // RMH Music Phase 6: the learner whose Daily score (or shared result) it is.
@@ -182,6 +195,18 @@ export const route = apiRoute('/api/moderation/report', {
         }
       }
 
+      // s12-16 member-reports: only a public item that has a member author and is not already taken down can be
+      // reported, and never one's own. The same answer for a missing item, a private one and a removed one, so the
+      // report flow never confirms that one exists.
+      let memberItemAuthor: string | null = null;
+      if (MEMBER_ITEM_REPORT_TYPES.has(entityType)) {
+        const author = await resolveTargetUser(entityType, entityId);
+        memberItemAuthor = author;
+        if (!author || author === session.user.id) {
+          return Response.json(refusalBody(author ? 'FORBIDDEN' : 'NOT_FOUND'), { status: author ? 403 : 404 });
+        }
+      }
+
       // One open report per (reporter, entity) — silently succeed if it exists.
       const existing = await prisma.contentReport.findFirst({
         where: {
@@ -196,7 +221,7 @@ export const route = apiRoute('/api/moderation/report', {
         return Response.json({ success: true, alreadyReported: true });
       }
 
-      const targetUserId = await resolveTargetUser(entityType, entityId);
+      const targetUserId = memberItemAuthor ?? (await resolveTargetUser(entityType, entityId));
       // s06-07: a report of jam feedback keeps the reported words (the author may edit them afterwards).
       let storedDetails = details?.trim() || null;
       if (entityType === 'jam-feedback') {
@@ -218,7 +243,7 @@ export const route = apiRoute('/api/moderation/report', {
       // Ping admins (grouped, non-blocking) that the moderation queue has
       // something new.
       void notifyAdminsOfReview({
-        preview: `New ${entityType} report needs review`,
+        notice: notice('admin-review-report', { kind: entityType }),
         kind: 'reports',
       });
 

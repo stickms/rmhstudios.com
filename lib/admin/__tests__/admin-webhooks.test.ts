@@ -32,6 +32,7 @@ const h = vi.hoisted(() => ({
   hold: null as Row | null,
 }));
 
+vi.mock('@/lib/account/deletion-billing-queue.server', () => ({ enqueueBillingSync: vi.fn(async () => undefined) }));
 vi.mock('@/lib/auth', () => ({ auth: { api: { getSession: vi.fn(async () => h.session) } } }));
 vi.mock('@/lib/admin-audit.server', () => ({
   recordAdminActionIn: vi.fn(async (_tx: unknown, adminId: string, action: string, opts: Record<string, unknown>) => {
@@ -125,6 +126,8 @@ vi.mock('@/lib/prisma.server', () => {
         h.hold = null;
         return { count: 1 };
       }),
+      // Sprint 12 (18): a hold that still records stopped subscriptions is kept; this one records none.
+      updateMany: vi.fn(async () => ({ count: 0 })),
     },
     developerApiKey: { findMany: vi.fn(async () => []), updateMany: vi.fn(async () => ({ count: 0 })) },
     scheduledPost: { count: vi.fn(async () => 0) },

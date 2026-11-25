@@ -39,7 +39,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/settings/privacy` | Privacy & data | public | `app/routes/_site/settings/privacy.tsx` |
 | `/settings/profile` | Profile customization | public | `app/routes/_site/settings/profile.tsx` |
 | `/settings/replays` | — | public | `app/routes/_site/settings/replays.tsx` |
-| `/settings/security` | Security | public | `app/routes/_site/settings/security.tsx` |
+| `/settings/security` | Account security | public | `app/routes/_site/settings/security.tsx` |
 | `/settings/themes` | Theme Studio | public | `app/routes/_site/settings/themes.tsx` |
 | `/share` | Share to RMH Studios | public | `app/routes/_site/share.tsx` |
 | `/site-history` | Site history | public | `app/routes/_site/site-history.tsx` |

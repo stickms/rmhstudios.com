@@ -51,6 +51,9 @@ const FactOrFrictionHistoryDetail = lazy(
 const UndercoverEditorHistoryDetail = lazy(
   () => import('@/components/rmhbox/minigames/undercover-editor/UndercoverEditorHistoryDetail'),
 );
+const RankingFileHistoryDetail = lazy(
+  () => import('@/components/rmhbox/minigames/ranking-file/RankingFileHistoryDetail'),
+);
 
 // ─── Rhyme Time ──────────────────────────────────────────────────
 
@@ -515,5 +518,53 @@ registerHistoryDisplay({
     const reveals = payload.storyReveals as Array<Record<string, unknown>> | undefined;
     const count = reveals?.length ?? 0;
     return `${count} parallel stories — Social deduction`;
+  },
+});
+
+// ─── Ranking File ────────────────────────────────────────────────
+
+registerHistoryDisplay({
+  minigameId: 'ranking-file',
+  DetailComponent: RankingFileHistoryDetail,
+  searchableFields: [
+    {
+      key: 'prompts',
+      label: 'Prompts',
+      extract: (log: GameLog) =>
+        log.actions
+          .filter((a) => a.type === 'round_reveal')
+          .map((a) => (a.payload as Record<string, unknown>).prompt as string)
+          .filter(Boolean),
+    },
+    {
+      key: 'items',
+      label: 'Items',
+      extract: (log: GameLog) =>
+        log.actions
+          .filter((a) => a.type === 'round_reveal')
+          .flatMap(
+            (a) => ((a.payload as Record<string, unknown>).official as Array<{ label?: string }> | undefined) ?? [],
+          )
+          .map((item) => item.label as string)
+          .filter(Boolean),
+    },
+  ],
+  filterableFields: [
+    {
+      key: 'category',
+      label: 'Category',
+      type: 'select',
+      options: (log: GameLog) => {
+        const categories = log.actions
+          .filter((a) => a.type === 'round_reveal')
+          .map((a) => (a.payload as Record<string, unknown>).category as string)
+          .filter(Boolean);
+        return Array.from(new Set(categories));
+      },
+    },
+  ],
+  getSummary: (log: GameLog) => {
+    const rounds = log.actions.filter((a) => a.type === 'round_reveal');
+    return `${rounds.length} rounds — Ranking trivia`;
   },
 });

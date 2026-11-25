@@ -7,10 +7,13 @@ interface CronSearch {
   expr?: string;
 }
 
-/** Only a valid expression survives into the page, so a shared link always opens on something that parses. */
+/**
+ * A bounded string survives the URL; whether it parses is checked in the page (below), so the parser stays in the
+ * page's own chunk instead of the entry every route loads (`routeTree.gen.ts` imports each route's validateSearch).
+ */
 function validateSearch(search: Record<string, unknown>): CronSearch {
   const expr = search.expr;
-  return typeof expr === 'string' && expr.length <= 200 && parseCron(expr).ok ? { expr } : {};
+  return typeof expr === 'string' && expr.length <= 200 ? { expr } : {};
 }
 
 export const Route = createFileRoute('/_site/tools/cron')({
@@ -24,7 +27,9 @@ export const Route = createFileRoute('/_site/tools/cron')({
 });
 
 function CronRoute() {
-  const { expr } = Route.useSearch();
+  const { expr: raw } = Route.useSearch();
+  // Only a valid expression opens the page, so a shared link always opens on something that parses.
+  const expr = raw && parseCron(raw).ok ? raw : undefined;
   const navigate = useNavigate({ from: '/tools/cron' });
   return (
     <CronTool

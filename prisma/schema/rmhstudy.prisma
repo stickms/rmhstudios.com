@@ -75,6 +75,13 @@ model FlashcardDeck {
   /// The languages the owner's cards are written in (BCP 47, from `lib/study/listen.ts`), so Listen reads each side in its own voice (s11-17). Null: the site's language. Describes the cards, so a copy takes it; sync never changes it.
   frontLang    String?  @db.VarChar(16)
   backLang     String?  @db.VarChar(16)
+  /// Set when a moderator took this deck down after a report (s12-16): it is no longer public and its owner cannot make it public again.
+  moderatedAt  DateTime?
+  /// Stars given to this public deck and how many members gave them (s12-08); the average is `ratingSum / ratingCount`. Written with the `DeckRating` row, in one transaction.
+  ratingSum    Int      @default(0)
+  ratingCount  Int      @default(0)
+  /// Copies of this deck that exist now: counted when a clone is made and when a copy is deleted (s12-08).
+  copyCount    Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -84,12 +91,29 @@ model FlashcardDeck {
   testResults FlashcardTestResult[]
   suggestions DeckSuggestion[]
   editors     DeckEditor[]
+  ratings     DeckRating[]
 
   @@index([userId])
   @@index([isPublic, updatedAt(sort: Desc)])
   @@index([userId, clonedFromId])
   @@index([userId, folderId])
   @@map("flashcard_deck")
+}
+
+/// One member's rating of one public deck (s12-08): 1 to 5 stars, changeable, no text. Who rated what is never shown.
+model DeckRating {
+  deckId    String
+  userId    String
+  stars     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  deck FlashcardDeck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  user User          @relation("DeckRatings", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([deckId, userId])
+  @@index([userId])
+  @@map("deck_rating")
 }
 
 /// A member's private, one-level folder of decks: name, order and collapse state follow the member across devices.
@@ -186,6 +210,8 @@ model FlashcardReview {
   suspendReason String?   @db.VarChar(8)
   /// Grades of "Again" on a card that had already been learned (repetitions > 0).
   lapses        Int       @default(0)
+  /// When the member last started this card over (the schedule reset, the log kept); null when never.
+  resetAt       DateTime?
 
   user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   card Flashcard @relation(fields: [cardId], references: [id], onDelete: Cascade)
@@ -213,6 +239,7 @@ model FlashcardReviewLog {
 
   @@index([userId, reviewedAt])
   @@index([userId, deckId, reviewedAt])
+  @@index([userId, cardId, reviewedAt])
   @@map("flashcard_review_log")
 }
 

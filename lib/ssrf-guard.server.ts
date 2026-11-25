@@ -149,6 +149,14 @@ async function assertSafeUrl(urlStr: string, opts: SafeFetchOptions): Promise<Pi
   return { address: first.address, family: first.family === 6 ? 6 : 4 };
 }
 
+/**
+ * Check a URL before it is stored (a feed an admin adds): https only, and every address it resolves to is public.
+ * The same check `safeFetch` runs before connecting; it does not connect. Throws `SsrfError` for a disallowed URL.
+ */
+export async function assertPublicHttpsUrl(urlStr: string): Promise<void> {
+  await assertSafeUrl(urlStr, { allowedProtocols: ['https:'] });
+}
+
 /** The Response type undici's fetch returns (WHATWG-compatible with the global). */
 type PinnedResponse = Awaited<ReturnType<typeof UndiciFetch>>;
 

@@ -725,10 +725,11 @@ input[type='number'] {
       opacity: 0;
       transition: opacity var(--site-transition-speed) var(--ease-glass);
     }
-    :where(input[type='checkbox'], input[type='radio']):is(:checked, :indeterminate)::before {
+    /* A radio matches :indeterminate while no radio of its group is checked, so only a checkbox's counts. */
+    :where(input[type='checkbox']:is(:checked, :indeterminate), input[type='radio']:checked)::before {
       opacity: 1;
     }
-    :where(input[type='checkbox'], input[type='radio']):is(:checked, :indeterminate) {
+    :where(input[type='checkbox']:is(:checked, :indeterminate), input[type='radio']:checked) {
       border-color: var(--site-accent);
     }
     /* The tick: two borders of an L, turned to a check. It lands after the fill. */

@@ -23,8 +23,13 @@ import { useArrival } from '@/components/ui/arrive';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { useDeviceSignOut } from '@/components/settings/useDeviceSignOut';
 
+/** The plan as the member knows it: "pro" is "Pro". */
+function planName(plan: string): string {
+  return plan.charAt(0).toUpperCase() + plan.slice(1);
+}
+
 export function DeleteAccountPanel() {
-  const { t } = useTranslation('feed');
+  const { t, i18n } = useTranslation('feed');
   const refusalText = useRefusalText();
   const { data: session } = useSession();
   const user = session?.user as
@@ -166,6 +171,25 @@ export function DeleteAccountPanel() {
                     })}
                   </li>
                 ) : null}
+                {(preview.data?.subscriptions ?? []).map((m) => (
+                  <li key={`${m.plan}-${m.periodEnd ?? 'open'}`} className="t-body border-b border-site-border py-2">
+                    {m.periodEnd
+                      ? t('stops-membership-on', {
+                          ns: 'deletion-billing',
+                          plan: planName(m.plan),
+                          date: new Intl.DateTimeFormat(i18n.language, { dateStyle: 'long' }).format(
+                            new Date(m.periodEnd),
+                          ),
+                          defaultValue: 'Your {{plan}} membership ends on {{date}}. You will not be charged again.',
+                        })
+                      : t('stops-membership', {
+                          ns: 'deletion-billing',
+                          plan: planName(m.plan),
+                          defaultValue:
+                            'Your {{plan}} membership ends with its current period. You will not be charged again.',
+                        })}
+                  </li>
+                ))}
                 {preview.data && preview.data.scheduledPosts > 0 ? (
                   <li className="t-body border-b border-site-border py-2">
                     {t('stops-scheduled', {

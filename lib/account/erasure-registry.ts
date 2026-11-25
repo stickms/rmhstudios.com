@@ -375,7 +375,12 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     decision: 'keep',
     reason: "Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record.",
   },
-  ConnectionsGrid: { decision: 'keep', reason: 'Rule 3: published content others use stays under "Deleted user".' },
+  ConnectionsGrid: {
+    decision: 'erase',
+    reason:
+      'Drafts were never published, so nobody else uses them and they go with the account. A published grid stays under "Deleted user" (rule 3: published content others use).',
+    scope: 'draft rows only (draft = true); published grids stay under "Deleted user" (rule 3)',
+  },
   ConnectionsPlay: {
     decision: 'erase',
     reason:
@@ -440,6 +445,11 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       "Who may edit a deck is the owner's choice, but a member's own membership of someone else's deck is their own record: erased, so a deleted member leaves every deck they edited. Rows on the member's own decks stay because the decks do (FlashcardDeck is the open public-decks decision); nobody can invite to such a deck any more.",
   },
   DeckFolder: { decision: 'erase', reason: 'Private deck folders (sprint 07 deck-folders); decks stay, folderless.' },
+  DeckRating: {
+    decision: 'erase',
+    reason:
+      "The member's own ratings go with the account and each rated deck's sum and count are corrected in the same transaction; the decks stay (FlashcardDeck), so no copyCount changes.",
+  },
   DeckSuggestion: {
     decision: 'erase',
     scope:
@@ -747,7 +757,7 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
   HistoryEntry: { decision: 'erase', reason: "Rule 1: the member's own browsing history." },
   HomeFavorite: {
     decision: 'erase',
-    reason: "The member's saved homes.",
+    reason: "The member's saved homes, with their private notes.",
   },
   HomeListing: {
     decision: 'erase',
@@ -1014,7 +1024,8 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
   },
   TwoFactor: {
     decision: 'erase',
-    reason: 'The second factor (encrypted authenticator secret and backup codes) is a way to authenticate as the account, so it goes with the passkeys.',
+    reason:
+      'The second factor (encrypted authenticator secret and backup codes) is a way to authenticate as the account, so it goes with the passkeys.',
   },
   PhotoNomination: {
     decision: 'keep',
@@ -1282,6 +1293,11 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     decision: 'erase',
     reason:
       "The member's seat in other members' parties (which character, whether they share the full sheet). A turn order may still hold the pseudonymous id of an erased member; readers drop it, and no name is stored there.",
+  },
+  RmhCharacterPartyRoll: {
+    decision: 'erase',
+    reason:
+      "The member's rolls for the table in any party, and every roll in a party they run (it goes with the party). A roll stores the user id and the character id, never a name; the view joins the current name.",
   },
   RmhCodeToken: {
     decision: 'erase',

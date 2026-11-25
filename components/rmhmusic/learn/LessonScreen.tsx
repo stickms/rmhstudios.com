@@ -36,6 +36,7 @@ import { PracticeModeToggle } from './PracticeModeToggle';
 import { KeySignatureLesson } from './KeySignatureLesson';
 import { PlayScaleLesson, ScaleNameBox } from './PlayScaleLesson';
 import { RhythmLesson } from './RhythmLesson';
+import { RhythmReadLesson } from './RhythmReadLesson';
 import { StaffChordsLesson } from './StaffChordsLesson';
 import { PianoUnitNote } from './PianoUnitNote';
 import { STAFF_BOX, STAFF_GRAND_ASPECT, STAFF_LOW_ASPECT } from './StaffCard';
@@ -370,6 +371,35 @@ function RhythmSkeleton({ toggle = false }: { toggle?: boolean }) {
 }
 
 /**
+ * The Read rhythms placeholder: the mode toggle (the real one), the sheet (title line, the bar at the
+ * width `RhythmReadLesson` gives it with its three rows of words, the sentence lines) and the answers box.
+ */
+function RhythmReadSkeleton() {
+  return (
+    <div className="rmm-rhythm space-y-4">
+      <PracticeModeToggle />
+      <div aria-hidden="true" className="space-y-4">
+        <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
+          <div className="h-8">
+            <div className="app-skeleton mx-auto h-8 w-40" />
+          </div>
+          <div className="mx-auto w-full max-w-md">
+            <div className="app-skeleton aspect-[400/112] w-full" />
+            <div className="h-18" />
+          </div>
+          <div className="flex min-h-16 items-center justify-center">
+            <div className="app-skeleton h-5 w-56 max-w-full" />
+          </div>
+        </section>
+        <div className="rmm-rhythm__answers">
+          <div className="app-skeleton h-full w-full" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
  * The interval reading lessons' placeholder: their boxes exactly — the mode toggle (the real one),
  * the sheet (title line, the staff and the note names under it, the sentence line) and the 12.5rem
  * answers box (`.rmm-interval__answers`).
@@ -462,6 +492,7 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
   const pitched =
     playable &&
     mode !== 'rhythm-basics' &&
+    mode !== 'rhythm-reading' &&
     // A key signature is read from the page: no note is played, so no sound is loaded.
     mode !== 'key-signature' &&
     // Neither is an interval read off the staff, nor a chord.
@@ -575,6 +606,8 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
         <StaffChordsLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       ) : lesson.mode === 'rhythm-basics' ? (
         <RhythmLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
+      ) : lesson.mode === 'rhythm-reading' ? (
+        <RhythmReadLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       ) : (
         <FirstNoteLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} sound={sound} />
       );
@@ -642,6 +675,8 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
         <StaffChordsSkeleton />
       ) : lesson.mode === 'rhythm-basics' ? (
         <RhythmSkeleton toggle={rhythmActivity(lesson.id) !== 'tap'} />
+      ) : lesson.mode === 'rhythm-reading' ? (
+        <RhythmReadSkeleton />
       ) : (
         <LessonSkeleton />
       );

@@ -24,6 +24,7 @@ import type OpenAI from 'openai';
 import { DEEPSEEK_FLASH } from '@/lib/ai/deepseek-models';
 import { prisma } from '@/lib/prisma.server';
 import { notifyAdminsOfReview } from '@/lib/admin-review.server';
+import { notice } from '@/lib/notifications/notice-keys';
 import { redisRateLimit } from '@/lib/redis.server';
 import type { ReportReason } from '@prisma/client';
 import { meteredAiFetch } from '../ai/metered-fetch.server';
@@ -301,7 +302,7 @@ export async function screenNewContent(args: ScreenArgs): Promise<void> {
     });
 
     void notifyAdminsOfReview({
-      preview: `Automated screening flagged a ${args.entityType} (${verdict.category})`,
+      notice: notice('admin-review-automod', { kind: args.entityType, category: verdict.category }),
       kind: 'reports',
     });
   } catch (err) {

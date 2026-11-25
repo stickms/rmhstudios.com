@@ -26,6 +26,8 @@ export const MODULE_KINDS = [
   'webrings',
   'endorsements',
   'counter',
+  // s12-07: what the member has made. Rendered by the lazy plus bundle.
+  'made',
 ] as const;
 export type ModuleKind = (typeof MODULE_KINDS)[number];
 
@@ -44,6 +46,7 @@ export const MODULE_LABELS: Record<ModuleKind, string> = {
   webrings: 'Webrings',
   endorsements: 'Skills',
   counter: 'Visitor counter',
+  made: 'Made here',
 };
 
 /** The kinds rendered by the lazy P05 module bundle rather than inline. */
@@ -54,6 +57,7 @@ export const PLUS_MODULE_KINDS = [
   'webrings',
   'endorsements',
   'counter',
+  'made',
 ] as const satisfies readonly ModuleKind[];
 export type PlusModuleKind = (typeof PLUS_MODULE_KINDS)[number];
 

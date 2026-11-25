@@ -36,6 +36,7 @@ const cspNonce = createIsomorphicFn()
 let styleTierPreloadInstalled = false;
 let historyTrailInstalled = false;
 let chromeInstalled = false;
+let routeAnnouncerInstalled = false;
 
 export function getRouter() {
   const nonce = cspNonce();
@@ -128,6 +129,18 @@ export function getRouter() {
   if (typeof document !== 'undefined' && !historyTrailInstalled) {
     historyTrailInstalled = true;
     installHistoryTrail(router);
+  }
+
+  // After a navigation that changes the pathname: say the new page's name in the polite live region
+  // and, after a keyboard-started one on the site tier, focus #main-content (lib/router/route-announce-client.ts).
+  // Imported on demand, so its ~1.6 KB stays out of the entry every page parses before hydrating (B5): the chunk is
+  // requested here, during hydration, and the first load is never announced anyway (the browser announces it), so
+  // the only navigations it could miss are ones made before a small chunk arrives.
+  if (typeof document !== 'undefined' && !routeAnnouncerInstalled) {
+    routeAnnouncerInstalled = true;
+    void import('@/lib/router/route-announce-client').then(({ installRouteAnnouncer }) =>
+      installRouteAnnouncer(router),
+    );
   }
 
   // Steel 4.3: chrome reflections load at idle, on pages that have a chrome element.

@@ -117,6 +117,10 @@ export const BOARD_PRIVACY_READ_PATHS = [
   'lib/lights-out/boards.server.ts',
   // s11-06 daily-following
   'lib/daily-puzzles/following.server.ts',
+
+  // Sprint 12
+  // s12-03 friend-ghosts
+  'lib/game/friend-ghosts.server.ts',
 ] as const;
 
 /**
