@@ -26,13 +26,20 @@ export interface ListEditRow {
 /** Where the schools go: one of the member's lists, or a new list with a name the member types. */
 export type ListImportTarget = { listId: string } | { newList: string };
 
-export function toListEditable(preview: MedListImportPreviewRes): ListEditRow[] {
+/**
+ * A matched row starts ticked, unless the target list already has that school and program (it would not be added, so a
+ * tick would promise something that will not happen); an unmatched row starts unticked until a school is picked.
+ */
+export function toListEditable(
+  preview: MedListImportPreviewRes,
+  existing: ReadonlySet<string> = new Set(),
+): ListEditRow[] {
   return preview.rows.map((r) => ({
     key: r.key,
     schoolName: r.schoolName,
     school: r.school,
     program: r.program,
-    include: r.school !== null,
+    include: r.school !== null && !existing.has(`${r.school.slug}|${r.program}`),
   }));
 }
 
@@ -44,16 +51,17 @@ export function listIndex(list: Pick<MedListDto, 'items'> | null | undefined): R
 export type ListRowStatus = 'add' | 'there' | 'duplicate' | 'skip' | 'unmatched';
 
 /**
- * Each row's fate, in order: unmatched (no school yet), skip (unticked), there (the list already has it), duplicate
- * (an earlier ticked row is the same school and program), else add.
+ * Each row's fate, in order: unmatched (no school yet), there (the list already has that school and program, ticked
+ * or not: it cannot be added, and its tick is disabled until the program changes), skip (unticked), duplicate (an
+ * earlier ticked row is the same school and program), else add.
  */
 export function rowStatuses(rows: readonly ListEditRow[], existing: ReadonlySet<string>): ListRowStatus[] {
   const seen = new Set<string>();
   return rows.map((r) => {
     if (!r.school) return 'unmatched';
-    if (!r.include) return 'skip';
     const k = `${r.school.slug}|${r.program}`;
     if (existing.has(k)) return 'there';
+    if (!r.include) return 'skip';
     if (seen.has(k)) return 'duplicate';
     seen.add(k);
     return 'add';

@@ -945,8 +945,12 @@ while open, so "Add to list" is its one ink primary. Endpoints `POST me/lists/im
   `runUnderLease`, the one model call and the unreadable-reply refund, once; `runner.server.ts` makes one runner per
   prompt. The list import is `list-parse.server.ts` (prompt `MEDSCHOOLS_LIST_IMPORT`, the same `medschools-import` task,
   flash, so it is one of the day's questions) plus `list-validate.ts`. The extractors, limits (2 MB, 40,000
-  characters), refusal sentences and privacy rules are the tracker import's; a text with no letters is
+  characters) and privacy rules are the tracker import's. **Its refusals are its own** (no list message mentions dates
+  or the tracker): `toListRefusal` re-codes the shared reader's `MEDSCHOOLS_IMPORT_TOO_LARGE` / `_UNSUPPORTED` as
+  `MEDSCHOOLS_LIST_IMPORT_TOO_LARGE` (413) / `_UNSUPPORTED` (415) and an unreadable reply (question refunded) as
+  `MEDSCHOOLS_LIST_IMPORT_UNREADABLE` (503; a provider failure stays `AI_UNAVAILABLE`); a text with no letters is
   `MEDSCHOOLS_LIST_IMPORT_EMPTY` (422) before any gate, as is a reply with no school the text holds (after the call).
+  The view's own pre-send file refusals use the same list codes.
 - **Only names, and the server is the validator** (`list-validate.ts`, pure). A name is kept only when the member's
   text holds it (folded for case and spacing; under three characters never), else it is dropped and counted (an
   invented school never reaches the page). It resolves to a school only when it names exactly ONE active school: the
@@ -957,8 +961,10 @@ while open, so "Add to list" is its one ink primary. Endpoints `POST me/lists/im
   line writes MD or DO in capitals ("do" is a word); else `ANY`. File order is kept, a school and program named twice
   is one row, at most 200 rows (`LIST_IMPORT_LIMITS`, a list's cap; the model may return 400 before the cut).
 - **Save** (`importListItems` in `api/lists.server.ts`, under the list lock): `target` is `{ listId }` (the caller's;
-  anyone else's, or a missing one, is a 404) or `{ newList: name }` (always a new list; the 21st is
-  `MEDSCHOOLS_LIST_CAP`); `items` are slug and program (strict schema: no user, item or school id). A school and program
+  anyone else's, or a missing one, is a 404) or `{ newList: name }` (a new list; the 21st is `MEDSCHOOLS_LIST_CAP`; a
+  quick repeat, the caller's list of exactly that cleaned name made in the last 10 s with exactly these schools and
+  programs, `IMPORT_REPEAT_WINDOW_MS`, is returned with `added: 0` instead of a second copy; the view also ignores a
+  second press while its save is in flight); `items` are slug and program (strict schema: no user, item or school id). A school and program
   already on the list, or named twice, is `alreadyThere`; an inactive or unknown school is `invalid`; the rest are
   appended in order. All or nothing at 200 schools (`MEDSCHOOLS_ITEM_CAP`): over it nothing is written, not even the new
   list.
@@ -966,7 +972,8 @@ while open, so "Add to list" is its one ink primary. Endpoints `POST me/lists/im
   (`list-ok`, `list-empty`); the only trace is the text-free `AiUsage` row. `api/import/privacy.server.test.ts` pins the
   list files with the tracker's, and the integration test scans every table for the file's words.
 - **UI.** `model.ts` (pure, tested) decides each row's fate (add, already on the list, named twice, unticked,
-  unmatched), the save body (only the rows that will be added) and the 200 cap; `ListImportPreview.tsx` is rows on rules
+  unmatched; a row already on the target list starts unticked with its tick disabled and a note, and becomes tickable
+  when its program is changed to one the list lacks), the save body (only the rows that will be added) and the 200 cap; `ListImportPreview.tsx` is rows on rules
   with crests, a tick, the program select (either, MD or MD-PhD, DO or DO-PhD) and the picker. A new list's name is
   typed in the preview ("Imported schools" to start). Strings are `lists-import-*`.
 - **Tests.** Unit: `features/medschools/api/import/list-*.test.ts`, `api/lists-import*.test.ts`,

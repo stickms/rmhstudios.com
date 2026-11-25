@@ -315,6 +315,33 @@ export async function addListToTracker(
   return { cycleYear: year, added: outcome.added, skipped: outcome.skipped };
 }
 
+/** How recent a list must be for a `newList` import with the same name and schools to count as a repeat of it. */
+export const IMPORT_REPEAT_WINDOW_MS = 10_000;
+
+/**
+ * The caller's list with exactly this name, made within `IMPORT_REPEAT_WINDOW_MS`, whose items are exactly `wanted`
+ * (school and program, any order), or null. Read under the list lock by `importListItems`.
+ */
+async function recentSameList(
+  tx: Tx,
+  userId: string,
+  name: string,
+  wanted: readonly { schoolId: string; program: MedListProgramId }[],
+  now: Date,
+): Promise<MedListDto | null> {
+  const recent = await tx.medSchoolList.findMany({
+    where: { userId, name, createdAt: { gte: new Date(now.getTime() - IMPORT_REPEAT_WINDOW_MS) } },
+    select: { id: true },
+  });
+  if (recent.length === 0) return null;
+  const want = [...new Set(wanted.map((w) => `${w.schoolId}|${w.program}`))].sort().join(',');
+  for (const l of recent) {
+    const have = await tx.medSchoolListItem.findMany({ where: { listId: l.id }, select: { schoolId: true, program: true } });
+    if (have.map((h) => `${h.schoolId}|${h.program}`).sort().join(',') === want) return oneList(tx, userId, l.id);
+  }
+  return null;
+}
+
 export type ImportListTarget = { listId: string } | { newList: string };
 export type ImportListResult =
   | { list: MedListDto; added: number; alreadyThere: number; invalid: number }
@@ -328,12 +355,14 @@ export type ImportListResult =
  * member's list, or a missing one, is `null`) or a new list (`newList`, always created; refused at the list cap). A
  * school that is not active is `invalid`; a school and program already on the list, or named twice in the body, is
  * `alreadyThere`; the rest are appended in the order given. All or nothing against the 200-item cap: over it nothing is
- * written, not even the new list. Under the list lock, like every list write.
+ * written, not even the new list. Under the list lock, like every list write, so a repeated `newList` request waits
+ * for the first and then finds its list (`recentSameList`) instead of making a second.
  */
 export async function importListItems(
   userId: string,
   target: ImportListTarget,
   items: readonly { slug: string; program: MedListProgramId }[],
+  now: Date = new Date(),
 ): Promise<ImportListResult> {
   const named = 'newList' in target ? cleanText(target.newList, LIMITS.listName) : undefined;
   if (named === null) return 'bad-name';
@@ -341,7 +370,6 @@ export async function importListItems(
     await listLock(tx, userId);
     const lists = await listRows(tx, userId);
     if ('listId' in target && !lists.some((l) => l.id === target.listId)) return null;
-    if (named !== undefined && lists.length >= LIMITS.lists) return 'list-cap' as const;
 
     const slugs = [...new Set(items.map((i) => i.slug))];
     const schools = await tx.medSchool.findMany({
@@ -371,6 +399,13 @@ export async function importListItems(
       seen.add(key);
       toAdd.push({ schoolId, program: item.program });
     }
+    if (named !== undefined) {
+      // A quick repeat of the same "new list" (a double press, a retried request) answers with the list the first one
+      // made instead of a second copy: same exact name, made in the last few seconds, holding exactly these schools.
+      const repeat = await recentSameList(tx, userId, named, toAdd, now);
+      if (repeat) return { list: repeat, added: 0, alreadyThere: alreadyThere + toAdd.length, invalid };
+      if (lists.length >= LIMITS.lists) return 'list-cap' as const;
+    }
     if (here.length + toAdd.length > LIMITS.itemsPerList) return 'cap' as const;
 
     const listId =
@@ -378,7 +413,7 @@ export async function importListItems(
         ? target.listId
         : (
             await tx.medSchoolList.create({
-              data: { userId, name: named!, position: lists.length },
+              data: { userId, name: named!, position: lists.length, createdAt: now },
               select: { id: true },
             })
           ).id;

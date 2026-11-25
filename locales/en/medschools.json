@@ -463,7 +463,7 @@
   "lists-import-stop": "Stop",
   "lists-import-summary_one": "{{count}} school will be added.",
   "lists-import-summary_other": "{{count}} schools will be added.",
-  "lists-import-there": "Already on this list.",
+  "lists-import-there-program": "Already on this list. Choose another program to add it again.",
   "lists-import-truncated": "The file was long, so only the first part was read (a list holds {{max}} schools).",
   "lists-import-unmatched": "Could not match this name to one school. Pick it below.",
   "lists-import-unrecognised": "Unrecognised school",

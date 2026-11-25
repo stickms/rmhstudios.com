@@ -14,7 +14,10 @@ vi.mock('@/lib/prisma.server', () => ({ prisma: { user: { findUnique: mocks.find
 vi.mock('@/lib/rate-limit.server', () => ({ withRateLimitAsync: async () => null }));
 vi.mock('@/lib/ai/provider.server', () => ({ isAiConfigured: mocks.aiConfigured }));
 vi.mock('./lists.server', () => ({ importListItems: mocks.importListItems }));
-vi.mock('./import/list-parse.server', () => ({ parseListImport: mocks.parseListImport }));
+vi.mock('./import/list-parse.server', async () => ({
+  ...(await vi.importActual<typeof import('./import/list-parse.server')>('./import/list-parse.server')),
+  parseListImport: mocks.parseListImport,
+}));
 
 import { route as parse } from './medschools.me.lists.import.parse.server';
 import { route as save } from './medschools.me.lists.import.save.server';
@@ -92,7 +95,18 @@ describe('me/lists/import routes', () => {
     expect((await json(parse, { text: 'Harvard' })).status).toBe(403);
     mocks.findUser.mockResolvedValue({ bannedUntil: null });
     expect((await json(parse, { text: 'Harvard', userId: 'b' })).status).toBe(400);
-    expect((await post(parse, 'Harvard', 'text/plain')).status).toBe(415);
+    const wrongType = await post(parse, 'Harvard', 'text/plain');
+    expect(wrongType.status).toBe(415);
+    expect(await wrongType.json()).toMatchObject({ code: 'MEDSCHOOLS_LIST_IMPORT_UNSUPPORTED' });
+    expect(mocks.parseListImport).not.toHaveBeenCalled();
+  });
+
+  it('parse: an oversized body is refused in the list import words, never the tracker import "dates" sentence', async () => {
+    const res = await json(parse, { text: 'x'.repeat(900_000) });
+    expect(res.status).toBe(413);
+    const body = (await res.json()) as { code: string; error: string };
+    expect(body.code).toBe('MEDSCHOOLS_LIST_IMPORT_TOO_LARGE');
+    expect(body.error).not.toMatch(/date|tracker/i);
     expect(mocks.parseListImport).not.toHaveBeenCalled();
   });
 

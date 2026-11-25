@@ -201,13 +201,25 @@ describe('list import: no model needed', () => {
     ]);
   });
 
+  it('a double press of "Add to list" for a new list makes one list, not two', async () => {
+    const body = { target: { newList: 'Double' }, items: [{ slug: PRIVATE_MD_SLUG, program: 'ANY' }] };
+    const [one, two] = await Promise.all([a.client.post<Saved>(SAVE, body), a.client.post<Saved>(SAVE, body)]);
+    expect(one.status).toBe(200);
+    expect(two.status).toBe(200);
+    expect(one.body.list.id).toBe(two.body.list.id);
+    expect(one.body.added + two.body.added).toBe(1);
+    expect(await listCount(a.id)).toBe(1);
+  });
+
   it('refuses a file the reader cannot read or that is too large, and a text with no words, before any model call', async () => {
     const bad = await parseFile(a, 'tool.exe', 'application/x-msdownload', 'MZ');
     expect(bad.status).toBe(415);
-    expect(bad.body.code).toBe('MEDSCHOOLS_IMPORT_UNSUPPORTED');
+    expect(bad.body.code).toBe('MEDSCHOOLS_LIST_IMPORT_UNSUPPORTED');
     const big = await parseFile(a, 'big.csv', 'text/csv', 'a,b\n'.repeat(900_000));
     expect(big.status).toBe(413);
-    expect(big.body.code).toBe('MEDSCHOOLS_IMPORT_TOO_LARGE');
+    expect(big.body.code).toBe('MEDSCHOOLS_LIST_IMPORT_TOO_LARGE');
+    // No list import refusal speaks of dates or the tracker.
+    for (const res of [bad, big]) expect(JSON.stringify(res.body)).not.toMatch(/date|tracker/i);
     const none = await parseText(a, '1 | 2 | 3.5 | --');
     expect(none.status).toBe(422);
     expect(none.body.code).toBe('MEDSCHOOLS_LIST_IMPORT_EMPTY');

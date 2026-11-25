@@ -30,8 +30,8 @@ type Stage = 'input' | 'reading' | 'preview' | 'saved';
 /** A file the browser will not send: the server's own refusal sentence, so the line is the same either way. */
 const localRefusal = (problem: 'unsupported' | 'too-large') =>
   problem === 'too-large'
-    ? new HttpError(413, undefined, undefined, { body: refusalBody('MEDSCHOOLS_IMPORT_TOO_LARGE') })
-    : new HttpError(415, undefined, undefined, { body: refusalBody('MEDSCHOOLS_IMPORT_UNSUPPORTED') });
+    ? new HttpError(413, undefined, undefined, { body: refusalBody('MEDSCHOOLS_LIST_IMPORT_TOO_LARGE') })
+    : new HttpError(415, undefined, undefined, { body: refusalBody('MEDSCHOOLS_LIST_IMPORT_UNSUPPORTED') });
 
 function ReadingSkeleton() {
   return (
@@ -75,6 +75,7 @@ export default function ListImport({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState<MedListImportSaveRes | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const inFlight = useRef(false);
   const abort = useAbortOnUnmount();
 
   const existing = useMemo(() => listIndex(list), [list]);
@@ -109,7 +110,7 @@ export default function ListImport({
         res = await api(parseMedListImportTextApi, { body: { text }, signal: controller.signal });
       }
       setPreview(res);
-      setRows(toListEditable(res));
+      setRows(toListEditable(res, existing));
       setStage('preview');
     } catch (e) {
       if (controller.signal.aborted) return;
@@ -119,6 +120,9 @@ export default function ListImport({
   };
 
   const save = async () => {
+    // A second press before the first re-render (the button's `loading` disables it from then on) sends nothing.
+    if (inFlight.current) return;
+    inFlight.current = true;
     setSaving(true);
     setError(null);
     try {
@@ -131,6 +135,7 @@ export default function ListImport({
     } catch (e) {
       setError(refusal(e));
     } finally {
+      inFlight.current = false;
       setSaving(false);
     }
   };

@@ -53,6 +53,20 @@ describe('list import model', () => {
     expect(rowStatuses(unticked, existing)).toEqual(['there', 'skip', 'add']);
   });
 
+  it('a row already on the list starts unticked and stays "there"; a program that makes it addable lets it be ticked', () => {
+    const existing = listIndex(list([{ slug: 'duke', program: 'ANY' }]));
+    const rows = toListEditable(preview, existing);
+    expect(rows.map((r) => r.include)).toEqual([false, true, false]);
+    expect(rowStatuses(rows, existing)[0]).toBe('there');
+    // A tick that somehow arrived on a "there" row still adds nothing.
+    expect(rowStatuses(rows.map((r, i) => (i === 0 ? { ...r, include: true } : r)), existing)[0]).toBe('there');
+    const otherProgram = rows.map((r, i) => (i === 0 ? { ...r, program: 'PHD' as const } : r));
+    expect(rowStatuses(otherProgram, existing)[0]).toBe('skip');
+    const ticked = otherProgram.map((r, i) => (i === 0 ? { ...r, include: true } : r));
+    expect(rowStatuses(ticked, existing)[0]).toBe('add');
+    expect(listSaveBody(ticked, existing, { listId: 'l1' }).items[0]).toEqual({ slug: 'duke', program: 'PHD' });
+  });
+
   it('the save body carries only the rows that will be added, and a trimmed new list name', () => {
     const rows = pickSchool(toListEditable(preview), '?unrecognised-2|ANY', school('emory'));
     const existing = listIndex(list([{ slug: 'duke', program: 'ANY' }]));

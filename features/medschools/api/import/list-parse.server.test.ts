@@ -116,10 +116,22 @@ describe('parseListImport', () => {
     expect(calls).toHaveLength(0);
   });
 
-  it('an unreadable reply refunds the question; a provider failure does not', async () => {
+  it("a file too large or of the wrong type is refused in the list import's own words, before any gate", async () => {
+    const big = { kind: 'file' as const, buffer: Buffer.alloc(2 * 1024 * 1024 + 1, 65), mimeType: 'text/plain', filename: 'a.txt' };
+    expect(await code(parseListImport({ userId: 'u1', input: big }, { runner: runnerOf(reply).runner }))).toBe(
+      'MEDSCHOOLS_LIST_IMPORT_TOO_LARGE',
+    );
+    const exe = { kind: 'file' as const, buffer: Buffer.from('MZ'), mimeType: 'application/x-msdownload', filename: 'a.exe' };
+    expect(await code(parseListImport({ userId: 'u1', input: exe }, { runner: runnerOf(reply).runner }))).toBe(
+      'MEDSCHOOLS_LIST_IMPORT_UNSUPPORTED',
+    );
+    expect(m.admitQuestion).not.toHaveBeenCalled();
+  });
+
+  it('an unreadable reply is the list sentence and refunds the question; a provider failure stays AI_UNAVAILABLE, no refund', async () => {
     expect(
       await code(parseListImport({ userId: 'u1', input: paste }, { runner: runnerOf(new UnreadableReplyError()).runner })),
-    ).toBe('AI_UNAVAILABLE');
+    ).toBe('MEDSCHOOLS_LIST_IMPORT_UNREADABLE');
     expect(m.refund).toHaveBeenCalledTimes(1);
     m.refund.mockClear();
     expect(
@@ -143,5 +155,23 @@ describe('parseListImport', () => {
     const seen = JSON.stringify(logs.map((l) => l.mock.calls));
     for (const needle of [ESSAY, 'Harvard', 'UCSF', 'Stanford', 'Schools I like']) expect(seen).not.toContain(needle);
     expect(seen).toContain('list-ok');
+  });
+});
+
+describe('the list import refusal sentences', () => {
+  it('none of them mentions dates or the tracker, and each renders its own sentence', async () => {
+    const { ERROR_CODES } = await import('@/lib/errors/codes');
+    const { codedSentence } = await import('@/components/errors/refusal-sentence');
+    const t = ((_k: string, o: { defaultValue: string }) => o.defaultValue) as never;
+    for (const c of [
+      'MEDSCHOOLS_LIST_IMPORT_EMPTY',
+      'MEDSCHOOLS_LIST_IMPORT_TOO_LARGE',
+      'MEDSCHOOLS_LIST_IMPORT_UNSUPPORTED',
+      'MEDSCHOOLS_LIST_IMPORT_UNREADABLE',
+    ] as const) {
+      const sentence = codedSentence(t, String, { error: ERROR_CODES[c].text, code: c });
+      expect(sentence, c).toBe(ERROR_CODES[c].text);
+      expect(sentence, c).not.toMatch(/date|tracker|cycle/i);
+    }
   });
 });

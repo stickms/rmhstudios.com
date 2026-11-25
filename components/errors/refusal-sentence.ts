@@ -596,6 +596,25 @@ function sentence(t: Translate, code: ErrorCode, p: Record<string, string | numb
         defaultValue: 'No medical schools were found in that file',
         ...p,
       });
+    case 'MEDSCHOOLS_LIST_IMPORT_UNSUPPORTED':
+      return t('medschoolsListImportUnsupported', {
+        ns: 'errors',
+        defaultValue:
+          'That file could not be read. Use a spreadsheet (.xlsx or .csv), a Word document (.docx), a PDF or a text file with your school names',
+        ...p,
+      });
+    case 'MEDSCHOOLS_LIST_IMPORT_TOO_LARGE':
+      return t('medschoolsListImportTooLarge', {
+        ns: 'errors',
+        defaultValue: 'That file is over 2 MB. Save just the school names in a smaller file, or paste them',
+        ...p,
+      });
+    case 'MEDSCHOOLS_LIST_IMPORT_UNREADABLE':
+      return t('medschoolsListImportUnreadable', {
+        ns: 'errors',
+        defaultValue: 'The school names could not be read this time. Try again, or paste a shorter list',
+        ...p,
+      });
   }
 }
 

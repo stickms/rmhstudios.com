@@ -89,6 +89,33 @@ describe('importListItems (the list import save)', () => {
     expect(f.tables.medSchoolList).toHaveLength(2);
   });
 
+  it('a quick repeat of the same new list (a double press) returns the first list instead of making a second', async () => {
+    const t0 = new Date('2026-11-25T10:00:00Z');
+    const body = [
+      { slug: 'school-x', program: 'ANY' as const },
+      { slug: 'school-y', program: 'PHD' as const },
+    ];
+    const first = must(await importListItems('a', { newList: 'Reach' }, body, t0));
+    const again = must(await importListItems('a', { newList: ' Reach ' }, [...body].reverse(), new Date(t0.getTime() + 3_000)));
+    expect(again.list.id).toBe(first.list.id);
+    expect(again).toMatchObject({ added: 0, alreadyThere: 2, invalid: 0 });
+    expect(f.tables.medSchoolList).toHaveLength(1);
+    expect(items(first.list.id)).toHaveLength(2);
+  });
+
+  it('it is a new list when the repeat is late, names other schools, or another name', async () => {
+    const t0 = new Date('2026-11-25T10:00:00Z');
+    const body = [{ slug: 'school-x', program: 'ANY' as const }];
+    must(await importListItems('a', { newList: 'Reach' }, body, t0));
+    must(await importListItems('a', { newList: 'Reach' }, body, new Date(t0.getTime() + 11_000)));
+    must(await importListItems('a', { newList: 'Reach' }, [{ slug: 'school-y', program: 'ANY' }], new Date(t0.getTime() + 12_000)));
+    must(await importListItems('a', { newList: 'Safety' }, body, new Date(t0.getTime() + 12_000)));
+    // Another member's identical list made a moment ago is never theirs to return.
+    const b = must(await importListItems('b', { newList: 'Reach' }, body, new Date(t0.getTime() + 12_000)));
+    expect(f.tables.medSchoolList).toHaveLength(5);
+    expect(b.added).toBe(1);
+  });
+
   it('a 21st list is list-cap and writes nothing', async () => {
     for (let n = 0; n < 20; n++) must(await createList('a', `L${n}`));
     const before = snapshot();

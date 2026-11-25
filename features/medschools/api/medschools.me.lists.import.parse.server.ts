@@ -1,7 +1,7 @@
 import { implement } from '@/lib/api/implement.server';
 import { apiRoute } from '@/lib/api/route.server';
 import { parseMedListImportFileApi } from '@features/medschools/medschools.contract';
-import { parseListImport } from './import/list-parse.server';
+import { parseListImport, toListRefusal } from './import/list-parse.server';
 import { IMPORT_PARSE_LIMIT, NO_STORE, readImportRequest } from './import/request.server';
 
 /**
@@ -15,7 +15,10 @@ export const route = apiRoute('/api/medschools/me/lists/import/parse', {
     parseMedListImportFileApi,
     { rateLimit: IMPORT_PARSE_LIMIT, rateLimitExemptAdmin: true },
     async ({ userId, isAdmin, request }) => {
-      const input = await readImportRequest(userId, request);
+      // The shared reader's size and type refusals, in the list import's own words.
+      const input = await readImportRequest(userId, request).catch((err: unknown) => {
+        throw toListRefusal(err);
+      });
       if (input instanceof Response) return input;
       const preview = await parseListImport({ userId, isAdmin, input, signal: request.signal });
       return Response.json(preview, { headers: NO_STORE });

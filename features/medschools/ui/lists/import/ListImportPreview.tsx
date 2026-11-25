@@ -35,7 +35,9 @@ export function ListImportPreview({
   const note = (s: ListRowStatus): string | null => {
     switch (s) {
       case 'there':
-        return t('lists-import-there', { defaultValue: 'Already on this list.' });
+        return t('lists-import-there-program', {
+          defaultValue: 'Already on this list. Choose another program to add it again.',
+        });
       case 'duplicate':
         return t('lists-import-duplicate', { defaultValue: 'Named twice in your file; added once.' });
       case 'unmatched':
@@ -58,8 +60,8 @@ export function ListImportPreview({
                 <input
                   type="checkbox"
                   className={CHECKBOX}
-                  checked={r.include && r.school !== null}
-                  disabled={!r.school}
+                  checked={r.include && status !== 'there' && r.school !== null}
+                  disabled={!r.school || status === 'there'}
                   aria-label={t('lists-import-row-label', { school: shown, defaultValue: 'Add {{school}}' })}
                   onChange={(e) => patch(r.key, { include: e.target.checked })}
                 />
@@ -86,7 +88,6 @@ export function ListImportPreview({
                       defaultValue: 'Program for {{school}}',
                     })}
                     value={r.program}
-                    disabled={!r.include}
                     onChange={(e) => patch(r.key, { program: asListProgram(e.target.value) })}
                   >
                     <option value="ANY">{t('program-either', { defaultValue: 'Either program' })}</option>

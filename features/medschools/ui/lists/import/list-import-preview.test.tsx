@@ -55,6 +55,19 @@ describe('ListImportPreview', () => {
   });
 });
 
+describe('ListImportPreview, a row already on the list', () => {
+  const html = renderToString(
+    <QueryClientProvider client={new QueryClient()}>
+      <ListImportPreview rows={rows} existing={new Set(['duke|PHD'])} onRows={() => undefined} />
+    </QueryClientProvider>,
+  );
+  it('is unticked and its tick disabled, with the note; its program select stays usable', () => {
+    expect(html).toContain('Already on this list. Choose another program to add it again.');
+    expect(html).toMatch(/<input type="checkbox" class="medapp-check" disabled="" aria-label="Add Duke/);
+    expect(html).toMatch(/<select aria-label="Program for Duke University School of Medicine">/);
+  });
+});
+
 describe('the lists page wiring (source)', () => {
   const page = readFileSync('features/medschools/ui/lists/ListsPage.tsx', 'utf8');
   const section = readFileSync('features/medschools/ui/lists/ListSection.tsx', 'utf8');
@@ -76,5 +89,16 @@ describe('the lists page wiring (source)', () => {
     expect(view.match(/variant="primary"/g)).toHaveLength(1);
     expect(view).toContain("'lists-import-add'");
     expect(view).not.toMatch(/\bfetch\(/);
+  });
+
+  it('"Add to list" is disabled while its save is in flight, and a second press before that sends nothing', () => {
+    expect(view).toMatch(/variant="primary"\s+loading=\{saving\}/);
+    expect(view).toMatch(/if \(inFlight\.current\) return;\s+inFlight\.current = true;/);
+  });
+
+  it('a file the browser refuses gets the list import sentences, never the tracker import ones', () => {
+    expect(view).toContain("refusalBody('MEDSCHOOLS_LIST_IMPORT_TOO_LARGE')");
+    expect(view).toContain("refusalBody('MEDSCHOOLS_LIST_IMPORT_UNSUPPORTED')");
+    expect(view).not.toMatch(/'MEDSCHOOLS_IMPORT_/);
   });
 });
