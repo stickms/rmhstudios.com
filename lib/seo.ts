@@ -1,6 +1,6 @@
 // The path → file index, not `static-cards`: route heads run in the browser, and
 // the cards' copy is only for the renderer (lib/og/static-card-index.ts).
-import { OG_CARD_VERSION, staticCardFileFor, staticCardImageFor } from '@/lib/og/static-card-index';
+import { OG_CARD_VERSION, cardVersionFor, staticCardFileFor, staticCardImageFor } from '@/lib/og/static-card-index';
 
 export const SITE_URL = 'https://rmhstudios.com';
 
@@ -47,7 +47,7 @@ export function ogCardPath(
     | 'med-school',
   id: string,
 ): string {
-  return `/api/og/${kind}/${encodeURIComponent(id)}?v=${OG_CARD_VERSION}`;
+  return `/api/og/${kind}/${encodeURIComponent(id)}?v=${cardVersionFor(kind === 'section' ? id : kind)}`;
 }
 
 /** Absolute-ise a site-relative asset path; pass absolute URLs through. */

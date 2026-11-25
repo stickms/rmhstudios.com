@@ -9,7 +9,7 @@ import { PracticePage } from '@features/medschools/ui/PracticePage';
 export const Route = createFileRoute('/med/practice')({
   head: definePage({
     path: '/med/practice',
-    title: 'Interview practice | RMH Studios',
+    title: 'Interview practice | RMH Med Schools',
     description: 'General medical school interview questions by program, with a practice timer.',
     noIndex: true,
   }),

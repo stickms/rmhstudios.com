@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
 Builds the static Geist / Geist Mono TTFs that the satori image generators load
-(lib/og/shared.server.ts, lib/discord-activity-image.tsx, scripts/gen-pwa-icons.tsx).
+(lib/og/shared.server.ts, lib/discord-activity-image.tsx, scripts/gen-pwa-icons.tsx),
+and DM Sans 400/500/600 for the RMH Med Schools cards (lib/og/med-card.server.tsx),
+which keep that app's own face.
 
 satori reads TTF / OTF / WOFF only, and @fontsource-variable ships WOFF2 variable
 files, so this decodes the installed package's latin subset and pins one static
@@ -21,6 +23,7 @@ OUT = ROOT / "public" / "fonts" / "og"
 JOBS = [
     ("geist", "Geist", [400, 500, 600, 700, 800]),
     ("geist-mono", "GeistMono", [400, 700]),
+    ("dm-sans", "DMSans", [400, 500, 600]),
 ]
 
 OUT.mkdir(parents=True, exist_ok=True)

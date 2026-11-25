@@ -70,19 +70,7 @@ export async function getSchoolFacts(slug: string): Promise<MedSchoolFactsRes | 
         checkedOn: true,
       },
     }),
-    prisma.medSchoolFact.findMany({
-      where: { schoolId: school.id, source: 'SCHOOL_PROFILE', kind: { startsWith: 'PROFILE_' } },
-      select: {
-        kind: true,
-        program: true,
-        cycleYear: true,
-        valueText: true,
-        valueNum: true,
-        valueJson: true,
-        sourceUrl: true,
-        checkedOn: true,
-      },
-    }),
+    profileRowsOf(school.id),
   ]);
   const order: string[] = [...Object.keys(FACT_KINDS), ...CURRICULUM_KIND_IDS];
   const facts: MedSchoolFactDto[] = rows
@@ -110,6 +98,28 @@ export async function getSchoolFacts(slug: string): Promise<MedSchoolFactsRes | 
     })
     .sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
   return { pageUrl: MSAR_PAGE_URL, facts, mdphd: mdphdOf(phdRows), classes: classProfilesOf(profileRows) };
+}
+
+/** One school's `SCHOOL_PROFILE` rows (explicit `select`), for `classProfilesOf`. */
+function profileRowsOf(schoolId: string): Promise<ProfileRow[]> {
+  return prisma.medSchoolFact.findMany({
+    where: { schoolId, source: 'SCHOOL_PROFILE', kind: { startsWith: 'PROFILE_' } },
+    select: {
+      kind: true,
+      program: true,
+      cycleYear: true,
+      valueText: true,
+      valueNum: true,
+      valueJson: true,
+      sourceUrl: true,
+      checkedOn: true,
+    },
+  });
+}
+
+/** The entering classes of one school, as the Facts tab reads them (the link-preview card takes its figures here). */
+export async function classProfilesForSchool(schoolId: string): Promise<MedClassProfileDto[]> {
+  return classProfilesOf(await profileRowsOf(schoolId));
 }
 
 type PhdRow = {

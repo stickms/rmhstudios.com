@@ -9,9 +9,9 @@ import { IndexPage } from '@features/medschools/ui/IndexPage';
 export const Route = createFileRoute('/med/')({
   head: definePage({
     path: '/med',
-    title: 'RMH Med Schools | RMH Studios',
+    title: 'Med school admissions by day | RMH Med Schools',
     description:
-      'Interview invites and decisions reported by medical school and day, from CycleTrack, Admit.org and Student Doctor Network. Reported events, not applicants.',
+      'Invites and decisions reported by day at US MD and DO schools, with class MCAT and GPA, secondaries and interview questions. Reported events, not applicants.',
   }),
   validateSearch: validateIndexSearch,
   // No `stripSearchParams`: `programs` absent means "the viewer's preferences", present (even all four) is a choice
