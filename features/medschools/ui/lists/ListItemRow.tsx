@@ -17,7 +17,8 @@ import { useMedLabels } from '../labels';
 export const codePointCount = (s: string): number => [...s].length;
 
 /**
- * One saved school, a row on a rule: the crest, the school (a link while it is listed, no underline at rest), `degree ·
+ * One saved school, a row on a rule: the crest (as on the index rows: 40px, crest | words | menu on the row's centre
+ * line, owner 2026-11-24), the school (a link while it is listed, no underline at rest), `degree ·
  * state · program`, the note as text that opens its editor, and one "⋯" holding the note, the move up and down, and
  * remove. The note is closed until asked for and saved when the field loses focus. A school that was deactivated stays
  * in the list, as plain text with a line saying so, because a link would 404.
@@ -67,10 +68,8 @@ export function ListItemRow({
 
   return (
     <div className="medapp-item">
-      <div className="medapp-item__head">
-        <span className="medapp-crest-cell">
-          <SchoolCrest slug={school.slug} name={school.shortName} size={40} />
-        </span>
+      <div className="medapp-item__head medapp-item__head--school">
+        <SchoolCrest slug={school.slug} name={school.name} size={40} />
         <div className="medapp-item__title">
           {school.active ? (
             <Link
