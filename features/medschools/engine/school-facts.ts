@@ -3,7 +3,8 @@
  * out-of-state applicants, when is the deposit due, what does it cost). Pure and client-safe: the importer, the public
  * endpoint and the school page all read the same catalogue, so a kind means one thing everywhere.
  *
- * The one source today is the AAMC MSAR "Reports for Applicants and Advisors" (`AAMC_MSAR_REPORT`). The owner states
+ * Sources: Admit.org's curriculum table, the MD-PhD program pages and RePORTER, each school's own class profile
+ * (`PROFILE_KINDS`, below), and the AAMC MSAR "Reports for Applicants and Advisors" (`AAMC_MSAR_REPORT`). The owner states
  * that RMH has AAMC's permission to use what is on that page (2026-11-24), and the PDFs say they "may be reproduced and
  * distributed with attribution for individual, educational, and noncommercial purposes only", so every figure carries its
  * source line (`factSourceLine`) with a link to the page. It is NOT the MSAR school profiles (mec.aamc.org/msar-ui),
@@ -226,3 +227,158 @@ export const CURRICULUM_CODE_LABEL: Record<string, string> = {
   BOTH: 'NBME and in-house exams',
   OTHER: '',
 };
+
+/**
+ * Entering-class statistics from each school's OWN class-profile page (source `SCHOOL_PROFILE`, phase C step 2;
+ * `data/medschools/class-profiles.json`). One row per figure the page states, never computed: no acceptance rate, no
+ * ratio, no rounding. The page's string is always kept (`valueText`, the DTO's `value`) and is what the page shows;
+ * `num` is parsed only where the string is a plain number of its kind.
+ *  - `score`: an MCAT total ("517"); `gpa`: a grade point average ("3.89"); `count`: a number of people ("7,412");
+ *    `percent`: a share ("38%"); `range`: a range as written ("500-525", "3.41–4.0"); `text`: anything else.
+ * MCAT and GPA kinds keep the page's statistic apart: median, mean and range are different kinds, and a figure whose
+ * statistic the page does not name is `MCAT_SCORE`, `GPA_SCORE` or `SGPA_SCORE` (plain "MCAT", "GPA").
+ */
+export const PROFILE_KINDS = {
+  MCAT_MEDIAN: { type: 'score', label: 'Median MCAT' },
+  MCAT_MEAN: { type: 'score', label: 'Mean MCAT' },
+  MCAT_RANGE: { type: 'range', label: 'MCAT range' },
+  MCAT_10_90: { type: 'range', label: 'MCAT 10th to 90th percentile' },
+  GPA_MEDIAN: { type: 'gpa', label: 'Median GPA' },
+  GPA_MEAN: { type: 'gpa', label: 'Mean GPA' },
+  GPA_RANGE: { type: 'range', label: 'GPA range' },
+  SGPA_MEDIAN: { type: 'gpa', label: 'Median science GPA' },
+  SGPA_MEAN: { type: 'gpa', label: 'Mean science GPA' },
+  // The page gives the figure but not whether it is a mean or a median: shown as plain "MCAT", "GPA", never guessed.
+  MCAT_SCORE: { type: 'score', label: 'MCAT' },
+  GPA_SCORE: { type: 'gpa', label: 'GPA' },
+  SGPA_SCORE: { type: 'gpa', label: 'Science GPA' },
+  APPLICANTS: { type: 'count', label: 'Applicants' },
+  INTERVIEWED: { type: 'count', label: 'Interviewed' },
+  MATRICULANTS: { type: 'count', label: 'Class size' },
+  IN_STATE_PCT: { type: 'percent', label: 'In state' },
+  IN_STATE_COUNT: { type: 'count', label: 'In state' },
+  OTHER: { type: 'text', label: '' },
+} as const satisfies Record<string, { type: 'score' | 'gpa' | 'count' | 'percent' | 'range' | 'text'; label: string }>;
+export type ProfileKindId = keyof typeof PROFILE_KINDS;
+export const PROFILE_KIND_IDS = Object.keys(PROFILE_KINDS) as ProfileKindId[];
+export const isProfileKind = (v: unknown): v is ProfileKindId => typeof v === 'string' && v in PROFILE_KINDS;
+
+/**
+ * The stored `kind` of a profile figure: `PROFILE_<KIND>`, and `PROFILE_<KIND>#<n>` for the n-th figure of the same kind
+ * in one class and program (a page lists several `OTHER` figures). The unique key is school x program x cycle x kind x
+ * source, so the ordinal is what lets one class hold them all without a migration; `#` occurs in no kind id, so the
+ * split is unambiguous.
+ */
+export const PROFILE_KIND_PREFIX = 'PROFILE_';
+export function profileStoredKind(kind: ProfileKindId, ordinal: number): string {
+  return ordinal <= 1 ? `${PROFILE_KIND_PREFIX}${kind}` : `${PROFILE_KIND_PREFIX}${kind}#${ordinal}`;
+}
+/** The catalogue kind of a stored kind, or null for anything this source does not own. */
+export function profileKindOf(stored: string): ProfileKindId | null {
+  const m = /^PROFILE_([A-Z0-9_]+?)(?:#([2-9]|[1-9]\d))?$/.exec(stored);
+  return m && isProfileKind(m[1]) ? m[1] : null;
+}
+
+/** An undated class (the page says "current" or "most recent"): this stands in the unique key; the label is kept. */
+export const PROFILE_UNDATED_CYCLE = 0;
+/** The oldest entering class kept (the research dropped older ones; the validator holds the line). */
+export const PROFILE_OLDEST_CLASS = 2024;
+
+const PLAIN_COUNT = /^\d{1,3}(?:,\d{3})+$|^\d+$/;
+
+/**
+ * The number in a figure's string where the string is a plain number of its kind, else null (the string is shown
+ * either way). Never reads an approximate ("~600", "approximately 230"), a bound ("6,000+", "more than 14,000"), words
+ * ("Fifty-four percent") or a range as a number.
+ */
+export function parseProfileNumber(kind: ProfileKindId, raw: string): number | null {
+  const v = raw.trim();
+  switch (PROFILE_KINDS[kind].type) {
+    case 'score': {
+      if (!/^\d{3}(?:\.\d)?$/.test(v)) return null;
+      const n = Number(v);
+      return n >= 472 && n <= 528 ? n : null;
+    }
+    case 'gpa': {
+      if (!/^\d\.\d{1,3}$/.test(v)) return null;
+      const n = Number(v);
+      return n > 0 && n <= 4.5 ? n : null;
+    }
+    case 'count':
+      return PLAIN_COUNT.test(v) ? Number(v.replace(/,/g, '')) : null;
+    case 'percent': {
+      const m = /^(\d{1,3}(?:\.\d+)?)\s?%$/.exec(v);
+      if (!m) return null;
+      const n = Number(m[1]);
+      return n <= 100 ? n : null;
+    }
+    default:
+      return null;
+  }
+}
+
+/** The value's digits, comma-free, as the verifier compares them: '7,412' -> '7412', '3.41–4.0' -> '3.41 4.0'. */
+const digitsOf = (x: string): string =>
+  x
+    .normalize('NFKC')
+    .replace(/,/g, '')
+    .replace(/[^0-9.]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+/**
+ * True when the evidence carries the value: its digits in order (a value in words, "Fifty-four percent", must appear in
+ * the evidence as written). The research verifier's rule, so a slip in the file is caught before import.
+ */
+export function evidenceHasValue(value: string, evidence: string): boolean {
+  const v = digitsOf(value);
+  if (v === '' || v === '.') return evidence.toLowerCase().includes(value.trim().toLowerCase());
+  const e = digitsOf(evidence);
+  return ` ${e} `.includes(` ${v} `) || e.replace(/ /g, '').includes(v.replace(/ /g, ''));
+}
+
+/**
+ * Whether a figure is for the combined MD-PhD (DO-PhD, MSTP) program only, from its qualifier: then it is stored under
+ * program PHD and shown apart. A figure that counts both programs ("MD & MD/PhD Applicants", "incl. MD/PhD") is REG.
+ */
+export function isPhdOnlyQualifier(qualifier: string | null): boolean {
+  if (!qualifier) return false;
+  if (!/\bMSTP\b|\bM\.?D\.?\s?[-/]\s?Ph\.?D\b|\bD\.?O\.?\s?[-/]\s?Ph\.?D\b/i.test(qualifier)) return false;
+  return !/\bincl|&|\band\b|,/i.test(qualifier);
+}
+
+/**
+ * Words that only restate a figure's kind (the page's own wording of "Average MCAT", "new matriculants", "Overall Grade
+ * Point Average"): a qualifier made of nothing else says no more than the tile's label and is not shown under it.
+ */
+const RESTATING = new Set(
+  (
+    'mcat gpa gpas score scores exam class average avg mean median overall cumulative total grade point undergraduate ' +
+    'undergrad ug science bcpm composite matriculating matriculants matriculated entering students student new ' +
+    'applicants applicant applications application received interviewed interviews interview enrolled enrollment size ' +
+    'incoming number of the is and for a an highest standard granted completed amcas candidates in state in-state ' +
+    'resident residents currently faq answer'
+  ).split(' '),
+);
+
+/**
+ * The qualifier as a reader sees it under a figure, or null when it adds nothing to the kind's own label: a research
+ * note on the page's wording ("labelled Average MCAT", "PDF label …", "row …"), or the page's words for the kind itself
+ * ("MCAT Exam Class Average", "new matriculants"; `RESTATING`). A note about the page's spelling ("(page spells …)",
+ * "; page says …") is dropped. The rest is the page's own scope and is shown ("five-year average", "among those
+ * accepted", "virtual interviews", "Oregon Campus column", "North Carolina").
+ */
+export function profileQualifierNote(qualifier: string | null): string | null {
+  if (!qualifier) return null;
+  const q = qualifier
+    .replace(/\s*\(page [^)]*\)/gi, '')
+    .replace(/;\s*page says.*$/i, '')
+    .trim();
+  if (q === '' || /^(labelled|labeled|pdf label|row )/i.test(q)) return null;
+  const words = q
+    .toLowerCase()
+    .split(/[^a-z0-9-]+/)
+    .filter((w) => w !== '');
+  if (words.every((w) => RESTATING.has(w) || /^20\d\d$/.test(w))) return null;
+  return q;
+}

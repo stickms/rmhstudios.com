@@ -5,8 +5,8 @@ import type { MedEventTypeId } from '../../medschools.contract';
  * The status vocabulary of the redesign (owner 2026-11-24): one key per colour a decision or update is drawn in, with
  * its token trio, its icon and its label. Pure and client-safe; `StatusIcon` and `StatusText` read it.
  *
- *  - acceptance green, rejection red, hold dark blue, secondary light blue, waitlist yellow, matriculation purple,
- *    interview orange, withdrawn neutral (muted ink).
+ *  - acceptance green, rejection red, hold dark purple, secondary orange, waitlist yellow, matriculation rose,
+ *    interview light blue, withdrawn neutral (muted ink).
  *  - The public feed's `SECONDARY` is "secondary RECEIVED" (the school sent one; sources report it that way and the
  *    tracker's `SECONDARY` milestone is "Secondary received"), so it reads "Secondary". The private `SECONDARY_SUBMITTED`
  *    milestone is the same hue and reads "Secondary submitted"; colour is never the only cue, the label always prints.

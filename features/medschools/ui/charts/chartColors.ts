@@ -5,7 +5,7 @@ import { STATUS, statusOfEvent } from '../status/status';
  * The fixed colour mappings of the RMH Med Schools charts. A category is drawn in its STATUS colour (owner
  * 2026-11-24): the line, the bar and the legend swatch are `var(--app-med-<stem>-text)`, the same token the row's
  * status words use, so a category matches its row icon and words everywhere (acceptance green, rejection red, hold dark
- * blue, secondary light blue, waitlist yellow, interview orange, matriculation purple, withdrawn neutral). Its pastel
+ * purple, secondary orange, waitlist yellow, interview light blue, matriculation rose, withdrawn neutral). Its pastel
  * fill is `var(--app-med-<stem>-fill)`. Sources and cycles are a different thing from a category and keep their own
  * slots, `--app-med-chart-1`..`-5`. Every line holds 3:1 against paper and ground in both modes (`status.test.tsx`
  * holds the status text at 4.5:1, `charts.test.tsx` the slots at 3:1). A component never writes a hex. Colour follows

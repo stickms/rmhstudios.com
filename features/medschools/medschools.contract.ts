@@ -987,6 +987,36 @@ export interface MedMdPhdDto {
   } | null;
 }
 
+/** One figure an entering-class profile states (`engine/school-facts.ts` `PROFILE_KINDS`). */
+export interface MedClassProfileStatDto {
+  /** The catalogue kind: MCAT_MEDIAN, MCAT_MEAN, MCAT_RANGE, MCAT_10_90, GPA_*, SGPA_*, APPLICANTS, INTERVIEWED, MATRICULANTS, IN_STATE_PCT, IN_STATE_COUNT or OTHER. */
+  kind: string;
+  /** REG, or PHD for a figure about the MD-PhD (DO-PhD, MSTP) program only. */
+  program: 'REG' | 'PHD';
+  /** Exactly as the page writes it ("517", "3.89", "7,412", "38%", "500-525"): this is what is shown. */
+  value: string;
+  /** The number, only where `value` is a plain number of its kind; null for "~600", "6,000+", a range or words. */
+  num: number | null;
+  /** The page's own words for the figure's scope ("five-year average", "Oregon Campus column"); an OTHER figure's name. */
+  qualifier: string | null;
+  /** The page's words that carry the figure (the source link highlights them). */
+  evidence: string;
+}
+
+/**
+ * One entering class as the school's own class-profile page states it. `enteringYear` null is a class the page does not
+ * date ("current class", "most recent entering class"); `label` is the page's own label either way.
+ */
+export interface MedClassProfileDto {
+  label: string;
+  enteringYear: number | null;
+  /** The page or PDF the figures were read on. */
+  url: string;
+  /** YYYY-MM-DD */
+  checkedOn: string;
+  stats: MedClassProfileStatDto[];
+}
+
 export interface MedSchoolFactsRes {
   /** The AAMC page the reports are listed on: the link every AAMC source line points at (a curriculum fact links its own `sourceUrl`). */
   pageUrl: string;
@@ -994,6 +1024,8 @@ export interface MedSchoolFactsRes {
   facts: MedSchoolFactDto[];
   /** The combined MD-PhD (or DO-PhD) program; null when nothing is known, so the page shows nothing. */
   mdphd: MedMdPhdDto | null;
+  /** Entering classes from the school's own class-profile page, newest first (an undated, "current" class first); empty when none. */
+  classes: MedClassProfileDto[];
 }
 
 /** 404 for an unknown or inactive slug. Public and user-independent. */

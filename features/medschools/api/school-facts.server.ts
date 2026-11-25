@@ -4,12 +4,20 @@ import {
   FACT_KINDS,
   MSAR_PAGE_URL,
   MSAR_REPORTS,
+  PROFILE_UNDATED_CYCLE,
   isCurriculumKind,
   isFactKind,
+  profileKindOf,
   type MsarReportId,
 } from '../engine/school-facts';
 import { MDPHD_CYCLE, MDPHD_KINDS, MDPHD_SOURCES, PHASES } from '../engine/mdphd';
-import type { MedMdPhdDto, MedMdPhdPhaseDto, MedSchoolFactDto, MedSchoolFactsRes } from '../medschools.contract';
+import type {
+  MedClassProfileDto,
+  MedMdPhdDto,
+  MedMdPhdPhaseDto,
+  MedSchoolFactDto,
+  MedSchoolFactsRes,
+} from '../medschools.contract';
 
 const SLUG_RE = /^[a-z0-9-]{1,80}$/;
 const day = (d: Date): string => d.toISOString().slice(0, 10);
@@ -25,9 +33,9 @@ export async function getSchoolFacts(slug: string): Promise<MedSchoolFactsRes | 
   if (!SLUG_RE.test(slug)) return null;
   const school = await prisma.medSchool.findFirst({ where: { slug, active: true }, select: { id: true } });
   if (!school) return null;
-  const [rows, phdRows] = await Promise.all([
+  const [rows, phdRows, profileRows] = await Promise.all([
     prisma.medSchoolFact.findMany({
-      where: { schoolId: school.id, program: 'REG' },
+      where: { schoolId: school.id, program: 'REG', source: { not: 'SCHOOL_PROFILE' } },
       select: {
         kind: true,
         source: true,
@@ -62,6 +70,19 @@ export async function getSchoolFacts(slug: string): Promise<MedSchoolFactsRes | 
         checkedOn: true,
       },
     }),
+    prisma.medSchoolFact.findMany({
+      where: { schoolId: school.id, source: 'SCHOOL_PROFILE', kind: { startsWith: 'PROFILE_' } },
+      select: {
+        kind: true,
+        program: true,
+        cycleYear: true,
+        valueText: true,
+        valueNum: true,
+        valueJson: true,
+        sourceUrl: true,
+        checkedOn: true,
+      },
+    }),
   ]);
   const order: string[] = [...Object.keys(FACT_KINDS), ...CURRICULUM_KIND_IDS];
   const facts: MedSchoolFactDto[] = rows
@@ -88,7 +109,7 @@ export async function getSchoolFacts(slug: string): Promise<MedSchoolFactsRes | 
       };
     })
     .sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
-  return { pageUrl: MSAR_PAGE_URL, facts, mdphd: mdphdOf(phdRows) };
+  return { pageUrl: MSAR_PAGE_URL, facts, mdphd: mdphdOf(phdRows), classes: classProfilesOf(profileRows) };
 }
 
 type PhdRow = {
@@ -161,4 +182,69 @@ export function mdphdOf(rows: PhdRow[]): MedMdPhdDto | null {
     };
   }
   return out;
+}
+
+type ProfileRow = {
+  kind: string;
+  program: string;
+  cycleYear: number;
+  valueText: string | null;
+  valueNum: number | null;
+  valueJson: unknown;
+  sourceUrl: string;
+  checkedOn: Date;
+};
+
+const str = (v: unknown): string | null => (typeof v === 'string' && v !== '' ? v : null);
+
+/**
+ * The entering classes from the `SCHOOL_PROFILE` rows: grouped by class (the cycle; undated classes are
+ * `PROFILE_UNDATED_CYCLE`), the figures in the page's order, newest class first with an undated ("current") class ahead
+ * of the dated ones. A row whose kind is not in the profile catalogue, or that lacks its printed value, label or evidence,
+ * is dropped, never guessed.
+ */
+export function classProfilesOf(rows: ProfileRow[]): MedClassProfileDto[] {
+  const byCycle = new Map<number, { dto: MedClassProfileDto; order: number[] }>();
+  for (const r of rows) {
+    const kind = profileKindOf(r.kind);
+    const json = (r.valueJson ?? {}) as Record<string, unknown>;
+    const value = str(json.text) ?? str(r.valueText);
+    const label = str(json.label);
+    const evidence = str(json.evidence);
+    if (!kind || !value || !label || !evidence || (r.program !== 'REG' && r.program !== 'PHD')) continue;
+    let entry = byCycle.get(r.cycleYear);
+    if (!entry) {
+      entry = {
+        dto: {
+          label,
+          enteringYear: r.cycleYear === PROFILE_UNDATED_CYCLE ? null : r.cycleYear,
+          url: r.sourceUrl,
+          checkedOn: day(r.checkedOn),
+          stats: [],
+        },
+        order: [],
+      };
+      byCycle.set(r.cycleYear, entry);
+    }
+    const order = typeof json.order === 'number' ? json.order : Number.MAX_SAFE_INTEGER;
+    const at = entry.order.findIndex((o) => o > order);
+    const stat = {
+      kind,
+      program: r.program,
+      value,
+      num: r.valueNum,
+      qualifier: str(json.qualifier),
+      evidence,
+    } as const;
+    if (at === -1) {
+      entry.dto.stats.push(stat);
+      entry.order.push(order);
+    } else {
+      entry.dto.stats.splice(at, 0, stat);
+      entry.order.splice(at, 0, order);
+    }
+    if (day(r.checkedOn) > entry.dto.checkedOn) entry.dto.checkedOn = day(r.checkedOn);
+  }
+  const rank = (y: number) => (y === PROFILE_UNDATED_CYCLE ? Number.MAX_SAFE_INTEGER : y);
+  return [...byCycle.entries()].sort((a, b) => rank(b[0]) - rank(a[0])).map(([, e]) => e.dto);
 }
