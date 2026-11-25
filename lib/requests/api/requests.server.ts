@@ -3,6 +3,7 @@ import { implement } from '@/lib/api/implement.server';
 import { createRequestApi, listRequestsApi } from '@/lib/requests/requests.contract';
 import { requestCreateSchema, requestListQuerySchema } from '@/lib/requests/schema';
 import { createRequest, listRequests, RequestBoardError } from '@/lib/requests/board.server';
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 
 /**
  * GET  /api/requests — the public board (anyone may read it; that is the point).
@@ -35,6 +36,9 @@ export const route = apiRoute('/api/requests', {
       idempotent: true,
     },
     async ({ userId, body }) => {
+      // s14-17: the board is public text other members read, so a timeout on replying holds for a new request.
+      const restricted = await restrictionResponse(userId, 'comment');
+      if (restricted) return restricted;
       try {
         return Response.json(await createRequest(userId, body), { status: 201 });
       } catch (error) {

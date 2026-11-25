@@ -205,7 +205,11 @@ describe('anonymizeAccount (follows)', () => {
     fn.mockClear();
     await anonymizeAccount(U);
     const all = fn.mock.calls[0]![0] as Op[];
-    expect(all.filter((o) => o.model === '$executeRaw')).toHaveLength(2);
+    // The two follow-counter statements; other features' raw erasure statements (e.g. Synapse Storm's) share the transaction.
+    const counters = all.filter(
+      (o) => o.model === '$executeRaw' && /"(subscriberCount|followCount)"/.test((o as unknown as { sql: string }).sql),
+    );
+    expect(counters).toHaveLength(2);
     expect(find(all, 'watch', 'deleteMany')!.args.where).toEqual({ userId: U });
     expect(find(all, 'rsvp', 'deleteMany')!.args.where).toEqual({ userId: U });
     expect(find(all, 'userQuest', 'deleteMany')!.args.where).toEqual({ userId: U });

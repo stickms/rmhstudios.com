@@ -1,4 +1,5 @@
 import { apiRoute } from '@/lib/api/route.server';
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@features/slice-it/engine/slice-it.contract';
@@ -7,6 +8,7 @@ import { prisma } from '@/lib/prisma.server';
 import { resolveUserDisplay, userDisplaySelect } from '@/lib/user-display';
 import { CommentBodyZ } from '@features/slice-it/engine/api-schemas';
 import { extractTimestamp } from '@features/slice-it/engine/taxonomy';
+import { notifySongComment } from '@features/slice-it/engine/comment-notices.server';
 
 const CommentQueryZ = z.object({
   cursor: z.string().max(64).optional(),
@@ -74,6 +76,8 @@ export const route = apiRoute('/api/slice-it/songs/$id/comments', {
       rateLimit: { limit: 15, windowMs: 60_000, prefix: 'slice-comments', scope: 'user' },
     },
     async ({ params, body, userId }) => {
+      const restricted = await restrictionResponse(userId, 'comment');
+      if (restricted) return restricted;
       const song = await prisma.song.findUnique({
         where: { id: params.id },
         // `duration` for L5: a timestamp past the end of the track is
@@ -105,6 +109,8 @@ export const route = apiRoute('/api/slice-it/songs/$id/comments', {
           user: { select: userDisplaySelect },
         },
       });
+      // After the save: tell the uploader. It logs its own failures and never fails the comment.
+      await notifySongComment({ songId: params.id, commenterId: userId });
       return Response.json(format(comment, userId));
     },
   ),

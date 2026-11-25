@@ -1,7 +1,8 @@
 /**
  * Ad-hoc TTL maps only go DOWN (redesign audit C4).
  *
- * The one cache helper is `lib/cached.server.ts` (`cached()`, tags, `lruL1()`). A
+ * The one cache helper is `lib/cached.server.ts` (`cached()`, tags, `lruL1()`; the L1 engine itself is
+ * `lib/cache-l1.ts`, plain code a socket hub imports directly because it cannot import `cached.server.ts`). A
  * hand-rolled `const cache = new Map()` next to a `TTL_MS` constant has no size
  * bound, no single-flight, no cross-process invalidation and no metrics, and each
  * one is another place a stale value can hide. Existing ones are a backlog, not

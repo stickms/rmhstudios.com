@@ -98,7 +98,8 @@ export async function getSteamProfile(
           select: { following: { select: userDisplaySelect } },
         })
       : Promise.resolve([]),
-    prisma.gameReview.count({ where: { userId: ownerId } }),
+    // A review a moderator removed is not counted (s14-08).
+    prisma.gameReview.count({ where: { userId: ownerId, moderatedAt: null } }),
     prisma.gameBadge.findMany({
       where: { userId: ownerId },
       orderBy: { craftedAt: 'desc' },

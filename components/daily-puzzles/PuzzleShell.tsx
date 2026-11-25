@@ -28,6 +28,8 @@ import { ArrowLeft, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { ModeStreakNote } from '@/components/daily-puzzles/ModeStreakNote';
+import { PuzzleReportEntry } from '@/components/daily-puzzles/PuzzleReportEntry';
+import { isReportableMode } from '@/lib/daily-puzzles/reports';
 import { cn } from '@/lib/utils';
 
 export type PuzzleTone = 'success' | 'danger' | 'warning' | 'accent' | 'neutral';
@@ -277,12 +279,15 @@ export function PuzzleShareRow({
   shareLabel,
   disabled,
   gameMode,
+  dateKey,
 }: {
   shareText: string;
   shareLabel?: string;
   disabled?: boolean;
   /** The puzzle's mode id: adds the mode's streak and a link to the statistics page. */
   gameMode?: string;
+  /** The puzzle's day: with an AI mode it adds "Something wrong with this puzzle?" under the row. */
+  dateKey?: string;
 }) {
   const { t } = useTranslation('c-daily-puzzles');
   const row = (
@@ -308,6 +313,7 @@ export function PuzzleShareRow({
     <div className="flex flex-col items-center gap-3">
       <ModeStreakNote gameMode={gameMode} />
       {row}
+      {dateKey && isReportableMode(gameMode) ? <PuzzleReportEntry gameMode={gameMode} dateKey={dateKey} /> : null}
     </div>
   );
 }

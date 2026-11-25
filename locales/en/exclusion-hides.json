@@ -1,0 +1,9 @@
+{
+  "excluded-body": "Coin games are hidden from menus and search while it lasts. Nothing else on the site changed.",
+  "excluded-settings": "Play limits",
+  "excluded-title": "You excluded yourself from staking until {{date}}",
+  "hidden-until": "Coin games are hidden from menus and search until {{date}}",
+  "invite-excluded": "You excluded yourself from staking",
+  "wager-back": "Back to compete",
+  "wager-title": "Wager Match"
+}

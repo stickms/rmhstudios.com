@@ -14,5 +14,11 @@
   "record": "{{wins}}W {{losses}}L {{draws}}D",
   "season-ends": "Season {{season}} ends {{date}}",
   "season-progress": "Season progress",
-  "signed-out": "Sign in to see your standing this season."
+  "signed-out": "Sign in to see your standing this season.",
+  "tier-bronze": "Bronze",
+  "tier-diamond": "Diamond",
+  "tier-gold": "Gold",
+  "tier-master": "Master",
+  "tier-platinum": "Platinum",
+  "tier-silver": "Silver"
 }

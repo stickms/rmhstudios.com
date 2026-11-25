@@ -15,6 +15,7 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useArrival } from '@/components/ui/arrive';
 import RmhTubeHeader from '@/components/rmhtube/RmhTubeHeader';
+import ReportRoomButton from '@/components/rmhtube/ReportRoomButton';
 import {
   cancelPartyApi,
   getPartyApi,
@@ -173,16 +174,35 @@ export default function PartyPage() {
           )}
           {query.isError && (
             <div className="py-8">
-              <h1 className="mb-2 text-xl font-semibold">
-                {t('not-found-title', {
-                  defaultValue: 'Party not found',
-                })}
-              </h1>
-              <p className="mb-4 text-sm text-app-text-muted">
-                {t('not-found-body', {
-                  defaultValue: 'The link may be wrong, or the party was removed.',
-                })}
-              </p>
+              {errorField<string>(query.error, 'reason') === 'MODERATED' ? (
+                <>
+                  <h1 className="mb-2 text-xl font-semibold">
+                    {t('room-closed-moderator', {
+                      ns: 'tube-room-reports',
+                      defaultValue: 'This room was closed by a moderator',
+                    })}
+                  </h1>
+                  <p className="mb-4 text-sm text-app-text-muted">
+                    {t('room-closed-moderator-body', {
+                      ns: 'tube-room-reports',
+                      defaultValue: 'It is no longer listed and cannot be joined.',
+                    })}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h1 className="mb-2 text-xl font-semibold">
+                    {t('not-found-title', {
+                      defaultValue: 'Party not found',
+                    })}
+                  </h1>
+                  <p className="mb-4 text-sm text-app-text-muted">
+                    {t('not-found-body', {
+                      defaultValue: 'The link may be wrong, or the party was removed.',
+                    })}
+                  </p>
+                </>
+              )}
               <Link to="/rmhtube" className="text-sm underline">
                 {t('back-landing', {
                   defaultValue: 'Back to RMHTube',
@@ -192,7 +212,9 @@ export default function PartyPage() {
           )}
           {party && (
             <article className={arrive}>
-              <h1 className="mb-1 text-2xl font-semibold">{party.name}</h1>
+              <h1 dir="auto" className="mb-1 text-2xl font-semibold">
+                {party.name}
+              </h1>
               <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1">
                 <p className="text-sm text-app-text-muted">
                   {t('hosted-by', {
@@ -311,6 +333,7 @@ export default function PartyPage() {
                       defaultValue: 'Copy link',
                     })}
                   </Button>
+                  <ReportRoomButton roomId={roomId} isHost={party.viewerIsHost} variant="text" />
                 </div>
               )}
               {party.viewerIsHost && !party.closed && (

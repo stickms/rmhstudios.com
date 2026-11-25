@@ -30,10 +30,12 @@ import { AwayStatusLine } from '@/components/messages/AwayLine';
 import { BadgeMark } from '@/components/shop/art/BadgeMark';
 import { PetMark } from '@/components/shop/art/PetMark';
 import { CompareProfileLink } from '@/components/achievements/CompareProfileLink';
-import type { ProfileData } from './profile-types';
+import type { ProfileData, ProfileViewerPatch } from './profile-types';
+import { ProfileMenu } from './ProfileMenu';
 import { ProfileBanner } from './ProfileBanner';
 import './profile.css';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { useRiskSurfacesHidden } from '@/hooks/useRiskSurfacesHidden';
 
 const DEFAULT_AVATAR = '/images/social/default_avatar.png';
 
@@ -132,6 +134,8 @@ export interface ProfileHeroProps {
   onJoinMembership: () => void;
   onShowSocial: (type: 'followers' | 'following') => void;
   onShowAchievements: () => void;
+  /** The profile menu changed the viewer's mute or block of this account (the page's copy of the profile follows). */
+  onViewerChange?: (patch: ProfileViewerPatch) => void;
 }
 
 /** A public count. It opens its list only when `onOpen` is given: a viewer who may not browse the list sees the number as text. */
@@ -179,8 +183,11 @@ export function ProfileHero({
   onJoinMembership,
   onShowSocial,
   onShowAchievements,
+  onViewerChange,
 }: ProfileHeroProps) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('feed');
+  // The coin count links to the coin hub; a self-excluded viewer sees it as text only (W8).
+  const riskHidden = useRiskSurfacesHidden();
   const name = displayName || profile.username || t('user', { defaultValue: 'User' });
   // The banner box holds the uploaded picture; without one, the equipped banner cosmetic, or else the equipped theme's
   // backdrop. Steel phase 5 dropped the element that drew this value and left the line that computed it.
@@ -361,6 +368,8 @@ export function ProfileHero({
             <Button variant="ghost" onClick={onGift}>
               {t('gift-a-membership', { defaultValue: 'Gift a membership' })}
             </Button>
+            {/* Mute, block, report and "pretending to be someone": someone else's profile only. */}
+            <ProfileMenu profile={profile} name={name} signedIn={signedIn} onChange={onViewerChange} />
           </>
         ) : (
           <Button asChild variant="primary">
@@ -411,21 +420,27 @@ export function ProfileHero({
             {t('rmharks-label', { defaultValue: 'RMHarks' })}
           </span>
         </span>
-        <Link
-          to="/predictions"
-          className="text-site-text-muted"
-          title={t('rmh-coins-count', {
+        {(() => {
+          const coins = (
+            <>
+              <AnimatedCount value={profile.coins} format={count} className="font-semibold text-site-text" />{' '}
+              {t('rmh-coins-label', { defaultValue: 'coins' })}
+            </>
+          );
+          const coinsTitle = t('rmh-coins-count', {
             count: profile.coins,
             defaultValue: '{{count}} RMH Coins',
-          })}
-        >
-          <AnimatedCount
-            value={profile.coins}
-            format={count}
-            className="font-semibold text-site-text"
-          />{' '}
-          {t('rmh-coins-label', { defaultValue: 'coins' })}
-        </Link>
+          });
+          return riskHidden ? (
+            <span className="text-site-text-muted" title={coinsTitle}>
+              {coins}
+            </span>
+          ) : (
+            <Link to="/predictions" className="text-site-text-muted" title={coinsTitle}>
+              {coins}
+            </Link>
+          );
+        })()}
       </div>
 
       <div className="t-meta mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">

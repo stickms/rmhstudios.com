@@ -4,6 +4,14 @@
  */
 import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// s14-17: these writes ask the member's timeouts first; this suite is not about them (restriction-paths and
+// lib/api/__tests__/v1-timeouts.test.ts are), so nobody is timed out here.
+vi.mock('@/lib/moderation/restrictions.server', () => ({
+  restrictionResponse: async () => null,
+  restrictionMessage: async () => null,
+  isRestricted: async () => false,
+}));
 import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 import { BAN_ENFORCEMENT_PATHS } from '@/lib/communities/bans';
 

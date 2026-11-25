@@ -48,6 +48,8 @@ export type ThreadPostView = {
   createdAt: string;
   author: PersonRef;
   canDelete: boolean;
+  /** The viewer wrote this reply (never offered "Report"). */
+  isMine: boolean;
 };
 
 export type ThreadPage = {
@@ -62,6 +64,8 @@ export type ThreadPage = {
     pinned: boolean;
     author: PersonRef;
     canDelete: boolean;
+    /** The viewer wrote this discussion (never offered "Report"). */
+    isMine: boolean;
   };
   posts: ThreadPostView[];
   signedIn: boolean;

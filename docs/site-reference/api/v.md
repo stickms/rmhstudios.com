@@ -60,6 +60,9 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/v1/me/games/:gameId/days` | `GET` `OPTIONS` | `app/routes/api/v1/me/games/$gameId/days.ts` |
 | `/api/v1/me/highlights` | `GET` `OPTIONS` | `app/routes/api/v1/me/highlights.ts` |
 | `/api/v1/me/highlights/:id` | `DELETE` `OPTIONS` `PATCH` | `app/routes/api/v1/me/highlights/$id.ts` |
+| `/api/v1/me/homes/saved` | `GET` `OPTIONS` | `app/routes/api/v1/me/homes/saved.ts` |
+| `/api/v1/me/homes/saved/:listingId` | `DELETE` `OPTIONS` `PUT` | `app/routes/api/v1/me/homes/saved/$listingId.ts` |
+| `/api/v1/me/homes/searches` | `GET` `OPTIONS` | `app/routes/api/v1/me/homes/searches.ts` |
 | `/api/v1/me/ladder/applications` | `GET` `OPTIONS` | `app/routes/api/v1/me/ladder/applications.ts` |
 | `/api/v1/me/ladder/applications/:id` | `GET` `OPTIONS` `PATCH` | `app/routes/api/v1/me/ladder/applications/$id.ts` |
 | `/api/v1/me/ladder/own-jobs` | `OPTIONS` `POST` | `app/routes/api/v1/me/ladder/own-jobs.ts` |

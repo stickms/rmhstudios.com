@@ -68,3 +68,15 @@ export function formatTotalDuration(totalSeconds: number): string {
   if (h > 0) return `${h}h ${m}m`;
   return `${m}m`;
 }
+
+/**
+ * s14-20: the message the composer is replying to, or null once it is no longer in the room (a moderator removed it).
+ * The composer sends `replyToId` only for a target this returns, so a reply never names a message that is gone.
+ */
+export function liveReplyTarget<T extends { id: string }>(
+  target: T | null,
+  chat: readonly { id: string }[] | undefined,
+): T | null {
+  if (!target || !chat) return null;
+  return chat.some((m) => m.id === target.id) ? target : null;
+}

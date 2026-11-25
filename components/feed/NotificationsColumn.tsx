@@ -624,8 +624,10 @@ export function NotificationsColumn({
                   return link && isSiteRelativePath(link) ? link : '/notifications';
                 })(),
               });
+            // A thread reply carries its own sentence ("Dana replied in X"): it leads the row instead of repeating the verb.
+            const noticeLed = Boolean(sys) || (n.previewKey === 'game-thread-reply' && Boolean(previewText));
             const rowSummary =
-              previewText && sys
+              previewText && noticeLed
                 ? previewText
                 : `${actorName} ${verb}`.trim();
             // An unread notification is bold; a read one is a plain row.
@@ -648,9 +650,9 @@ export function NotificationsColumn({
                       {/* Who did it; a system notification has no person and shows a bell. A grouped row shows its newest actor. */}
                       {isSystem ? <InboxAvatar icon={Bell} /> : <InboxAvatar person={n.actor} />}
                       <div className="min-w-0 flex-1">
-                        {sys ? (
+                        {noticeLed ? (
                           <p className="t-body font-semibold text-site-text">
-                            {previewText || sys.label}
+                            {previewText || sys?.label}
                           </p>
                         ) : (
                           <>

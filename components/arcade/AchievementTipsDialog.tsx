@@ -12,6 +12,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/contract/client';
 import { listAchievementTipsApi, postAchievementTipApi, voteAchievementTipApi } from '@/lib/arcade/arcade.contract';
 import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { RemovedByModerator, ReportItemButton } from '@/components/steam/ReportItem';
 
 interface Tip {
   id: string;
@@ -23,6 +24,7 @@ interface Tip {
   };
   isMine: boolean;
   voted: boolean;
+  removed: boolean;
 }
 
 export function AchievementTipsDialog({
@@ -141,13 +143,23 @@ export function AchievementTipsDialog({
           ) : (
             tips.map((tip) => (
               <div key={tip.id} className={cn('p-4', arrival, isNew(tip.id) && ARRIVE)}>
-                <p className="whitespace-pre-wrap break-words text-sm text-site-text">{tip.body}</p>
+                <p dir="auto" className="whitespace-pre-wrap break-words text-sm text-site-text">
+                  {tip.body}
+                </p>
+                {tip.removed ? <RemovedByModerator className="t-meta text-site-text-muted" /> : null}
                 <div className="mt-2 flex items-center justify-between text-xs text-site-text-muted">
-                  <span className="truncate">{tip.author.name ?? tip.author.handle}</span>
+                  <bdi className="truncate">{tip.author.name ?? tip.author.handle}</bdi>
+                  <ReportItemButton
+                    entityType="achievement-tip"
+                    entityId={tip.id}
+                    signedIn={signedIn}
+                    isOwn={tip.isMine}
+                    className="inline-flex items-center gap-1 text-site-text-muted underline"
+                  />
                   <button
                     type="button"
                     onClick={() => void vote(tip)}
-                    disabled={!signedIn || tip.isMine}
+                    disabled={!signedIn || tip.isMine || tip.removed}
                     aria-pressed={tip.voted}
                     className={cn(
                       'inline-flex items-center gap-1 rounded-site-sm px-1.5 py-0.5',

@@ -5,6 +5,7 @@ import { fmtInt } from './hooks';
 import { api } from '@/lib/contract/client';
 import { getElectionMarketsApi } from '@/lib/elections/elections.contract';
 import { useArrival } from '@/components/ui/arrive';
+import { useRiskSurfacesHidden } from '@/hooks/useRiskSurfacesHidden';
 
 /** The slice of GET /api/elections/markets this panel reads. */
 interface Market {
@@ -40,6 +41,8 @@ export function MarketsPanel({
     useTranslation(
       'c-elections',
     );
+  // A self-excluded member is not offered the trade link (W8).
+  const riskHidden = useRiskSurfacesHidden();
   const {
     data,
   } =
@@ -198,7 +201,7 @@ export function MarketsPanel({
                           },
                         )}
                   </span>
-                  {resolved ? null : (
+                  {resolved || riskHidden ? null : (
                     <Link
                       className="el-btn el-btn--sm el-btn--pink"
                       to="/predictions"

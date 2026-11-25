@@ -8,6 +8,7 @@
  * change it, who is going, and the calendar entry.
  */
 import { notice, type NoticePreview } from '@/lib/notifications/notice-keys';
+import { refusalBody } from '@/lib/errors/codes';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
@@ -15,6 +16,8 @@ import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import { generateRoomCode } from '@/lib/rmhtube/utils';
 import { parseMedia } from '@/lib/rmhtube/media';
 import { enqueueTubePartyFanout } from '@/lib/rmhtube/subscriptions.server';
+import { recentlyModeratedName } from '@/lib/rmhtube/room-reports.server';
+import { normalizeRoomName } from '@/lib/rmhtube/room-reports';
 import {
   EXPIRE_AFTER_MS,
   GOING_AVATARS,
@@ -43,7 +46,11 @@ export type PartyRefusal =
   | 'INVALID_VIDEO'
   | 'NOT_FOUND'
   | 'FORBIDDEN'
-  | 'CLOSED';
+  | 'CLOSED'
+  /** s14-10: a moderator removed the room; it cannot be read as a party or edited back. */
+  | 'MODERATED'
+  /** s14-10: the host's room of this name was removed by a moderator in the last 30 days. */
+  | 'NAME_REMOVED';
 
 export type PartyResult<T = PartyDTO> =
   | {
@@ -157,6 +164,13 @@ export async function scheduleParty(
       reason: 'INVALID_TIME',
     };
 
+  // s14-10: a name a moderator removed from this host's rooms in the last 30 days cannot be scheduled again.
+  if (await recentlyModeratedName(hostId, input.name, now))
+    return {
+      ok: false,
+      reason: 'NAME_REMOVED',
+    };
+
   // Password rooms cannot be scheduled: the page is public and a password cannot be shared on it, so the
   // room is created without one (this endpoint takes no password at all).
   let video: {
@@ -267,14 +281,30 @@ export async function scheduleParty(
 
 /** The party behind a room code, or null when the room is not a scheduled party. */
 export async function getParty(roomId: string, viewerId: string | null): Promise<PartyDTO | null> {
-  const row = await prisma.rmhTubeRoom.findUnique({
+  // s14-10: a room a moderator removed is not a party anyone can read (the page asks `partyModerated` for the sentence).
+  const row = await prisma.rmhTubeRoom.findFirst({
     where: {
       id: roomId,
+      moderatedAt: null,
     },
     include: partyInclude,
   });
   if (!row || !row.scheduledFor) return null;
   return dtoFor(row, viewerId);
+}
+
+/** Whether a moderator removed this room, so the party page can say so instead of "not found". Reveals nothing else. */
+export async function partyModerated(roomId: string): Promise<boolean> {
+  const row = await prisma.rmhTubeRoom.findUnique({
+    where: {
+      id: roomId,
+    },
+    select: {
+      moderatedAt: true,
+      scheduledFor: true,
+    },
+  });
+  return !!row && row.moderatedAt !== null && row.scheduledFor !== null;
 }
 
 /**
@@ -285,6 +315,8 @@ export async function listUpcoming(viewerId: string | null, now: Date = new Date
   const since = new Date(now.getTime() - EXPIRE_AFTER_MS);
   const open = {
     closedAt: null,
+    // s14-10: a removed room is in no list.
+    moderatedAt: null,
     scheduledFor: {
       gte: since,
     },
@@ -385,10 +417,26 @@ export async function updateParty(
       ok: false,
       reason: 'FORBIDDEN',
     };
+  // s14-10: a moderator's removal sticks: the host cannot edit the room back.
+  if (room.moderatedAt)
+    return {
+      ok: false,
+      reason: 'MODERATED',
+    };
   if (room.closedAt)
     return {
       ok: false,
       reason: 'CLOSED',
+    };
+  // s14-10: a rename to a name a moderator removed from this host's rooms in the last 30 days is refused.
+  if (
+    patch.name !== undefined &&
+    normalizeRoomName(patch.name) !== normalizeRoomName(room.name) &&
+    (await recentlyModeratedName(userId, patch.name, now))
+  )
+    return {
+      ok: false,
+      reason: 'NAME_REMOVED',
     };
 
   let newStart: Date | null = null;
@@ -419,6 +467,7 @@ export async function updateParty(
       id: roomId,
       hostId: userId,
       closedAt: null,
+      moderatedAt: null,
     },
     data: {
       ...(patch.name !== undefined
@@ -532,7 +581,7 @@ export async function setGoing(
     },
     include: partyInclude,
   });
-  if (!room || !room.scheduledFor)
+  if (!room || !room.scheduledFor || room.moderatedAt)
     return {
       ok: false,
       reason: 'NOT_FOUND',
@@ -589,9 +638,11 @@ export async function partyForCalendar(roomId: string): Promise<
     })
   | null
 > {
-  const row = await prisma.rmhTubeRoom.findUnique({
+  // s14-10: no calendar file for a removed room.
+  const row = await prisma.rmhTubeRoom.findFirst({
     where: {
       id: roomId,
+      moderatedAt: null,
     },
   });
   if (!row || !row.scheduledFor) return null;
@@ -780,13 +831,22 @@ const REFUSAL_STATUS: Record<PartyRefusal, number> = {
   NOT_FOUND: 404,
   FORBIDDEN: 403,
   CLOSED: 409,
+  MODERATED: 409,
+  NAME_REMOVED: 409,
 };
 
 /** The error response for a refusal: a stable `reason` the page translates, and a generic `error` line. */
 export function refusalResponse(reason: PartyRefusal): Response {
+  // s14-10: the two moderator refusals also carry their taxonomy code, so the dialog reads them in the member's language.
+  const coded =
+    reason === 'MODERATED'
+      ? refusalBody('CONTENT_REMOVED_BY_MODERATOR')
+      : reason === 'NAME_REMOVED'
+        ? refusalBody('TUBE_ROOM_NAME_REMOVED')
+        : { error: 'Request not allowed' };
   return Response.json(
     {
-      error: 'Request not allowed',
+      ...coded,
       reason,
     },
     {

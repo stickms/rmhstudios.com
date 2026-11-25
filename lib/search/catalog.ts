@@ -14,6 +14,7 @@
 import { games, apps } from '@/lib/catalog';
 import { confidenceOf, scoreRecord, MATCH_FLOOR } from './score';
 import type { SearchHit, SearchKind } from './types';
+import { isRiskSurfacePath } from '@/lib/economy/risk-surfaces';
 
 export interface SiteDestination {
   id: string;
@@ -518,6 +519,8 @@ export function catalogNames(): string[] {
 export interface CatalogSearchOptions {
   /** Drop auth-gated destinations for signed-out visitors. */
   signedIn?: boolean;
+  /** Drop the destinations that stake coins, for a self-excluded member (`lib/economy/risk-surfaces.ts`). */
+  hideRiskSurfaces?: boolean;
   /** Max hits per kind. */
   limit?: number;
   /** Minimum score to include. Defaults to {@link MATCH_FLOOR}. */
@@ -643,7 +646,9 @@ export function searchCatalog(
   );
 
   const pageHits = collect(
-    SITE_DESTINATIONS.filter((d) => opts.signedIn !== false || !d.requiresAuth),
+    SITE_DESTINATIONS.filter(
+      (d) => (opts.signedIn !== false || !d.requiresAuth) && !(opts.hideRiskSurfaces && isRiskSurfacePath(d.href)),
+    ),
     'page',
     (d, score, reason) => ({
       key: `page:${d.id}`,

@@ -18,6 +18,7 @@ export interface UpdatedProfile {
   tipGoalLabel: string | null;
   membershipPriceCoins: number | null;
   showLikes: boolean;
+  showSupporterMarks: boolean;
   dmPrivacy: NonNullable<UpdateProfileInput['dmPrivacy']>;
   followListVisibility: NonNullable<UpdateProfileInput['followListVisibility']>;
   dmRequests: boolean;

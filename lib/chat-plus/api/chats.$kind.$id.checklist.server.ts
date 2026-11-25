@@ -3,7 +3,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
 import { createChatChecklistApi, tickChatChecklistApi } from '@/lib/chat-plus/chat.contract';
-import { requireChat } from '@/lib/chat-plus/route-helpers.server';
+import { requireChat, requireChatText } from '@/lib/chat-plus/route-helpers.server';
 import {
   checklistSchema,
   createChecklist,
@@ -28,7 +28,7 @@ export const route = apiRoute('/api/chats/$kind/$id/checklist', {
       body: checklistSchema,
     },
     async ({ params, userId, body }) => {
-      const access = await requireChat(params, userId, { write: true });
+      const access = await requireChatText(params, userId);
       if (access instanceof Response) return access;
       const posted = await createChecklist(access, body);
       return Response.json({ message: posted.message, kind: posted.kind }, { status: 201 });

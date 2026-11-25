@@ -9,7 +9,7 @@ import { listCuratedBuilds } from '@/lib/builds/curated';
 import { userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
 import { isTrackableTitle } from '@/lib/games/route-match';
 import { getLibraryExtras } from '@/lib/games/detail.server';
-import { notifyHubReply } from '@/lib/cards/notify.server';
+import { notifyThreadReply } from '@/lib/games/thread-notices.server';
 import { listWorkshop } from '@/lib/games/workshop.server';
 import { listGuides, listReviews } from '@/lib/games/meta.server';
 import {
@@ -110,13 +110,14 @@ export async function createPost(input: {
     });
     return { id: post.id, thread };
   });
-  // After the commit: tell the thread's author (never about their own reply).
-  await notifyHubReply({
-    threadAuthorId: made.thread.authorId,
-    replierId: input.userId,
-    gameId: made.thread.gameId,
+  // After the commit: tell the thread's author and its earlier posters (never the poster; failures are logged).
+  await notifyThreadReply({
+    id: made.id,
     threadId: made.thread.id,
+    gameId: made.thread.gameId,
     threadTitle: made.thread.title,
+    threadAuthorId: made.thread.authorId,
+    posterId: input.userId,
   });
   return { id: made.id };
 }
@@ -133,6 +134,8 @@ export async function deleteThread(input: {
   if (!t) throw new HubError('NOT_FOUND');
   if (t.authorId !== input.userId && !input.isAdmin) throw new HubError('FORBIDDEN');
   await prisma.gameThread.delete({ where: { id: input.threadId } });
+  // Notices about replies in the removed thread would open a page that is gone.
+  await prisma.notification.deleteMany({ where: { entityType: 'hub-thread', entityId: input.threadId } });
 }
 
 export async function deletePost(input: {
@@ -302,6 +305,7 @@ export async function getThreadPage(
       pinned: t.pinned,
       author,
       canDelete: viewer.isAdmin || viewer.id === author.userId,
+      isMine: viewer.id === author.userId,
     },
     posts: t.posts.map((p) => ({
       id: p.id,
@@ -309,6 +313,7 @@ export async function getThreadPage(
       createdAt: p.createdAt.toISOString(),
       author: person(p.author as AuthorRow),
       canDelete: viewer.isAdmin || viewer.id === p.authorId,
+      isMine: viewer.id === p.authorId,
     })),
     signedIn: !!viewer.id,
     isAdmin: viewer.isAdmin,

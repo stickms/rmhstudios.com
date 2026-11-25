@@ -4,6 +4,7 @@ import type { ProfileData } from '@/components/profile/profile-types';
 import {
   applyFollow,
   applyMembershipJoined,
+  applyViewerChange,
   applySavedProfile,
   buildEditInitial,
   canSeeGuestbookTab,
@@ -108,6 +109,24 @@ describe('profileThemeStyle', () => {
     ).toEqual({
       '--site-accent': '#111',
     });
+  });
+});
+
+describe('viewer changes from the profile menu', () => {
+  it('a mute only records the mute', () => {
+    const muted = applyViewerChange({ ...profile, isFollowing: true, followerCount: 4 }, { viewerHasMuted: true });
+    expect(muted).toMatchObject({ viewerHasMuted: true, isFollowing: true, followerCount: 4 });
+  });
+  it('a block also drops the follow it removes, once', () => {
+    const blocked = applyViewerChange({ ...profile, isFollowing: true, followerCount: 4 }, { viewerHasBlocked: true });
+    expect(blocked).toMatchObject({ viewerHasBlocked: true, isFollowing: false, followerCount: 3 });
+    const again = applyViewerChange(blocked, { viewerHasBlocked: true });
+    expect(again).toMatchObject({ isFollowing: false, followerCount: 3 });
+  });
+  it('an unblock leaves the follow state alone and a missing profile stays missing', () => {
+    const open = applyViewerChange({ ...profile, isFollowing: false, followerCount: 3 }, { viewerHasBlocked: false });
+    expect(open).toMatchObject({ viewerHasBlocked: false, isFollowing: false, followerCount: 3 });
+    expect(applyViewerChange(null, { viewerHasMuted: true })).toBeNull();
   });
 });
 

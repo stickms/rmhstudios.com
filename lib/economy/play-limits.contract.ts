@@ -22,3 +22,14 @@ export const setPlayLimitsApi = endpoint<{
   method: 'POST',
   path: '/api/settings/play-limits',
 });
+
+/**
+ * Whether the risk surfaces (`lib/economy/risk-surfaces.ts`) are hidden from this member's menus and search. Says
+ * `hidden` and nothing else: the dates stay on the settings panel. Signed out is never hidden.
+ */
+export const getRiskSurfacesApi = endpoint<{
+  res: { hidden: boolean };
+}>()({
+  method: 'GET',
+  path: '/api/settings/play-limits/surfaces',
+});

@@ -426,6 +426,17 @@ function AdminDashboardPage() {
                 'Every RMHHomes feed with its status and last error, the latest runs, and controls to pause a feed, add one or run a scrape.',
             })}
           />
+
+          {/* s14-06 puzzle-reports */}
+          <AdminHubCard
+            to="/admin/daily-puzzles"
+            title={t('card-title', { ns: 'puzzle-reports', defaultValue: 'Daily puzzles' })}
+            description={t('card-description', {
+              ns: 'puzzle-reports',
+              defaultValue:
+                'The coming puzzles with their answers, reports from players, and a way to replace one before its day starts.',
+            })}
+          />
         </div>
       </AdminBody>
     </PageLayout>

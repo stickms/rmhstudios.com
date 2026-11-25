@@ -57,6 +57,9 @@ const RankingFileHistoryDetail = lazy(
 const SequenceSamHistoryDetail = lazy(
   () => import('@/components/rmhbox/minigames/sequence-sam/SequenceSamHistoryDetail'),
 );
+const IdentityCrisisHistoryDetail = lazy(
+  () => import('@/components/rmhbox/minigames/identity-crisis/IdentityCrisisHistoryDetail'),
+);
 
 // ─── Rhyme Time ──────────────────────────────────────────────────
 
@@ -584,5 +587,31 @@ registerHistoryDisplay({
     const last = rounds[rounds.length - 1]?.payload as Record<string, unknown> | undefined;
     const longest = typeof last?.length === 'number' ? last.length : 0;
     return `${rounds.length} rounds, up to ${longest} steps — Memory`;
+  },
+});
+
+// ─── Identity Crisis ─────────────────────────────────────────────
+
+registerHistoryDisplay({
+  minigameId: 'identity-crisis',
+  DetailComponent: IdentityCrisisHistoryDetail,
+  searchableFields: [
+    {
+      key: 'identity',
+      label: 'Identity',
+      extract: (log: GameLog) =>
+        log.actions
+          .filter((a) => a.type === 'identity_reveal')
+          .map((a) => (a.payload as Record<string, unknown>).identity as string)
+          .filter(Boolean),
+    },
+  ],
+  filterableFields: [],
+  getSummary: (log: GameLog) => {
+    const questions = log.actions.filter((a) => a.type === 'question_asked').length;
+    const solved = log.actions.filter(
+      (a) => a.type === 'identity_reveal' && (a.payload as Record<string, unknown>).outcome !== 'missed',
+    ).length;
+    return `${questions} questions, ${solved} of ${log.players.length} identified — Deduction`;
   },
 });

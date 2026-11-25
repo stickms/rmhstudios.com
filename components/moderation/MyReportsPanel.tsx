@@ -119,6 +119,23 @@ export function MyReportsPanel() {
     'rmhbox-pack': t('kind-rmhbox-pack', { defaultValue: 'Prompt pack' }),
 
     // s13-17 dm-reports
+
+    // Sprint 14 (docs/autonomous/sprint-14/plan.md §Anchors)
+    // s14-07 slice-reports
+    'song-comment': t('kind-song-comment', { defaultValue: 'Song comment' }),
+
+    // s14-08 game-reports
+    'game-review': t('kind-game-review', { defaultValue: 'Game review' }),
+    'game-guide': t('kind-game-guide', { defaultValue: 'Game guide' }),
+    'game-thread': t('kind-game-thread', { defaultValue: 'Game discussion' }),
+    'game-thread-post': t('kind-game-thread-post', { defaultValue: 'Discussion reply' }),
+    'achievement-tip': t('kind-achievement-tip', { defaultValue: 'Achievement tip' }),
+
+    // s14-09 profile-reports
+    impersonation: t('kind-impersonation', { defaultValue: 'Impersonation' }),
+
+    // s14-10 tube-room-reports
+    'tube-room': t('kind-tube-room', { defaultValue: 'Room' }),
   };
   const GONE: Partial<Record<ReportEntityType, string>> = {
     rmhark: t('gone-rmhark', { defaultValue: 'A post that is no longer available' }),
@@ -150,6 +167,24 @@ export function MyReportsPanel() {
 
     // s13-17 dm-reports
     dm: t('gone-dm', { defaultValue: 'A message that is no longer available' }),
+
+    // Sprint 14 (docs/autonomous/sprint-14/plan.md §Anchors)
+    // s14-07 slice-reports
+    song: t('gone-song', { defaultValue: 'A song that is no longer available' }),
+    'song-comment': t('gone-song-comment', { defaultValue: 'A song comment that is no longer available' }),
+
+    // s14-08 game-reports
+    'game-review': t('gone-game-review', { defaultValue: 'A game review that is no longer available' }),
+    'game-guide': t('gone-game-guide', { defaultValue: 'A game guide that is no longer available' }),
+    'game-thread': t('gone-game-thread', { defaultValue: 'A game discussion that is no longer available' }),
+    'game-thread-post': t('gone-game-thread-post', { defaultValue: 'A discussion reply that is no longer available' }),
+    'achievement-tip': t('gone-achievement-tip', { defaultValue: 'An achievement tip that is no longer available' }),
+
+    // s14-09 profile-reports
+    impersonation: t('gone-impersonation', { defaultValue: 'An account that is no longer available' }),
+
+    // s14-10 tube-room-reports
+    'tube-room': t('gone-tube-room', { defaultValue: 'A room that is no longer available' }),
   };
 
   const whatOf = (r: MyReport): string =>

@@ -2,7 +2,14 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { cancelPartyApi, getPartyApi, updatePartyApi } from '@/lib/rmhtube/parties.contract';
 import { updatePartyBody } from '@/lib/rmhtube/parties-schema';
-import { cancelParty, getParty, refusalResponse, roomIdFromParams, updateParty } from '@/lib/rmhtube/parties.server';
+import {
+  cancelParty,
+  getParty,
+  partyModerated,
+  refusalResponse,
+  roomIdFromParams,
+  updateParty,
+} from '@/lib/rmhtube/parties.server';
 
 /** One watch party: read it (anyone with the code), edit it or cancel it (its host only). */
 export const route = apiRoute('/api/rmhtube/parties/$roomId', {
@@ -15,11 +22,9 @@ export const route = apiRoute('/api/rmhtube/parties/$roomId', {
     async ({ userId, params }) => {
       const roomId = roomIdFromParams(params);
       const party = roomId ? await getParty(roomId, userId) : null;
-      return party
-        ? {
-            party,
-          }
-        : refusalResponse('NOT_FOUND');
+      if (party) return { party };
+      // s14-10: a removed room answers with the reason, so the page can say a moderator closed it.
+      return refusalResponse(roomId && (await partyModerated(roomId)) ? 'MODERATED' : 'NOT_FOUND');
     },
   ),
   PATCH: implement(

@@ -10,6 +10,7 @@ import type { PgBoss } from 'pg-boss';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
+import { ERROR_CODES, type ErrorCode } from '@/lib/errors/codes';
 import { recordAdminActionIn } from '@/lib/admin-audit.server';
 import { createNotification } from '@/lib/notifications.server';
 import {
@@ -209,6 +210,8 @@ export type ThemeOutcome<T = object> =
       ok: false;
       error: string;
       status: number;
+      /** Set where the refusal has a registered code (the shortlist edit's refusals). */
+      code?: ErrorCode;
     };
 
 /** Replace a member's marks. Votes only during voting; the cap is re-checked under the member's lock. */
@@ -392,8 +395,9 @@ export async function setCandidates(adminId: string, slug: string, raw: readonly
     if (jam.themeResolvedAt || jam.startsAt.getTime() <= Date.now()) {
       return {
         ok: false,
-        error: 'The jam has started',
+        error: ERROR_CODES.JAM_EDIT_LOCKED.text,
         status: 409,
+        code: 'JAM_EDIT_LOCKED',
       };
     }
     if (
@@ -405,8 +409,9 @@ export async function setCandidates(adminId: string, slug: string, raw: readonly
     ) {
       return {
         ok: false,
-        error: 'Themes cannot change once voting has begun',
+        error: ERROR_CODES.JAM_SHORTLIST_LOCKED.text,
         status: 409,
+        code: 'JAM_SHORTLIST_LOCKED',
       };
     }
     await tx.gameJamThemeCandidate.deleteMany({

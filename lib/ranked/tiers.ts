@@ -12,10 +12,13 @@
  * reaches Master.
  */
 
+/** The stable id of a tier: what the server sends and the client translates (the label below is English only). */
+export type TierId = 'master' | 'diamond' | 'platinum' | 'gold' | 'silver' | 'bronze';
+
 export interface RankTier {
-  /** Stable key for lookups/styling. */
-  key: string;
-  /** Display label. */
+  /** Stable key for lookups/styling; the tier's id. */
+  key: TierId;
+  /** English display label. Translate by `key` (`components/feed/tier-names.ts`); this stays for the developer API. */
   label: string;
   /** Inclusive lower bound on rating for this tier. */
   min: number;
@@ -66,4 +69,9 @@ export const RANK_TIERS: readonly RankTier[] = [
 /** The tier a given rating falls into. Always returns a tier (Bronze is the floor). */
 export function tierForRating(rating: number): RankTier {
   return RANK_TIERS.find((t) => rating >= t.min) ?? RANK_TIERS[RANK_TIERS.length - 1];
+}
+
+/** The id of the tier a given rating falls into. */
+export function tierIdForRating(rating: number): TierId {
+  return tierForRating(rating).key;
 }

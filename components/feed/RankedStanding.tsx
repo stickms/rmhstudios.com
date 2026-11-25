@@ -8,6 +8,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { tierName } from '@/components/feed/tier-names';
 import { apiQuery } from '@/lib/contract/client';
 import { getRankedStandingApi } from '@/lib/ranked/ranked.contract';
 import {
@@ -145,7 +146,7 @@ function StandingRow({ g }: { g: RankedStandingGame }) {
           ) : (
             <>
               <span className="text-site-text">{fmt.number(g.rating)}</span>
-              {g.tier ? ` ${g.tier}` : ''}
+              {g.tier ? ` ${tierName(t, g.tierId, g.tier)}` : ''}
             </>
           )}
         </span>

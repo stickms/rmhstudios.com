@@ -1,6 +1,7 @@
 import { tournamentRefusal } from '@/lib/tournaments/tournament-error';
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
+import { isAppError } from '@/lib/errors/codes';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { registerForTournament, TournamentError } from '@/lib/tournaments/tournament.server';
 
@@ -23,6 +24,8 @@ export const Route = createFileRoute('/api/tournaments/$id/register')({
           await registerForTournament({ tournamentId: params.id, userId: session.user.id });
           return Response.json({ ok: true });
         } catch (error) {
+          // A refused stake (self-exclusion, cool-off, daily cap; W8) carries its own status and code.
+          if (isAppError(error)) return Response.json(error.toBody(), { status: error.status });
           if (error instanceof TournamentError) {
             return Response.json({ error: error.message, ...tournamentRefusal(error) }, { status: error.status });
           }

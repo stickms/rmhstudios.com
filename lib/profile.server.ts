@@ -16,6 +16,7 @@ import type { ProfilePresence } from '@/lib/presence-types';
 import { inPresenceAudience } from '@/lib/profile/audience';
 import { canSeeFollowLists } from '@/lib/social/follow-list-privacy.server';
 import { normalizeFollowListVisibility, type FollowListVisibility } from '@/lib/social/follow-list-privacy';
+import { activeMuteWhere } from '@/lib/moderation/mute-expiry';
 
 /**
  * Coerce the JSON `links` column into a validated ProfileLink[]. Defends the
@@ -53,6 +54,7 @@ const profileSelect = {
       website: true,
       links: true,
       showLikes: true,
+      showSupporterMarks: true,
       guestbookMode: true,
       dmPrivacy: true,
       dmRequests: true,
@@ -113,6 +115,8 @@ export interface ProfilePayload {
   links: ProfileLink[];
   bannerUrl: string | null;
   showLikes: boolean;
+  /** The creator's switch for supporter marks on replies (sprint 14 #13); sent to the owner only. */
+  showSupporterMarks?: boolean;
   /** Plan U15 — 'off' | 'following' | 'everyone'. */
   guestbookMode: string;
   /** G1 — true only on the owner's opted-in birthday (UTC). */
@@ -142,6 +146,10 @@ export interface ProfilePayload {
   followingCount: number;
   rmharkCount: number;
   isFollowing: boolean;
+  /** The viewer has an active (unexpired) mute on this account. False for a signed-out viewer and on one's own profile. */
+  viewerHasMuted: boolean;
+  /** The viewer has blocked this account. False for a signed-out viewer and on one's own profile. */
+  viewerHasBlocked: boolean;
   isOwnProfile: boolean;
   handleCooldownMs?: number;
   hasCustomAvatar?: boolean;
@@ -246,6 +254,21 @@ export async function getProfile(
     ? Boolean((user as Record<string, unknown>).followers) &&
       ((user as Record<string, unknown>).followers as unknown[]).length > 0
     : false;
+  // The profile menu reads "Unmute" / "Unblock" when these apply. A mute counts only while it is in force (an expired
+  // row is absent for every reader), so it goes through the same predicate the other mute readers use.
+  const [viewerMute, viewerBlock] =
+    viewerId && !isOwnProfile
+      ? await Promise.all([
+          prisma.userMute.findFirst({
+            where: { muterId: viewerId, mutedId: user.id, ...activeMuteWhere(new Date()) },
+            select: { id: true },
+          }),
+          prisma.userBlock.findUnique({
+            where: { blockerId_blockedId: { blockerId: viewerId, blockedId: user.id } },
+            select: { id: true },
+          }),
+        ])
+      : [null, null];
   const followListVisibility = normalizeFollowListVisibility(user.profile?.followListVisibility);
   const presence = await resolveProfilePresence({
     userId: user.id,
@@ -284,6 +307,7 @@ export async function getProfile(
     links: parseProfileLinks(user.profile?.links),
     bannerUrl: user.profile?.bannerUrl ?? null,
     showLikes: user.profile?.showLikes ?? false,
+    ...(isOwnProfile ? { showSupporterMarks: user.profile?.showSupporterMarks ?? true } : {}),
     guestbookMode: user.profile?.guestbookMode ?? 'off',
     birthdayToday: !!user.birthday && isBirthdayOn(user.birthday.month, user.birthday.day, new Date()),
     dmPrivacy: user.profile?.dmPrivacy ?? 'EVERYONE',
@@ -305,6 +329,8 @@ export async function getProfile(
     followingCount: user.followingCount,
     rmharkCount: user.postCount,
     isFollowing,
+    viewerHasMuted: viewerMute !== null,
+    viewerHasBlocked: viewerBlock !== null,
     isOwnProfile,
     ...(isOwnProfile
       ? {

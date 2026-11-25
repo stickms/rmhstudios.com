@@ -291,6 +291,11 @@ export const NOTICE_TEMPLATES = {
 
   // s13-20 message-push
   'dm-received': '{{name}} sent you a message',
+
+  // Sprint 14 notices (docs/autonomous/sprint-14/plan.md §Anchors)
+  // s14-11 thread-replies
+  'game-thread-reply': '{{name}} replied in {{title}}',
+  'song-comment': '{{name}} commented on {{title}}',
 } as const;
 
 export type NoticeKey = keyof typeof NOTICE_TEMPLATES;
@@ -587,6 +592,11 @@ export interface NoticeParamTypes {
 
   // s13-20 message-push
   'dm-received': { name: string | number };
+
+  // Sprint 14 notices (docs/autonomous/sprint-14/plan.md §Anchors)
+  // s14-11 thread-replies
+  'game-thread-reply': { name: string | number; title: string | number };
+  'song-comment': { name: string | number; title: string | number };
 }
 
 export type NoticeParamValue = string | number;

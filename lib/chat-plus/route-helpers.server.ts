@@ -1,11 +1,13 @@
 /**
  * Shared preamble for the `/api/chats/$kind/$id/*` routes: validate the kind,
  * resolve the viewer's access (404 for strangers — indistinguishable from "no
- * such chat"), and refuse banned accounts on anything that writes.
+ * such chat"), and refuse banned accounts on anything that writes, and timed-out
+ * ones on anything that writes text (`requireChatText`).
  */
 
 import { refusalBody } from '@/lib/errors/codes';
 import { getActiveBan } from '@/lib/admin-audit.server';
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { getChatAccess, type ChatAccess } from '@/lib/chat-plus/access.server';
 import { requestWriteRefusal } from '@/lib/messages/requests.server';
 import { chatKindSchema } from '@/lib/chat-plus/types-schema';
@@ -28,4 +30,19 @@ export async function requireChat(
     if (refusal) return Response.json({ error: refusal }, { status: 403 });
   }
   return access;
+}
+
+/**
+ * `requireChat` for a write that puts text in the chat (a thread reply, a checklist, a command's line): that is a chat
+ * message, so a moderator's timeout on messages and chats holds for it (s14-17). Votes, pins and settings are not
+ * text and use `requireChat(..., { write: true })`.
+ */
+export async function requireChatText(
+  params: Record<string, string>,
+  userId: string,
+): Promise<ChatAccess | Response> {
+  const access = await requireChat(params, userId, { write: true });
+  if (access instanceof Response) return access;
+  const restricted = await restrictionResponse(userId, 'message');
+  return restricted ?? access;
 }

@@ -2,6 +2,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { restoreGuideRevisionApi } from '@/lib/games/guide-history.contract';
 import { restoreGuideRevision } from '@/lib/games/guide-history.server';
+import { refusalBody } from '@/lib/errors/codes';
 
 /**
  * POST /api/guides/:id/revisions/:revisionId/restore — make an earlier version current. Author only (an admin can
@@ -17,6 +18,7 @@ export const route = apiRoute('/api/guides/$id/revisions/$revisionId/restore', {
         params.id,
         params.revisionId,
       );
+      if (result === 'removed') return Response.json(refusalBody('GAME_CONTENT_REMOVED_BY_MODERATOR'), { status: 409 });
       if (result === 'forbidden') return Response.json({ error: 'Forbidden' }, { status: 403 });
       if (result === 'not_found') return Response.json({ error: 'Not found' }, { status: 404 });
       return Response.json({ ok: true });

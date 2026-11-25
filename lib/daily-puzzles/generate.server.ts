@@ -66,7 +66,8 @@ async function callDeepSeek(system: string, user: string, maxTokens: number): Pr
     return res.choices[0]?.message?.content?.trim() ?? '';
 }
 
-async function generateForMode(
+/** Generate one puzzle without touching the table: the model, else the deterministic fallback. Never throws. */
+export async function generateForMode(
     mode: DailyPuzzleMode,
     dateKey: string,
 ): Promise<{ data: AnyPuzzle; source: 'deepseek' | 'fallback' }> {

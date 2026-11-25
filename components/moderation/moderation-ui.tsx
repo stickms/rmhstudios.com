@@ -67,8 +67,8 @@ export function useFeatureLabels(): Record<RestrictableFeature, string> {
     comment: t('restriction-feature-comment', {
       defaultValue: 'Replying',
     }),
-    message: t('restriction-feature-message', {
-      defaultValue: 'Direct messages',
+    message: t('restriction-feature-message-chats', {
+      defaultValue: 'Messages and chats',
     }),
     community: t('restriction-feature-community', {
       defaultValue: 'Creating communities',

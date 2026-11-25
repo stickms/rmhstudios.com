@@ -25,6 +25,8 @@
 
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
+import { isRestricted } from '@/lib/moderation/restrictions.server';
+import { refusalBody } from '@/lib/errors/codes';
 import { userDisplaySelect, resolveUser, resolveUserDisplay } from '@/lib/user-display';
 import { getRole, canModerate } from '@/lib/communities/access.server';
 import { setActivity } from '@/lib/presence.server';
@@ -295,6 +297,10 @@ export async function postSpaceMessage(input: {
   userId: string;
   body: string;
 }): Promise<SpaceMessageView> {
+  // s14-17: a Space's chat is a chat; a member timed out of messages and chats cannot write in it.
+  if (await isRestricted(input.userId, 'message')) {
+    throw new SpaceError(403, refusalBody('FEATURE_RESTRICTED').error);
+  }
   const space = await prisma.groupCall.findFirst({
     where: { id: input.spaceId, ...TITLED },
     select: { status: true, recordChat: true },

@@ -162,6 +162,7 @@ describe('keys, docs and filtering', () => {
 
   it('has a docs page for the RMHLadder group (s13-10) and for every group the registry declares', () => {
     expect(docsPathForGroup('RMHLadder')).toBe('developer-api/endpoints/rmhladder');
+    expect(docsPathForGroup('RMH Homes')).toBe('developer-api/endpoints/rmh-homes');
     expect(endpointsByGroup().map((g) => g.group)).toContain('RMHLadder');
   });
 

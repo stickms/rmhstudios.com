@@ -4,6 +4,7 @@
  * nothing from the server, and the screen turns every key below into words with a literal `t()` call.
  */
 import { z } from 'zod';
+import type { CoopRecord } from './coop-record';
 
 export const RUNS_PAGE_SIZE = 20;
 
@@ -132,7 +133,13 @@ export interface CoopMatchView {
 
 export type RunsKind = 'solo' | 'coop';
 export type SoloRunsPage = { kind: 'solo'; runs: SoloRunView[]; nextCursor: string | null };
-export type CoopMatchesPage = { kind: 'coop'; matches: CoopMatchView[]; nextCursor: string | null };
+export type CoopMatchesPage = {
+  kind: 'coop';
+  matches: CoopMatchView[];
+  nextCursor: string | null;
+  /** Only on the first co-op page: the member's co-op record, null with no co-op profile. */
+  coopRecord?: CoopRecord | null;
+};
 export type RunsPage = SoloRunsPage | CoopMatchesPage;
 
 // ---- Cursor ---------------------------------------------------------------------------------------------

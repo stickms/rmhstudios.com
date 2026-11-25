@@ -144,6 +144,9 @@ model UserProfile {
   bannerUrl             String?   @db.VarChar(300)
   bannerSizeBytes       Int?
   showLikes             Boolean   @default(false)
+  // Sprint 14 #13: mark replies from this creator's active supporters, shown to the creator only, under their own
+  // posts (lib/creator/supporter-marks.server). Off means the lookup is never made.
+  showSupporterMarks    Boolean   @default(true)
   dmPrivacy             DmPrivacy @default(EVERYONE)
   // Sprint 04 #16: with dmPrivacy FOLLOWERS or NONE, let a refused sender leave
   // one text message that waits in the Requests folder. Off by default.

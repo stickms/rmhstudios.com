@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowDown, Share2 } from 'lucide-react';
 import { countdownTo, type Cycle, type Phase } from '@/lib/elections/calendar';
 import { useNow } from './hooks';
+import { useRiskSurfacesHidden } from '@/hooks/useRiskSurfacesHidden';
 import { BriefingPortrait, HOST_NAME } from './BriefingPortrait';
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -25,6 +26,8 @@ export function Hero({
   onShare: () => void;
 }) {
   const { t } = useTranslation('c-elections');
+  // A self-excluded member is not offered the coin markets (W8).
+  const riskHidden = useRiskSurfacesHidden();
   const ref = useRef<HTMLElement | null>(null);
   const now = useNow(1000, serverTime);
   const cd = now ? countdownTo(cycle.date, now) : null;
@@ -92,9 +95,11 @@ export function Hero({
                 <Share2 size={18} aria-hidden />
                 {t('hero.share', { defaultValue: 'Share' })}
               </button>
-              <Link className="el-btn el-btn--ghost" to="/predictions">
-                {t('hero.markets', { defaultValue: 'Bet coins' })}
-              </Link>
+              {riskHidden ? null : (
+                <Link className="el-btn el-btn--ghost" to="/predictions">
+                  {t('hero.markets', { defaultValue: 'Bet coins' })}
+                </Link>
+              )}
             </div>
           </div>
 

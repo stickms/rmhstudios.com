@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Play, ShoppingBag, Settings, Trophy, Zap, Users, Clock, Crosshair, Sparkles, Coins, RefreshCw, X, ScrollText, Book, LogOut, History } from 'lucide-react';
+import { Play, ShoppingBag, Settings, Trophy, Zap, Users, Clock, Crosshair, Sparkles, Coins, RefreshCw, X, ScrollText, Book, LogOut, History, HeartPulse, Swords } from 'lucide-react';
 import PatchnotesModal from './PatchnotesModal';
 import RunsScreen from './RunsScreen';
 import MenuBackdrop from '../menu/MenuBackdrop';
@@ -15,6 +15,7 @@ import { useKeyboardNav } from '@features/altair/engine/hooks/use-keyboard-nav';
 import { useQuitGame } from '@/hooks/useQuitGame';
 import { api } from '@/lib/contract/client';
 import { getAltairLeaderboardApi } from '@features/altair/engine/altair.contract';
+import type { CoopBoardEntry } from '@features/altair/engine/coop-record';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { currentDocumentLocale, formatNumber } from '@/lib/core/format';
@@ -220,7 +221,9 @@ interface LeaderboardEntry {
   gamesPlayed: number;
 }
 
-type LeaderboardCategory = 'gold' | 'xp' | 'survival' | 'kills' | 'time';
+type LeaderboardRow = LeaderboardEntry | CoopBoardEntry;
+
+type LeaderboardCategory = 'gold' | 'xp' | 'survival' | 'kills' | 'time' | 'coop-wins' | 'coop-revives';
 
 const CATEGORIES: { key: LeaderboardCategory; label: string; icon: typeof Trophy }[] = [
   { key: 'gold', label: 'Gold', icon: Coins },
@@ -228,7 +231,18 @@ const CATEGORIES: { key: LeaderboardCategory; label: string; icon: typeof Trophy
   { key: 'survival', label: 'Time', icon: Clock },
   { key: 'kills', label: 'Kills', icon: Crosshair },
   { key: 'time', label: 'Best Run', icon: Trophy },
+  { key: 'coop-wins', label: 'Co-op wins', icon: Swords },
+  { key: 'coop-revives', label: 'Revives', icon: HeartPulse },
 ];
+
+function isCoopRow(entry: LeaderboardRow): entry is CoopBoardEntry {
+  return 'totalCoopWins' in entry;
+}
+
+/** The runs a row reports: solo games played, or the member's co-op runs. */
+function runCount(entry: LeaderboardRow): number {
+  return isCoopRow(entry) ? entry.totalCoopRuns : entry.gamesPlayed;
+}
 
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -238,13 +252,19 @@ function formatTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-function formatValue(entry: LeaderboardEntry, category: LeaderboardCategory): string {
+function formatValue(entry: LeaderboardRow, category: LeaderboardCategory): string {
+  if (isCoopRow(entry)) {
+    const value = category === 'coop-revives' ? entry.totalRevivesGiven : entry.totalCoopWins;
+    return formatNumber(value, currentDocumentLocale());
+  }
   switch (category) {
     case 'gold': return formatNumber(entry.totalGold, currentDocumentLocale());
     case 'xp': return formatNumber(entry.totalXP, currentDocumentLocale());
     case 'survival': return formatTime(entry.totalTimeSurvived);
     case 'kills': return formatNumber(entry.totalKills, currentDocumentLocale());
     case 'time': return formatTime(entry.bestTime);
+    case 'coop-wins':
+    case 'coop-revives': return formatNumber(0, currentDocumentLocale());
   }
 }
 
@@ -253,7 +273,7 @@ function formatValue(entry: LeaderboardEntry, category: LeaderboardCategory): st
 function LeaderboardModal({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation("c-altair");
   const [category, setCategory] = useState<LeaderboardCategory>('gold');
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [entries, setEntries] = useState<LeaderboardRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const arrival = useArrival(!loading);
@@ -310,22 +330,29 @@ function LeaderboardModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Category tabs */}
-        <div className="flex gap-1 px-5 pb-3">
+        <div className="flex flex-wrap gap-1 px-5 pb-3">
           {CATEGORIES.map((cat) => {
             const Icon = cat.icon;
             const isActive = category === cat.key;
+            const label =
+              cat.key === 'coop-wins'
+                ? t('tab-coop-wins', { ns: 'altair-coop', defaultValue: 'Co-op wins' })
+                : cat.key === 'coop-revives'
+                  ? t('tab-coop-revives', { ns: 'altair-coop', defaultValue: 'Revives' })
+                  : cat.label;
             return (
               <button
                 key={cat.key}
+                aria-pressed={isActive}
                 onClick={() => setCategory(cat.key)}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-(--altair-radius) text-xs font-semibold transition-colors ${
+                className={`flex-1 min-w-20 flex items-center justify-center gap-1.5 py-2 rounded-(--altair-radius) text-xs font-semibold transition-colors ${
                   isActive
                     ? 'bg-(--altair-accent) text-(--altair-accent-fg)'
                     : 'bg-(--altair-bg) text-(--altair-text-muted) hover:bg-(--altair-surface-hover)'
                 }`}
               >
                 <Icon size={13} />
-                {cat.label}
+                {label}
               </button>
             );
           })}
@@ -365,7 +392,7 @@ function LeaderboardModal({ onClose }: { onClose: () => void }) {
                   </span>
 
                   {/* Name */}
-                  <span className="flex-1 text-sm font-semibold text-(--altair-text) truncate">
+                  <span dir="auto" className="flex-1 text-sm font-semibold text-(--altair-text) truncate">
                     {entry.username}
                   </span>
 
@@ -376,7 +403,7 @@ function LeaderboardModal({ onClose }: { onClose: () => void }) {
 
                   {/* Games played (subtle) */}
                   <span className="text-xs text-(--altair-text-dim) w-10 text-right">
-                    {entry.gamesPlayed} {t("run-label", { defaultValue: "run", defaultValue_other: "runs", count: entry.gamesPlayed })}
+                    {runCount(entry)} {t("run-label", { defaultValue: "run", defaultValue_other: "runs", count: runCount(entry) })}
                   </span>
                 </div>
               ))}

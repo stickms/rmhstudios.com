@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { withDeveloperApi, apiOptions } from '@/lib/api/with-developer-api.server';
 import { MAX_RMHARK_LENGTH } from '@/lib/rmhark-schema';
 import { createPost } from '@/lib/social/engagement.server';
+import { restrictionMessage } from '@/lib/moderation/restrictions.server';
 import { parsePage, page, serializeOwnPost } from '@/lib/api/serializers.server';
 import { pinnedOrderFor } from '@/lib/feed/profile-pins.server';
 import { hasScope } from '@/lib/api/scopes';
@@ -80,6 +81,10 @@ export const Route = createFileRoute('/api/v1/posts')({
         withDeveloperApi(
           request,
           async ({ userId, json, error, scopes, requestId }) => {
+            // A moderator's timeout on posting holds for a key too, whatever the post is (s14-17).
+            const restricted = await restrictionMessage(userId, 'post');
+            if (restricted) return error('feature_restricted', restricted, 403);
+
             const body = await request.json().catch(() => null);
             const parsed = createSchema.safeParse(body);
             if (!parsed.success) {

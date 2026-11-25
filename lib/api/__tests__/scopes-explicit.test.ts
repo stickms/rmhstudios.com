@@ -17,12 +17,14 @@ const explicit = SCOPES.filter((s) => s.explicit);
 const ordinary = SCOPES.filter((s) => !s.explicit);
 
 describe('explicit scopes', () => {
-  it('manage:moderation, write:study-reviews, read:ladder and write:ladder are the explicit scopes', () => {
+  it('manage:moderation, write:study-reviews, the ladder scopes and the homes scopes are the explicit scopes', () => {
     expect(explicit.map((s) => s.id)).toEqual([
       'manage:moderation',
       'write:study-reviews',
       'read:ladder',
       'write:ladder',
+      'read:homes',
+      'write:homes',
     ]);
   });
 
@@ -119,6 +121,18 @@ describe('the default grant', () => {
       'write:ladder',
       'read:*',
     ]);
+  });
+
+  it('read:homes and write:homes (s14-15) are real scopes that only a literal entry grants', () => {
+    for (const id of ['read:homes', 'write:homes']) {
+      expect(ALL_SCOPES).toContain(id);
+      expect(hasScope(DEFAULT_SCOPES, id)).toBe(false);
+      expect(hasScope(['*', 'read:*', 'write:*', 'manage:*'], id)).toBe(false);
+      expect(hasScope([id], id)).toBe(true);
+      expect(WILDCARD_SCOPES).not.toContain(id);
+      expect(READ_SCOPES).not.toContain(id);
+      expect(DEFAULT_SCOPES).not.toContain(id);
+    }
   });
 
   it('a key made with the default grant cannot satisfy any RMHLadder endpoint scope', () => {

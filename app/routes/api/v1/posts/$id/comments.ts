@@ -1,3 +1,4 @@
+import { restrictionMessage } from '@/lib/moderation/restrictions.server';
 import { createFileRoute } from '@tanstack/react-router';
 import { prisma } from '@/lib/prisma.server';
 import { canReadThread } from '@/lib/feed/audience.server';
@@ -58,6 +59,10 @@ export const Route = createFileRoute('/api/v1/posts/$id/comments')({
         withDeveloperApi(
           request,
           async ({ userId, json, error }) => {
+            // A moderator's timeout on replying holds for a key too (s14-17).
+            const restricted = await restrictionMessage(userId, 'comment');
+            if (restricted) return error('feature_restricted', restricted, 403);
+
             const body = await request.json().catch(() => null);
             const parsed = bodySchema.safeParse(body);
             if (!parsed.success) return error('invalid_request', parsed.error.issues[0]?.message ?? 'Invalid request body', 400);

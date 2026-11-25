@@ -12,6 +12,8 @@ import { EmotePicker } from './EmotePicker';
 import { PersonAvatar } from './SteamPeople';
 import { PostText } from './PostText';
 import { hubErrorText } from './hub-errors';
+import { ReportItemButton } from './ReportItem';
+import { ThreadMuteButton } from './ThreadMuteButton';
 
 async function post(
   path: string,
@@ -58,7 +60,7 @@ function Author({ person, when }: { person: PersonRef; when: string }) {
       >
         <PersonAvatar src={person.image} name={person.name} />
         <span className="stm-person-body">
-          <span className="stm-person-name">{person.name}</span>
+          <bdi className="stm-person-name">{person.name}</bdi>
           <span className="stm-person-sub">
             <RelativeTime date={when} format={relativeTimeShort} />
           </span>
@@ -118,6 +120,14 @@ export function ThreadPage({ data }: { data: ThreadPageData }) {
               ownedTitles={data.authorEmotes[th.author.userId] ?? []}
             />
             <div className="stm-post-tools">
+              {data.signedIn ? <ThreadMuteButton threadId={th.id} className="stm-btn" /> : null}
+              <ReportItemButton
+                entityType="game-thread"
+                entityId={th.id}
+                signedIn={data.signedIn}
+                isOwn={th.isMine}
+                className="stm-btn"
+              />
               {th.canDelete ? (
                 <button
                   type="button"
@@ -201,7 +211,7 @@ export function ThreadPage({ data }: { data: ThreadPageData }) {
           })}
         </h2>
         {data.posts.map((p) => (
-          <article key={p.id} className="stm-web-card stm-post">
+          <article key={p.id} id={`post-${p.id}`} className="stm-web-card stm-post">
             <Author person={p.author} when={p.createdAt} />
             <div className="stm-post-main">
               <PostText
@@ -209,8 +219,15 @@ export function ThreadPage({ data }: { data: ThreadPageData }) {
                 text={p.body}
                 ownedTitles={data.authorEmotes[p.author.userId] ?? []}
               />
-              {p.canDelete ? (
-                <div className="stm-post-tools">
+              <div className="stm-post-tools">
+                <ReportItemButton
+                  entityType="game-thread-post"
+                  entityId={p.id}
+                  signedIn={data.signedIn}
+                  isOwn={p.isMine}
+                  className="stm-btn"
+                />
+                {p.canDelete ? (
                   <button
                     type="button"
                     className="stm-btn"
@@ -232,8 +249,8 @@ export function ThreadPage({ data }: { data: ThreadPageData }) {
                       defaultValue: 'Delete',
                     })}
                   </button>
-                </div>
-              ) : null}
+                ) : null}
+              </div>
             </div>
           </article>
         ))}

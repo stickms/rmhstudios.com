@@ -1,4 +1,5 @@
 import { apiRoute } from '@/lib/api/route.server';
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/rideshare/rideshare.contract';
 import { sendRideMessageBody } from '@/lib/rideshare/rideshare-schema';
@@ -16,6 +17,10 @@ export const route = apiRoute('/api/rideshare/rides/$id/messages', {
     },
     async ({ request, params, session, body }) => {
       const userId = session.user.id;
+
+      const restricted = await restrictionResponse(userId, 'message');
+      if (restricted) return restricted;
+
 
       const ip = getClientIp(request);
       const { allowed, retryAfter } = rateLimit(ip, {

@@ -15,9 +15,11 @@ import { createSongCommentApi, listSongCommentsApi } from '@features/slice-it/en
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { ReportCommentButton } from './ReportSongButtons';
 
 interface Comment {
   id: string;
+  isOwn: boolean;
   content: string;
   createdAt: string;
   user: {
@@ -145,10 +147,13 @@ export function SongComments({ songId }: SongCommentsProps) {
               </div>
               <div className="bg-slice-card-bg/60 p-2 rounded-xl rounded-tl-none flex-1">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="font-bold text-slice-text text-[10px]">{comment.user.name}</span>
+                  <bdi className="font-bold text-slice-text text-[10px]">{comment.user.name}</bdi>
                   <span className="text-[10px] text-slice-text-light">{fmt.date(new Date(comment.createdAt))}</span>
+                  <ReportCommentButton commentId={comment.id} isOwn={comment.isOwn} />
                 </div>
-                <p className="text-slice-text-darker text-xs leading-relaxed">{comment.content}</p>
+                <p dir="auto" className="text-slice-text-darker text-xs leading-relaxed">
+                  {comment.content}
+                </p>
               </div>
             </motion.div>
           ))

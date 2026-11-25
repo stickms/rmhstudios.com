@@ -45,6 +45,8 @@ export interface AchievementTipView {
   };
   isMine: boolean;
   voted: boolean;
+  /** A moderator removed this tip; only its author is sent it (s14-08). */
+  removed: boolean;
 }
 
 /** The caller's status for a game plus the community median. 404 for an unknown game. */

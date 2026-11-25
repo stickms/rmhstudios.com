@@ -1,6 +1,6 @@
 /**
  * Notifications for the Steam-style community features: someone offers you a trade,
- * answers or declines yours, buys your card, or replies to your discussion.
+ * answers or declines yours, or buys your card (replies to a discussion: `lib/games/thread-notices.server.ts`).
  *
  * Always best-effort and always AFTER the transaction commits: `createNotification`
  * swallows its own failures, and a notification must never undo a sale or a trade.
@@ -54,25 +54,6 @@ export async function notifyCardSold(w: {
     entityId: w.listingId,
     preview: notice('card-sold', { card: cardName(w.gameId, w.cardIndex), coins: w.proceeds }),
     link: '/games/market',
-  });
-}
-
-export async function notifyHubReply(w: {
-  threadAuthorId: string;
-  replierId: string;
-  gameId: string;
-  threadId: string;
-  threadTitle: string;
-}) {
-  await createNotification({
-    type: 'REPLY',
-    userId: w.threadAuthorId,
-    actorId: w.replierId,
-    entityType: 'hub-thread',
-    entityId: w.threadId,
-    preview: `replied to “${w.threadTitle.slice(0, 80)}”`,
-    link: `/games/hub/${w.gameId}/t/${w.threadId}`,
-    dedupeUnread: true,
   });
 }
 

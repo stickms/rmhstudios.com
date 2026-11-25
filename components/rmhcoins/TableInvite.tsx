@@ -13,6 +13,8 @@ import { Link2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CopyButton } from '@/components/ui/copy-button';
 import { lobbyLink } from '@/lib/lobby-link';
+import { useRiskSurfacesHidden } from '@/hooks/useRiskSurfacesHidden';
+import { ExcludedInvite } from '@/components/settings/ExcludedNotice';
 
 export type CasinoGame = 'blackjack' | 'holdem' | 'baccarat' | 'roulette';
 
@@ -22,6 +24,12 @@ export function casinoTablePath(game: CasinoGame): string {
 }
 
 export function TableInvite({ game, joinCode }: { game: CasinoGame; joinCode: string }) {
+  const riskHidden = useRiskSurfacesHidden();
+  // A self-excluded member is not handed a join link to a table (W8).
+  return riskHidden ? <ExcludedInvite /> : <InviteLink game={game} joinCode={joinCode} />;
+}
+
+function InviteLink({ game, joinCode }: { game: CasinoGame; joinCode: string }) {
   const { t } = useTranslation('c-rmhcoins');
 
   return (

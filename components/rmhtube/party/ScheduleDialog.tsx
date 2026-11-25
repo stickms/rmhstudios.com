@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useDialogHost } from '@/components/shared/useDialogHost';
 import { schedulePartyApi, updatePartyApi, type PartyDTO } from '@/lib/rmhtube/parties.contract';
 import { ABSOLUTE_MAX_MEMBERS, DEFAULT_MAX_MEMBERS } from '@/lib/rmhtube/constants';
@@ -38,6 +39,7 @@ interface Props {
 
 export default function ScheduleDialog({ open, onOpenChange, party, onSaved }: Props) {
   const { t } = useTranslation('watch-parties');
+  const codedText = useRefusalText();
   const { host, sentinel } = useDialogHost('.app-theme');
   const editing = party !== undefined;
   const [name, setName] = useState(party?.name ?? '');
@@ -140,7 +142,13 @@ export default function ScheduleDialog({ open, onOpenChange, party, onSaved }: P
       onSaved(result.party);
       onOpenChange(false);
     } catch (err) {
-      setError(refusalText(errorField<string>(err, 'reason')));
+      // s14-10: a name a moderator removed, and a room a moderator removed, carry a code read in the member's language.
+      const code = errorField<string>(err, 'code');
+      setError(
+        code === 'TUBE_ROOM_NAME_REMOVED' || code === 'CONTENT_REMOVED_BY_MODERATOR'
+          ? codedText(err)
+          : refusalText(errorField<string>(err, 'reason')),
+      );
     } finally {
       setSaving(false);
     }

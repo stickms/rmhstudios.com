@@ -12,6 +12,7 @@
 import type { PgBoss } from 'pg-boss';
 import { prisma } from '@/lib/prisma.server';
 import { publishDueForUser, publishScheduledPost, withoutRecentlyRefused } from '@/lib/scheduled/publish.server';
+import { activeRestrictionRule } from '@/lib/moderation/restrictions-core';
 import { DAY_MS } from './constants';
 
 export interface CapsuleRow {
@@ -77,8 +78,9 @@ const MAX_BATCHES = 6;
 
 /**
  * Publish every scheduled post whose time has come, for all authors, in bounded
- * batches. Suspended accounts are skipped (their posts stay queued until the
- * suspension ends), matching the ban check the manual publish route makes.
+ * batches. Suspended accounts, and authors timed out of posting, are skipped (their
+ * posts stay queued until the suspension or timeout ends), matching the checks the
+ * manual publish route makes.
  */
 export async function publishDueScheduled(now: Date = new Date()): Promise<number> {
   let published = 0;
@@ -87,7 +89,12 @@ export async function publishDueScheduled(now: Date = new Date()): Promise<numbe
       where: {
         publishedId: null,
         scheduledAt: { not: null, lte: now },
-        user: { OR: [{ bannedUntil: null }, { bannedUntil: { lt: now } }] },
+        // A suspended author, or one a moderator timed out of posting (s14-17), is skipped here rather than read and
+        // refused, so their queued drafts cannot fill every batch and hold back everyone else's.
+        user: {
+          OR: [{ bannedUntil: null }, { bannedUntil: { lt: now } }],
+          featureRestrictions: { none: { feature: 'post', ...activeRestrictionRule(now) } },
+        },
       },
       orderBy: { scheduledAt: 'asc' },
       take: BATCH,

@@ -83,7 +83,7 @@ const ALLOWED: Readonly<
     count: 1,
     reason: 'GC of the in-memory lobby Map (per-process state, nothing in the DB)',
   },
-  'lib/cached.server.ts': {
+  'lib/cache-l1.ts': {
     count: 1,
     reason: 'L1 cache expiry sweep over the in-process LRU',
   },

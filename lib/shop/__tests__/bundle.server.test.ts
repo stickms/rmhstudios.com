@@ -5,7 +5,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
  */
 
 const w = await vi.hoisted(async () => {
-  const { Table, FakeLedger, makeTransaction } = await import('../../economy/__tests__/fake-db');
+  const { Table, FakeLedger, makeTransaction, checkedDb } = await import('../../economy/__tests__/fake-db');
   const inventory = new Table({
     unique: [['userId', 'itemId']],
   });
@@ -28,7 +28,8 @@ const w = await vi.hoisted(async () => {
   return {
     inventory,
     ledger,
-    prisma,
+    // Every query is checked against the schema before the in-memory tables see it.
+    prisma: checkedDb(prisma),
   };
 });
 

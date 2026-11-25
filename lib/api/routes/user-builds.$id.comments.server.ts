@@ -1,4 +1,5 @@
 import { refusalCodeOf } from '@/lib/errors/codes';
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { pageSize } from '@/lib/pagination';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
@@ -36,6 +37,8 @@ export const route = apiRoute('/api/user-builds/$id/comments', {
     C.createBuildCommentApi,
     { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'build-comment' }, body: createCommentSchema },
     async ({ params, userId, body }) => {
+      const restricted = await restrictionResponse(userId, 'comment');
+      if (restricted) return restricted;
       const build = await findCommentBuild(params.id);
       if (!build || build.visibility === 'PRIVATE') {
         return Response.json({ error: 'Build not found' }, { status: 404 });

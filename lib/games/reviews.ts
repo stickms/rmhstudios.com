@@ -54,6 +54,8 @@ export interface ReviewView {
   };
   myVote?: boolean | null;
   isMine?: boolean;
+  /** A moderator removed this review; only its author is sent it, who sees "Removed by a moderator" (s14-08). */
+  removed?: boolean;
   /** The author's time on record, if their playtime setting lets this viewer see it. */
   playtimeSeconds?: number | null;
   /** Awards this review has received, most first. */
@@ -72,4 +74,8 @@ export interface GuideSummary {
     name: string | null;
     handle: string | null;
   };
+  /** The viewer wrote this guide (never offered "Report"). */
+  isMine?: boolean;
+  /** A moderator removed this guide; only its author is sent it (s14-08). */
+  removed?: boolean;
 }

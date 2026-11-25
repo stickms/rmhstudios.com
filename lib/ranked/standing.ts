@@ -9,6 +9,7 @@
  */
 
 import { displayRating } from '@/lib/ranked/season';
+import type { TierId } from '@/lib/ranked/tiers';
 
 /** Most candidate rows `placeOf` reads. Past this the place is reported as "outside the top 5,000". */
 export const PLACE_SCAN_CAP = 5_000;
@@ -23,6 +24,8 @@ export interface RankedStandingGame {
   rating: number | null;
   /** The tier's name, null while provisional. A word, never a colour. */
   tier: string | null;
+  /** The tier's stable id, null while provisional. Clients translate this; `tier` stays English for older readers. */
+  tierId: TierId | null;
   provisional: boolean;
   placementsLeft: number;
   wins: number;

@@ -160,3 +160,19 @@ describe('searchCatalog — 2026-10-09 audit regressions', () => {
     expect(new Set(names).size).toBe(names.length);
   });
 });
+
+describe('searchCatalog for a self-excluded member (W8)', () => {
+  it('drops the pages that stake coins, and only those', () => {
+    for (const query of ['predictions', 'blackjack', 'wagers']) {
+      const shown = searchCatalog(q(query)).page.map((h) => h.href);
+      const hidden = searchCatalog(q(query), { hideRiskSurfaces: true }).page.map((h) => h.href);
+      expect(
+        shown.some((href) => href === '/predictions' || href === '/compete?tab=wagers'),
+        query,
+      ).toBe(true);
+      expect(hidden, query).not.toContain('/predictions');
+      expect(hidden, query).not.toContain('/compete?tab=wagers');
+    }
+    expect(searchCatalog(q('store'), { hideRiskSurfaces: true }).page.length).toBeGreaterThan(0);
+  });
+});

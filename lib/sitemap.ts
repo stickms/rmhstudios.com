@@ -688,6 +688,13 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   // s13-11 lists-on
   '/settings/lists': 'personal',
 
+  // Sprint 14 (docs/autonomous/sprint-14/plan.md §Anchors)
+  // s14-05 doctrine-ledger
+  '/strategies/profile/xp': 'personal', // a member's own XP breakdown, behind sign-in
+
+  // s14-06 puzzle-reports
+  '/admin/daily-puzzles': 'admin',
+
   '/account/connect': 'personal', // the account-merge step after a new sign-in; needs a session
   '/settings': 'personal',
   '/settings/appearance': 'personal',

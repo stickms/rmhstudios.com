@@ -1425,6 +1425,41 @@ export interface CreateMyLadderOwnJobArgs {
 
 export type CreateMyLadderOwnJobResponse = { data: { id: string; status: string; appliedDate: string | null; followUpDate: string | null; interviewDates: string[]; notes: string | null; updatedAt: string; job: { id: string; title: string; company: string; location: string | null; remote: string; url: string | null; deadline: string | null; own: boolean }; events: { id: string; type: string; fromStatus: string | null; toStatus: string | null; fields: string[]; createdAt: string }[] } };
 
+export interface ListMySavedHomesArgs {
+  /** Page size, 1–50 (default 25). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMySavedHomesResponse = { data: { listingId: string; savedAt: string; note: string; priceAlerts: boolean; listing: { title: string | null; listingType: string | null; propertyType: string | null; priceCents: number | null; beds: number | null; baths: number | null; sqft: number | null; city: string | null; state: string | null; status: string | null; url: string; available: boolean }; priceChanges: { oldCents: number; newCents: number; changedAt: string }[] }[]; nextCursor: string | null };
+
+export interface SaveMyHomeBody {
+  /** Your private note, up to 1,000 characters; `null` or an empty string clears it. */
+  note?: string;
+  /** Tell you when the price drops. */
+  priceAlerts?: boolean;
+}
+
+export interface SaveMyHomeArgs {
+  /** The listing id. */
+  listingId: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: SaveMyHomeBody;
+}
+
+export type SaveMyHomeResponse = { data: { listingId: string; savedAt: string; note: string | null; priceAlerts: boolean; listing: { title: string; listingType: string; propertyType: string; priceCents: number; beds: number; baths: number; sqft: number; city: string; state: string; status: string; url: string; available: boolean }; priceChanges: { oldCents: number; newCents: number; changedAt: string }[] } };
+
+export interface UnsaveMyHomeArgs {
+  /** The listing id. */
+  listingId: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export type ListMyHomeSearchesResponse = { data: { id: string; label: string; listingType: string | null; propertyTypes: string[]; locationLabel: string | null; radiusKm: number | null; minPriceCents: number | null; maxPriceCents: number | null; minBeds: number | null; minBaths: number | null; petsRequired: boolean; active: boolean; createdAt: string }[] };
+
 export class RmhClient {
   private apiKey: string;
   private baseUrl: string;
@@ -2074,5 +2109,25 @@ export class RmhClient {
   /** Add a job you found elsewhere (scope: write:ladder) */
   createMyLadderOwnJob(args: CreateMyLadderOwnJobArgs): Promise<CreateMyLadderOwnJobResponse> {
     return this.request<CreateMyLadderOwnJobResponse>("POST", { path: "/api/v1/me/ladder/own-jobs", body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** List your saved homes (scope: read:homes) */
+  listMySavedHomes(args: ListMySavedHomesArgs = {}): Promise<ListMySavedHomesResponse> {
+    return this.request<ListMySavedHomesResponse>("GET", { path: "/api/v1/me/homes/saved", query: { limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Save a home (scope: write:homes) */
+  saveMyHome(args: SaveMyHomeArgs): Promise<SaveMyHomeResponse> {
+    return this.request<SaveMyHomeResponse>("PUT", { path: "/api/v1/me/homes/saved/{listingId}", pathParams: { listingId: args.listingId }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Unsave a home (scope: write:homes) */
+  unsaveMyHome(args: UnsaveMyHomeArgs): Promise<void> {
+    return this.request<void>("DELETE", { path: "/api/v1/me/homes/saved/{listingId}", pathParams: { listingId: args.listingId }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** List your saved searches (scope: read:homes) */
+  listMyHomeSearches(): Promise<ListMyHomeSearchesResponse> {
+    return this.request<ListMyHomeSearchesResponse>("GET", { path: "/api/v1/me/homes/searches" });
   }
 }

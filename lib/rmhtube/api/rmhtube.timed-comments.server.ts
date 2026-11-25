@@ -1,4 +1,5 @@
 import { apiRoute } from '@/lib/api/route.server';
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { z } from 'zod';
 import { defineHandler, apiError } from '@/lib/api/handler.server';
 import { mediaUrlSchema } from '@/lib/rmhtube/party';
@@ -21,6 +22,8 @@ export const route = apiRoute('/api/rmhtube/timed-comments', {
       }),
     },
     async ({ userId, body }) => {
+      const restricted = await restrictionResponse(userId, 'comment');
+      if (restricted) return restricted;
       const comment = await addTimedComment(userId, body.url, body.atSec, body.body);
       if (!comment) return apiError('Comment limit reached for this video.', 429);
       return Response.json({ comment }, { status: 201 });

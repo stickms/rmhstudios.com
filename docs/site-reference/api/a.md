@@ -69,6 +69,9 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/admin/curated-builds/image` | `POST` | `lib/admin/api/admin.curated-builds.image.server.ts` |
 | `/api/admin/curated-builds/image/:filename` | `GET` | `lib/admin/api/admin.curated-builds.image.$filename.server.ts` |
 | `/api/admin/curated-builds/image/proxy` | `GET` | `lib/admin/api/admin.curated-builds.image.proxy.server.ts` |
+| `/api/admin/daily-puzzles` | `GET` | `lib/admin/api/admin.daily-puzzles.server.ts` |
+| `/api/admin/daily-puzzles/generate` | `POST` | `lib/admin/api/admin.daily-puzzles.generate.server.ts` |
+| `/api/admin/daily-puzzles/replace` | `POST` | `lib/admin/api/admin.daily-puzzles.replace.server.ts` |
 | `/api/admin/deepseek/balance` | `GET` | `lib/ai/api/admin.deepseek.balance.server.ts` |
 | `/api/admin/deepseek/history` | `GET` | `lib/ai/api/admin.deepseek.history.server.ts` |
 | `/api/admin/deepseek/refresh` | `POST` | `lib/ai/api/admin.deepseek.refresh.server.ts` |
@@ -165,6 +168,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/admin/release-notes/draft` | `POST` | `lib/developer/api/admin.release-notes.draft.server.ts` |
 | `/api/admin/reports` | `GET` | `lib/admin/api/admin.reports.server.ts` |
 | `/api/admin/reports/:id` | `POST` | `lib/admin/api/admin.reports.$id.server.ts` |
+| `/api/admin/reports/claims` | `GET` | `lib/admin/api/admin.reports.claims.server.ts` |
 | `/api/admin/reports/groups` | `GET` | `lib/admin/api/admin.reports.groups.server.ts` |
 | `/api/admin/reports/groups/decide` | `POST` | `lib/admin/api/admin.reports.groups.decide.server.ts` |
 | `/api/admin/restrictions/:id` | `DELETE` | `lib/moderation/api/admin.restrictions.$id.server.ts` |

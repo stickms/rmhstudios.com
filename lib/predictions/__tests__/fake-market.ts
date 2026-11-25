@@ -132,7 +132,8 @@ export function makeFakeDb(
       coinTransaction: {
         findUnique: async ({ where }: { where: { idempotencyKey: string } }) => {
           const row = state.ledger.find((l) => l.idempotencyKey === where.idempotencyKey);
-          return row ? { id: 'tx', amount: row.amount } : null;
+          // `CoinTransaction.amount` is a BigInt column: a reader that puts it in a JSON body throws.
+          return row ? { id: 'tx', amount: BigInt(row.amount) } : null;
         },
       },
       userProfile: { upsert: async () => ({}) },

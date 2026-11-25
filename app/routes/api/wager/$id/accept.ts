@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
+import { isAppError } from '@/lib/errors/codes';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { acceptWager, WagerError } from '@/lib/wager/wager.server';
 
@@ -22,6 +23,8 @@ export const Route = createFileRoute('/api/wager/$id/accept')({
           const wager = await acceptWager({ matchId: params.id, userId: session.user.id });
           return Response.json({ wager });
         } catch (error) {
+          // A refused stake (self-exclusion, cool-off, daily cap; W8) carries its own status and code.
+          if (isAppError(error)) return Response.json(error.toBody(), { status: error.status });
           if (error instanceof WagerError) {
             return Response.json({ error: error.message }, { status: error.status });
           }

@@ -54,6 +54,7 @@ export function useProfileEditForm(initial: ProfileEditInitial) {
   // Appended last so the ordinals above stay put (see the note on this hook).
   const [followListVisibility, setFollowListVisibility] = useState(initial.followListVisibility ?? 'everyone');
   const [dmRequests, setDmRequests] = useState(initial.dmRequests ?? false);
+  const [showSupporterMarks, setShowSupporterMarks] = useState(initial.showSupporterMarks ?? true);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -69,6 +70,7 @@ export function useProfileEditForm(initial: ProfileEditInitial) {
     website,
     links,
     showLikes,
+    showSupporterMarks,
     dmPrivacy,
     followListVisibility,
     dmRequests,
@@ -112,6 +114,8 @@ export function useProfileEditForm(initial: ProfileEditInitial) {
     setFollowListVisibility,
     dmRequests,
     setDmRequests,
+    showSupporterMarks,
+    setShowSupporterMarks,
     tipGoal,
     setTipGoal,
     tipGoalLabel,

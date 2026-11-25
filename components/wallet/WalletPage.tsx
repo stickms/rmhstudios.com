@@ -19,6 +19,7 @@ import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
 import type { TabItem } from '@/components/ui/tabs';
 import { walletBalanceQuery } from '@/lib/economy/wallet.queries';
 import { playLimitsQuery } from '@/lib/settings/privacy.queries';
+import { useRiskSurfacesHidden } from '@/hooks/useRiskSurfacesHidden';
 import { SpendBudgetMeter } from './SpendBudgetMeter';
 
 import { WALLET_TABS, type WalletTab } from '@/lib/economy/wallet-tabs';
@@ -50,6 +51,8 @@ export function WalletPage({
   const { t: tl } = useTranslation('spending-budget');
   const { data: session, isPending } = useSession();
   const signedIn = !!session && !isPending;
+  // A self-excluded member is not pointed at the coin games (W8).
+  const riskHidden = useRiskSurfacesHidden();
   // The session can still be resolving on the first paint (PanelFallback below).
   const arrival = useArrival(!isPending);
 
@@ -130,11 +133,13 @@ export function WalletPage({
                   <Store /> {t('wallet-link-store', { defaultValue: 'Store' })}
                 </Link>
               </Button>
-              <Button asChild variant="default" size="sm">
-                <Link to="/predictions">
-                  <TrendingUp /> {t('wallet-link-play', { defaultValue: 'Play & predict' })}
-                </Link>
-              </Button>
+              {riskHidden ? null : (
+                <Button asChild variant="default" size="sm">
+                  <Link to="/predictions">
+                    <TrendingUp /> {t('wallet-link-play', { defaultValue: 'Play & predict' })}
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
 

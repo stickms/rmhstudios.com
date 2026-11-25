@@ -1,6 +1,7 @@
 import { BookOpen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { GuideSummary } from '@/lib/games/reviews';
+import { RemovedByModerator, ReportItemButton } from './ReportItem';
 
 /** Player-written guides for a title, listed as Steam's Guides tab does. */
 export function SteamGuides({
@@ -34,15 +35,26 @@ export function SteamGuides({
               <a href={`/games/${gameId}/guides/${g.id}`} className="stm-guide">
                 <BookOpen aria-hidden />
                 <span className="stm-person-body">
-                  <span className="stm-person-name">
+                  <span className="stm-person-name" dir="auto">
                     {g.title}
                     {!g.published ? (
                       <span className="stm-muted"> ({t('draft', { defaultValue: 'draft' })})</span>
                     ) : null}
                   </span>
-                  <span className="stm-person-sub">{g.author.name ?? g.author.handle}</span>
+                  <bdi className="stm-person-sub">{g.author.name ?? g.author.handle}</bdi>
                 </span>
               </a>
+              {g.removed ? (
+                <RemovedByModerator />
+              ) : (
+                // A draft is private to its author, so only a published guide by someone else is reportable.
+                <ReportItemButton
+                  entityType="game-guide"
+                  entityId={g.id}
+                  signedIn={signedIn}
+                  isOwn={!!g.isMine || !g.published}
+                />
+              )}
             </li>
           ))}
         </ul>

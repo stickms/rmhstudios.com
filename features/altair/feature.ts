@@ -22,7 +22,7 @@ export default defineFeature({
     'features/altair/api/altair.runs.server.ts',
     'features/altair/api/altair.score.server.ts',
   ],
-  namespaces: ['altair-runs', 'c-altair', 'r-altair'],
+  namespaces: ['altair-coop', 'altair-runs', 'c-altair', 'r-altair'],
   catalog: 'features/altair/catalog.ts',
   listed: true,
 });

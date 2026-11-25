@@ -1,4 +1,5 @@
 import { apiRoute } from '@/lib/api/route.server';
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { implement } from '@/lib/api/implement.server';
 import { createSuggestionApi, listSuggestionsApi } from '@/lib/study/suggestions.contract';
 import { createSuggestionBody, listSuggestionsQuery } from '@/lib/study/suggestions-schema';
@@ -19,6 +20,8 @@ export const route = apiRoute('/api/study/decks/$id/suggestions', {
       body: createSuggestionBody,
     },
     async ({ userId, params, body }) => {
+      const restricted = await restrictionResponse(userId, 'comment');
+      if (restricted) return restricted;
       const result = await createSuggestion(userId, params.id, body);
       if (!result.ok) return refusedResponse(result);
       return { success: true as const, id: result.id };

@@ -22,6 +22,9 @@ import {
   getConversationPrefApi,
   setConversationPrefApi,
 } from '@/lib/preferences/conversation.contract';
+import { refusalBody } from '@/lib/errors/codes';
+import { CONVERSATION_PIN_LIMIT, chatIdOfDmScope } from '@/lib/messages/pins';
+import { setPinned } from '@/lib/messages/pins.server';
 import {
   conversationPrefQuerySchema,
   conversationPrefSchema,
@@ -44,6 +47,26 @@ export const route = apiRoute('/api/preferences/conversation', {
       rateLimit: { limit: 40, windowMs: 60_000, prefix: 'conversation-pref' },
       body: conversationPrefSchema,
     },
-    async ({ userId, body }) => setConversationPref(userId, body),
+    async ({ userId, body }) => {
+      // s14-12: a pin is the one field with a rule of its own. `pinned: true` is for a direct conversation the caller
+      // is in, and at most CONVERSATION_PIN_LIMIT of them, decided under a lock in `setPinned`.
+      if (body.pinned === undefined) return setConversationPref(userId, body);
+      const chatId = chatIdOfDmScope(body.scopeKey);
+      if (body.pinned && !chatId) return Response.json(refusalBody('INVALID_INPUT'), { status: 400 });
+      const { pinned, ...rest } = body;
+      let view: Awaited<ReturnType<typeof setConversationPref>> | null = null;
+      if (chatId) {
+        const result = await setPinned(userId, chatId, pinned);
+        if (!result.ok) {
+          return result.reason === 'limit'
+            ? Response.json(refusalBody('CONVERSATION_PIN_LIMIT', { max: CONVERSATION_PIN_LIMIT }), { status: 409 })
+            : Response.json(refusalBody('INVALID_INPUT'), { status: 400 });
+        }
+        view = result.pref;
+      }
+      const others = rest.muteUntil !== undefined || rest.mentionsOnly !== undefined;
+      if (others || !view) return setConversationPref(userId, others ? rest : body);
+      return view;
+    },
   ),
 });

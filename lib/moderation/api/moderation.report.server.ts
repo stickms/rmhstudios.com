@@ -137,6 +137,32 @@ async function resolveTargetUser(entityType: string, entityId: string): Promise<
         // The sender, with no membership check: the report route itself checks the reporter's.
         return await (await import('@/lib/messages/dm-reports.server')).dmMessageAuthor(entityId);
 
+      // Sprint 14 (docs/autonomous/sprint-14/plan.md §Anchors)
+      // s14-07 slice-reports
+      case 'song-comment':
+        // The comment's author; null for a missing comment or one on a private or taken-down song.
+        return await (await import('@features/slice-it/engine/song-reports.server')).songCommentAuthor(entityId);
+
+      // s14-08 game-reports
+      case 'game-review':
+      case 'game-guide':
+      case 'game-thread':
+      case 'game-thread-post':
+      case 'achievement-tip':
+        // The author; null for a missing item, a draft guide and anything a moderator already removed.
+        return await (await import('@/lib/games/moderation.server')).gameContentOwner(entityType, entityId);
+
+      // s14-09 profile-reports
+      case 'impersonation':
+        // The accused account (the entity id). Filed only through `POST /api/handles/impersonation`.
+        return entityId;
+
+      // s14-10 tube-room-reports
+      case 'tube-room':
+        // The room's host; null for a missing or already removed room. Whether the reporter may see the room is
+        // checked in the report route (`roomReportable`).
+        return await (await import('@/lib/rmhtube/room-reports.server')).roomReportAuthor(entityId);
+
       case 'music-score':
       case 'music-share':
         // RMH Music Phase 6: the learner whose Daily score (or shared result) it is.
@@ -284,6 +310,52 @@ export const route = apiRoute('/api/moderation/report', {
           });
         }
         memberItemAuthor = target.authorId;
+      }
+
+      // Sprint 14 (docs/autonomous/sprint-14/plan.md §Anchors)
+      // s14-07 slice-reports
+      // Only a public song that has not been taken down, and never the reporter's own: the same answer for a missing,
+      // a private and a removed song. (A comment's visibility rule is in `resolveTargetUser`.)
+      if (entityType === 'song') {
+        const target = await (await import('@features/slice-it/engine/song-reports.server')).songReportTarget(
+          entityId,
+          session.user.id,
+        );
+        if (!target.ok) {
+          return Response.json(refusalBody(target.reason === 'own' ? 'FORBIDDEN' : 'NOT_FOUND'), {
+            status: target.reason === 'own' ? 403 : 404,
+          });
+        }
+        memberItemAuthor = target.authorId;
+      }
+
+      // s14-08 game-reports
+      // A review, guide, discussion, reply or tip is eligible through the member-item check above (`resolveTargetUser`
+      // answers null for a missing item, a draft guide or a removed item, and the reporter's own is refused there), so
+      // nothing more is needed here. A missing, a draft and a removed item all get the same 404, so ids cannot be probed.
+
+      // s14-09 profile-reports
+      // An impersonation report carries a structured header naming who is being impersonated, which only
+      // `POST /api/handles/impersonation` writes (with its own rate limit and dedupe). The generic route refuses the
+      // type before it reads anything, so a report filed here could never be mistaken for evidence.
+      if (entityType === 'impersonation') {
+        return Response.json(refusalBody('INVALID_INPUT'), { status: 400 });
+      }
+
+      // s14-10 tube-room-reports
+      // A public room, or one the reporter is in, that is not removed and not their own. A private room they were never
+      // in, a removed room and an unknown code all give the same answer, so room codes cannot be probed.
+      if (entityType === 'tube-room') {
+        const target = await (await import('@/lib/rmhtube/room-reports.server')).roomReportable(
+          entityId,
+          session.user.id,
+        );
+        if (!target.ok) {
+          return Response.json(refusalBody(target.reason === 'own' ? 'FORBIDDEN' : 'NOT_FOUND'), {
+            status: target.reason === 'own' ? 403 : 404,
+          });
+        }
+        memberItemAuthor = target.hostId;
       }
 
       // One open report per (reporter, entity) — silently succeed if it exists.

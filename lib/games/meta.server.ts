@@ -13,6 +13,7 @@ import { games } from '@/lib/catalog';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import type { RatingAgg, ReviewView, GuideSummary } from '@/lib/games/reviews';
 import { canViewPlaytime, isPlaytimePrivacy } from '@/lib/playtime/privacy';
+import { GAME_CONTENT_REMOVED } from '@/lib/games/moderation';
 
 export class GameMetaError extends Error {}
 
@@ -22,20 +23,26 @@ export function isValidGame(gameId: string): boolean {
 
 const aggKey = (gameId: string) => `game-rating:${gameId}`;
 
+/** Drop a game's cached rating (a takedown shows in the rating at once, not after the 60-second cache). */
+export function invalidateRatingCache(gameId: string): void {
+  void invalidateCached(aggKey(gameId));
+}
+
 export async function getRatingAgg(gameId: string): Promise<RatingAgg> {
   return cached(
     aggKey(gameId),
     60_000,
     async () => {
       const [res, byStars] = await Promise.all([
+        // A review a moderator removed counts for nothing (s14-08).
         prisma.gameReview.aggregate({
-          where: { gameId },
+          where: { gameId, moderatedAt: null },
           _avg: { stars: true },
           _count: { _all: true },
         }),
         prisma.gameReview.groupBy({
           by: ['stars'],
-          where: { gameId, stars: { gte: 4 } },
+          where: { gameId, stars: { gte: 4 }, moderatedAt: null },
           _count: { _all: true },
         }),
       ]);
@@ -54,7 +61,7 @@ export async function getRatingAgg(gameId: string): Promise<RatingAgg> {
 export async function getRatingAggs(gameIds: string[]): Promise<Record<string, RatingAgg>> {
   const rows = await prisma.gameReview.groupBy({
     by: ['gameId'],
-    where: { gameId: { in: gameIds } },
+    where: { gameId: { in: gameIds }, moderatedAt: null },
     _avg: { stars: true },
     _count: { _all: true },
   });
@@ -73,8 +80,9 @@ export async function listReviews(
   viewerId: string | null,
   sort: 'helpful' | 'recent' = 'helpful',
 ): Promise<ReviewView[]> {
+  // Other members see only reviews no moderator removed; the author also sees their own, marked removed (s14-08).
   const reviews = await prisma.gameReview.findMany({
-    where: { gameId },
+    where: { gameId, OR: [{ moderatedAt: null }, ...(viewerId ? [{ userId: viewerId }] : [])] },
     orderBy: { createdAt: 'desc' },
     take: 100,
     select: {
@@ -84,6 +92,7 @@ export async function listReviews(
       body: true,
       createdAt: true,
       updatedAt: true,
+      moderatedAt: true,
       user: { select: userDisplaySelect },
       votes: { select: { userId: true, helpful: true } },
     },
@@ -147,6 +156,7 @@ export async function listReviews(
       author: { name: author.name, handle: author.handle, image: author.image },
       myVote: viewerId ? (r.votes.find((v) => v.userId === viewerId)?.helpful ?? null) : null,
       isMine: viewerId === r.userId,
+      removed: Boolean(r.moderatedAt),
       playtimeSeconds: playtime.get(r.userId) ?? null,
       awards: (awardsByReview.get(r.id) ?? []).sort((a, b) => b.count - a.count),
     };
@@ -161,6 +171,12 @@ export async function upsertReview(
   data: { stars: number; body?: string | null },
 ): Promise<void> {
   if (!isValidGame(gameId)) throw new GameMetaError('UNKNOWN_GAME');
+  // A removed review cannot be edited; the stamp is never written here, so no write can lift it either.
+  const existing = await prisma.gameReview.findUnique({
+    where: { userId_gameId: { userId, gameId } },
+    select: { moderatedAt: true },
+  });
+  if (existing?.moderatedAt) throw new GameMetaError(GAME_CONTENT_REMOVED);
   await prisma.gameReview.upsert({
     where: { userId_gameId: { userId, gameId } },
     create: { userId, gameId, stars: data.stars, body: data.body ?? null },
@@ -170,7 +186,15 @@ export async function upsertReview(
 }
 
 export async function deleteReview(userId: string, gameId: string): Promise<void> {
-  await prisma.gameReview.deleteMany({ where: { userId, gameId } });
+  // A removed review stays: deleting it and writing again would bring it back (s14-08).
+  const res = await prisma.gameReview.deleteMany({ where: { userId, gameId, moderatedAt: null } });
+  if (res.count === 0) {
+    const removed = await prisma.gameReview.findUnique({
+      where: { userId_gameId: { userId, gameId } },
+      select: { moderatedAt: true },
+    });
+    if (removed?.moderatedAt) throw new GameMetaError(GAME_CONTENT_REMOVED);
+  }
   void invalidateCached(aggKey(gameId));
 }
 
@@ -181,9 +205,10 @@ export async function voteReview(
 ): Promise<void> {
   const review = await prisma.gameReview.findUnique({
     where: { id: reviewId },
-    select: { userId: true },
+    select: { userId: true, moderatedAt: true },
   });
-  if (!review) throw new GameMetaError('NOT_FOUND');
+  // A removed review is gone to everyone else, so there is nothing to vote on.
+  if (!review || review.moderatedAt) throw new GameMetaError('NOT_FOUND');
   if (review.userId === userId) throw new GameMetaError('OWN_REVIEW');
   await prisma.gameReviewVote.upsert({
     where: { reviewId_userId: { reviewId, userId } },
@@ -200,13 +225,19 @@ export async function unvoteReview(userId: string, reviewId: string): Promise<vo
 
 export async function listGuides(gameId: string, viewerId: string | null): Promise<GuideSummary[]> {
   const guides = await prisma.gameGuide.findMany({
-    where: { gameId, OR: [{ published: true }, ...(viewerId ? [{ authorId: viewerId }] : [])] },
+    where: {
+      gameId,
+      // Published guides no moderator removed, and the viewer's own (a removed one marked as such), s14-08.
+      OR: [{ published: true, moderatedAt: null }, ...(viewerId ? [{ authorId: viewerId }] : [])],
+    },
     orderBy: { updatedAt: 'desc' },
     take: 100,
     select: {
       id: true,
+      authorId: true,
       title: true,
       published: true,
+      moderatedAt: true,
       updatedAt: true,
       author: { select: userDisplaySelect },
     },
@@ -219,6 +250,8 @@ export async function listGuides(gameId: string, viewerId: string | null): Promi
       published: g.published,
       updatedAt: g.updatedAt.toISOString(),
       author: { name: a.name, handle: a.handle },
+      isMine: viewerId !== null && g.authorId === viewerId,
+      removed: Boolean(g.moderatedAt),
     };
   });
 }
@@ -229,7 +262,7 @@ export async function listGuides(gameId: string, viewerId: string | null): Promi
  * authors resolved, to call `.length` on them, is the expensive way to count.
  */
 export async function countPublishedGuides(gameId: string): Promise<number> {
-  return prisma.gameGuide.count({ where: { gameId, published: true } });
+  return prisma.gameGuide.count({ where: { gameId, published: true, moderatedAt: null } });
 }
 
 export async function getGuide(id: string, viewerId: string | null) {
@@ -242,12 +275,15 @@ export async function getGuide(id: string, viewerId: string | null) {
       title: true,
       body: true,
       published: true,
+      moderatedAt: true,
       updatedAt: true,
       author: { select: userDisplaySelect },
     },
   });
   if (!guide) return null;
   if (!guide.published && guide.authorId !== viewerId) return null;
+  // A guide a moderator removed is gone to everyone but its author (s14-08).
+  if (guide.moderatedAt && guide.authorId !== viewerId) return null;
   const a = resolveUser(guide.author);
   return {
     id: guide.id,
@@ -256,6 +292,7 @@ export async function getGuide(id: string, viewerId: string | null) {
     title: guide.title,
     body: guide.body,
     published: guide.published,
+    removed: Boolean(guide.moderatedAt),
     updatedAt: guide.updatedAt.toISOString(),
     isAuthor: viewerId === guide.authorId,
     author: { name: a.name, handle: a.handle, image: a.image },
@@ -283,10 +320,12 @@ export async function updateGuide(
 ): Promise<void> {
   const guide = await prisma.gameGuide.findUnique({
     where: { id },
-    select: { authorId: true, body: true },
+    select: { authorId: true, body: true, moderatedAt: true },
   });
   if (!guide) throw new GameMetaError('NOT_FOUND');
   if (guide.authorId !== authorId) throw new GameMetaError('FORBIDDEN');
+  // A removed guide cannot be edited, restored from its history or rewritten into a new version (s14-08).
+  if (guide.moderatedAt) throw new GameMetaError(GAME_CONTENT_REMOVED);
 
   await prisma.$transaction(async (tx) => {
     // On a changed body, snapshot the previous revision (bounded to MAX_REVISIONS).
@@ -316,8 +355,12 @@ export async function updateGuide(
 }
 
 export async function deleteGuide(authorId: string, id: string): Promise<void> {
-  const res = await prisma.gameGuide.deleteMany({ where: { id, authorId } });
-  if (res.count === 0) throw new GameMetaError('NOT_FOUND');
+  // A removed guide stays, so the takedown cannot be undone by deleting it (s14-08).
+  const res = await prisma.gameGuide.deleteMany({ where: { id, authorId, moderatedAt: null } });
+  if (res.count === 0) {
+    const removed = await prisma.gameGuide.findFirst({ where: { id, authorId }, select: { moderatedAt: true } });
+    throw new GameMetaError(removed?.moderatedAt ? GAME_CONTENT_REMOVED : 'NOT_FOUND');
+  }
 }
 
 export async function publishGuide(
@@ -327,9 +370,10 @@ export async function publishGuide(
 ): Promise<void> {
   const before = await prisma.gameGuide.findFirst({
     where: { id, authorId },
-    select: { gameId: true, published: true },
+    select: { gameId: true, published: true, moderatedAt: true },
   });
-  const res = await prisma.gameGuide.updateMany({ where: { id, authorId }, data: { published } });
+  if (before?.moderatedAt) throw new GameMetaError(GAME_CONTENT_REMOVED);
+  const res = await prisma.gameGuide.updateMany({ where: { id, authorId, moderatedAt: null }, data: { published } });
   if (res.count === 0 || !before) throw new GameMetaError('NOT_FOUND');
   // A guide becoming public is news to the game's followers (its author is left out by the fan-out). Only the
   // change from draft to published counts, and the fan-out never notifies one guide twice.

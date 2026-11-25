@@ -68,6 +68,8 @@ import {
 } from 'lucide-react';
 import { games, apps } from '@/lib/catalog';
 import { SITE_DESTINATIONS } from '@/lib/search/catalog';
+import { useRiskSurfacesHidden } from '@/hooks/useRiskSurfacesHidden';
+import { isRiskSurfacePath } from '@/lib/economy/risk-surfaces';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SITE_STYLES, useThemeStore, type SiteStyle } from '@/stores/themeStore';
 import { useSession } from '@/components/Providers';
@@ -247,6 +249,7 @@ export function CommandPalette({
   const listRef = useRef<HTMLDivElement>(null);
 
   const signedIn = !!session?.user;
+  const riskHidden = useRiskSurfacesHidden();
   const userHandle = (
     session?.user as
       | {
@@ -470,6 +473,8 @@ export function CommandPalette({
 
     for (const p of PAGES) {
       if (p.requiresAuth && !signedIn) continue;
+      // A self-excluded member does not find the coin games by name (W8).
+      if (riskHidden && p.href && isRiskSurfacePath(p.href)) continue;
       list.push({
         ...p,
         section: 'pages',
@@ -519,7 +524,7 @@ export function CommandPalette({
     }
 
     return list;
-  }, [t, signedIn, userHandle, go, setStyle, surprise, whatsNewUnread, runDeviceSignOut]);
+  }, [t, signedIn, riskHidden, userHandle, go, setStyle, surprise, whatsNewUnread, runDeviceSignOut]);
 
   // Ranked by the SAME scorer the Explore page and the top-bar panel use
   // (`lib/search/score.ts`), not a matcher of its own. This used Fuse.js, so ⌘K,

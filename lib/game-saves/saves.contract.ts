@@ -44,6 +44,30 @@ export const deleteGameSaveApi = endpoint<{
   path: '/api/game-saves/$gameId',
 });
 
+/**
+ * Write the live save. `expectedUpdatedAt` is optional: absent, the write is last-writer-wins; an ISO time (or `null`
+ * for "no row yet") makes it a compare-and-set that answers 409 {@link SaveChangedElsewhere} when the stored row moved.
+ */
+export const saveGameApi = endpoint<{
+  body: {
+    saveData: Record<string, unknown>;
+    expectedUpdatedAt?: string | null;
+  };
+  res: {
+    success: true;
+    updatedAt: string;
+  };
+}>()({
+  method: 'POST',
+  path: '/api/game-saves/$gameId',
+});
+
+/** The 409 body of a compare-and-set save: nothing was written; `updatedAt` is the row as it is now. */
+export interface SaveChangedElsewhere {
+  error: 'Save changed elsewhere';
+  updatedAt: string | null;
+}
+
 export const listGameSavesApi = endpoint<{
   res: {
     saves: SaveSummary[];

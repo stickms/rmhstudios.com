@@ -1395,6 +1395,96 @@ export const ERROR_CODES = {
     i18n: 'errors:rideScheduleLimit',
     text: 'You can have up to {{max}} scheduled rides',
   },
+
+  // Sprint 14
+  // s14-06 puzzle-reports
+  PUZZLE_REPORT_NOT_PLAYED: {
+    http: 403,
+    i18n: 'errors:puzzleReportNotPlayed',
+    text: 'Finish this puzzle before reporting it',
+  },
+  PUZZLE_ALREADY_STARTED: {
+    http: 409,
+    i18n: 'errors:puzzleAlreadyStarted',
+    text: 'Players have already played this puzzle, so it cannot be replaced',
+  },
+  PUZZLE_CHANGED: {
+    http: 409,
+    i18n: 'errors:puzzleChanged',
+    text: 'This puzzle changed since you opened it. Reload to see it',
+  },
+
+  // s14-08 game-reports
+  GAME_CONTENT_REMOVED_BY_MODERATOR: {
+    http: 409,
+    i18n: 'errors:gameContentRemovedByModerator',
+    text: 'A moderator removed this, so it cannot be changed or deleted',
+  },
+
+  // s14-09 profile-reports
+  IMPERSONATION_UNKNOWN: {
+    http: 404,
+    i18n: 'errors:impersonationUnknown',
+    text: 'We could not find that account',
+  },
+  IMPERSONATION_SELF: {
+    http: 400,
+    i18n: 'errors:impersonationSelf',
+    text: 'Choose a different account: an account cannot be reported for being itself, and you cannot report your own',
+  },
+
+  // s14-10 tube-room-reports
+  TUBE_ROOM_NAME_REMOVED: {
+    http: 409,
+    i18n: 'errors:tubeRoomNameRemoved',
+    text: 'A moderator removed a room with this name. Choose another',
+  },
+
+  // s14-12 pinned-conversations
+  CONVERSATION_PIN_LIMIT: {
+    http: 409,
+    i18n: 'errors:conversationPinLimit',
+    text: 'You can pin up to {{max}} conversations. Unpin one first',
+  },
+
+  // s14-14 jam-editing
+  JAM_EDIT_LOCKED: {
+    http: 409,
+    i18n: 'errors:jamEditLocked',
+    text: 'This can no longer change: the jam has started',
+  },
+  JAM_DATES_ORDER: {
+    http: 400,
+    i18n: 'errors:jamDatesOrder',
+    text: 'Dates must run: start, submissions close, rating close',
+  },
+  JAM_DEADLINE_SHORTER: {
+    http: 409,
+    i18n: 'errors:jamDeadlineShorter',
+    text: 'Deadlines can only move later once the jam has started',
+  },
+  JAM_SHORTLIST_LOCKED: {
+    http: 409,
+    i18n: 'errors:jamShortlistLocked',
+    text: 'The shortlist can no longer change: a member has already voted',
+  },
+  JAM_VOTE_OPENS_LATE: {
+    http: 400,
+    i18n: 'errors:jamVoteOpensLate',
+    text: 'Voting must open before the jam starts',
+  },
+
+  // s14-17 timeouts-everywhere
+  FEATURE_RESTRICTED: {
+    http: 403,
+    i18n: 'errors:featureRestricted',
+    text: 'This is restricted on your account. See Settings, Account status',
+  },
+  FEATURE_RESTRICTED_UNTIL: {
+    http: 403,
+    i18n: 'errors:featureRestrictedUntil',
+    text: 'This is restricted on your account until {{endsAt}}. See Settings, Account status',
+  },
 } as const;
 
 export type ErrorCode = keyof typeof ERROR_CODES;

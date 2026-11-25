@@ -16,6 +16,8 @@ import { SECTIONS, viewerPathFor } from '@/components/shell/sections';
 import { useSectionLabels } from '@/components/shell/use-section-labels';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { SECTION_NAV_IDS, SIDEBAR_NAV, isNavGroup, type NavLeaf } from '@/lib/sidebar-nav';
+import { useRiskSurfacesHidden } from '@/hooks/useRiskSurfacesHidden';
+import { isRiskSurfacePath } from '@/lib/economy/risk-surfaces';
 
 export const Route = createFileRoute('/_site/sections')({
   head: () => ({
@@ -48,8 +50,11 @@ function SectionsPage() {
   const labels = useSectionLabels();
   const isAdmin = Boolean((session?.user as { isAdmin?: boolean } | undefined)?.isAdmin);
   const viewerPath = viewerPathFor(session?.user as { id: string; handle?: string | null } | undefined);
+  // A self-excluded member does not see the coin games listed; the wallet link goes to the wallet page (W8).
+  const riskHidden = useRiskSurfacesHidden();
   const more = MORE.filter(
-    (leaf) => !(leaf.requiresAuth && !session) && !(leaf.requiresAdmin && !isAdmin),
+    (leaf) =>
+      !(leaf.requiresAuth && !session) && !(leaf.requiresAdmin && !isAdmin) && !(riskHidden && isRiskSurfacePath(leaf.href)),
   );
 
   return (
@@ -108,7 +113,7 @@ function SectionsPage() {
               </Link>
             </li>
             <li>
-              <Link to="/predictions" className="sections-list__row t-body">
+              <Link to={riskHidden ? '/wallet' : '/predictions'} className="sections-list__row t-body">
                 {t('nav-wallet', { defaultValue: 'Wallet' })}
               </Link>
             </li>

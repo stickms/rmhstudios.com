@@ -1,4 +1,5 @@
 import { apiRoute } from '@/lib/api/route.server';
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
 import { rateJamEntryApi } from '@/lib/competitive/jams.contract';
@@ -22,6 +23,11 @@ export const route = apiRoute('/api/jams/$slug/rate', {
     { rateLimit: 'write', body: schema },
     async ({ params, userId, body }) => {
       const { entryId, feedback, anonymous, ...scores } = body;
+      // A rating alone is a score; written feedback is text the entry's team reads.
+      if (feedback?.trim()) {
+        const restricted = await restrictionResponse(userId, 'comment');
+        if (restricted) return restricted;
+      }
       const res = await rateEntry(params.slug, userId, entryId, scores, { feedback, anonymous });
       if (!res.ok) return Response.json({ error: res.error }, { status: res.status });
       return Response.json({ ok: true as const, feedback: res.feedback });

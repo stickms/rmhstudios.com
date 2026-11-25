@@ -14,6 +14,7 @@ import { useArrival } from '@/components/ui/arrive';
 import { MacroField } from '@/components/safety/MacroField';
 import { entityLink } from '@/components/admin/reports/ReportList';
 import { NoteCount } from '@/components/admin/reports/NoteCount';
+import { ImpersonationClaims, ImpersonationComparison } from '@/components/admin/reports/ImpersonationComparison';
 import { api } from '@/lib/contract/client';
 import { toast } from '@/lib/toast';
 import {
@@ -162,13 +163,25 @@ export function ReportGroups({
               defaultValue_other: 'Dismiss {{count}} reports?',
               defaultValue: 'Dismiss {{count}} reports?',
             }),
-      description: t('confirm-description', {
-        count: targets.length,
-        defaultValue_one: 'Every open report on this target is decided, and each reporter is told the outcome.',
-        defaultValue_other:
-          'Every open report on these {{count}} targets is decided, and each reporter is told the outcome.',
-        defaultValue: 'Every open report on these {{count}} targets is decided, and each reporter is told the outcome.',
-      }),
+      description: [
+        t('confirm-description', {
+          count: targets.length,
+          defaultValue_one: 'Every open report on this target is decided, and each reporter is told the outcome.',
+          defaultValue_other:
+            'Every open report on these {{count}} targets is decided, and each reporter is told the outcome.',
+          defaultValue:
+            'Every open report on these {{count}} targets is decided, and each reporter is told the outcome.',
+        }),
+        // s14-07: a song takedown deletes its audio for good, so the confirm says so.
+        opts.deleteContent && targets.some((g) => g.entityType === 'song')
+          ? t('confirm-song-final', {
+              ns: 'slice-reports',
+              defaultValue: "This deletes the song's audio. It cannot be undone.",
+            })
+          : '',
+      ]
+        .filter(Boolean)
+        .join(' '),
       confirmLabel: opts.deleteContent
         ? t('resolve-and-remove', {
             defaultValue: 'Resolve and remove content',
@@ -305,7 +318,11 @@ export function ReportGroups({
                         defaultValue: '{{count}} reports',
                       })}
                     </span>
-                    <Badge variant="default">{g.entityType}</Badge>
+                    <Badge variant="default">
+                      {g.entityType === 'impersonation'
+                        ? t('kind-impersonation', { ns: 'my-reports', defaultValue: 'Impersonation' })
+                        : g.entityType}
+                    </Badge>
                     {g.reasons.map((r) => (
                       <Badge key={r.reason} variant="danger">
                         {reasonLabels[r.reason] ?? r.reason} {r.count}
@@ -381,6 +398,16 @@ export function ReportGroups({
 
                   {isOpen && (
                     <div id={panelId} className="space-y-4 pt-2">
+                      {/* s14-09: an impersonation report is decided on the two accounts, and on who else claims the
+                          reported account's websites. Mounted only while the group is open, so nothing is read before. */}
+                      {g.entityType === 'impersonation' && (
+                        <div className="space-y-4">
+                          {g.reports.map((r) => (
+                            <ImpersonationComparison key={r.id} reportId={r.id} />
+                          ))}
+                          <ImpersonationClaims userId={g.entityId} />
+                        </div>
+                      )}
                       <ul className="divide-y divide-site-border border-t border-site-border">
                         {g.reports.map((r) => (
                           <li key={r.id} className="space-y-1 py-3">

@@ -80,6 +80,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/strategies/profile` | — | public | `app/routes/strategies/profile/index.tsx` |
 | `/strategies/profile/reputation` | — | public | `app/routes/strategies/profile/reputation.tsx` |
 | `/strategies/profile/settings` | — | public | `app/routes/strategies/profile/settings.tsx` |
+| `/strategies/profile/xp` | — | public | `app/routes/strategies/profile/xp.tsx` |
 | `/strategies/puzzles` | Puzzles \| RMH Strategies | public | `app/routes/strategies/puzzles/index.tsx` |
 | `/strategies/puzzles/:mode` | — | public | `app/routes/strategies/puzzles/$mode.tsx` |
 | `/strategies/puzzles/archive` | Puzzle Archive \| RMH Strategies | public | `app/routes/strategies/puzzles/archive.tsx` |

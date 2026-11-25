@@ -8,10 +8,11 @@ export default defineFeature({
   delivery: 'island',
   routes: [
     'features/synapse-storm/api/games.synapse-storm.leaderboard.server.ts',
+    'features/synapse-storm/api/games.synapse-storm.matches.server.ts',
     'features/synapse-storm/api/games.synapse-storm.save.server.ts',
     'lib/game/api/games.synapse-storm.score.server.ts',
     'app/routes/synapse-storm.tsx',
   ],
-  namespaces: ['c-synapse-storm'],
+  namespaces: ['c-synapse-storm', 'synapse-matches'],
   catalog: 'features/synapse-storm/catalog.ts',
 });

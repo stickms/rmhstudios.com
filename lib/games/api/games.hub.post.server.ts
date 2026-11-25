@@ -1,4 +1,5 @@
 import { apiRoute } from '@/lib/api/route.server';
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { createPost } from '@/lib/games/hub.server';
@@ -11,6 +12,10 @@ export const route = apiRoute('/api/games/hub/post', {
       rateLimit: 'write',
       body: z.object({ threadId: z.string().min(1).max(64), body: z.string().max(10_000) }),
     },
-    ({ userId, body }) => hubResponse(() => createPost({ userId, ...body })),
+    async ({ userId, body }) => {
+      const restricted = await restrictionResponse(userId, 'comment');
+      if (restricted) return restricted;
+      return hubResponse(() => createPost({ userId, ...body }));
+    },
   ),
 });

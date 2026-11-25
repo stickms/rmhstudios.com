@@ -4,6 +4,7 @@ import { aiSearchApi } from '@/lib/feed/compose-assist.contract';
 import { z } from 'zod';
 import { answerSearch, isAITextConfigured, type AISearchSource } from '@/lib/ai/text.server';
 import { universalSearch } from '@/lib/search/universal.server';
+import { isSelfExcluded } from '@/lib/economy/play-limits.server';
 
 /**
  * POST /api/ai/search — a natural-language answer over search results.
@@ -42,6 +43,8 @@ export const route = apiRoute('/api/ai/search', {
         tab: 'top',
         viewerId: userId,
         signedIn: true,
+        // A self-excluded member's answer is not drawn from the pages that stake coins (W8).
+        hideRiskSurfaces: userId ? await isSelfExcluded(userId) : false,
         assist: true,
       });
 

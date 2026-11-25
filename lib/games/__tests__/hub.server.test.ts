@@ -40,6 +40,7 @@ const prismaMock = vi.hoisted(() => {
         bannedUntil: db.banned.get(where.id) ?? null,
       }),
     },
+    notification: { deleteMany: async () => ({ count: 0 }) },
     gameThread: {
       count: async ({
         where,
@@ -225,8 +226,8 @@ vi.mock('@/lib/prisma.server', () => ({
 const reply = vi.hoisted(() => ({
   fn: vi.fn(async () => {}),
 }));
-vi.mock('@/lib/cards/notify.server', () => ({
-  notifyHubReply: reply.fn,
+vi.mock('@/lib/games/thread-notices.server', () => ({
+  notifyThreadReply: reply.fn,
 }));
 
 import { createPost, createThread, deletePost, deleteThread, moderateThread, HubError } from '@/lib/games/hub.server';
@@ -516,19 +517,20 @@ describe('moderateThread', () => {
 });
 
 describe('reply notification', () => {
-  it('tells the thread author about a reply, with a link target, and not on a refused reply', async () => {
+  it('hands a reply to the thread notices, with its post id, and not on a refused reply', async () => {
     reply.fn.mockClear();
     const { id } = await thread({
       title: 'Best build?',
     });
-    await createPost({
+    const post = await createPost({
       userId: 'u2',
       threadId: id,
       body: 'Try the shield',
     });
     expect(reply.fn).toHaveBeenCalledWith({
+      id: post.id,
       threadAuthorId: 'u1',
-      replierId: 'u2',
+      posterId: 'u2',
       gameId: 'altair',
       threadId: id,
       threadTitle: 'Best build?',

@@ -16,6 +16,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/daily-puzzles/following/summary` | `GET` | `lib/daily-puzzles/api/daily-puzzles.following.summary.server.ts` |
 | `/api/daily-puzzles/leaderboard` | `GET` | `lib/daily-puzzles/api/daily-puzzles.leaderboard.server.ts` |
 | `/api/daily-puzzles/puzzle` | `GET` | `lib/daily-puzzles/api/daily-puzzles.puzzle.server.ts` |
+| `/api/daily-puzzles/report` | `PUT` | `lib/daily-puzzles/api/daily-puzzles.report.server.ts` |
 | `/api/daily-puzzles/results` | `GET` | `lib/daily-puzzles/api/daily-puzzles.results.server.ts` |
 | `/api/daily-puzzles/score` | `POST` | `lib/daily-puzzles/api/daily-puzzles.score.server.ts` |
 | `/api/daily-puzzles/stats` | `GET` | `lib/daily-puzzles/api/daily-puzzles.stats.server.ts` |
@@ -85,7 +86,9 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/doctrine/recruitment/create` | `POST` | `features/doctrine/api/doctrine.recruitment.create.server.ts` |
 | `/api/doctrine/recruitment/redeem` | `POST` | `features/doctrine/api/doctrine.recruitment.redeem.server.ts` |
 | `/api/doctrine/reputation` | `GET` | `features/doctrine/api/doctrine.reputation.server.ts` |
+| `/api/doctrine/reputation/activity` | `GET` | `features/doctrine/api/doctrine.reputation.activity.server.ts` |
 | `/api/doctrine/reputation/leaderboard` | `GET` | `features/doctrine/api/doctrine.reputation.leaderboard.server.ts` |
+| `/api/doctrine/reputation/ledger` | `GET` | `features/doctrine/api/doctrine.reputation.ledger.server.ts` |
 | `/api/doctrine/safehouse/content` | `GET` | `features/doctrine/api/doctrine.safehouse.content.server.ts` |
 | `/api/doctrine/safehouse/disclosures` | `GET` | `features/doctrine/api/doctrine.safehouse.disclosures.server.ts` |
 | `/api/doctrine/sahur/status` | `GET` | `features/doctrine/api/doctrine.sahur.status.server.ts` |

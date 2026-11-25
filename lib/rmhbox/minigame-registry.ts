@@ -47,6 +47,7 @@ import {
 } from './constants';
 import { RANKING_FILE_SETTINGS } from './ranking-file/settings';
 import { SEQUENCE_SAM_SETTINGS } from './sequence-sam/settings';
+import { IDENTITY_CRISIS_SETTINGS } from './identity-crisis/settings';
 
 // ─── Per-Minigame Settings Schemas ───────────────────────────────
 
@@ -714,21 +715,23 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
   //   joinInProgressPolicy: 'spectate_only',
   //   tags: ['action', 'cooperative'],
   // },
-  // 'identity-crisis': {
-  //   id: 'identity-crisis',
-  //   displayName: 'Identity Crisis',
-  //   description: 'Figure out who you are by asking yes/no questions.',
-  //   category: 'word',
-  //   icon: '🎭',
-  //   minPlayers: 3,
-  //   maxPlayers: 10,
-  //   estimatedDurationSeconds: 180,
-  //   supportsTeams: false,
-  //   instructionDurationSeconds: 15,
-  //   preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
-  //   joinInProgressPolicy: 'spectate_only',
-  //   tags: ['word', 'deduction'],
-  // },
+  'identity-crisis': {
+    id: 'identity-crisis',
+    displayName: 'Identity Crisis',
+    description:
+      'Everyone can see who you are but you. Ask the table yes-or-no questions to work out your own identity.',
+    category: 'word',
+    icon: 'user-search',
+    minPlayers: 3,
+    maxPlayers: 10,
+    estimatedDurationSeconds: 420,
+    supportsTeams: false,
+    instructionDurationSeconds: 15,
+    preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
+    joinInProgressPolicy: 'spectate_only',
+    tags: ['word', 'deduction'],
+    settingsSchema: IDENTITY_CRISIS_SETTINGS,
+  },
   // 'pixel-pushers': {
   //   id: 'pixel-pushers',
   //   displayName: 'Pixel Pushers',

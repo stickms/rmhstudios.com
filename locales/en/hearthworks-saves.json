@@ -1,0 +1,17 @@
+{
+  "save-to-account": "Save this town to your account",
+  "save-to-account-hint": "Carry on from any device",
+  "summary-buildings": "Buildings",
+  "summary-coins": "Coins",
+  "summary-residents": "{{residents}} residents",
+  "where-account": "Saved to your account",
+  "where-checking": "Checking your account…",
+  "where-device": "Saved on this device",
+  "where-guest": "Saved on this device. Sign in to keep this town on your account.",
+  "where-offline": "Your account could not be reached. The town is saved on this device.",
+  "where-stale": "Your account holds a newer copy of this town.",
+  "where-syncing": "Saving to your account…",
+  "where-too-large": "This town is too large to save to your account",
+  "where-unreadable": "The copy on your account could not be read, so it was left as it is.",
+  "where-unsupported": "This browser cannot save to your account, so the town stays on this device."
+}

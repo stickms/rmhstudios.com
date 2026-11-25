@@ -1,5 +1,15 @@
 # Changelog
 
+## Sprint 14 — 2027-01
+
+<!-- s14-15 homes-api -->
+- New scopes `read:homes` and `write:homes` (group RMH Homes), both **explicit**: `*`, `read:*` and `write:*` do not grant them, and neither is part of a new key's default grant, because a house hunt is private. A key must list `read:homes` or `write:homes` itself; the key-creation pickers leave them unticked under "All".
+- New endpoints, all answered with `Cache-Control: private, no-store`: `GET /api/v1/me/homes/saved?limit=&cursor=` (`read:homes`; your saved homes, newest saved first, 1 to 50, default 25; each with your `note`, `priceAlerts`, the listing's `title`, `listingType`, `propertyType`, `priceCents`, `beds`, `baths`, `sqft`, `city`, `state`, `status`, `url` and `available`, and the newest 10 `priceChanges`), `PUT /api/v1/me/homes/saved/{listingId}` (`write:homes`, honours `Idempotency-Key`; saves the home, idempotent, and sets `note` (up to 1,000 characters, `null` clears it) and `priceAlerts` through the site's own functions; a listing that is gone, removed by a moderator or posted by someone blocked either way is `404 not_found`), `DELETE /api/v1/me/homes/saved/{listingId}` (`write:homes`, `204`, idempotent) and `GET /api/v1/me/homes/searches` (`read:homes`; your saved searches with their criteria and no coordinates).
+- A listing a moderator removed, or one by an author blocked either way, reads `available: false` with its listing fields `null` and no price changes; the saved row and your note are kept. An address, a search's `lat` and `lng`, and the internal price-notice time are never in the API.
+
+<!-- s14-17 timeouts-everywhere -->
+- `POST /api/v1/posts` and `POST /api/v1/posts/{id}/comments` now honour a moderator's timeouts, as the site does: a key whose owner is timed out of posting (or of replying) is refused with `403 feature_restricted` (`authorization_error`) before anything is written, and the message says when the timeout ends. `POST /api/v1/me/scheduled/{id}/publish` answers the same while the owner is timed out of posting, and a draft that falls due during a timeout stays a draft and publishes on the first pass after it ends. No field changed.
+
 ## Sprint 13 — 2026-12
 
 <!-- s13-10 api-ladder -->

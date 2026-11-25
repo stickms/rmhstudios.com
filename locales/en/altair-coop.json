@@ -1,0 +1,17 @@
+{
+  "record-favourite": "Most played: {{class}}",
+  "record-kills_one": "{{count}} kill",
+  "record-kills_other": "{{count}} kills",
+  "record-label": "Your co-op record",
+  "record-revives-given_one": "Revives given {{count}}",
+  "record-revives-given_other": "Revives given {{count}}",
+  "record-revives-received_one": "Revives received {{count}}",
+  "record-revives-received_other": "Revives received {{count}}",
+  "record-runs_one": "{{count}} run",
+  "record-runs_other": "{{count}} runs",
+  "record-title": "Co-op record",
+  "record-wins_one": "{{count}} win ({{rate}}%)",
+  "record-wins_other": "{{count}} wins ({{rate}}%)",
+  "tab-coop-revives": "Revives",
+  "tab-coop-wins": "Co-op wins"
+}

@@ -11,6 +11,8 @@ import { useSectionLabels } from './use-section-labels';
 import { useInboxCount } from './use-inbox-count';
 import { isNavGroup, isNavLeafActive, sidebarPlaces } from '@/lib/sidebar-nav';
 import { useLayoutStore } from '@/stores/layoutStore';
+import { useRiskSurfacesHidden } from '@/hooks/useRiskSurfacesHidden';
+import { isRiskSurfacePath } from '@/lib/economy/risk-surfaces';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
@@ -75,6 +77,8 @@ export function Sidebar() {
     )?.isAdmin,
   );
   const signedIn = Boolean(session);
+  // A self-excluded member does not see the coin games listed (W8).
+  const riskHidden = useRiskSurfacesHidden();
   // The places, in the viewer's saved arrangement (Settings → Layout). The store reads its local mirror on mount and
   // the account row after it; the server render and the first client paint use the default order, so nothing
   // mismatches at hydration.
@@ -88,8 +92,13 @@ export function Sidebar() {
     () =>
       sidebarPlaces(placesOrder, placesHidden)
         .flatMap((item) => (isNavGroup(item) ? item.children : [item]))
-        .filter((leaf) => (!leaf.requiresAuth || signedIn) && (!leaf.requiresAdmin || isAdmin)),
-    [placesOrder, placesHidden, signedIn, isAdmin],
+        .filter(
+          (leaf) =>
+            (!leaf.requiresAuth || signedIn) &&
+            (!leaf.requiresAdmin || isAdmin) &&
+            !(riskHidden && isRiskSurfacePath(leaf.href)),
+        ),
+    [placesOrder, placesHidden, signedIn, isAdmin, riskHidden],
   );
 
   // The lists show as many links as the window's height leaves room for (owner, 2026-11-12: no scrollbar in the

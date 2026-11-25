@@ -38,6 +38,7 @@ export const updateProfileSchema = z.object({
     .optional()
     .nullable(),
   showLikes: z.boolean().optional(),
+  showSupporterMarks: z.boolean().optional(),
   dmPrivacy: z.enum(['EVERYONE', 'FOLLOWERS', 'NONE']).optional(),
   followListVisibility: z.enum(FOLLOW_LIST_VISIBILITIES).optional(),
   dmRequests: z.boolean().optional(),

@@ -26,6 +26,8 @@ import { cn } from '@/lib/utils';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { JamThemeVote } from './JamThemeVote';
 import { JamThemeResults } from './JamThemeResults';
+import { JamEditDialog } from './JamEditDialog';
+import { JamShortlistDialog } from './JamShortlistDialog';
 
 type Scores = Record<JamCategory, number>;
 interface Entry {
@@ -159,6 +161,9 @@ export function JamDetail({ slug }: { slug: string }) { const fmt = useLocaleFor
   const jam: Jam | null | undefined = data?.jam ?? (isError ? null : undefined);
   const [buildId, setBuildId] = useState('');
   const [busy, setBusy] = useState(false);
+  // s14-14: an admin's edit dialogs (mounted fresh each time they open).
+  const [dialog, setDialog] = useState<'edit' | 'shortlist' | null>(null);
+  const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin ?? false;
   const arrival = useArrival(jam !== undefined);
 
   const load = () => queryClient.invalidateQueries({ queryKey: query.queryKey });
@@ -192,9 +197,10 @@ export function JamDetail({ slug }: { slug: string }) { const fmt = useLocaleFor
     <div className={cn('space-y-4 max-w-3xl', arrival)}>
       <Section className="flex flex-col gap-3 py-4">
         <div className="flex items-center justify-between gap-2">
-          <p dir="auto" className="text-sm">{jam.description}</p>
+          <h2 dir="auto" className="t-heading">{jam.title}</h2>
           <PhaseBadge phase={jam.phase} />
         </div>
+        <p dir="auto" className="text-sm">{jam.description}</p>
         <p className="text-sm">
           <span className="text-site-text-muted">{t('jam-theme', { defaultValue: 'Theme' })}: </span>
           <strong>
@@ -209,7 +215,21 @@ export function JamDetail({ slug }: { slug: string }) { const fmt = useLocaleFor
             when: fmt.dateTime(new Date(jam.ratingEndsAt)),
           })}
         </p>
+        {isAdmin && jam.phase !== 'done' && (
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => setDialog('edit')}>
+              {t('open-edit', { ns: 'jam-editing', defaultValue: 'Edit jam' })}
+            </Button>
+            {jam.themeVoting && jam.phase === 'upcoming' && (
+              <Button size="sm" onClick={() => setDialog('shortlist')}>
+                {t('open-shortlist', { ns: 'jam-editing', defaultValue: 'Edit shortlist' })}
+              </Button>
+            )}
+          </div>
+        )}
       </Section>
+      {dialog === 'edit' && <JamEditDialog jam={jam} onClose={() => setDialog(null)} />}
+      {dialog === 'shortlist' && <JamShortlistDialog slug={slug} onClose={() => setDialog(null)} />}
 
       {jam.themeVoting && jam.phase === 'upcoming' && <JamThemeVote slug={slug} signedIn={signedIn} />}
       {jam.themeVoting && jam.phase !== 'upcoming' && <JamThemeResults slug={slug} />}

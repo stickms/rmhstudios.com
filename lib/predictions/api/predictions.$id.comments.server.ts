@@ -1,4 +1,5 @@
 import { apiRoute } from '@/lib/api/route.server';
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { implement } from '@/lib/api/implement.server';
 import {
   addPredictionCommentApi,
@@ -32,6 +33,8 @@ export const route = apiRoute('/api/predictions/$id/comments', {
     addPredictionCommentApi,
     { rateLimit: 'write', body: commentSchema },
     async ({ params, userId, body }) => {
+      const restricted = await restrictionResponse(userId, 'comment');
+      if (restricted) return restricted;
       const comment = await addComment(params.id, userId, body.body);
       if (!comment) return Response.json({ error: 'Not found' }, { status: 404 });
       return Response.json({ comment }, { status: 201 });

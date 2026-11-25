@@ -5,6 +5,7 @@ import { useLobbyInvite, useLobbyInviteJoin } from '@/hooks/useLobbyLink';
 import { MenuBackdrop } from './MenuBackdrop';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { OpenMatchesButton, YourMatches, useYourMatches } from './YourMatches';
 import './SynapseStormMenu.css';
 
 interface MultiplayerMenuProps {
@@ -17,6 +18,8 @@ export const MultiplayerMenu: React.FC<MultiplayerMenuProps> = ({ onBack }) => {
   const { t } = useTranslation('c-synapse-storm');
   const [joinCode, setJoinCode] = useState('');
   const [step, setStep] = useState<'name' | 'choice'>('name');
+  const [showMatches, setShowMatches] = useState(false);
+  const matches = useYourMatches();
 
   // An invite link should not stall on the callsign prompt when this browser
   // already has a callsign — but a first-time player still gets asked, and the
@@ -36,6 +39,11 @@ export const MultiplayerMenu: React.FC<MultiplayerMenuProps> = ({ onBack }) => {
     if (!displayName.trim()) return;
     connect();
     setStep('choice');
+  };
+
+  const openMatches = () => {
+    setShowMatches(true);
+    matches.open();
   };
 
   const handleCreate = () => {
@@ -59,6 +67,17 @@ export const MultiplayerMenu: React.FC<MultiplayerMenuProps> = ({ onBack }) => {
       decoding="async"
     />
   );
+
+  if (showMatches) {
+    return (
+      <YourMatches
+        state={matches.state}
+        onMore={matches.more}
+        onRetry={matches.open}
+        onBack={() => setShowMatches(false)}
+      />
+    );
+  }
 
   if (step === 'name') {
     return (
@@ -112,6 +131,7 @@ export const MultiplayerMenu: React.FC<MultiplayerMenuProps> = ({ onBack }) => {
                   })}
                 </button>
               </div>
+              <OpenMatchesButton onOpen={openMatches} />
             </div>
           </div>
         </div>
@@ -211,6 +231,8 @@ export const MultiplayerMenu: React.FC<MultiplayerMenuProps> = ({ onBack }) => {
                 {error}
               </div>
             )}
+
+            <OpenMatchesButton onOpen={openMatches} />
 
             <button className="ssm-btn ssm-btn--ghost ssm-leave" onClick={onBack}>
               {t('back', {

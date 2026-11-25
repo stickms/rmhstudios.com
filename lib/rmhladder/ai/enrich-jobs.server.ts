@@ -48,13 +48,15 @@ export async function enrichRecentLadderJobs(
         OR: [{ profile: { is: null } }, { profile: { is: { provider: 'deterministic' } } }],
       },
       include: { company: true },
-      orderBy: [{ profile: { updatedAt: 'asc' } }, { updatedAt: 'asc' }],
+      // LadderJob has no updatedAt: oldest discovery first among jobs with no or a deterministic profile.
+      orderBy: [{ profile: { updatedAt: 'asc' } }, { discoveredAt: 'asc' }],
       take: limit * 4,
     }),
     prisma.ladderJob.findMany({
       where: baseWhere,
       include: { company: true },
-      orderBy: [{ updatedAt: 'desc' }],
+      // The scraper stamps lastSeenAt in the write that changes a job, so it is the freshest-change order.
+      orderBy: [{ lastSeenAt: { sort: 'desc', nulls: 'last' } }],
       take: limit * 2,
     }),
   ]);

@@ -18,7 +18,7 @@
  * to know whether a message named you. It is the middle option rather than
  * something buried under a submenu for exactly that reason.
  *
- * A scope key is `dm:<id>` | `group:<id>` | `space:<id>` | `post:<rootId>` — one
+ * A scope key is `dm:<id>` | `group:<id>` | `space:<id>` | `post:<rootId>` | `game-thread:<threadId>` — one
  * namespace for every conversation kind (`post:` is a feed post's whole reply
  * thread, keyed by its root post), so the preference table does not grow a column every
  * time a new surface gains a thread.
@@ -31,7 +31,7 @@ import { prisma } from '@/lib/prisma.server';
 /* Scope keys                                                                  */
 /* -------------------------------------------------------------------------- */
 
-export const CONVERSATION_SCOPES = ['dm', 'group', 'space', 'post'] as const;
+export const CONVERSATION_SCOPES = ['dm', 'group', 'space', 'post', 'game-thread'] as const;
 export type ConversationScope = (typeof CONVERSATION_SCOPES)[number];
 
 /**
@@ -40,7 +40,7 @@ export type ConversationScope = (typeof CONVERSATION_SCOPES)[number];
  * and lands in a `@db.VarChar(80)` primary key — an unbounded string would
  * either error at the database or let one user mint unbounded rows.
  */
-export const CONVERSATION_SCOPE_KEY = /^(?:dm|group|space|post):[A-Za-z0-9_-]{1,60}$/;
+export const CONVERSATION_SCOPE_KEY = /^(?:dm|group|space|post|game-thread):[A-Za-z0-9_-]{1,60}$/;
 
 export function isConversationScopeKey(value: string): boolean {
   return CONVERSATION_SCOPE_KEY.test(value);

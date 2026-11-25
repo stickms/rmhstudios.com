@@ -87,6 +87,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/settings/missing-alt-text` | `GET` | `lib/feed/api/settings.missing-alt-text.server.ts` |
 | `/api/settings/muted-conversations` | `GET` | `lib/notify/api/settings.muted-conversations.server.ts` |
 | `/api/settings/play-limits` | `GET` `POST` | `lib/economy/api/settings.play-limits.server.ts` |
+| `/api/settings/play-limits/surfaces` | `GET` | `lib/economy/api/settings.play-limits.surfaces.server.ts` |
 | `/api/settings/playtime-privacy` | `GET` `POST` `PUT` | `lib/playtime/api/settings.playtime-privacy.server.ts` |
 | `/api/settings/quiet-counts` | `GET` `PUT` | `lib/feed/api/settings.quiet-counts.server.ts` |
 | `/api/settings/read-receipts` | `GET` `PUT` | `lib/messages/api/settings.read-receipts.server.ts` |

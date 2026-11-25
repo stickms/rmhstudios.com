@@ -17,7 +17,7 @@ import type { SocialModalKind } from './profile-column/ProfileDialogs';
 import { ProfilePostsPanel } from './profile-column/ProfilePostsPanel';
 import { ProfileTabBar } from './profile-column/ProfileTabBar';
 import { ProfileTabPanels } from './profile-column/ProfileTabPanels';
-import { profileThemeStyle } from './profile-column/profile-column-state';
+import { applyViewerChange, profileThemeStyle } from './profile-column/profile-column-state';
 import type { ProfileTab } from './profile-column/profile-column-state';
 import { useProfileActions } from './profile-column/useProfileActions';
 import { useProfileLoader } from './profile-column/useProfileLoader';
@@ -145,6 +145,7 @@ export function ProfileColumn({
         onGift={() => setGiftOpen(true)}
         onJoinMembership={actions.handleJoinMembership}
         onShowSocial={setSocialModal}
+        onViewerChange={(patch) => setProfile((prev) => applyViewerChange(prev, patch))}
         onShowAchievements={() => {
           // Open the person's Achievements tab and bring it into view: the badge sits in the head, the tab far below.
           scrollToTabsRef.current = true;

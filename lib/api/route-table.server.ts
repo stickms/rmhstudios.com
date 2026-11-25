@@ -50,6 +50,9 @@ import { route as r_lib_context_notes_api_admin_context_notes_id } from '@/lib/c
 import { route as r_lib_admin_api_admin_curated_builds_image } from '@/lib/admin/api/admin.curated-builds.image.server';
 import { route as r_lib_admin_api_admin_curated_builds_image_filename } from '@/lib/admin/api/admin.curated-builds.image.$filename.server';
 import { route as r_lib_admin_api_admin_curated_builds_image_proxy } from '@/lib/admin/api/admin.curated-builds.image.proxy.server';
+import { route as r_lib_admin_api_admin_daily_puzzles } from '@/lib/admin/api/admin.daily-puzzles.server';
+import { route as r_lib_admin_api_admin_daily_puzzles_generate } from '@/lib/admin/api/admin.daily-puzzles.generate.server';
+import { route as r_lib_admin_api_admin_daily_puzzles_replace } from '@/lib/admin/api/admin.daily-puzzles.replace.server';
 import { route as r_lib_ai_api_admin_deepseek_balance } from '@/lib/ai/api/admin.deepseek.balance.server';
 import { route as r_lib_ai_api_admin_deepseek_history } from '@/lib/ai/api/admin.deepseek.history.server';
 import { route as r_lib_ai_api_admin_deepseek_refresh } from '@/lib/ai/api/admin.deepseek.refresh.server';
@@ -146,6 +149,7 @@ import { route as r_lib_developer_api_admin_release_notes_id } from '@/lib/devel
 import { route as r_lib_developer_api_admin_release_notes_draft } from '@/lib/developer/api/admin.release-notes.draft.server';
 import { route as r_lib_admin_api_admin_reports } from '@/lib/admin/api/admin.reports.server';
 import { route as r_lib_admin_api_admin_reports_id } from '@/lib/admin/api/admin.reports.$id.server';
+import { route as r_lib_admin_api_admin_reports_claims } from '@/lib/admin/api/admin.reports.claims.server';
 import { route as r_lib_admin_api_admin_reports_groups } from '@/lib/admin/api/admin.reports.groups.server';
 import { route as r_lib_admin_api_admin_reports_groups_decide } from '@/lib/admin/api/admin.reports.groups.decide.server';
 import { route as r_lib_moderation_api_admin_restrictions_id } from '@/lib/moderation/api/admin.restrictions.$id.server';
@@ -351,6 +355,7 @@ import { route as r_lib_daily_puzzles_api_daily_puzzles_following } from '@/lib/
 import { route as r_lib_daily_puzzles_api_daily_puzzles_following_summary } from '@/lib/daily-puzzles/api/daily-puzzles.following.summary.server';
 import { route as r_lib_daily_puzzles_api_daily_puzzles_leaderboard } from '@/lib/daily-puzzles/api/daily-puzzles.leaderboard.server';
 import { route as r_lib_daily_puzzles_api_daily_puzzles_puzzle } from '@/lib/daily-puzzles/api/daily-puzzles.puzzle.server';
+import { route as r_lib_daily_puzzles_api_daily_puzzles_report } from '@/lib/daily-puzzles/api/daily-puzzles.report.server';
 import { route as r_lib_daily_puzzles_api_daily_puzzles_results } from '@/lib/daily-puzzles/api/daily-puzzles.results.server';
 import { route as r_lib_daily_puzzles_api_daily_puzzles_score } from '@/lib/daily-puzzles/api/daily-puzzles.score.server';
 import { route as r_lib_daily_puzzles_api_daily_puzzles_stats } from '@/lib/daily-puzzles/api/daily-puzzles.stats.server';
@@ -386,7 +391,9 @@ import { route as r_features_doctrine_api_doctrine_reactions } from '@/features/
 import { route as r_features_doctrine_api_doctrine_recruitment_create } from '@/features/doctrine/api/doctrine.recruitment.create.server';
 import { route as r_features_doctrine_api_doctrine_recruitment_redeem } from '@/features/doctrine/api/doctrine.recruitment.redeem.server';
 import { route as r_features_doctrine_api_doctrine_reputation } from '@/features/doctrine/api/doctrine.reputation.server';
+import { route as r_features_doctrine_api_doctrine_reputation_activity } from '@/features/doctrine/api/doctrine.reputation.activity.server';
 import { route as r_features_doctrine_api_doctrine_reputation_leaderboard } from '@/features/doctrine/api/doctrine.reputation.leaderboard.server';
+import { route as r_features_doctrine_api_doctrine_reputation_ledger } from '@/features/doctrine/api/doctrine.reputation.ledger.server';
 import { route as r_features_doctrine_api_doctrine_safehouse_content } from '@/features/doctrine/api/doctrine.safehouse.content.server';
 import { route as r_features_doctrine_api_doctrine_safehouse_disclosures } from '@/features/doctrine/api/doctrine.safehouse.disclosures.server';
 import { route as r_features_doctrine_api_doctrine_sahur_status } from '@/features/doctrine/api/doctrine.sahur.status.server';
@@ -501,6 +508,7 @@ import { route as r_lib_games_api_games_market_order_cancel } from '@/lib/games/
 import { route as r_lib_playtime_api_games_playtime } from '@/lib/playtime/api/games.playtime.server';
 import { route as r_lib_cards_api_games_showcase } from '@/lib/cards/api/games.showcase.server';
 import { route as r_features_synapse_storm_api_games_synapse_storm_leaderboard } from '@/features/synapse-storm/api/games.synapse-storm.leaderboard.server';
+import { route as r_features_synapse_storm_api_games_synapse_storm_matches } from '@/features/synapse-storm/api/games.synapse-storm.matches.server';
 import { route as r_features_synapse_storm_api_games_synapse_storm_save } from '@/features/synapse-storm/api/games.synapse-storm.save.server';
 import { route as r_lib_game_api_games_synapse_storm_score } from '@/lib/game/api/games.synapse-storm.score.server';
 import { route as r_lib_cards_api_games_trades_accept } from '@/lib/cards/api/games.trades.accept.server';
@@ -1008,6 +1016,7 @@ import { route as r_lib_game_api_settings_leaderboard_privacy } from '@/lib/game
 import { route as r_lib_feed_api_settings_missing_alt_text } from '@/lib/feed/api/settings.missing-alt-text.server';
 import { route as r_lib_notify_api_settings_muted_conversations } from '@/lib/notify/api/settings.muted-conversations.server';
 import { route as r_lib_economy_api_settings_play_limits } from '@/lib/economy/api/settings.play-limits.server';
+import { route as r_lib_economy_api_settings_play_limits_surfaces } from '@/lib/economy/api/settings.play-limits.surfaces.server';
 import { route as r_lib_playtime_api_settings_playtime_privacy } from '@/lib/playtime/api/settings.playtime-privacy.server';
 import { route as r_lib_feed_api_settings_quiet_counts } from '@/lib/feed/api/settings.quiet-counts.server';
 import { route as r_lib_messages_api_settings_read_receipts } from '@/lib/messages/api/settings.read-receipts.server';
@@ -1291,6 +1300,9 @@ const API_ROUTES_A: readonly ApiRoute[] = [
   r_lib_admin_api_admin_curated_builds_image, // /api/admin/curated-builds/image
   r_lib_admin_api_admin_curated_builds_image_filename, // /api/admin/curated-builds/image/$filename
   r_lib_admin_api_admin_curated_builds_image_proxy, // /api/admin/curated-builds/image/proxy
+  r_lib_admin_api_admin_daily_puzzles, // /api/admin/daily-puzzles
+  r_lib_admin_api_admin_daily_puzzles_generate, // /api/admin/daily-puzzles/generate
+  r_lib_admin_api_admin_daily_puzzles_replace, // /api/admin/daily-puzzles/replace
   r_lib_ai_api_admin_deepseek_balance, // /api/admin/deepseek/balance
   r_lib_ai_api_admin_deepseek_history, // /api/admin/deepseek/history
   r_lib_ai_api_admin_deepseek_refresh, // /api/admin/deepseek/refresh
@@ -1387,6 +1399,7 @@ const API_ROUTES_A: readonly ApiRoute[] = [
   r_lib_developer_api_admin_release_notes_draft, // /api/admin/release-notes/draft
   r_lib_admin_api_admin_reports, // /api/admin/reports
   r_lib_admin_api_admin_reports_id, // /api/admin/reports/$id
+  r_lib_admin_api_admin_reports_claims, // /api/admin/reports/claims
   r_lib_admin_api_admin_reports_groups, // /api/admin/reports/groups
   r_lib_admin_api_admin_reports_groups_decide, // /api/admin/reports/groups/decide
   r_lib_moderation_api_admin_restrictions_id, // /api/admin/restrictions/$id
@@ -1601,6 +1614,7 @@ const API_ROUTES_D: readonly ApiRoute[] = [
   r_lib_daily_puzzles_api_daily_puzzles_following_summary, // /api/daily-puzzles/following/summary
   r_lib_daily_puzzles_api_daily_puzzles_leaderboard, // /api/daily-puzzles/leaderboard
   r_lib_daily_puzzles_api_daily_puzzles_puzzle, // /api/daily-puzzles/puzzle
+  r_lib_daily_puzzles_api_daily_puzzles_report, // /api/daily-puzzles/report
   r_lib_daily_puzzles_api_daily_puzzles_results, // /api/daily-puzzles/results
   r_lib_daily_puzzles_api_daily_puzzles_score, // /api/daily-puzzles/score
   r_lib_daily_puzzles_api_daily_puzzles_stats, // /api/daily-puzzles/stats
@@ -1636,7 +1650,9 @@ const API_ROUTES_D: readonly ApiRoute[] = [
   r_features_doctrine_api_doctrine_recruitment_create, // /api/doctrine/recruitment/create
   r_features_doctrine_api_doctrine_recruitment_redeem, // /api/doctrine/recruitment/redeem
   r_features_doctrine_api_doctrine_reputation, // /api/doctrine/reputation
+  r_features_doctrine_api_doctrine_reputation_activity, // /api/doctrine/reputation/activity
   r_features_doctrine_api_doctrine_reputation_leaderboard, // /api/doctrine/reputation/leaderboard
+  r_features_doctrine_api_doctrine_reputation_ledger, // /api/doctrine/reputation/ledger
   r_features_doctrine_api_doctrine_safehouse_content, // /api/doctrine/safehouse/content
   r_features_doctrine_api_doctrine_safehouse_disclosures, // /api/doctrine/safehouse/disclosures
   r_features_doctrine_api_doctrine_sahur_status, // /api/doctrine/sahur/status
@@ -1760,6 +1776,7 @@ const API_ROUTES_G: readonly ApiRoute[] = [
   r_lib_playtime_api_games_playtime, // /api/games/playtime
   r_lib_cards_api_games_showcase, // /api/games/showcase
   r_features_synapse_storm_api_games_synapse_storm_leaderboard, // /api/games/synapse-storm/leaderboard
+  r_features_synapse_storm_api_games_synapse_storm_matches, // /api/games/synapse-storm/matches
   r_features_synapse_storm_api_games_synapse_storm_save, // /api/games/synapse-storm/save
   r_lib_game_api_games_synapse_storm_score, // /api/games/synapse-storm/score
   r_lib_cards_api_games_trades_accept, // /api/games/trades/accept
@@ -2303,6 +2320,7 @@ const API_ROUTES_S: readonly ApiRoute[] = [
   r_lib_feed_api_settings_missing_alt_text, // /api/settings/missing-alt-text
   r_lib_notify_api_settings_muted_conversations, // /api/settings/muted-conversations
   r_lib_economy_api_settings_play_limits, // /api/settings/play-limits
+  r_lib_economy_api_settings_play_limits_surfaces, // /api/settings/play-limits/surfaces
   r_lib_playtime_api_settings_playtime_privacy, // /api/settings/playtime-privacy
   r_lib_feed_api_settings_quiet_counts, // /api/settings/quiet-counts
   r_lib_messages_api_settings_read_receipts, // /api/settings/read-receipts

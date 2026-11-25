@@ -68,6 +68,8 @@ A request whose key lacks the required scope fails with `403 insufficient_scope`
 | `read:characters` | RMHCharacters | Read your characters and the summaries of your parties. |
 | `read:ladder` | RMHLadder | Read your RMHLadder applications, their dates and notes, and their timelines. Never offers, pay, resumes or contacts. Not included in `*` or `read:*`, and not in a new key’s default grant: a key must list it itself. |
 | `write:ladder` | RMHLadder | Change an application’s status, dates and notes, and add a job you found yourself. Not included in `*` or `write:*`: a key must list it itself. |
+| `read:homes` | RMH Homes | Read your saved homes with your notes and their last price changes, and your saved searches. Never an address or a search’s coordinates. Not included in `*` or `read:*`, and not in a new key’s default grant: a key must list it itself. |
+| `write:homes` | RMH Homes | Save a home, change your note and price alert on it, and unsave it. Not included in `*` or `write:*`: a key must list it itself. |
 
 <!-- END GENERATED: scopes -->
 

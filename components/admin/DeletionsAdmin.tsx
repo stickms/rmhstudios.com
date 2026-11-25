@@ -134,8 +134,10 @@ export function DeletionsAdmin() {
           {t('waiting-heading', { defaultValue: 'Waiting' })}
         </h2>
         <p className="t-meta text-site-text-muted">
-          {t('waiting-count', {
+          {t('waiting-total', {
+            defaultValue_one: '{{n}} account in its grace period',
             defaultValue: '{{n}} accounts in their grace period',
+            count: data.waitingTotal,
             n: fmt.number(data.waitingTotal),
           })}
         </p>
@@ -180,8 +182,10 @@ export function DeletionsAdmin() {
           {t('overdue-heading', { defaultValue: 'Overdue' })}
         </h2>
         <p className="t-meta text-site-text-muted">
-          {t('overdue-count', {
+          {t('overdue-total', {
+            defaultValue_one: '{{n}} account due more than 24 hours ago and not erased',
             defaultValue: '{{n}} accounts due more than 24 hours ago and not erased',
+            count: data.overdueTotal,
             n: fmt.number(data.overdueTotal),
           })}
         </p>
@@ -223,7 +227,10 @@ export function DeletionsAdmin() {
                     <td className="t-meta py-3 pe-3 text-site-text">{fmt.date(r.dueAt)}</td>
                     <td className="t-meta py-3 pe-3 text-site-text">{billing(r.billing)}</td>
                     <td className="t-meta py-3 pe-3 text-site-text">{fmt.number(r.attempts)}</td>
-                    <td className="t-meta py-3 pe-3 break-all text-site-danger" dir="ltr">
+                    <td
+                      className={`t-meta py-3 pe-3 break-all ${!r.running && r.lastErrorName ? 'text-site-danger' : 'text-site-text-muted'}`}
+                      dir="ltr"
+                    >
                       {r.running
                         ? t('running', { defaultValue: 'Running now' })
                         : (r.lastErrorName ?? t('no-error', { defaultValue: 'No attempt failed yet' }))}
@@ -246,8 +253,10 @@ export function DeletionsAdmin() {
           {t('finished-heading', { defaultValue: 'Finished' })}
         </h2>
         <p className="t-meta text-site-text-muted">
-          {t('finished-count', {
+          {t('finished-total', {
+            defaultValue_one: '{{n}} erasure in the last 30 days',
             defaultValue: '{{n}} erasures in the last 30 days',
+            count: data.finishedTotal,
             n: fmt.number(data.finishedTotal),
           })}
         </p>
@@ -262,8 +271,10 @@ export function DeletionsAdmin() {
           <BarChart
             bars={data.finished.map((d) => ({ label: d.day, value: d.count }))}
             label={t('finished-chart-label', { defaultValue: 'Erasures finished per day' })}
-            summary={t('finished-chart-summary', {
+            summary={t('finished-chart-total', {
+              defaultValue_one: '{{n}} erasure finished in the last 30 days, per day',
               defaultValue: '{{n}} erasures finished in the last 30 days, per day',
+              count: data.finishedTotal,
               n: fmt.number(data.finishedTotal),
             })}
             columns={{

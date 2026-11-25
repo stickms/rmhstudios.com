@@ -50,6 +50,7 @@ const game = (over: Partial<RankedStandingGame>): RankedStandingGame => ({
   played: true,
   rating: 1300,
   tier: 'Platinum',
+  tierId: 'platinum',
   provisional: false,
   placementsLeft: 0,
   wins: 1,

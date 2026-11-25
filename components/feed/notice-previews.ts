@@ -1463,6 +1463,21 @@ export function noticeText(
         ...values,
       });
 
+    // Sprint 14 notices (docs/autonomous/sprint-14/plan.md §Anchors)
+    // s14-11 thread-replies
+    case 'game-thread-reply':
+      return t('notice-game-thread-reply', {
+        ns: 'notice-language',
+        defaultValue: '{{name}} replied in {{title}}',
+        ...values,
+      });
+    case 'song-comment':
+      return t('notice-song-comment', {
+        ns: 'notice-language',
+        defaultValue: '{{name}} commented on {{title}}',
+        ...values,
+      });
+
     default:
       return null;
   }

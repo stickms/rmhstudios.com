@@ -91,5 +91,6 @@ model SSPlayerMatch {
   @@unique([matchId, userId])
   @@index([matchId])
   @@index([lobbyId])
+  @@index([userId, lastUpdateAt(sort: Desc)])
   @@map("ss_player_match")
 }

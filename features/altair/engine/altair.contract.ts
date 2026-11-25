@@ -8,6 +8,7 @@
 import { endpoint } from '@/lib/contract/endpoint';
 import type { IssuedRun } from '@features/altair/engine/solo/issue.server';
 import type { RunsPage } from '@features/altair/engine/runs';
+import type { CoopBoardEntry } from '@features/altair/engine/coop-record';
 
 export interface AltairLeaderboardEntry {
   username: string;
@@ -19,12 +20,15 @@ export interface AltairLeaderboardEntry {
   gamesPlayed: number;
 }
 
-/** The top ten for a category (`time` when `type` is absent or unknown). */
+/**
+ * The top ten for a category (`time` when `type` is absent or unknown). `coop-wins` and `coop-revives` answer
+ * {@link CoopBoardEntry} rows instead.
+ */
 export const getAltairLeaderboardApi = endpoint<{
   query: {
     type?: string | undefined;
   };
-  res: AltairLeaderboardEntry[];
+  res: Array<AltairLeaderboardEntry | CoopBoardEntry>;
 }>()({
   method: 'GET',
   path: '/api/altair/leaderboard',

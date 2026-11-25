@@ -4,7 +4,7 @@ import type { Prisma, PrismaClient, Tournament, TournamentMatch } from '@prisma/
 import { prisma } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import { createNotification } from '@/lib/notifications.server';
-import { creditCoins, debitCoins, EscrowError, recordWagerTxn } from '@/lib/wager/escrow.server';
+import { creditCoins, debitCoins, debitStake, EscrowError, recordWagerTxn } from '@/lib/wager/escrow.server';
 import { getWagerGame } from '@/lib/wager/eligible-games';
 import { TOURNAMENT_RAKE_BPS } from '@/lib/wager/constants';
 import { MIN_DOUBLE_ELIM_PLAYERS } from './tournament-schema';
@@ -160,7 +160,8 @@ export async function registerForTournament(
       if (existing) throw new TournamentError('Already registered', 'DUPLICATE', 409);
 
       if (t.entryFeeCoins > 0) {
-        await debitCoins(tx, opts.userId, t.entryFeeCoins);
+        // The entry fee is a stake: refused for a self-excluded member (W8).
+        await debitStake(tx, opts.userId, t.entryFeeCoins);
         await recordWagerTxn(tx, {
           senderId: opts.userId,
           // Hold: the entry fee leaves the entrant's balance for the pot.

@@ -1,4 +1,5 @@
 import { apiRoute } from '@/lib/api/route.server';
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { guestbookModeSchema, signGuestbookSchema } from '@/lib/guestbook/schema';
@@ -29,6 +30,8 @@ export const route = apiRoute('/api/profile/$id/guestbook', {
       body: signGuestbookSchema,
     },
     async ({ userId, params, body }) => {
+      const restricted = await restrictionResponse(userId, 'comment');
+      if (restricted) return restricted;
       const result = await signGuestbook(params.id, userId, body.body);
       if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
       return Response.json({ id: result.id }, { status: 201 });

@@ -8,6 +8,7 @@
 import type { Server, Socket } from 'socket.io';
 import { sanitizeUserName, generateRoomCode, sanitizeString } from '../utils';
 import { getPrismaClient } from '../prisma-client';
+import { isMemberRestricted, restrictedChatError } from '../../shared/member-restrictions';
 import { logger } from '../logger';
 import { checkRateLimit } from '../rate-limit';
 import { config } from '../config';
@@ -1100,7 +1101,7 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
   });
 
   // ─── Chat ───
-  socket.on('rmhstudy:room:chat', (payload: { roomCode?: string; message?: string }) => {
+  socket.on('rmhstudy:room:chat', async (payload: { roomCode?: string; message?: string }) => {
     if (!checkRateLimit(socket.id, 'rmhstudy:room:chat')) {
       emitError(socket, 'Rate limited. Slow down chat messages.');
       return;
@@ -1118,6 +1119,15 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
 
     const member = room.members.get(userId);
     if (!member) return;
+
+    // s14-17: a member a moderator timed out of messages and chats is refused before the line is kept or sent.
+    const restricted = await isMemberRestricted(getPrismaClient(), userId, 'message', (err) =>
+      logger.error({ event: 'restriction_check_failed', userId, error: String(err) }),
+    );
+    if (restricted) {
+      emitError(socket, restrictedChatError().message, 'FEATURE_RESTRICTED');
+      return;
+    }
 
     const chatMsg: ChatMessage = {
       id: generateId(),

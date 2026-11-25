@@ -339,6 +339,25 @@ export const SCOPES: ScopeDetail[] = [
       'Change an application’s status, dates and notes, and add a job you found yourself. Not included in `*` or `write:*`: a key must list it itself.',
     explicit: true,
   },
+
+  // Sprint 14
+  // s14-15 homes-api
+  {
+    id: 'read:homes',
+    action: 'read',
+    group: 'RMH Homes',
+    description:
+      'Read your saved homes with your notes and their last price changes, and your saved searches. Never an address or a search’s coordinates. Not included in `*` or `read:*`, and not in a new key’s default grant: a key must list it itself.',
+    explicit: true,
+  },
+  {
+    id: 'write:homes',
+    action: 'write',
+    group: 'RMH Homes',
+    description:
+      'Save a home, change your note and price alert on it, and unsave it. Not included in `*` or `write:*`: a key must list it itself.',
+    explicit: true,
+  },
 ];
 
 export const ALL_SCOPES: string[] = SCOPES.map((s) => s.id);

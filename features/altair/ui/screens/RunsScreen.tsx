@@ -3,7 +3,7 @@
  * matches (teammates by their current names), paged by cursor. In the game's own look (L8). Every number shown is the
  * server's: a verified run's replay, a co-op match as the hub recorded it.
  */
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Skull, Swords, Trophy } from 'lucide-react';
@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { HttpError } from '@/lib/http';
 import { getAltairRunsApi } from '@features/altair/engine/altair.contract';
 import { CLASSES } from '@features/altair/engine/data/classes';
+import CoopRecordLine from './CoopRecordLine';
 import type {
   CoopMatchView,
   RejectReasonView,
@@ -37,6 +38,9 @@ export default function RunsScreen({ onBack }: RunsScreenProps) {
   const { t } = useTranslation('altair-runs');
   const refusalText = useRefusalText();
   const [kind, setKind] = useState<RunsKind>('solo');
+  // s14-20: opening the screen moves focus to its heading, so a keyboard or screen-reader member lands in it. A stable
+  // callback ref runs once when the heading mounts (no effect, no animation frame).
+  const focusHeading = useCallback((el: HTMLHeadingElement | null) => el?.focus(), []);
 
   const query = useInfiniteQuery({
     queryKey: [getAltairRunsApi.path, kind],
@@ -57,12 +61,17 @@ export default function RunsScreen({ onBack }: RunsScreenProps) {
   const pages = query.data?.pages ?? [];
   const soloRuns: SoloRunView[] = pages.flatMap((p) => (p.kind === 'solo' ? p.runs : []));
   const matches: CoopMatchView[] = pages.flatMap((p) => (p.kind === 'coop' ? p.matches : []));
+  // The record rides on the first co-op page only.
+  const firstPage = pages[0];
+  const coopRecord = firstPage?.kind === 'coop' ? (firstPage.coopRecord ?? null) : null;
   const signedOut = query.error instanceof HttpError && query.error.status === 401;
 
   return (
     <div className="altair-scan flex flex-col items-center flex-1 px-4 pt-4 pb-12">
       <div className="w-full max-w-xl">
-        <h2 className="text-xl font-semibold text-(--altair-text) mb-3">{t('title', { defaultValue: 'Your runs' })}</h2>
+        <h2 ref={focusHeading} tabIndex={-1} className="text-xl font-semibold text-(--altair-text) mb-3">
+          {t('title', { defaultValue: 'Your runs' })}
+        </h2>
         <Tabs
           tabs={tabs}
           value={kind}
@@ -98,6 +107,7 @@ export default function RunsScreen({ onBack }: RunsScreenProps) {
         )}
         {query.isSuccess && (
           <div className={arrival}>
+            {kind === 'coop' && coopRecord && <CoopRecordLine record={coopRecord} />}
             <RunsList kind={kind} soloRuns={soloRuns} matches={matches} />
             {query.hasNextPage && (
               <button

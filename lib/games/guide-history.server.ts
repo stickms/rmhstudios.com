@@ -11,6 +11,7 @@
  */
 import { prisma } from '@/lib/prisma.server';
 import { GameMetaError, updateGuide } from '@/lib/games/meta.server';
+import { GAME_CONTENT_REMOVED } from '@/lib/games/moderation';
 import type { GuideRevisionRow } from '@/lib/games/guide-history.contract';
 
 export interface HistoryViewer {
@@ -103,7 +104,7 @@ export async function getGuideForHistory(viewer: HistoryViewer, gameId: string, 
   };
 }
 
-export type RestoreResult = 'ok' | 'not_found' | 'forbidden';
+export type RestoreResult = 'ok' | 'not_found' | 'forbidden' | 'removed';
 
 /** The English note a restore is recorded with; the date is when that version became current. */
 export function restoreNote(since: Date): string {
@@ -137,6 +138,8 @@ export async function restoreGuideRevision(
   try {
     await updateGuide(viewer.userId as string, guideId, { body: rev.body, note: restoreNote(since) });
   } catch (e) {
+    // A guide a moderator removed cannot be changed, and a restore is a change (s14-08).
+    if (e instanceof GameMetaError && e.message === GAME_CONTENT_REMOVED) return 'removed';
     if (e instanceof GameMetaError) return e.message === 'FORBIDDEN' ? 'forbidden' : 'not_found';
     throw e;
   }

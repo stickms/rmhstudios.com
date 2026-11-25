@@ -2,13 +2,21 @@
  * GitHub-style contribution heatmap for Doctrine activity.
  */
 
+import { useTranslation } from 'react-i18next';
+import { dayOf } from '@/lib/calendar/tz';
+import { resolveTimeZone } from '@features/doctrine/engine/ledger';
+
 interface HeatmapProps {
   /** Map of YYYY-MM-DD → activity count */
   data: Record<string, number>;
   weeks?: number;
+  /** The zone the day keys are in (the one the activity read was bucketed in); UTC when omitted. */
+  tz?: string;
 }
 
-export function ActivityHeatmap({ data, weeks = 20 }: HeatmapProps) {
+export function ActivityHeatmap({ data, weeks = 20, tz }: HeatmapProps) {
+  const { t } = useTranslation('doctrine-ledger');
+  const zone = resolveTimeZone(tz);
   const today = new Date();
   const cells: Array<{
     date: string;
@@ -19,7 +27,7 @@ export function ActivityHeatmap({ data, weeks = 20 }: HeatmapProps) {
   for (let i = weeks * 7 - 1; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().slice(0, 10);
+    const dateStr = dayOf(d.getTime(), zone);
     cells.push({
       date: dateStr,
       count: data[dateStr] ?? 0,
@@ -38,6 +46,8 @@ export function ActivityHeatmap({ data, weeks = 20 }: HeatmapProps) {
     return 'rgba(249,115,22,0.2)';
   }
 
+  const activeDays = cells.filter((c) => c.count > 0).length;
+
   // Group into weeks
   const weekGroups: (typeof cells)[] = [];
   for (let i = 0; i < cells.length; i += 7) {
@@ -46,7 +56,14 @@ export function ActivityHeatmap({ data, weeks = 20 }: HeatmapProps) {
 
   return (
     <div className="overflow-x-auto">
-      <div className="flex gap-[3px]">
+      <p className="sr-only">
+        {t('heatmap-summary', {
+          defaultValue: 'Active on {{active}} of the last {{total}} days',
+          active: activeDays,
+          total: cells.length,
+        })}
+      </p>
+      <div className="flex gap-[3px]" aria-hidden="true">
         {weekGroups.map((week, wi) => (
           <div key={wi} className="flex flex-col gap-[3px]">
             {week.map((cell) => (

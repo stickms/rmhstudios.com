@@ -108,12 +108,26 @@ export interface DmTakedown {
 export async function takeDownDmMessage(messageId: string, now: Date = new Date()): Promise<DmTakedown> {
   const message = await prisma.chatMessage.findUnique({
     where: { id: messageId },
-    select: { chatId: true, senderId: true, chat: { select: { kind: true } } },
+    select: { chatId: true, senderId: true, threadParentId: true, chat: { select: { kind: true } } },
   });
   if (!message) return { removed: false };
 
   if (message.chat.kind === 'group') {
-    const { count } = await prisma.chatMessage.deleteMany({ where: { id: messageId } });
+    // s14-20: a thread reply takes one off its parent's reply count in the same transaction, never below zero (the
+    // delete cascades the reply's reactions and versions). A top-level message has no parent: a plain delete.
+    const parentId = message.threadParentId;
+    const { count } = parentId
+      ? await prisma.$transaction(async (tx) => {
+          const deleted = await tx.chatMessage.deleteMany({ where: { id: messageId } });
+          if (deleted.count > 0) {
+            await tx.chatMessage.updateMany({
+              where: { id: parentId, replyCount: { gt: 0 } },
+              data: { replyCount: { decrement: 1 } },
+            });
+          }
+          return deleted;
+        })
+      : await prisma.chatMessage.deleteMany({ where: { id: messageId } });
     if (count > 0) {
       // Open group views drop the line now rather than at the next reload.
       publishGroupEvent(message.chatId, {

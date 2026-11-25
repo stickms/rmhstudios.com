@@ -13,13 +13,17 @@
  * they already have; there is nothing to gain from moving a working save across
  * a migration.
  *
+ * Hearthworks is on the list because its town now reaches the account: `features/hearthworks/engine/save/account.ts`
+ * keeps one gzipped copy of the world here (IndexedDB stays the first copy) and sends `expectedUpdatedAt` so a second
+ * device cannot overwrite a newer copy.
+ *
  * Games still on `localStorage` alone are absent too, and that is the point of
  * keeping this list short: an id here is a promise that something writes to it.
  * Velum 2099's story save, Lights Out's puzzle history, Dream Rift's high
  * scores and the Altair meta shop have not been moved yet —
  * add the id in the same commit that teaches the game to save, not before.
  */
-export const SHARED_SAVE_GAMES = ['void-breaker', 'neon-driftway'] as const;
+export const SHARED_SAVE_GAMES = ['void-breaker', 'neon-driftway', 'hearthworks'] as const;
 
 /**
  * Games that save on the shared table but are not in the public catalog

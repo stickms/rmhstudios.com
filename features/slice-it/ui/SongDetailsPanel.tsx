@@ -24,6 +24,7 @@ import { PackPanel } from './packs/PackPanel';
 import { Leaderboard } from './Leaderboard';
 import { Pressings } from './Pressings';
 import { SongComments } from './SongComments';
+import { ReportSongButton } from './ReportSongButtons';
 import { useSliceItStore } from '@features/slice-it/engine/store';
 import type { SliceSong } from '@features/slice-it/engine/types';
 import { Slider } from '@/components/ui/slider';
@@ -599,6 +600,8 @@ export function SongDetailsPanel({
               {t('edit-chart', { defaultValue: 'Edit chart' })}
             </Link>
           )}
+
+          {!readOnly && <ReportSongButton songId={song.id} isOwner={isOwner} />}
         </div>
 
         {/* C2 — renders nothing when there is one chart, which is every song

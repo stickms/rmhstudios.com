@@ -35,7 +35,11 @@ async function resolveRecipient(
       return row?.userId ?? null;
     }
     case 'review': {
-      const row = await prisma.gameReview.findUnique({ where: { id: entityId }, select: { userId: true } });
+      // A review a moderator removed is gone to everyone else, so it cannot be awarded (s14-08).
+      const row = await prisma.gameReview.findUnique({
+        where: { id: entityId, moderatedAt: null },
+        select: { userId: true },
+      });
       return row?.userId ?? null;
     }
     default:
