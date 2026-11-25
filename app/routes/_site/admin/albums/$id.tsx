@@ -221,7 +221,7 @@ function ManageAlbumPage() {
       <AdminBody width="narrow" className={arrival}>
         {/* Album details: fields on the page gutter. */}
         <div className="relative flex flex-col gap-3">
-          <Input
+          <Input aria-label={t('album-title-label', { defaultValue: 'Album title' })}
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -229,7 +229,7 @@ function ManageAlbumPage() {
             placeholder={t('album-title-label', { defaultValue: 'Album title' })}
             className="font-semibold"
           />
-          <Textarea
+          <Textarea aria-label={t('field-album-description', { defaultValue: 'Album description' })}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder={t('album-description-placeholder', {

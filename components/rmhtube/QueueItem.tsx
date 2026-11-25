@@ -3,7 +3,7 @@
  * voting (Phase 3.5), and remove button.
  */
 
-import { X, GripVertical, Play, ThumbsUp, ListPlus, Radio } from 'lucide-react';
+import { X, GripVertical, Play, ThumbsUp, ListPlus, Radio, Captions } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { formatDuration } from '@/lib/rmhtube/utils';
 import type { ClientQueueItem } from '@/lib/rmhtube/types';
@@ -19,6 +19,8 @@ interface QueueItemProps {
   onPlay: () => void;
   onVote: () => void;
   onAddToPlaylist?: () => void;
+  /** Present only when this viewer may attach subtitles (the adder or the host) and the item can take them. */
+  onAddSubtitles?: () => void;
 }
 
 export default function QueueItem({
@@ -31,6 +33,7 @@ export default function QueueItem({
   onPlay,
   onVote,
   onAddToPlaylist,
+  onAddSubtitles,
 }: QueueItemProps) {
   const { t } = useTranslation('c-rmhtube');
   return (
@@ -82,6 +85,18 @@ export default function QueueItem({
             <span>{formatDuration(item.duration)}</span>
           )}
         </p>
+        {item.subtitles && item.subtitles.length > 0 && (
+          <p className="truncate text-xs text-app-text-dim">
+            {t('queue-subtitles', { ns: 'rmhtube-subtitles', defaultValue: 'Subtitles' })}
+            {': '}
+            {item.subtitles.map((track, i) => (
+              <span key={track.id}>
+                {i > 0 && ', '}
+                <bdi>{track.label}</bdi>
+              </span>
+            ))}
+          </p>
+        )}
       </div>
 
       {/* Vote (Phase 3.5) */}
@@ -99,6 +114,18 @@ export default function QueueItem({
         >
           <ThumbsUp className="h-3.5 w-3.5" />
           {item.votes > 0 && <span>{item.votes}</span>}
+        </button>
+      )}
+
+      {/* Add subtitles (the adder or the host) */}
+      {onAddSubtitles && (
+        <button
+          onClick={onAddSubtitles}
+          className="shrink-0 rounded-app-sm p-1 transition-colors text-app-text-dim hover:text-app-accent hover:bg-app-accent-dim"
+          title={t('add-subtitles', { ns: 'rmhtube-subtitles', defaultValue: 'Add subtitles' })}
+          aria-label={t('add-subtitles', { ns: 'rmhtube-subtitles', defaultValue: 'Add subtitles' })}
+        >
+          <Captions className="h-3.5 w-3.5" aria-hidden />
         </button>
       )}
 

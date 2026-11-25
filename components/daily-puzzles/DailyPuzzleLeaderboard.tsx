@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { m as motion, AnimatePresence } from 'framer-motion';
@@ -6,7 +7,7 @@ import { Trophy, Lightbulb } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
 import { formatDuration } from '@/lib/globeset/game';
-import { api } from '@/lib/contract/client';
+import { api, apiQuery } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import {
   getDailyPuzzleLeaderboardApi,
@@ -14,6 +15,9 @@ import {
   type DailyPuzzleLeaderboardEntry as LeaderboardEntry,
 } from '@/lib/daily-puzzles/daily-puzzles.contract';
 import { useArrival } from '@/components/ui/arrive';
+import { BoardTabs, FollowingBoardList, type BoardTab } from '@/components/daily-puzzles/FollowingBoard';
+import { getDailyFollowingBoardApi } from '@/lib/daily-puzzles/following.contract';
+import type { DailyMode } from '@/lib/daily-puzzles/following-schema';
 import { cn } from '@/lib/utils';
 
 /**
@@ -28,7 +32,7 @@ import { cn } from '@/lib/utils';
 const TIMED_MODES = new Set(['globeset']);
 
 interface DailyPuzzleLeaderboardProps {
-  gameMode: string;
+  gameMode: DailyMode;
   dateKey: string;
   /** For score-based games (higher = better) */
   score?: number;
@@ -74,6 +78,14 @@ export function DailyPuzzleLeaderboard({
 
   const { t } = useTranslation('c-daily-puzzles');
   const session = useSession();
+  const queryClient = useQueryClient();
+  const [tab, setTab] = useState<BoardTab>('everyone');
+  const friendsOpen = !!session.data && tab === 'friends';
+  const friends = useQuery({
+    ...apiQuery(getDailyFollowingBoardApi, { query: { gameMode, date: dateKey } }),
+    enabled: friendsOpen && completed,
+    retry: false,
+  });
   const isLightsOut = gameMode === 'lights-out';
   const isTimed = TIMED_MODES.has(gameMode);
 
@@ -148,6 +160,7 @@ export function DailyPuzzleLeaderboard({
         if (!(e instanceof HttpError) || e.status >= 500 || e.status === 429) throw e;
       }
       fetchLeaderboard();
+      void queryClient.invalidateQueries({ queryKey: [getDailyFollowingBoardApi.path] });
     } catch {
       if (retries.current < 3) {
         retries.current += 1;
@@ -168,6 +181,7 @@ export function DailyPuzzleLeaderboard({
     gameMode,
     dateKey,
     fetchLeaderboard,
+    queryClient,
   ]);
 
   useEffect(() => {
@@ -241,7 +255,17 @@ export function DailyPuzzleLeaderboard({
           </div>
         )}
 
-        {loading ? (
+        {/* Signed out, the board is "Everyone" only. */}
+        {session.data && <BoardTabs value={tab} onChange={setTab} />}
+
+        {friendsOpen ? (
+          <FollowingBoardList
+            gameMode={gameMode}
+            entries={friends.data?.entries}
+            loading={friends.isPending}
+            failed={friends.isError}
+          />
+        ) : loading ? (
           <div className="flex items-center justify-center py-6">
             <Spinner size={24} />
           </div>

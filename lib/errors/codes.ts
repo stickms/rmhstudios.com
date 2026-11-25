@@ -1047,6 +1047,150 @@ export const ERROR_CODES = {
     i18n: 'errors:medschoolsImportEmpty',
     text: 'No application dates were found in that file',
   },
+
+  // Sprint 11
+  // s11-03 character-party
+  PARTY_FULL: {
+    http: 409,
+    i18n: 'errors:partyFull',
+    text: 'This party is full',
+  },
+  PARTY_LIMIT: {
+    http: 409,
+    i18n: 'errors:partyLimit',
+    text: 'You have reached the limit for parties',
+  },
+  PARTY_SYSTEM_MISMATCH: {
+    http: 400,
+    i18n: 'errors:partySystemMismatch',
+    text: 'That character is for a different game than this party',
+  },
+  PARTY_JOIN_REFUSED: {
+    http: 403,
+    i18n: 'errors:partyJoinRefused',
+    text: 'You cannot join this party',
+  },
+  PARTY_ALREADY_MEMBER: {
+    http: 409,
+    i18n: 'errors:partyAlreadyMember',
+    text: 'You are already in this party',
+  },
+  PARTY_ORDER_CHANGED: {
+    http: 409,
+    i18n: 'errors:partyOrderChanged',
+    text: 'The turn order changed. Reload it and try again',
+  },
+  // s11-05 lights-out-maker
+  LIGHTS_OUT_BOARD_LIMIT: {
+    http: 409,
+    i18n: 'errors:lightsOutBoardLimit',
+    text: 'You have reached the limit for new boards',
+  },
+  LIGHTS_OUT_BOARD_UNPLAYABLE: {
+    http: 400,
+    i18n: 'errors:lightsOutBoardUnplayable',
+    text: 'A board must be solvable in at least three moves',
+  },
+  // s11-06 daily-following
+  // s11-07 studio-share
+  STUDIO_SHARE_LIMIT: {
+    http: 409,
+    i18n: 'errors:studioShareLimit',
+    text: 'You can have {{max}} shared links at a time. Stop sharing one to make another.',
+  },
+  // s11-09 read-alongs
+  READ_ALONG_CAP: {
+    http: 409,
+    i18n: 'errors:readAlongCap',
+    text: 'A community can have {{max}} active read-alongs',
+  },
+  READ_ALONG_FULL: {
+    http: 409,
+    i18n: 'errors:readAlongFull',
+    text: 'This read-along has {{max}} readers and is full',
+  },
+  READ_ALONG_STARTED: {
+    http: 409,
+    i18n: 'errors:readAlongStarted',
+    text: 'The first part has opened, so the parts can no longer be changed',
+  },
+  READ_ALONG_ENDED: {
+    http: 409,
+    i18n: 'errors:readAlongEnded',
+    text: 'This read-along has ended',
+  },
+  // s11-10 deck-coeditors
+  DECK_EDITOR_ALREADY: {
+    http: 409,
+    i18n: 'errors:deckEditorAlready',
+    text: 'This member is already invited',
+  },
+  DECK_EDITOR_COPY: {
+    http: 400,
+    i18n: 'errors:deckEditorCopy',
+    text: "A copy of another member's deck can't have editors",
+  },
+  DECK_EDITOR_FULL: {
+    http: 409,
+    i18n: 'errors:deckEditorFull',
+    text: 'A deck can have at most {{max}} editors',
+  },
+  DECK_EDITOR_INVITES_FULL: {
+    http: 409,
+    i18n: 'errors:deckEditorInvitesFull',
+    text: 'You can have at most {{max}} invitations waiting',
+  },
+  DECK_EDITOR_UNAVAILABLE: {
+    http: 403,
+    i18n: 'errors:deckEditorUnavailable',
+    text: "This member can't be invited",
+  },
+  // s11-12 type-challenges
+  TYPE_CHALLENGE_RACED: {
+    http: 409,
+    i18n: 'errors:typeChallengeRaced',
+    text: 'This race has already been run',
+  },
+  TYPE_CHALLENGE_UNAVAILABLE: {
+    http: 403,
+    i18n: 'errors:typeChallengeUnavailable',
+    text: "This member can't be challenged",
+  },
+  TYPE_CHALLENGE_PASSAGE: {
+    http: 400,
+    i18n: 'errors:typeChallengePassage',
+    text: "That passage can't be sent as a challenge",
+  },
+  TYPE_CHALLENGE_NO_RUN: {
+    http: 409,
+    i18n: 'errors:typeChallengeNoRun',
+    text: 'Set a best run on that passage first',
+  },
+  TYPE_CHALLENGE_FULL: {
+    http: 409,
+    i18n: 'errors:typeChallengeFull',
+    text: 'You can have at most {{max}} challenges waiting',
+  },
+  TYPE_CHALLENGE_PAIR_FULL: {
+    http: 409,
+    i18n: 'errors:typeChallengePairFull',
+    text: 'You already have {{max}} challenges waiting for this member',
+  },
+  // s11-13 listing-prices
+  // s11-14 listing-photo-alt
+  LISTING_PHOTO_ALT_TOO_LONG: {
+    http: 400,
+    i18n: 'errors:listingPhotoAltTooLong',
+    text: 'A photo description can have at most {{max}} characters',
+  },
+  // s11-16 rmhtube-subtitles
+  // s11-17 card-listen
+  // s11-18 sweep-references
+  LISTING_PHOTO_NOT_SITE: {
+    http: 400,
+    i18n: 'errors:listingPhotoNotSite',
+    text: 'Use photos uploaded to this listing',
+  },
   MEDSCHOOLS_LIST_IMPORT_EMPTY: {
     http: 422,
     i18n: 'errors:medschoolsListImportEmpty',

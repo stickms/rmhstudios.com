@@ -375,7 +375,7 @@ describe('reading a deck', () => {
 
   it('getTestCards returns reviewable cards with the note they belong to', async () => {
     const id = await addCloze();
-    const cards = await getTestCards('mine');
+    const cards = await getTestCards('mine', 'me');
     expect(cards.map((c) => [c.clozeIndex, c.noteId])).toEqual([
       [1, id],
       [2, id],

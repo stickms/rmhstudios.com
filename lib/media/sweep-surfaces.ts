@@ -92,3 +92,45 @@ export function sweptSurfaces(): SweepSurfaceKey[] {
     (k) => (MEDIA_SWEEP_SURFACES[k] as SweepSurface).kind === 'swept',
   );
 }
+
+/**
+ * Every schema column that names a stored picture, sound or clip (a `String`, `String?` or `String[]` whose name ends
+ * in image, images, imageUrl(s), thumbnailUrl, coverUrl, bannerUrl, mediaUrl(s), soundUrl or avatarUrl) is either named
+ * as a field in a Prisma `where` inside `referencedUrls` (lib/media/sweep.server.ts, so the sweep keeps what it
+ * points at) or listed here with a reason a reviewer can check. `lib/media/__tests__/sweep-reference-columns.test.ts`
+ * reads the schema and fails a column that is in neither, an entry whose column is gone, and an entry the sweep now
+ * names. Keyed `Model.field`. The sweep only ever deletes feed-space (`rmharks/`) and card-sound keys
+ * (`SWEEPABLE_PREFIXES`), so a column that cannot hold one of those is safe; a column that can is not listed here
+ * unless no `Media` row exists for it (a row-less object is never a sweep target).
+ */
+export const SWEEP_REFERENCE_EXEMPT: Readonly<Record<string, string>> = {
+  'User.image': 'The sign-in provider avatar (a third-party address) or a `user-avatars/` object; never a feed key.',
+  'UserProfile.customImage': 'The member avatar, in the `user-avatars/` key space (surface `avatar`, not recorded).',
+  'UserProfile.bannerUrl': 'The profile banner, in the `user-banners/` key space the sweep never deletes from.',
+  'AiPersona.avatarUrl':
+    'The generated persona avatar, in the `personas/avatars/` key space (surface `persona-avatar`).',
+  'Stamp.imageUrl':
+    'A member stamp written straight to its own `stamps/` key (lib/profile/stamps.server.ts), no Media row.',
+  'VibePage.thumbnailUrl':
+    'A route path (`/api/vibe/thumb/<slug>`) over the `vibe-thumbs/` key space, not a feed object.',
+  'BlogPost.image':
+    'A blog cover an admin sets in the blog editor, whose uploads go to the `blog/` key space (BLOG_MEDIA_PREFIX).',
+  'NewsArticle.image': 'The source article picture: a third-party address from the news pipeline, not stored here.',
+  'Song.coverUrl':
+    'Slice It song art: read by the game, written only by song imports (a source address); no feed upload is written here.',
+  'ChartPack.coverUrl': 'Slice It pack art: read by the game; the app has no writer that records a feed upload here.',
+  'EmojiPack.coverUrl':
+    'Read only: nothing in the app writes it. Emoji items are ATTACHED with no post (surface `emoji`), which no sweep rule matches.',
+  'PhotoNomination.imageUrl':
+    'Written by `ingest(file, "post")` without `record` (lib/api/routes/photo-of-the-day.server.ts), so no Media row exists for the sweep to select.',
+  'DoctrineSafehouseContent.mediaUrls':
+    'No code path in the app writes it (admin tooling and seeds only); no Media row names these addresses.',
+  'DoctrineDisclosure.mediaUrls': 'Same as `DoctrineSafehouseContent.mediaUrls`: no writer in the app, no Media row.',
+  'RmhTubeQueueItem.thumbnailUrl': 'The thumbnail of a watched video, a third-party address given by the video source.',
+  'RmhTubeTimedComment.mediaUrl':
+    'The address of the video a comment is pinned to (a key to a watch, not an upload of this row).',
+  'RmhTubeHeatBucket.mediaUrl':
+    'The address of the video a bucket counts (a key to a watch, not an upload of this row).',
+  'RmhTubeCommentaryTrack.mediaUrl': 'The address of the video a commentary track is synced to (a key, not an upload).',
+  'HomeListing.aiImages': 'A subset of `HomeListing.images` (the write path filters it), which `referencedUrls` names.',
+};

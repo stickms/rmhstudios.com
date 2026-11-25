@@ -11,6 +11,7 @@
 
 import { getAdapter, checkRobots } from './adapters/index';
 import { assessListing } from './ingest';
+import { isPriceChange, isPriceDrop } from '../prices';
 import type { HomeSourceConfig } from './types';
 
 export interface SourceRunStats {
@@ -23,24 +24,33 @@ export interface SourceRunStats {
   errorMessage?: string;
   /** Ids of listings newly created this run (for watch-alert fan-out). */
   newListingIds: string[];
+  /** Listings whose price dropped by at least 1% this run (for the favouriters' drop notices). */
+  priceDrops: PriceDropRecord[];
+}
+
+export interface PriceDropRecord {
+  listingId: string;
+  title: string;
+  city: string;
+  state: string;
+  oldCents: number;
+  newCents: number;
 }
 
 interface ExistingRow {
   id: string;
+  externalId: string;
   status: string;
+  priceCents: number;
 }
 
 export interface ProcessPrisma {
   homeListing: {
-    findUnique(args: {
-      where: {
-        sourceRefId_externalId: {
-          sourceRefId: string;
-          externalId: string;
-        };
-      };
+    /** One read per batch: the stored rows for the feed's external ids. */
+    findMany(args: {
+      where: { sourceRefId: string; externalId: { in: string[] } };
       select?: Record<string, unknown>;
-    }): Promise<ExistingRow | null>;
+    }): Promise<ExistingRow[]>;
     upsert(args: {
       where: {
         sourceRefId_externalId: {
@@ -57,6 +67,9 @@ export interface ProcessPrisma {
       count: number;
     }>;
   };
+  homeListingPriceChange: {
+    createMany(args: { data: Record<string, unknown>[] }): Promise<{ count: number }>;
+  };
   homeSource: {
     update(args: {
       where: {
@@ -69,7 +82,7 @@ export interface ProcessPrisma {
   };
 }
 
-const ZERO: Omit<SourceRunStats, 'newListingIds'> = {
+const ZERO: Omit<SourceRunStats, 'newListingIds' | 'priceDrops'> = {
   discovered: 0,
   created: 0,
   updated: 0,
@@ -94,6 +107,7 @@ export async function processSource(
       errored: true,
       errorMessage: `No adapter for provider ${source.provider}`,
       newListingIds: [],
+      priceDrops: [],
     };
   }
 
@@ -104,12 +118,14 @@ export async function processSource(
       errored: true,
       errorMessage: `Source ${source.key} has no resolvable feed URL`,
       newListingIds: [],
+      priceDrops: [],
     };
   }
 
   const stats: SourceRunStats = {
     ...ZERO,
     newListingIds: [],
+    priceDrops: [],
   };
 
   try {
@@ -161,23 +177,30 @@ export async function processSource(
       };
     }
 
-    // 3. Upsert each listing.
+    // 3. Upsert each listing. The stored rows for the whole batch are read once, up front, so a price change
+    // is found by comparing in memory (one read per batch, not one per listing).
+    const assessedAll = [];
     for (const normalized of listings) {
       const assessed = assessListing(normalized, source);
-      if (!assessed) continue;
+      if (assessed) assessedAll.push(assessed);
+    }
+    const existingRows = await deps.prisma.homeListing.findMany({
+      where: {
+        sourceRefId: source.id,
+        externalId: { in: [...new Set(assessedAll.map((a) => a.externalId))] },
+      },
+      select: {
+        id: true,
+        externalId: true,
+        status: true,
+        priceCents: true,
+      },
+    });
+    const existingByExternal = new Map(existingRows.map((r) => [r.externalId, r]));
+    const changes: Array<{ listingId: string; oldCents: number; newCents: number }> = [];
 
-      const existing = await deps.prisma.homeListing.findUnique({
-        where: {
-          sourceRefId_externalId: {
-            sourceRefId: source.id,
-            externalId: assessed.externalId,
-          },
-        },
-        select: {
-          id: true,
-          status: true,
-        },
-      });
+    for (const assessed of assessedAll) {
+      const existing = existingByExternal.get(assessed.externalId);
 
       const shared = {
         listingType: assessed.listingType,
@@ -229,9 +252,37 @@ export async function processSource(
 
       if (existing) {
         stats.updated++;
+        if (isPriceChange(existing.priceCents, assessed.priceCents)) {
+          changes.push({ listingId: existing.id, oldCents: existing.priceCents, newCents: assessed.priceCents });
+          if (isPriceDrop(existing.priceCents, assessed.priceCents)) {
+            stats.priceDrops.push({
+              listingId: existing.id,
+              title: assessed.title,
+              city: assessed.city,
+              state: assessed.state,
+              oldCents: existing.priceCents,
+              newCents: assessed.priceCents,
+            });
+          }
+          // A later duplicate of the same posting in this feed compares against what was just written.
+          existingByExternal.set(assessed.externalId, { ...existing, priceCents: assessed.priceCents });
+        }
       } else {
         stats.created++;
         stats.newListingIds.push(upserted.id);
+      }
+    }
+
+    // Record the price changes after the upserts: the history rows, then the drop stamp.
+    if (changes.length > 0) {
+      await deps.prisma.homeListingPriceChange.createMany({
+        data: changes.map((c) => ({ ...c, source: 'feed', changedAt: now })),
+      });
+      if (stats.priceDrops.length > 0) {
+        await deps.prisma.homeListing.updateMany({
+          where: { id: { in: stats.priceDrops.map((d) => d.listingId) } },
+          data: { priceDroppedAt: now },
+        });
       }
     }
 

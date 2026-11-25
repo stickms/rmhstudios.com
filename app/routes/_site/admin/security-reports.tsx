@@ -234,7 +234,7 @@ function ReportCard({
         </p>
       ) : null}
 
-      <Textarea
+      <Textarea aria-label={t('field-triage-notes', { defaultValue: 'Triage notes' })}
         rows={2}
         placeholder={t('triage-notes-placeholder', { defaultValue: 'Internal triage notes…' })}
         value={notes}

@@ -165,6 +165,7 @@ export function AchievementTipsDialog({
         {signedIn ? (
           <div className="space-y-2">
             <Textarea
+              aria-label={t('field-tip', { defaultValue: 'Your tip' })}
               rows={2}
               value={draft}
               onChange={(e) => setDraft(e.target.value.slice(0, 500))}

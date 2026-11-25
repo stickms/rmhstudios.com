@@ -471,7 +471,7 @@ export default function BalatroPage() {
                 <MpToolbar controller={mp} container={frameRef.current} />
               </Suspense>
             )}
-            <input
+            <input aria-label={t('field-save-file', { defaultValue: 'Save file' })}
               ref={saveInput}
               type="file"
               accept=".zip,application/zip"

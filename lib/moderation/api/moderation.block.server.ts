@@ -6,6 +6,7 @@ import { invalidateHiddenAuthors } from '@/lib/moderation.server';
 import { invalidateFollowingIds } from '@/lib/social/follow-graph.server';
 import { invalidateAudience, recordFollowEvent } from '@/lib/social/follow-events.server';
 import { clearRepostMuteForBlock, invalidateRepostMutes } from '@/lib/feed/repost-mutes.server';
+import { endEditingBetween } from '@/lib/study/deck-editors.server';
 import { toggleAction } from '@/lib/moderation/blocked-muted-schema';
 import { z } from 'zod';
 
@@ -70,6 +71,7 @@ export const route = apiRoute('/api/moderation/block', {
         await tx.userBlock.create({ data: { blockerId, blockedId } });
         // A block already hides everything, so the blocker's "reposts off" row for this person is dead weight.
         await clearRepostMuteForBlock(tx, blockerId, blockedId);
+        await endEditingBetween(tx, blockerId, blockedId);
         const edges = await tx.follow.findMany({
           where: {
             OR: [

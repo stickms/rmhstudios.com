@@ -8,6 +8,7 @@
 // ─── Media Types ─────────────────────────────────────────────────
 
 import type { MediaType, LiveHint, ParsedMedia } from './media';
+import type { SubtitleLabel } from './subtitles';
 
 export type { MediaType, LiveHint, ParsedMedia };
 
@@ -167,6 +168,8 @@ export interface ClientQueueItem {
    * `/watch?v=…` is equally how YouTube addresses a live broadcast.
    */
   live: boolean;
+  /** Subtitle tracks the item's adder or the host attached (sprint 11 16); the cues are fetched once per item. */
+  subtitles?: SubtitleLabel[];
 }
 
 /**

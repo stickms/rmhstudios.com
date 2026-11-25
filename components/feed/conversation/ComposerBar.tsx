@@ -158,7 +158,7 @@ export function ComposerBar({
           </div>
         )}
 
-        <input
+        <input aria-label={t('field-attach-images', { defaultValue: 'Attach images' })}
           ref={imageInputRef}
           type="file"
           accept="image/*"
@@ -190,7 +190,7 @@ export function ComposerBar({
           {!voiceActive && (
             <>
               <div className="relative min-w-full flex-1 sm:min-w-0">
-                <GhostTextArea
+                <GhostTextArea aria-label={t('field-message', { defaultValue: 'Message' })}
                   ref={inputRef}
                   value={input}
                   suggestion={suggestion}

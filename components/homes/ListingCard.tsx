@@ -19,6 +19,7 @@ import { Link } from '@tanstack/react-router';
 import { Globe, ImageOff, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Listing } from '@/lib/homes/types';
+import { coverAlt } from '@/lib/homes/photos';
 import {
   formatBaths,
   formatBeds,
@@ -31,6 +32,7 @@ import {
 } from '@/lib/homes/format';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { formatUsd } from './PriceHistory';
 import { FavoriteButton } from './FavoriteButton';
 
 interface ListingCardProps {
@@ -51,7 +53,7 @@ export function ListingCard({
   showStatus,
   layout = 'card',
 }: ListingCardProps) {
-  const { t } = useTranslation('site');
+  const { t, i18n } = useTranslation('site');
   const location = formatLocation(listing);
   const posted = formatPostedAt(listing.createdAt, Date.now());
   const cover = listing.images[0];
@@ -89,7 +91,7 @@ export function ListingCard({
           )}
         >
           {cover ? (
-            <img src={cover} alt="" loading="lazy" className="h-full w-full object-cover" />
+            <img src={cover} alt={coverAlt(listing)} loading="lazy" className="h-full w-full object-cover" />
           ) : (
             <div className="grid h-full w-full place-items-center text-site-text-muted">
               <ImageOff className={row ? 'size-5' : 'size-7'} aria-hidden />
@@ -129,6 +131,16 @@ export function ListingCard({
               <Badge variant="warning">{statusLabel(listing.status)}</Badge>
             )}
           </div>
+
+          {listing.reducedByCents != null && (
+            <p className="t-meta mt-0.5 whitespace-nowrap">
+              {t('reduced-amount', {
+                ns: 'listing-prices',
+                defaultValue: 'Reduced {{amount}}',
+                amount: formatUsd(listing.reducedByCents / 100, i18n.language || 'en'),
+              })}
+            </p>
+          )}
 
           <p className="t-body mt-1 line-clamp-2 font-medium break-words text-site-text">
             {listing.title}

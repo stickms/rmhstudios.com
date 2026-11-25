@@ -983,5 +983,6 @@
   "event-venue-ref-irl": "Location",
   "event-venue-ref-space": "Space ID",
   "event-venue-ref-tournament": "Tournament ID",
-  "event-venue-url": "URL"
+  "event-venue-url": "URL",
+  "field-gift-message": "Gift message"
 }

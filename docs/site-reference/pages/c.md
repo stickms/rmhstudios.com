@@ -16,6 +16,7 @@ Standard pages, rendered inside the sidebar shell.
 | --- | ----- | ------ | ------ |
 | `/c/:slug` | — | public | `app/routes/_site/c.$slug.tsx` |
 | `/c/:slug/invite/:code` | Community invite | public | `app/routes/_site/c.$slug_.invite.$code.tsx` |
+| `/c/:slug/read/:id` | Read-along | public | `app/routes/_site/c.$slug_.read.$id.tsx` |
 | `/c/:slug/wiki` | — | public | `app/routes/_site/c.$slug_.wiki.index.tsx` |
 | `/c/:slug/wiki/:page` | Wiki | public | `app/routes/_site/c.$slug_.wiki.$page.tsx` |
 | `/calendar` | Calendar | public | `app/routes/_site/calendar.tsx` |

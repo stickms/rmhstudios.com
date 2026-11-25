@@ -10,8 +10,17 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { lessonProgressQuery } from '@/lib/rmhtype/rmhtype.queries';
-import { UNITS, isUnitComplete, lessonById, recommendedNext, type LessonProgressRow } from '@/lib/rmhtype/lessons';
+import {
+  isUnitComplete,
+  lessonById,
+  recommendedNext,
+  unitsFor,
+  unitsNotInCourse,
+  type LessonProgressRow,
+} from '@/lib/rmhtype/lessons';
 import RmhTypeHeader from '@/components/rmhtype/RmhTypeHeader';
+import { LayoutPicker, NotInCourseNote } from '@/components/rmhtype/LayoutPicker';
+import { useLayoutPref } from '@/components/rmhtype/useLayoutPref';
 import { LessonStars } from '@/components/rmhtype/lessons/LessonStars';
 import { useLessonLabels } from '@/components/rmhtype/lessons/lesson-labels';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,6 +29,10 @@ import { useArrival } from '@/components/ui/arrive';
 export default function LessonsIndex() {
   const { t } = useTranslation('rmhtype-lessons');
   const labels = useLessonLabels();
+  // The layout this device types on picks the course: its own lesson ids, so QWERTY stars are never touched.
+  const [layout, setLayout] = useLayoutPref();
+  const units = unitsFor(layout);
+  const missingUnits = unitsNotInCourse(layout);
   const progressQuery = useQuery(lessonProgressQuery());
   const rows: LessonProgressRow[] | null = progressQuery.data?.progress ?? null;
   const failed = progressQuery.isError;
@@ -27,8 +40,8 @@ export default function LessonsIndex() {
   const arrival = useArrival(rows !== null);
 
   const progress = useMemo(() => new Map((rows ?? []).map((row) => [row.lessonId, row])), [rows]);
-  const recommended = rows ? recommendedNext(progress) : null;
-  const anyUnitComplete = UNITS.some((unit) => isUnitComplete(progress, unit));
+  const recommended = rows ? recommendedNext(progress, layout) : null;
+  const anyUnitComplete = units.some((unit) => isUnitComplete(progress, unit));
 
   return (
     <div className="app-page">
@@ -50,6 +63,8 @@ export default function LessonsIndex() {
               'Learn to type without looking, one small group of keys at a time. Every lesson is open; the recommended one is the next you have not finished.',
           })}
         </p>
+
+        <LayoutPicker value={layout} onChange={setLayout} tier="app" className="mt-4" />
 
         {failed ? (
           <div className="mt-8">
@@ -105,7 +120,7 @@ export default function LessonsIndex() {
               </p>
             ) : null}
 
-            {UNITS.map((unit) => (
+            {units.map((unit) => (
               <section key={unit.id} aria-labelledby={`unit-${unit.id}`} className="mt-8">
                 <h2 id={`unit-${unit.id}`} className="text-lg font-semibold">
                   {t('unit-heading', {
@@ -159,6 +174,18 @@ export default function LessonsIndex() {
                     );
                   })}
                 </ul>
+              </section>
+            ))}
+            {missingUnits.map((unit) => (
+              <section key={unit} aria-labelledby={`unit-${unit}`} className="mt-8">
+                <h2 id={`unit-${unit}`} className="text-lg font-semibold">
+                  {t('unit-heading', {
+                    n: unit,
+                    name: labels.unitTitle(unit),
+                    defaultValue: 'Unit {{n}}: {{name}}',
+                  })}
+                </h2>
+                <NotInCourseNote layout={layout} />
               </section>
             ))}
             <p className="mt-8 text-xs text-app-text-dim">

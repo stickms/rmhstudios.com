@@ -105,6 +105,10 @@ async function targetsFor(viewerId: string, rows: Row[]): Promise<Map<string, Re
     }
   }
 
+  // Sprint 11 (docs/autonomous/sprint-11/plan.md §Anchors)
+  // s11-05 lights-out-maker
+  // s11-07 studio-share
+
   return out;
 }
 

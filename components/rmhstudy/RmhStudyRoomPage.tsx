@@ -8,7 +8,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Crown, Copy, Play, Pause, SkipForward, RotateCcw, Plus, Check, Trash2, Circle, UserX, Ban, Globe, GlobeLock, MessageCircle, Users, Timer, Settings, Info, X, Layers, ExternalLink } from 'lucide-react';
+import { Crown, Copy, Play, Pause, SkipForward, RotateCcw, Plus, Check, Trash2, Circle, UserX, Ban, Globe, GlobeLock, MessageCircle, Users, Timer, Settings, Info, X, Layers, ExternalLink, HelpCircle } from 'lucide-react';
 import { connectToRmhStudy, emit, getSocket } from '@/lib/rmhstudy/socket';
 import { useRmhStudyStore } from '@/lib/rmhstudy/store';
 import { C2S } from '@/lib/rmhstudy/events';
@@ -20,6 +20,8 @@ import type { ChatPanelMessage } from '@/components/shared/ChatPanel';
 import type { TimerPhase } from '@/lib/rmhstudy/types';
 import { useParams, useRouter } from '@tanstack/react-router';
 import { useStudyActivityNotification } from '@/components/access/useStudyActivityNotification';
+import RoomQuizPanel from '@/components/rmhstudy/RoomQuizPanel';
+import QuizStartDialog, { type QuizStartRequest } from '@/components/rmhstudy/QuizStartDialog';
 
 function formatTime(ms: number): string {
   const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
@@ -58,6 +60,8 @@ export default function RmhStudyRoom() {
   const tasks = useRmhStudyStore((s) => s.tasks);
   const connectionStatus = useRmhStudyStore((s) => s.connectionStatus);
   const lastPhaseComplete = useRmhStudyStore((s) => s.lastPhaseComplete);
+  const quiz = useRmhStudyStore((s) => s.quiz);
+  const [showQuizDialog, setShowQuizDialog] = useState(false);
 
   const [newTask, setNewTask] = useState('');
   const [mobileTab, setMobileTab] = useState<MobileTab>('session');
@@ -190,11 +194,24 @@ export default function RmhStudyRoom() {
 
   const isHost = room.hostUserId === room.myUserId;
   const timer = room.timer;
+  const quizRunning = quiz !== null && quiz.phase !== 'ended';
 
   // ─── Shared UI Sections ─────────────────────────────────────────
 
   const timerAndTasks = (
     <div className="space-y-6">
+      {/* Room quiz (s11-15): every member sees it while the host runs one. */}
+      {quiz && (
+        <RoomQuizPanel
+          quiz={quiz}
+          myUserId={room.myUserId}
+          isHost={isHost}
+          onAnswer={(choice) => emit(C2S.QUIZ_ANSWER, { choice })}
+          onStop={() => emit(C2S.QUIZ_STOP)}
+          onClose={() => useRmhStudyStore.getState().dismissQuiz()}
+        />
+      )}
+
       {/* Timer */}
       <div className="rounded-app app-glass p-8 text-center">
         <div className={`text-sm font-medium uppercase tracking-wider mb-2 ${phaseColor(timer.phase)}`}>
@@ -256,6 +273,15 @@ export default function RmhStudyRoom() {
                 {t('resume', { defaultValue: 'Resume' })}
               </button>
             )}
+            {timer.phase !== 'working' && !quizRunning && (
+              <button
+                onClick={() => setShowQuizDialog(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-app-sm font-medium transition-colors bg-app-surface-hover text-app-text hover:bg-app-surface-active"
+              >
+                <HelpCircle className="h-4 w-4" aria-hidden="true" />
+                {t('quiz-the-room', { ns: 'room-quiz', defaultValue: 'Quiz the room' })}
+              </button>
+            )}
             {timer.phase !== 'idle' && (
               <>
                 <button
@@ -282,7 +308,7 @@ export default function RmhStudyRoom() {
       <div className="rounded-app app-glass p-4">
         <h3 className="text-sm font-semibold mb-3">{t('my-tasks', { defaultValue: 'My Tasks' })}</h3>
         <form onSubmit={handleAddTask} className="flex gap-2 mb-3">
-          <input
+          <input aria-label={t('field-new-task', { defaultValue: 'New task' })}
             type="text"
             value={newTask}
             onChange={(e) => setNewTask(e.target.value)}
@@ -657,7 +683,7 @@ export default function RmhStudyRoom() {
                   <span className="text-sm font-mono font-bold text-app-text">{room.settings.sessionsBeforeLongBreak}</span>
                 </div>
                 {isHost && timer.phase === 'idle' ? (
-                  <input
+                  <input aria-label={t('field-sessions-before-long-break', { defaultValue: 'Sessions before a long break' })}
                     type="range"
                     min={1}
                     max={12}
@@ -723,7 +749,7 @@ export default function RmhStudyRoom() {
             <p className="text-sm text-app-text-muted mb-4">
               {t('ban-confirm-desc', { defaultValue: 'This member will be removed and cannot rejoin this room.' })}
             </p>
-            <input
+            <input aria-label={t('field-ban-reason', { defaultValue: 'Reason for removing this member' })}
               type="text"
               value={banReason}
               onChange={(e) => setBanReason(e.target.value)}
@@ -750,6 +776,16 @@ export default function RmhStudyRoom() {
       )}
 
       {/* Ban list modal */}
+      {isHost && (
+        <QuizStartDialog
+          open={showQuizDialog}
+          onOpenChange={setShowQuizDialog}
+          onStart={(request: QuizStartRequest) => {
+            useRmhStudyStore.getState().dismissQuiz();
+            emit(C2S.QUIZ_START, request);
+          }}
+        />
+      )}
       {showBanList && <BanListModal bannedUsers={room?.bannedUsers} onUnban={(userId) => emit(C2S.ROOM_UNBAN, { roomCode: room?.roomCode, targetUserId: userId })} onClose={() => setShowBanList(false)} labels={{ title: t("banned-users", { defaultValue: "Banned Users" }), empty: t("no-banned-users", { defaultValue: "No banned users" }), bannedAt: (time) => t("banned-at", { defaultValue: "Banned {{time}}", time }), unbanTitle: t("unban-user", { defaultValue: "Unban user" }), unban: t("unban", { defaultValue: "Unban" }) }} />}
     </div>
   );

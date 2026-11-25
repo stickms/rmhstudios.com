@@ -43,3 +43,42 @@ model StudioProjectRevision {
   @@index([userId, savedAt])
   @@map("studio_project_revision")
 }
+
+/// A snapshot of a cloud project shared by a link (`/studio?share=<token>`). The token is 128 random bits and the
+/// only way to the row: no endpoint takes the id. `data` is the project with every audio clip's `bufferId` and
+/// `name` emptied (samples live on the sharer's device) and is null once the share is revoked or taken down; the
+/// row stays so the owner's list still shows it. `projectId` is a plain column: the project may be deleted later.
+model StudioProjectShare {
+  id             String    @id @default(cuid())
+  token          String    @unique @db.VarChar(32)
+  userId         String
+  projectId      String    @db.VarChar(64)
+  name           String    @db.VarChar(80)
+  data           Json?
+  sizeBytes      Int
+  trackCount     Int
+  missingSamples Int
+  openCount      Int       @default(0)
+  revokedAt      DateTime?
+  createdAt      DateTime  @default(now())
+
+  user    User                     @relation("StudioProjectShares", fields: [userId], references: [id], onDelete: Cascade)
+  openers StudioProjectShareOpen[]
+
+  @@index([userId, createdAt])
+  @@map("studio_project_share")
+}
+
+/// One signed-in member's first opening of a share, so the opened count rises once per member. `userId` is a
+/// plain column (no relation): erasure deletes by it, and the share's own deletion cascades here.
+model StudioProjectShareOpen {
+  shareId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  share StudioProjectShare @relation(fields: [shareId], references: [id], onDelete: Cascade)
+
+  @@id([shareId, userId])
+  @@index([userId])
+  @@map("studio_project_share_open")
+}

@@ -224,3 +224,23 @@ export const SetStatusSchema = z.object({
 export const CheckHistorySchema = z.object({
   roomIds: z.array(z.string().min(1).max(64)).max(20),
 });
+
+// ─── Subtitles (sprint 11 16) ───────────────────────────────────
+
+/**
+ * Wire shape only: bounded so a hostile payload stays small before it is parsed further. The real gate is
+ * `validateCues` / `addSubtitle` (`subtitles.ts`, `subtitles.server.ts`), which cleans, orders and size-checks.
+ */
+export const SubtitleAddSchema = z.object({
+  itemId: z.string().min(1).max(64),
+  label: z.string().min(1).max(200),
+  lang: z.string().max(32).optional(),
+  cues: z
+    .array(z.object({ start: z.number(), end: z.number(), text: z.string().max(4000) }))
+    .min(1)
+    .max(5000),
+});
+
+export const SubtitleRemoveSchema = z.object({
+  subtitleId: z.string().min(1).max(64),
+});

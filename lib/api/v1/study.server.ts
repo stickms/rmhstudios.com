@@ -15,6 +15,7 @@ import { CARD_IMAGE_SELECT, fromColumns, type CardImage } from '@/lib/study/card
 import { CARD_SOUND_SELECT, fromSoundColumns, type CardSound } from '@/lib/study/card-sound';
 import { readOcclusion, type Occlusion } from '@/lib/study/occlusion';
 import { resolveMediaUrls } from '@/lib/study/card-images.server';
+import { requireDeckRole } from '@/lib/study/deck-access.server';
 import {
   createDeck,
   deleteCard,
@@ -517,6 +518,8 @@ async function ownedCard(userId: string, deckId: string, cardId: string) {
 
 /** Add 1 to 100 cards in one transaction; nothing is written when any is invalid or the deck would overflow. */
 export async function createMyCards(userId: string, deckId: string, drafts: readonly WithApiPictures<CardDraft>[]) {
+  // The developer API is the key owner's own decks: a deck they only edit (s11-10) is not theirs to write through it.
+  if (!(await requireDeckRole(userId, deckId, ['owner']))) return notFound();
   const resolved = await resolvePictures(userId, drafts);
   if (!resolved.ok) return resolved;
   const result = await importCardsDetailed(userId, deckId, resolved.items, {

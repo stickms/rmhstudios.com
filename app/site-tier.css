@@ -108,7 +108,11 @@
 @source not "../components/kaikai-debt";
 @source not "../components/kowloon-knockout";
 @source not "../features/laundry-sort/ui";
-@source not "../components/lights-out";
+/* Lights Out: the full-screen game is excluded; the member-made boards (BoardMaker, BoardPlay, BoardsList,
+   LightsGrid) are _site pages and need their utilities here (Sprint 11 feature 05). */
+@source not "../components/lights-out/LightsOutGame.tsx";
+@source not "../components/lights-out/LightsOutDiscordActivity.tsx";
+@source not "../components/lights-out/FewestMovesToday.tsx";
 @source not "../components/neon-driftway";
 @source not "../features/nightrail/engine";
 @source not "../features/nightrail/ui";
@@ -163,7 +167,18 @@
 @source not "../lib/kaikai-debt";
 @source not "../lib/kowloon-knockout";
 @source not "../features/laundry-sort/engine";
-@source not "../lib/lights-out";
+/* Lights Out engine: what only the game, its jobs and its Discord activity read. The board maker's pages reach the
+   rest (lights-out, solve, shapes, boards, replay-log, boards.contract). */
+@source not "../lib/lights-out/api";
+@source not "../lib/lights-out/__tests__";
+@source not "../lib/lights-out/boards-schema.ts";
+@source not "../lib/lights-out/boards.server.ts";
+@source not "../lib/lights-out/discord.contract.ts";
+@source not "../lib/lights-out/persistence.ts";
+@source not "../lib/lights-out/recap-embed.ts";
+@source not "../lib/lights-out/recap.server.ts";
+@source not "../lib/lights-out/seed.ts";
+@source not "../lib/lights-out/share.ts";
 @source not "../lib/neon-driftway";
 @source not "../lib/pwa";
 @source not "../lib/rebar-rutabaga";

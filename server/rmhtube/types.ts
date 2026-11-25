@@ -7,6 +7,7 @@
  */
 
 import type { MediaType, VideoState, RoomSettings } from '../../lib/rmhtube/types';
+import type { SubtitleLabel } from '../../lib/rmhtube/subtitles';
 
 export type { MediaType, VideoState, RoomSettings };
 
@@ -38,6 +39,8 @@ export interface QueueItem {
   position: number;
   /** No fixed timeline — mirror play/pause instead of synchronising a position. */
   live: boolean;
+  /** Labels of the subtitle tracks attached to this item (the cues are fetched, not carried). */
+  subtitles?: SubtitleLabel[];
 }
 
 export interface BannedUser {

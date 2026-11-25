@@ -36,6 +36,7 @@ import { PracticeModeToggle } from './PracticeModeToggle';
 import { KeySignatureLesson } from './KeySignatureLesson';
 import { PlayScaleLesson, ScaleNameBox } from './PlayScaleLesson';
 import { RhythmLesson } from './RhythmLesson';
+import { StaffChordsLesson } from './StaffChordsLesson';
 import { PianoUnitNote } from './PianoUnitNote';
 import { STAFF_BOX, STAFF_GRAND_ASPECT, STAFF_LOW_ASPECT } from './StaffCard';
 import { useLearnerShape } from './useLearnerShape';
@@ -398,6 +399,30 @@ function IntervalSkeleton() {
   );
 }
 
+/**
+ * The chord reading lessons' placeholder: the sheet (title line, the staff and the note names under
+ * it, the sentence line) and a block for the answer buttons.
+ */
+function StaffChordsSkeleton() {
+  return (
+    <div aria-hidden="true" className="space-y-4">
+      <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
+        <div className="h-8">
+          <div className="app-skeleton mx-auto h-8 w-40" />
+        </div>
+        <div className={STAFF_BOX}>
+          <div className="app-skeleton aspect-[200/102] w-full" />
+          <div className="h-9" />
+        </div>
+        <div className="flex h-11 items-center">
+          <div className="app-skeleton h-5 w-56 max-w-full" />
+        </div>
+      </section>
+      <div className="app-skeleton h-56 w-full" />
+    </div>
+  );
+}
+
 export function LessonScreen({ lessonId }: { lessonId: string }) {
   const { t } = useTranslation('c-rmhmusic');
   const status = useLearnStore((s) => s.status);
@@ -439,8 +464,9 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
     mode !== 'rhythm-basics' &&
     // A key signature is read from the page: no note is played, so no sound is loaded.
     mode !== 'key-signature' &&
-    // Neither is an interval read off the staff.
-    mode !== 'staff-intervals';
+    // Neither is an interval read off the staff, nor a chord.
+    mode !== 'staff-intervals' &&
+    mode !== 'staff-chords';
   const soundId =
     mode === 'ear-chord' || mode === 'play-chord'
       ? chordSoundFor({
@@ -545,6 +571,8 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
         <KeySignatureLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       ) : lesson.mode === 'staff-intervals' ? (
         <IntervalReadLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
+      ) : lesson.mode === 'staff-chords' ? (
+        <StaffChordsLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       ) : lesson.mode === 'rhythm-basics' ? (
         <RhythmLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       ) : (
@@ -610,6 +638,8 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
         <KeySignatureSkeleton />
       ) : lesson.mode === 'staff-intervals' ? (
         <IntervalSkeleton />
+      ) : lesson.mode === 'staff-chords' ? (
+        <StaffChordsSkeleton />
       ) : lesson.mode === 'rhythm-basics' ? (
         <RhythmSkeleton toggle={rhythmActivity(lesson.id) !== 'tap'} />
       ) : (

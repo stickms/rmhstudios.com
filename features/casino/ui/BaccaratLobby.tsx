@@ -178,7 +178,7 @@ export function BaccaratLobby() {
     <div className="flex flex-col gap-3">
       {/* Join by code */}
       <div className="flex gap-2">
-        <input
+        <input aria-label={t('field-join-code', { defaultValue: 'Join code' })}
           type="text"
           placeholder={t(
             'join-code-placeholder',
@@ -225,6 +225,7 @@ export function BaccaratLobby() {
       {showCreate ? (
         <div className="rule-section flex flex-col gap-2">
           <input
+            aria-label={t('field-room-name', { defaultValue: 'Room name' })}
             type="text"
             placeholder={t(
               'room-name-placeholder',
@@ -261,7 +262,7 @@ export function BaccaratLobby() {
                   },
                 )}
               </label>
-              <Select
+              <Select aria-label={t('max-players', { defaultValue: 'Max players' })}
                 value={
                   maxPlayers
                 }
@@ -317,7 +318,7 @@ export function BaccaratLobby() {
                   },
                 )}
               </label>
-              <Select
+              <Select aria-label={t('privacy', { defaultValue: 'Privacy' })}
                 value={
                   privacy
                 }

@@ -598,6 +598,7 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: Initi
                     <span className="text-site-danger">*</span>
                   </Label>
                   <input
+                    aria-label={t('field-content-file', { defaultValue: 'Content file' })}
                     ref={fileInputRef}
                     type="file"
                     accept=".md,.markdown,.mdx,.txt,text/markdown,text/plain"

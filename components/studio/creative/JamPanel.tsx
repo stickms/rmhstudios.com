@@ -69,6 +69,7 @@ export default function JamPanel({ container, onClose }: { container: HTMLElemen
               </p>
               <div className="flex gap-2">
                 <Input
+                  aria-label={t('field-jam-code', { defaultValue: 'Room code' })}
                   className="surface-field font-mono uppercase"
                   maxLength={10}
                   placeholder={t('jam-code', {

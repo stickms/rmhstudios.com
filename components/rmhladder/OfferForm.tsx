@@ -402,7 +402,12 @@ export function OfferForm({
                   defaultValue: 'Base salary',
                 })}
               </Label>
-              <Input {...money('basePay')} value={form.basePay} onChange={(e) => set('basePay', e.target.value)} />
+              <Input
+                aria-label={t('field-base-pay', { defaultValue: 'Base salary' })}
+                {...money('basePay')}
+                value={form.basePay}
+                onChange={(e) => set('basePay', e.target.value)}
+              />
             </div>
             {form.payPeriod === 'hour' && (
               <div className="space-y-2">
@@ -460,6 +465,7 @@ export function OfferForm({
                       })}
                 </Label>
                 <Input
+                  aria-label={t('field-bonus-value', { defaultValue: 'Bonus per year' })}
                   {...money('bonusValue')}
                   value={form.bonusValue}
                   onChange={(e) => set('bonusValue', e.target.value)}
@@ -472,7 +478,12 @@ export function OfferForm({
                   defaultValue: 'Sign-on bonus',
                 })}
               </Label>
-              <Input {...money('signOn')} value={form.signOn} onChange={(e) => set('signOn', e.target.value)} />
+              <Input
+                aria-label={t('field-sign-on', { defaultValue: 'Sign-on bonus' })}
+                {...money('signOn')}
+                value={form.signOn}
+                onChange={(e) => set('signOn', e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="offer-equityGrant">
@@ -481,6 +492,7 @@ export function OfferForm({
                 })}
               </Label>
               <Input
+                aria-label={t('field-equity-grant', { defaultValue: 'Equity grant value' })}
                 {...money('equityGrant')}
                 value={form.equityGrant}
                 onChange={(e) => set('equityGrant', e.target.value)}

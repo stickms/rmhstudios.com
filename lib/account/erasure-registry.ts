@@ -70,7 +70,7 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
   AiPersona: {
     decision: 'erase',
     reason:
-      "Only private personas (isPublic = false) that no other member has chatted with are the member's tool and are erased; their messages go by the cascade. Public personas stay under the tombstone as published content others chat with (chatCount). A persona made private after being public, with other members' chats, is kept so their chats survive (it is unreachable: its owner is a tombstone). The generated avatar object stays in storage (no personal data; classified not-recorded).",
+      "Only private personas (isPublic = false) that no other member has chatted with are the member's tool and are erased; their messages go by the cascade. Public personas stay under the tombstone as published content others chat with (chatCount). A persona made private after being public, with other members' chats, is kept so their chats survive (it is unreachable: its owner is a tombstone), with its systemPrompt set to '' and its tagline and greeting to null in the same erasure step; the name, emoji and avatar stay because they are how those chats show it. The generated avatar object stays in storage (no personal data; classified not-recorded).",
   },
   AiPersonaMessage: {
     decision: 'erase',
@@ -431,6 +431,13 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
   DailyWheelSpin: {
     decision: 'keep',
     reason: "Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record.",
+  },
+  DeckEditor: {
+    decision: 'erase',
+    scope:
+      'rows where the member is the editor or the invitee (userId); rows on decks the member owns stay with those decks (invitedById points at the anonymised member)',
+    reason:
+      "Who may edit a deck is the owner's choice, but a member's own membership of someone else's deck is their own record: erased, so a deleted member leaves every deck they edited. Rows on the member's own decks stay because the decks do (FlashcardDeck is the open public-decks decision); nobody can invite to such a deck any more.",
   },
   DeckFolder: { decision: 'erase', reason: 'Private deck folders (sprint 07 deck-folders); decks stay, folderless.' },
   DeckSuggestion: {
@@ -892,6 +899,12 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     decision: 'erase',
     reason: 'Synced reading places, bookmarks and notes (sprint 04 reading-sync).',
   },
+  LightsOutBoard: { decision: 'keep', reason: 'Rule 3: published content others play stays under "Deleted user".' },
+  LightsOutBoardPlay: {
+    decision: 'erase',
+    reason:
+      "The member's own plays and best moves (their row on a board's fewest-moves list). No children: it is the child of `LightsOutBoard`, whose anonymous play and solve tallies stay (counter rule).",
+  },
   Listing: {
     decision: 'erase',
     reason:
@@ -1168,6 +1181,16 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     decision: 'erase',
     reason: "Rule 1: the member's seasonal ranked ratings; opponents' ratings are not recomputed.",
   },
+  ReadAlong: {
+    decision: 'deidentify',
+    reason:
+      'A read-along the member started is handed to the community owner and paused (nothing posts under their name until a moderator resumes it); when the member owned the community, or it has no owner, it is cancelled and its unposted parts are deleted. The parts stay with it; the threads it posted are community posts.',
+  },
+  ReadAlongReader: {
+    decision: 'erase',
+    reason:
+      "The member's own rows as a reader: which read-alongs they joined, their notice setting and their last finished part.",
+  },
   ReadingGoal: { decision: 'erase', reason: "Rule 1: the member's own yearly reading goal." },
   ReadingHighlight: {
     decision: 'erase',
@@ -1245,6 +1268,16 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     decision: 'erase',
     reason: "The member's characters; private (only the owner-scoped character API reads them).",
   },
+  RmhCharacterParty: {
+    decision: 'erase',
+    reason:
+      "Parties the member runs (name, invite code, turn order with the extras' names) are deleted with their membership rows; the players' own characters are untouched.",
+  },
+  RmhCharacterPartyMember: {
+    decision: 'erase',
+    reason:
+      "The member's seat in other members' parties (which character, whether they share the full sheet). A turn order may still hold the pseudonymous id of an erased member; readers drop it, and no name is stored there.",
+  },
   RmhCodeToken: {
     decision: 'erase',
     reason: 'Hashed bearer tokens for the rmhcode CLI would stay valid for a tombstone.',
@@ -1280,6 +1313,10 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason:
       "Subscriptions to a member's channel are the social graph: the open owner decision on a deleted member's follows (as `Follow`); rows untouched.",
   },
+  RmhTubeSubtitle: {
+    decision: 'erase',
+    reason: 'Rule 1: subtitle tracks the member added to a queue item are deleted explicitly (sprint 11 16).',
+  },
   RmhTubeTimedComment: {
     decision: 'keep',
     reason:
@@ -1294,6 +1331,16 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason: "Rule 1: the member's per-day minutes; deleted in anonymizeAccount (sprint 08 01).",
   },
   RmhTubeWatchLater: { decision: 'erase', reason: "Rule 1: the member's own watch-later list." },
+  RmhTypeChallenge: {
+    decision: 'erase',
+    scope: 'rows where the member is either side (challengerId or opponentId)',
+    reason:
+      "A challenge is a two-person record with no public trace (s11-12): both sides' rows go when either member is deleted, so the other side's list loses it. The inbox notices that name the member (actorId) go with it.",
+  },
+  RmhTypeChallengeOptOut: {
+    decision: 'erase',
+    reason: "The member's own switch (a row means challenges are off); nothing about it is public (s11-12).",
+  },
   RmhTypeDailyEntry: {
     decision: 'erase',
     reason: 'The RMHType daily board orders `wpm` at read; the row going takes the member off it.',
@@ -1434,6 +1481,10 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       "Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity.",
   },
   StudioProject: { decision: 'erase', reason: 'Cloud copies of Studio projects.' },
+  StudioProjectShare: {
+    decision: 'erase',
+    reason: "Shared links to the member's Studio projects; copies already opened live on the openers' devices.",
+  },
   StudyBuddyMatch: {
     decision: 'keep',
     reason:

@@ -22,6 +22,8 @@ interface MarketplaceDeck {
  user: { name: string | null; handle: string | null; image: string | null };
  isOwn: boolean;
  alreadyCloned: boolean;
+ /** Accepted editors besides the owner (s11-10); no names. */
+ editorCount?: number;
  /** The deck's first card with a picture (s08-15); absent when none has one. */
  preview?: { front: string; image: CardImage };
 }
@@ -139,6 +141,14 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  {t('deck-card-count', { count: Number(deck.cardCount), defaultValue_one: '{{n}} card', defaultValue:'{{n}} cards', n: deck.cardCount })}
  {deck.user.name || deck.user.handle
  ? `· ${t('deck-by', { defaultValue:'by'})} ${deck.user.name ||'@'+ deck.user.handle}`
+ :''}
+ {(deck.editorCount ?? 0) > 0
+ ? ` ${t('deck-with-editors', {
+ ns:'deck-coeditors',
+ count: deck.editorCount,
+ defaultValue_one:'with {{count}} editor',
+ defaultValue:'with {{count}} editors',
+ })}`
  :''}
  </p>
  <div className="mt-3">

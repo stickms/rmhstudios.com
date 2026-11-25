@@ -89,6 +89,10 @@ import {
 } from '@/lib/media/sweep-jobs.server';
 import { HANDLE_CHANGE_QUEUE, registerHandleChangeCron } from '@/lib/account/handle-change-jobs.server';
 import { MUTE_EXPIRY_QUEUE, registerMuteExpiryCron } from '@/lib/moderation/mute-expiry-jobs.server';
+import {
+  TYPE_CHALLENGE_EXPIRY_QUEUE,
+  registerTypeChallengeExpiryCron,
+} from '@/lib/rmhtype/challenges-jobs.server';
 import { TOMBSTONE_PRUNE_QUEUE, registerTombstonePruneCron } from '@/lib/sync/tombstones.server';
 import { SPEEDRUN_REVERIFY_QUEUE, registerSpeedrunReverifyCron } from '@/lib/speedrun/review-jobs.server';
 import { CENSUS_QUEUE, registerCensusCron } from '@/lib/admin/census.server';
@@ -104,6 +108,7 @@ import {
 } from '@/lib/profile/visit-sweep.server';
 import { registerDiscordBot, stopDiscordBot } from '../discord-bot/jobs';
 import { RECURRING_QUEUE, registerRecurringThreadCron } from '@/lib/communities/recurring-jobs.server';
+import { READ_ALONG_QUEUE, registerReadAlongCron } from '@/lib/communities/read-along-jobs.server';
 
 // Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
 installProcessGuards({ service: 'jobs' });
@@ -330,6 +335,14 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   // s10-19 erasure-follows
   // s10-19: daily at 04:07 UTC, delete deleted accounts' handle changes past the 30-day reclaim window in batches of 1,000.
   { queue: HANDLE_CHANGE_QUEUE, register: registerHandleChangeCron },
+
+  // Sprint 11 (docs/autonomous/sprint-11/plan.md §Anchors)
+  // s11-09 read-alongs
+  // s11-09: every five minutes, post each due read-along part's thread once (claimed first) and tell its joined readers once.
+  { queue: READ_ALONG_QUEUE, register: registerReadAlongCron },
+
+  // s11-12 type-challenges
+  { queue: TYPE_CHALLENGE_EXPIRY_QUEUE, register: registerTypeChallengeExpiryCron },
 ];
 
 /**

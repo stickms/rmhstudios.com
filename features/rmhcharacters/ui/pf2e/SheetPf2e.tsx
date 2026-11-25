@@ -5,44 +5,38 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import * as R from '@features/rmhcharacters/engine/pf2e/rules';
 import { ABILITIES, ABILITY_NAMES, type Pf2eCharacter, type Pf2eData } from '@features/rmhcharacters/engine/types';
+import { PF2E_CONDITIONS } from '@features/rmhcharacters/engine/conditions';
 import { Chip, Issues, Muted, Section, StatRow, Stepper } from '../controls';
-
-/** Player Core conditions that are commonly tracked. */
-export const PF2E_CONDITIONS = [
-  'Blinded',
-  'Clumsy',
-  'Concealed',
-  'Confused',
-  'Controlled',
-  'Dazzled',
-  'Deafened',
-  'Drained',
-  'Doomed',
-  'Enfeebled',
-  'Fascinated',
-  'Fatigued',
-  'Fleeing',
-  'Frightened',
-  'Grabbed',
-  'Hidden',
-  'Immobilized',
-  'Off-Guard',
-  'Paralyzed',
-  'Persistent Damage',
-  'Petrified',
-  'Prone',
-  'Quickened',
-  'Restrained',
-  'Sickened',
-  'Slowed',
-  'Stunned',
-  'Stupefied',
-  'Unconscious',
-];
+import { RollButton } from '../RollButton';
+import { RollsContext } from '../useRolls';
 
 type SetPf = (fn: (c: Pf2eCharacter) => Pf2eCharacter) => void;
 
-export function SheetPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: SetPf }) {
+/**
+ * `readOnly` is the game master's view of a player's shared sheet: no tracker, no condition toggles, no rules check and
+ * no roll buttons (an empty roll context makes each one show its value only). `set` is then never called.
+ */
+export function SheetPf2e(props: { c: Pf2eCharacter; d: Pf2eData; set: SetPf; readOnly?: boolean }) {
+  return props.readOnly ? (
+    <RollsContext.Provider value={null}>
+      <SheetPf2eBody {...props} />
+    </RollsContext.Provider>
+  ) : (
+    <SheetPf2eBody {...props} />
+  );
+}
+
+function SheetPf2eBody({
+  c,
+  d,
+  set,
+  readOnly = false,
+}: {
+  c: Pf2eCharacter;
+  d: Pf2eData;
+  set: SetPf;
+  readOnly?: boolean;
+}) {
   const { t } = useTranslation('c-rmhcharacters');
   const [amount, setAmount] = useState('');
   const mods = R.attributeMods(c);
@@ -53,7 +47,16 @@ export function SheetPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
   const bulk = R.bulk(c);
   const saveRow = (k: 'fortitude' | 'reflex' | 'will', label: string) => {
     const s = R.save(c, d, k);
-    return <StatRow label={`${label} (${R.RANK_LETTER[s.rank]})`} value={R.signed(s.bonus)} />;
+    return (
+      <StatRow
+        label={`${label} (${R.RANK_LETTER[s.rank]})`}
+        value={
+          <RollButton kind="save" name={label} bonus={s.bonus}>
+            {R.signed(s.bonus)}
+          </RollButton>
+        }
+      />
+    );
   };
   const applyHp = (sign: 1 | -1) => {
     const n = Math.max(0, Math.floor(Number(amount) || 0));
@@ -76,7 +79,9 @@ export function SheetPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
           <div key={a} className="rmhc-stat">
             <div className="text-xs font-medium text-app-text-muted">{ABILITY_NAMES[a]}</div>
             <div className="font-mono text-2xl tabular-nums text-app-text">
-              {R.signed(mods[a])}
+              <RollButton kind="check" name={ABILITY_NAMES[a]} bonus={mods[a]}>
+                {R.signed(mods[a])}
+              </RollButton>
               {R.partialBoosts(c).includes(a) ? '½' : ''}
             </div>
           </div>
@@ -99,7 +104,11 @@ export function SheetPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
             {saveRow('will', t('sp.will', { defaultValue: 'Will' }))}
             <StatRow
               label={`${t('sp.perception', { defaultValue: 'Perception' })} (${R.RANK_LETTER[per.rank]})`}
-              value={R.signed(per.bonus)}
+              value={
+                <RollButton kind="perception" bonus={per.bonus}>
+                  {R.signed(per.bonus)}
+                </RollButton>
+              }
               note={R.ancestryOf(d, c)?.senses}
             />
             <StatRow label={t('sp.classDc', { defaultValue: 'Class DC' })} value={R.classDc(c, d).value} />
@@ -115,106 +124,114 @@ export function SheetPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
             />
           </Section>
 
-          <Section title={t('s5.tracker', { defaultValue: 'Hit point tracker' })} className="rmhc-noprint">
-            <div className="flex flex-wrap items-end gap-2">
-              <Input
-                type="number"
-                min={0}
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                aria-label={t('s5.amount', { defaultValue: 'Amount' })}
-                className="w-24"
-              />
-              <Button type="button" onClick={() => applyHp(-1)}>
-                {t('s5.damage', { defaultValue: 'Damage' })}
-              </Button>
-              <Button type="button" onClick={() => applyHp(1)}>
-                {t('s5.heal', { defaultValue: 'Heal' })}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => set((x) => ({ ...x, hp: { current: maxHp, temp: x.hp.temp } }))}
-              >
-                {t('s5.full', { defaultValue: 'Full' })}
-              </Button>
-            </div>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              {(
-                [
-                  ['temp', t('s5.temp', { defaultValue: 'Temporary HP' }), c.hp.temp, 999],
-                  ['heroPoints', t('sp.hero', { defaultValue: 'Hero Points' }), c.heroPoints, 3],
+          {readOnly ? null : (
+            <Section title={t('s5.tracker', { defaultValue: 'Hit point tracker' })} className="rmhc-noprint">
+              <div className="flex flex-wrap items-end gap-2">
+                <Input
+                  type="number"
+                  min={0}
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  aria-label={t('s5.amount', { defaultValue: 'Amount' })}
+                  className="w-24"
+                />
+                <Button type="button" onClick={() => applyHp(-1)}>
+                  {t('s5.damage', { defaultValue: 'Damage' })}
+                </Button>
+                <Button type="button" onClick={() => applyHp(1)}>
+                  {t('s5.heal', { defaultValue: 'Heal' })}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => set((x) => ({ ...x, hp: { current: maxHp, temp: x.hp.temp } }))}
+                >
+                  {t('s5.full', { defaultValue: 'Full' })}
+                </Button>
+              </div>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {(
                   [
-                    'focusPoints',
-                    t('sp.focus', { defaultValue: 'Focus Points' }),
-                    c.focusPoints,
-                    Math.max(0, R.focusPointsMax(c)),
-                  ],
-                  ['dying', t('sp.dying', { defaultValue: 'Dying' }), c.dying, 4],
-                  ['wounded', t('sp.wounded', { defaultValue: 'Wounded' }), c.wounded, 4],
-                ] as const
-              ).map(([key, label, value, max]) => (
-                <div key={key} className="flex items-center justify-between gap-2 text-sm text-app-text-muted">
-                  {label}
-                  <Stepper
-                    label={label}
-                    value={value}
-                    max={max}
-                    onChange={(n) =>
-                      set((x) => (key === 'temp' ? { ...x, hp: { ...x.hp, temp: n } } : { ...x, [key]: n }))
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Chip on={c.shieldRaised} onToggle={() => set((x) => ({ ...x, shieldRaised: !x.shieldRaised }))}>
-                {t('sp.raise', { defaultValue: 'Shield raised' })}
-              </Chip>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() =>
-                  set((x) => ({
-                    ...x,
-                    hp: { current: Math.min(maxHp, x.hp.current + Math.max(1, mods.con) * x.level), temp: 0 },
-                    spells: { ...x.spells, slotsUsed: {} },
-                    focusPoints: R.focusPointsMax(x),
-                    wounded: 0,
-                  }))
-                }
-              >
-                {t('sp.rest', { defaultValue: 'Rest 8 hours' })}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => set((x) => ({ ...x, focusPoints: Math.min(R.focusPointsMax(x), x.focusPoints + 1) }))}
-              >
-                {t('sp.refocus', { defaultValue: 'Refocus' })}
-              </Button>
-            </div>
-          </Section>
-
-          <Section title={t('s5.conditions', { defaultValue: 'Conditions' })}>
-            <div className="flex flex-wrap gap-2">
-              {PF2E_CONDITIONS.map((cond) => (
-                <Chip
-                  key={cond}
-                  on={c.conditions.includes(cond)}
-                  onToggle={() =>
+                    ['temp', t('s5.temp', { defaultValue: 'Temporary HP' }), c.hp.temp, 999],
+                    ['heroPoints', t('sp.hero', { defaultValue: 'Hero Points' }), c.heroPoints, 3],
+                    [
+                      'focusPoints',
+                      t('sp.focus', { defaultValue: 'Focus Points' }),
+                      c.focusPoints,
+                      Math.max(0, R.focusPointsMax(c)),
+                    ],
+                    ['dying', t('sp.dying', { defaultValue: 'Dying' }), c.dying, 4],
+                    ['wounded', t('sp.wounded', { defaultValue: 'Wounded' }), c.wounded, 4],
+                  ] as const
+                ).map(([key, label, value, max]) => (
+                  <div key={key} className="flex items-center justify-between gap-2 text-sm text-app-text-muted">
+                    {label}
+                    <Stepper
+                      label={label}
+                      value={value}
+                      max={max}
+                      onChange={(n) =>
+                        set((x) => (key === 'temp' ? { ...x, hp: { ...x.hp, temp: n } } : { ...x, [key]: n }))
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Chip on={c.shieldRaised} onToggle={() => set((x) => ({ ...x, shieldRaised: !x.shieldRaised }))}>
+                  {t('sp.raise', { defaultValue: 'Shield raised' })}
+                </Chip>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() =>
                     set((x) => ({
                       ...x,
-                      conditions: x.conditions.includes(cond)
-                        ? x.conditions.filter((y) => y !== cond)
-                        : [...x.conditions, cond],
+                      hp: { current: Math.min(maxHp, x.hp.current + Math.max(1, mods.con) * x.level), temp: 0 },
+                      spells: { ...x.spells, slotsUsed: {} },
+                      focusPoints: R.focusPointsMax(x),
+                      wounded: 0,
                     }))
                   }
                 >
-                  {cond}
-                </Chip>
-              ))}
-            </div>
+                  {t('sp.rest', { defaultValue: 'Rest 8 hours' })}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => set((x) => ({ ...x, focusPoints: Math.min(R.focusPointsMax(x), x.focusPoints + 1) }))}
+                >
+                  {t('sp.refocus', { defaultValue: 'Refocus' })}
+                </Button>
+              </div>
+            </Section>
+          )}
+
+          <Section title={t('s5.conditions', { defaultValue: 'Conditions' })}>
+            {readOnly ? (
+              <Muted>
+                {c.conditions.filter((x) => (PF2E_CONDITIONS as readonly string[]).includes(x)).join(', ') || '—'}
+              </Muted>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {PF2E_CONDITIONS.map((cond) => (
+                  <Chip
+                    key={cond}
+                    on={c.conditions.includes(cond)}
+                    onToggle={() =>
+                      set((x) => ({
+                        ...x,
+                        conditions: x.conditions.includes(cond)
+                          ? x.conditions.filter((y) => y !== cond)
+                          : [...x.conditions, cond],
+                      }))
+                    }
+                  >
+                    {cond}
+                  </Chip>
+                ))}
+              </div>
+            )}
           </Section>
 
           <Section title={t('sp.strikes', { defaultValue: 'Strikes' })}>
@@ -222,7 +239,25 @@ export function SheetPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
               <StatRow
                 key={s.name}
                 label={s.name}
-                value={`${s.attack.map(R.signed).join(' / ')} · ${s.damage}`}
+                value={
+                  <span className="inline-flex flex-wrap items-center justify-end gap-2">
+                    {s.attack.map((bonus, i) => (
+                      <RollButton
+                        key={i}
+                        kind="strike"
+                        name={s.name}
+                        bonus={bonus}
+                        damage={s.damage}
+                        step={(i + 1) as 1 | 2 | 3}
+                      >
+                        {R.signed(bonus)}
+                      </RollButton>
+                    ))}
+                    <RollButton kind="damage" name={s.name} damage={s.damage}>
+                      {s.damage}
+                    </RollButton>
+                  </span>
+                }
                 note={s.traits}
               />
             ))}
@@ -235,16 +270,22 @@ export function SheetPf2e({ c, d, set }: { c: Pf2eCharacter; d: Pf2eData; set: S
               <StatRow
                 key={s.id}
                 label={`${s.name} (${R.RANK_LETTER[s.rank]})`}
-                value={R.signed(s.bonus)}
+                value={
+                  <RollButton kind="skill" name={s.name} bonus={s.bonus}>
+                    {R.signed(s.bonus)}
+                  </RollButton>
+                }
                 {...(s.armorPenalty
                   ? { note: t('sp.armorPenalty', { defaultValue: 'armor {{n}}', n: s.armorPenalty }) }
                   : {})}
               />
             ))}
           </Section>
-          <Section title={t('s5.check', { defaultValue: 'Rules check' })} className="rmhc-noprint">
-            <Issues issues={R.validate(c, d)} />
-          </Section>
+          {readOnly ? null : (
+            <Section title={t('s5.check', { defaultValue: 'Rules check' })} className="rmhc-noprint">
+              <Issues issues={R.validate(c, d)} />
+            </Section>
+          )}
           <Section title={t('sp.featsTitle', { defaultValue: 'Feats' })}>
             <ul className="flex flex-col">
               {c.feats.map((f) => {

@@ -13,7 +13,7 @@
  * server first so progress follows them across devices.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -57,6 +57,8 @@ import { PuzzlePage } from '@/components/daily-puzzles/PuzzleShell';
 import { StatsLink } from '@/components/daily-puzzles/StatsLink';
 import { useSession } from '@/components/Providers';
 import { apiQuery } from '@/lib/contract/client';
+import { getDailyFollowingSummaryApi, type FollowingSummaryMode } from '@/lib/daily-puzzles/following.contract';
+import { FollowingSummaryLine } from '@/components/daily-puzzles/FollowingBoard';
 import { getDailyStatsApi } from '@/lib/daily-puzzles/stats.contract';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
@@ -195,6 +197,12 @@ export function DailyPuzzlesHub({
   // across devices); the local figures stand in while it loads, and for guests.
   const serverStats = useQuery({
     ...apiQuery(getDailyStatsApi, {}),
+    enabled: !!session.data,
+    retry: false,
+  }).data;
+  // One line per mode on how the viewer's friends did today (mutual follows; signed in only).
+  const friendsToday = useQuery({
+    ...apiQuery(getDailyFollowingSummaryApi, { query: { date: todayKey } }),
     enabled: !!session.data,
     retry: false,
   }).data;
@@ -514,6 +522,7 @@ export function DailyPuzzlesHub({
                   labelMoves={t('moves-suffix', { defaultValue: 'moves' })}
                   ctaPlay={t('play', { defaultValue: 'Play' })}
                   ctaView={t('view-results-short', { defaultValue: 'View' })}
+                  friendSummary={friendsToday?.modes.find((f) => f.gameMode === mode.id) ?? null}
                   title={modeText[mode.id]?.title ?? mode.title}
                   description={modeText[mode.id]?.description ?? mode.descriptionDefault}
                 />
@@ -608,6 +617,7 @@ function PuzzleCard({
   labelMoves,
   ctaPlay,
   ctaView,
+  friendSummary,
   title,
   description,
 }: {
@@ -620,10 +630,13 @@ function PuzzleCard({
   labelMoves: string;
   ctaPlay: string;
   ctaView: string;
+  friendSummary: FollowingSummaryMode | null;
   title: string;
   description: string;
 }) {
   const done = mounted && status.completed;
+  // The label names the card and overrides its content, so the friends line is attached as its description.
+  const summaryId = useId();
   const isLightsOut = mode.id === LIGHTS_OUT;
   const scoreText =
     status.label == null
@@ -638,6 +651,7 @@ function PuzzleCard({
       onClick={onOpen}
       className="surface-card surface-press group relative flex h-full w-full flex-col gap-2 overflow-hidden rounded-site px-4 py-4 text-left"
       aria-label={`${title} — ${done ? ctaView : ctaPlay}`}
+      aria-describedby={friendSummary ? summaryId : undefined}
     >
       {/* Accent top edge — decoration only; the per-mode accent is data. */}
       <span
@@ -667,6 +681,7 @@ function PuzzleCard({
 
       <h3 className="text-lg font-bold text-site-text">{title}</h3>
       <p className="flex-1 text-sm text-site-text-muted">{description}</p>
+      {friendSummary && <FollowingSummaryLine id={summaryId} summary={friendSummary} />}
 
       {/* The LABEL takes the card's ink; the accent is carried by the arrow.
           Painting the label itself in the raw per-mode accent put it at

@@ -317,7 +317,7 @@ export default function ServerBrowser({
       {/* Quick Play: the best open room for a mode or map, else an offer to host or play offline. */}
       <div className="mb-4 flex flex-wrap items-end gap-2 rounded-app-sm border border-app-border bg-app-bg p-3">
         <Field label={t('browser_quick_mode', { defaultValue: 'Mode' })} className="min-w-36 flex-1">
-          <SelectField value={quick.mode} onChange={(e) => setQuick({ ...quick, mode: e.target.value as Tf2Mode | '' })}>
+          <SelectField aria-label={t('browser_quick_mode', { defaultValue: 'Mode' })} value={quick.mode} onChange={(e) => setQuick({ ...quick, mode: e.target.value as Tf2Mode | '' })}>
             <option value="">{t('browser_any', { defaultValue: 'Any' })}</option>
             {TF2_MODES.filter((m) => TF2_MAPS.some((x) => x.mode === m)).map((m) => (
               <option key={m} value={m}>
@@ -327,7 +327,7 @@ export default function ServerBrowser({
           </SelectField>
         </Field>
         <Field label={t('play_map', { defaultValue: 'Map' })} className="min-w-36 flex-1">
-          <SelectField value={quick.map} onChange={(e) => setQuick({ ...quick, map: e.target.value })}>
+          <SelectField aria-label={t('play_map', { defaultValue: 'Map' })} value={quick.map} onChange={(e) => setQuick({ ...quick, map: e.target.value })}>
             <option value="">{t('browser_any', { defaultValue: 'Any' })}</option>
             {TF2_MAPS.filter((m) => !quick.mode || m.mode === quick.mode).map((m) => (
               <option key={m.name} value={m.name}>
@@ -382,7 +382,7 @@ export default function ServerBrowser({
             <Field label={t('browser_search', { defaultValue: 'Search' })}>
               <div className="relative">
                 <Search className="pointer-events-none absolute start-2 top-1/2 size-3.5 -translate-y-1/2 text-app-text-dim" aria-hidden />
-                <TextField
+                <TextField aria-label={t('field-search-servers', { defaultValue: 'Search servers' })}
                   value={filters.search}
                   className="ps-7"
                   type="search"
@@ -393,7 +393,7 @@ export default function ServerBrowser({
               </div>
             </Field>
             <Field label={t('play_map', { defaultValue: 'Map' })}>
-              <SelectField value={filters.map} onChange={(e) => setFilters({ ...filters, map: e.target.value })}>
+              <SelectField aria-label={t('play_map', { defaultValue: 'Map' })} value={filters.map} onChange={(e) => setFilters({ ...filters, map: e.target.value })}>
                 <option value="">{t('browser_any', { defaultValue: 'Any' })}</option>
                 {TF2_MAPS.map((m) => (
                   <option key={m.name} value={m.name}>
@@ -403,7 +403,7 @@ export default function ServerBrowser({
               </SelectField>
             </Field>
             <Field label={t('browser_quick_mode', { defaultValue: 'Mode' })}>
-              <SelectField value={filters.mode} onChange={(e) => setFilters({ ...filters, mode: e.target.value as Tf2Mode | '' })}>
+              <SelectField aria-label={t('browser_quick_mode', { defaultValue: 'Mode' })} value={filters.mode} onChange={(e) => setFilters({ ...filters, mode: e.target.value as Tf2Mode | '' })}>
                 <option value="">{t('browser_any', { defaultValue: 'Any' })}</option>
                 {TF2_MODES.filter((m) => TF2_MAPS.some((x) => x.mode === m)).map((m) => (
                   <option key={m} value={m}>
@@ -584,7 +584,7 @@ export default function ServerBrowser({
         }}
       >
         <Field label={t('play_code', { defaultValue: 'Join by code' })} className="min-w-40 flex-1">
-          <TextField
+          <TextField aria-label={t('field-join-code', { defaultValue: 'Join code' })}
             value={code}
             maxLength={TF2_LIMITS.ROOM_CODE_LENGTH}
             autoCapitalize="characters"

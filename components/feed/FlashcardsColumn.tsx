@@ -16,6 +16,7 @@ import { createDeckApi, listDecksApi } from '@/lib/study/decks.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { DeckFolderList } from '@/components/study/DeckFolderList';
 import type { DeckFolderSummary } from '@/lib/study/folders';
+import type { DeckInvitation, SharedDeckSummary } from '@/lib/study/deck-editors';
 
 interface Deck {
   id: string;
@@ -28,6 +29,8 @@ interface Deck {
   /** Cards due today (own decks only; suspended cards are left out). */
   dueCount?: number;
   user?: { name: string | null; handle: string | null };
+  /** Accepted editors besides the owner of a public deck (s11-10); no names. */
+  editorCount?: number;
 }
 
 /** The member's IANA zone; undefined when the browser will not say. */
@@ -45,6 +48,9 @@ export function FlashcardsColumn({
   /** Deck list prefetched by the route loader; `null`when signed out. */
   initialData?: {
     mine: Deck[];
+    /** Decks the member edits but does not own (s11-10). */
+    shared?: SharedDeckSummary[];
+    invitations?: DeckInvitation[];
     popular: Deck[];
     folders?: DeckFolderSummary[];
     signedIn: boolean;
@@ -59,6 +65,8 @@ export function FlashcardsColumn({
   const seeded = useRef(initialData != null);
   const [mine, setMine] = useState<Deck[]>(initialData?.mine ?? []);
   const [popular, setPopular] = useState<Deck[]>(initialData?.popular ?? []);
+  const [shared, setShared] = useState<SharedDeckSummary[]>(initialData?.shared ?? []);
+  const [invitations, setInvitations] = useState<DeckInvitation[]>(initialData?.invitations ?? []);
   const [folders, setFolders] = useState<DeckFolderSummary[]>(initialData?.folders ?? []);
   const [signedIn, setSignedIn] = useState(initialData?.signedIn ?? false);
   const [reviewAllCount, setReviewAllCount] = useState(initialData?.reviewAllCount ?? 0);
@@ -81,6 +89,8 @@ export function FlashcardsColumn({
       const data = await api(listDecksApi, tz ? { query: { tz } } : undefined);
       setMine(data.mine ?? []);
       setPopular(data.popular ?? []);
+      setShared(data.shared ?? []);
+      setInvitations(data.invitations ?? []);
       setFolders(data.folders ?? []);
       setSignedIn(!!data.signedIn);
       setReviewAllCount(data.reviewAllCount ?? 0);
@@ -163,6 +173,14 @@ export function FlashcardsColumn({
                 defaultValue: '· by {{owner}}',
               })
             : ''}
+          {showOwner && d.user && (d.editorCount ?? 0) > 0
+            ? ` ${t('deck-with-editors', {
+                ns: 'deck-coeditors',
+                count: d.editorCount,
+                defaultValue_one: 'with {{count}} editor',
+                defaultValue: 'with {{count}} editors',
+              })}`
+            : ''}
           {d.isPublic ? t('deck-public-suffix', { defaultValue: '· public' }) : ''}{' '}
           <DeckDue count={d.dueCount ?? 0} />
         </p>
@@ -214,14 +232,14 @@ export function FlashcardsColumn({
             </button>
           </div>
           <div className="mt-3 space-y-2">
-            <input
+            <input aria-label={t('field-deck-title', { defaultValue: 'Deck title' })}
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               placeholder={t('deck-title-placeholder', { defaultValue: 'Deck title' })}
               maxLength={100}
               className="surface-field border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
-            <input
+            <input aria-label={t('field-deck-description', { defaultValue: 'Deck description' })}
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               placeholder={t('description-placeholder', { defaultValue: 'Description (optional)' })}
@@ -229,12 +247,12 @@ export function FlashcardsColumn({
               className="surface-field border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <div className="rounded-site-sm border border-site-accent/30 bg-site-accent/5 p-2">
-              <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-site-accent">
+              <label htmlFor="flashcards-generate-topic" className="mb-1 flex items-center gap-1 text-xs font-semibold text-site-accent">
                 <Sparkles className="h-3 w-3" />
                 {''}
                 {t('ai-tutor-label', { defaultValue: 'AI tutor — auto-generate cards' })}
               </label>
-              <input
+              <input id="flashcards-generate-topic"
                 value={form.generateTopic}
                 onChange={(e) => setForm((f) => ({ ...f, generateTopic: e.target.value }))}
                 placeholder={t('generate-topic-placeholder', {
@@ -278,12 +296,20 @@ export function FlashcardsColumn({
       )}
 
       <div className="space-y-6 py-4">
-        {(mine.length > 0 || folders.length > 0) && (
+        {(mine.length > 0 || folders.length > 0 || shared.length > 0 || invitations.length > 0) && (
           <section>
             <h2 className="site-section-label mb-2">
               {t('your-decks', { defaultValue: 'Your decks' })}
             </h2>
-            <DeckFolderList decks={mine} folders={folders} renderDeck={(d) => DeckCard(d)} onChanged={() => void load()} />
+            <DeckFolderList
+              decks={mine}
+              folders={folders}
+              renderDeck={(d) => DeckCard(d)}
+              shared={shared}
+              renderShared={(d) => DeckCard({ ...d, user: d.owner }, true)}
+              invitations={invitations}
+              onChanged={() => void load()}
+            />
           </section>
         )}
         <section>

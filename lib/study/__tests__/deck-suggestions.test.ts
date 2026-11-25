@@ -84,6 +84,8 @@ const makeTx = () => ({
   user: {
     findUnique: async ({ where }: { where: { id: string } }) => U().find((u) => u.id === where.id) ?? null,
   },
+  // Nobody edits a deck here (s11-10): the access rule that refuses an editor reads this and finds no row.
+  deckEditor: { findUnique: async () => null },
   userBlock: {
     findFirst: async ({ where }: { where: Record<string, unknown> }) =>
       db.blocks.find((b) => matches('block', b, where)) ?? null,
@@ -323,11 +325,21 @@ describe('who may suggest', () => {
       reason: 'no-change',
     });
     expect((await createSuggestion('me', 'd1', input)).ok).toBe(true);
-    expect(await createSuggestion('other', 'd1', { ...input, back: ' Paris, France ' })).toMatchObject({
+    expect(await createSuggestion('me', 'd1', { ...input, back: ' Paris, France ' })).toMatchObject({
       ok: false,
       status: 409,
       reason: 'duplicate',
     });
+  });
+
+  it('lets two members suggest the same correction: a duplicate is refused only against the own open ones', async () => {
+    expect((await createSuggestion('me', 'd1', input)).ok).toBe(true);
+    expect((await createSuggestion('other', 'd1', { ...input, back: ' Paris, France ' })).ok).toBe(true);
+    expect(
+      S()
+        .filter((x) => x.status === 'open')
+        .map((x) => x.suggesterId),
+    ).toEqual(['me', 'other']);
   });
 });
 
@@ -438,6 +450,28 @@ describe('the author decides', () => {
     ).toBe(true);
     expect(S().find((s) => s.suggesterId === 'other')!.status).toBe('open');
     expect(db.notices).toHaveLength(0);
+  });
+
+  it('decline and block that loses the race still declines the rest and reports already-decided', async () => {
+    const first = open({ status: 'declined' });
+    open();
+    open({ suggesterId: 'other' });
+    const res = await decideSuggestion('author', first.id, { decision: 'decline', block: true });
+    expect(res).toMatchObject({ ok: false, status: 409, reason: 'already-decided', declined: 1 });
+    expect(
+      S()
+        .filter((x) => x.suggesterId === 'me')
+        .every((x) => x.status === 'declined'),
+    ).toBe(true);
+    expect(S().find((x) => x.suggesterId === 'other')!.status).toBe('open');
+  });
+
+  it('a plain decline that loses the race blocks nobody', async () => {
+    const first = open({ status: 'declined' });
+    const second = open();
+    const res = await decideSuggestion('author', first.id, { decision: 'decline' });
+    expect(res).toMatchObject({ ok: false, reason: 'already-decided' });
+    expect(S().find((x) => x.id === second.id)!.status).toBe('open');
   });
 
   it('lists open suggestions oldest first and marks a card that changed since', async () => {

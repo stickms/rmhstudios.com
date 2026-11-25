@@ -1,11 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { Calendar, ChevronDown, ChevronUp, Play, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { formatDateKey, getTodayEST } from '@/lib/daily-puzzles/seed';
 import { getCompletedDates, syncFromServer, type PuzzleResult } from '@/lib/daily-puzzles/persistence';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { apiQuery } from '@/lib/contract/client';
+import { getDailyFollowingSummaryApi } from '@/lib/daily-puzzles/following.contract';
+import { FollowingSummaryLine } from '@/components/daily-puzzles/FollowingBoard';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface PastPuzzlesSectionProps {
@@ -24,6 +28,13 @@ export function PastPuzzlesSection({ gameMode, selectedDateKey, onSelectDate, re
   const session = useSession();
   const todayKey = formatDateKey(getTodayEST());
   const isToday = selectedDateKey === todayKey;
+
+  // How the viewer's friends did on the day being viewed (today's line is on the hub).
+  const friendsThatDay = useQuery({
+    ...apiQuery(getDailyFollowingSummaryApi, { query: { date: selectedDateKey } }),
+    enabled: !!session.data && !isToday,
+    retry: false,
+  }).data?.modes.find((f) => f.gameMode === gameMode);
 
   // Load completion data
   useEffect(() => {
@@ -70,6 +81,12 @@ export function PastPuzzlesSection({ gameMode, selectedDateKey, onSelectDate, re
             })}
           </Button>
         </div>
+      )}
+
+      {!isToday && friendsThatDay && (
+        <p className="text-center">
+          <FollowingSummaryLine summary={friendsThatDay} />
+        </p>
       )}
 
       <Button

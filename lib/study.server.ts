@@ -30,6 +30,11 @@ import type { TestCard } from '@/lib/study/practice-test';
 import type { DeckFolderSummary } from '@/lib/study/folders';
 import { listFolders } from '@/lib/study/folders.server';
 import { isSuggestable } from '@/lib/study/suggestions';
+import type { DeckRole } from '@/lib/study/deck-access';
+import { readDeckLanguage } from '@/lib/study/listen';
+import { canReadDeck, deckRole } from '@/lib/study/deck-access.server';
+import type { DeckInvitation, SharedDeckSummary } from '@/lib/study/deck-editors';
+import { MEMBER_NAME, editorCounts, invitationTo, listInvitations } from '@/lib/study/deck-editors.server';
 
 export interface DeckSummary {
   id: string;
@@ -49,10 +54,16 @@ export interface PopularDeck {
   description: string | null;
   cardCount: number;
   user: { name: string | null; handle: string | null };
+  /** Accepted editors besides the owner: "By <owner> with N editors", no names (s11-10). */
+  editorCount: number;
 }
 
 export interface DecksList {
   mine: DeckSummary[];
+  /** Decks the viewer is an accepted editor of: "Shared with you" (s11-10). Never carries the owner's folder or pace. */
+  shared: SharedDeckSummary[];
+  /** Open invitations to edit a deck: the deck's title and the owner's name, nothing more. */
+  invitations: DeckInvitation[];
   popular: PopularDeck[];
   /** The viewer's own deck folders, in order (private; empty when signed out). */
   folders: DeckFolderSummary[];
@@ -70,7 +81,7 @@ export interface DecksList {
  * `null` for signed-out visitors (they see only public decks).
  */
 export async function listDecks(userId: string | null, tz?: string): Promise<DecksList> {
-  const [mine, popular, folders] = await Promise.all([
+  const [mine, popular, folders, sharedRows, invitations] = await Promise.all([
     userId
       ? prisma.flashcardDeck.findMany({
           where: { userId },
@@ -79,20 +90,50 @@ export async function listDecks(userId: string | null, tz?: string): Promise<Dec
         })
       : Promise.resolve([]),
     prisma.flashcardDeck.findMany({
-      where: { isPublic: true, ...(userId ? { userId: { not: userId } } : {}) },
+      // A public deck the viewer edits is in "Shared with you", not here.
+      where: {
+        isPublic: true,
+        ...(userId ? { userId: { not: userId }, editors: { none: { userId, status: 'accepted' } } } : {}),
+      },
       orderBy: { updatedAt: 'desc' },
       take: 30,
       select: { id: true, title: true, description: true, cardCount: true, user: { select: { name: true, handle: true } } },
     }),
     userId ? listFolders(userId) : Promise.resolve([] as DeckFolderSummary[]),
+    userId
+      ? prisma.flashcardDeck.findMany({
+          where: { userId: { not: userId }, editors: { some: { userId, status: 'accepted' } } },
+          orderBy: { updatedAt: 'desc' },
+          take: 200,
+          // The owner's folder, pace and test date are not selected: an editor never receives them.
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            cardCount: true,
+            user: { select: MEMBER_NAME },
+          },
+        })
+      : Promise.resolve([]),
+    userId ? listInvitations(userId) : Promise.resolve([] as DeckInvitation[]),
   ]);
+  const popularCounts = await editorCounts(popular.map((d) => d.id));
   // Due counts skip suspended cards (lib/study/queue.server.ts applies ACTIVE_REVIEW_WHERE).
   const [dueMap, reviewAll] = userId
     ? await Promise.all([dueByDeck(userId, new Date(), tz), reviewAllCount(userId, new Date(), tz)])
     : [new Map<string, number>(), 0];
   return {
     mine: mine.map(({ newPerDay: _pace, ...d }) => ({ ...d, dueCount: dueMap.get(d.id) ?? 0 })),
-    popular,
+    shared: (Array.isArray(sharedRows) ? sharedRows : []).map((d) => ({
+      id: d.id,
+      title: d.title,
+      description: d.description,
+      cardCount: d.cardCount,
+      dueCount: dueMap.get(d.id) ?? 0,
+      owner: { name: d.user.profile?.displayName ?? d.user.name ?? d.user.handle ?? '', handle: d.user.handle },
+    })),
+    invitations,
+    popular: popular.map((d) => ({ ...d, editorCount: popularCounts.get(d.id) ?? 0 })),
     folders,
     signedIn: !!userId,
     reviewAllCount: reviewAll,
@@ -108,6 +149,8 @@ export interface MarketplaceDeck {
   user: { name: string | null; handle: string | null; image: string | null };
   isOwn: boolean;
   alreadyCloned: boolean;
+  /** Accepted editors besides the owner (s11-10); no names. */
+  editorCount: number;
   /** The deck's first card with a picture, for the preview; absent when no card has one (s08-15). */
   preview?: { front: string; image: CardImage };
 }
@@ -164,6 +207,8 @@ export async function listMarketplaceDecks(
     clonedSet = new Set(cloned.map((c) => c.clonedFromId).filter((v): v is string => !!v));
   }
 
+  const counts = await editorCounts(decks.map((d) => d.id));
+
   // One preview per deck: its first card with a picture (the front's when both sides have one).
   const previews = new Map<string, { front: string; image: CardImage }>();
   if (decks.length > 0) {
@@ -196,6 +241,7 @@ export async function listMarketplaceDecks(
         user: d.user,
         isOwn: d.userId === viewerId,
         alreadyCloned: clonedSet.has(d.id),
+        editorCount: counts.get(d.id) ?? 0,
         ...(preview ? { preview } : {}),
       };
     }),
@@ -222,6 +268,9 @@ export async function cloneDeck(userId: string, sourceId: string): Promise<Clone
       isPublic: true,
       title: true,
       description: true,
+      // The languages describe the cards, so a copy keeps them (s11-17); sync never touches them afterwards.
+      frontLang: true,
+      backLang: true,
       // Authored cards only: the clone's siblings are generated again, so they get their own ids.
       cards: {
         where: AUTHORED_WHERE,
@@ -249,6 +298,8 @@ export async function cloneDeck(userId: string, sourceId: string): Promise<Clone
         userId,
         title: source.title.slice(0, 100),
         description: source.description?.slice(0, 500) ?? null,
+        frontLang: source.frontLang,
+        backLang: source.backLang,
         isPublic: false,
         clonedFromId: sourceId,
         sourceSyncedAt: new Date(),
@@ -344,7 +395,10 @@ export interface DeckDetail {
     title: string;
     description: string | null;
     isPublic: boolean;
+    /** The deck's owner. Everything owner-only (settings, folder, pace, sounds, suggestions) keys off this. */
     isOwner: boolean;
+    /** The viewer's role: `owner`, `editor` (an accepted editor) or null. An editor adds and edits cards and studies. */
+    role: DeckRole | null;
     /** Authored cards: what the owner wrote. */
     cardCount: number;
     /** Added from another deck (the marketplace). */
@@ -353,9 +407,22 @@ export interface DeckDetail {
     notifyUpdates: boolean;
     /** The author lets people who study the deck suggest fixes (s10-04); off until they turn it on. */
     acceptsSuggestions: boolean;
+    /** The languages the fronts and backs are written in (a tag from `DECK_LANGUAGE_TAGS`), null: the site's. */
+    frontLang?: string | null;
+    backLang?: string | null;
     /** The owner's folder for this deck (owner only; absent for every other viewer). */
     folderId?: string | null;
+    /**
+     * A public deck's byline: its owner's name and how many accepted editors it has, never their names (s11-10).
+     * Absent on a private deck and for the owner.
+     */
+    byline?: { owner: { name: string; handle: string | null }; editors: number };
   };
+  /**
+   * The viewer's open invitation to edit this deck (s11-10). On a private deck it is all they receive: no cards, no
+   * counts, the title and the owner's name.
+   */
+  invitation?: DeckInvitation;
   /** What the author of the original changed; owner of a copy only, null when there is nothing to say. */
   updates: UpdatesSummary | null;
   /** The authored cards, in deck order. */
@@ -392,6 +459,35 @@ async function highlightSources(
   return out;
 }
 
+/** What a pending invitee receives of a private deck: the invitation line, no cards and no counts (s11-10). */
+function invitationOnly(invitation: DeckInvitation): DeckDetail {
+  return {
+    deck: {
+      id: invitation.deckId,
+      title: invitation.title,
+      description: null,
+      isPublic: false,
+      isOwner: false,
+      role: null,
+      cardCount: 0,
+      isCopy: false,
+      notifyUpdates: true,
+      acceptsSuggestions: false,
+    },
+    invitation,
+    updates: null,
+    cards: [],
+    reviewCount: 0,
+    rowCount: 0,
+    dueCount: 0,
+    suspendedCount: 0,
+    signedIn: true,
+  };
+}
+
+/** True for the deck a pending invitee receives: nothing of it is readable yet (the pages that show cards refuse it). */
+export const isInvitationOnly = (detail: DeckDetail): boolean => detail.deck.role === null && !detail.deck.isPublic;
+
 /** The "Suggest a fix" target of one card row, when the deck page offers it (text cards only). */
 function suggestTargetFor(
   suggestDeckId: string | null,
@@ -411,11 +507,21 @@ function suggestTargetFor(
  * not-found state).
  */
 export async function getDeck(deckId: string, viewer: { id: string | null }): Promise<DeckDetail | null> {
+  // One role decides everything below; a pending invitee has none and reads only the invitation.
+  const role = viewer.id ? await deckRole(viewer.id, deckId) : null;
+  const invitation = viewer.id && role === null ? await invitationTo(viewer.id, deckId) : null;
+  const preview = await prisma.flashcardDeck.findUnique({
+    where: { id: deckId },
+    select: { isPublic: true },
+  });
+  if (!preview) return null;
+  if (!preview.isPublic && role === null) return invitation ? invitationOnly(invitation) : null;
   const deck = await prisma.flashcardDeck.findUnique({
     where: { id: deckId },
     select: {
       id: true, title: true, description: true, isPublic: true, userId: true, cardCount: true,
-      clonedFromId: true, notifyUpdates: true, folderId: true, acceptsSuggestions: true,
+      clonedFromId: true, notifyUpdates: true, folderId: true, acceptsSuggestions: true, frontLang: true, backLang: true,
+      user: { select: MEMBER_NAME },
       cards: {
         orderBy: CARD_ORDER,
         select: {
@@ -436,8 +542,8 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
     },
   });
   if (!deck) return null;
-  const isOwner = viewer.id === deck.userId;
-  if (!deck.isPublic && !isOwner) return null;
+  const isOwner = role === 'owner';
+  if (!deck.isPublic && role === null) return null;
   const sources = isOwner ? await highlightSources(deck.cards, deck.userId) : new Map<string, { title: string; href: string }>();
 
   // Due cards are counted over what is reviewed (generated cards included), not what is listed.
@@ -481,7 +587,8 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
   // "Suggest a fix" (s10-04): a signed-in reader of a public deck that takes suggestions, or the holder of a copy of
   // one that does. The server refuses everything the page cannot see (blocks, bans, new accounts) when they send it.
   let suggestDeckId: string | null = null;
-  if (viewer.id && !isOwner && deck.isPublic && deck.acceptsSuggestions) suggestDeckId = deck.id;
+  // An editor edits the deck directly, so it offers them no suggestion either.
+  if (viewer.id && role === null && deck.isPublic && deck.acceptsSuggestions) suggestDeckId = deck.id;
   if (viewer.id && isOwner && deck.clonedFromId) {
     const origin = await prisma.flashcardDeck.findUnique({
       where: { id: deck.clonedFromId },
@@ -497,13 +604,30 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
       description: deck.description,
       isPublic: deck.isPublic,
       isOwner,
+      role,
       cardCount: deck.cardCount,
       isCopy: !!deck.clonedFromId,
-      notifyUpdates: deck.notifyUpdates ?? true,
+      // "Tell me about updates" is the owner's setting: no other viewer's payload carries it (a neutral default stands in).
+      notifyUpdates: isOwner ? (deck.notifyUpdates ?? true) : true,
       acceptsSuggestions: deck.acceptsSuggestions,
+      // What the cards are written in, for Listen (s11-17): the same for every reader, it describes the cards.
+      frontLang: readDeckLanguage(deck.frontLang),
+      backLang: readDeckLanguage(deck.backLang),
       // A folder is the owner's private organisation: no other viewer's payload carries it.
       ...(isOwner ? { folderId: deck.folderId ?? null } : {}),
+      ...(deck.isPublic && !isOwner
+        ? {
+            byline: {
+              owner: {
+                name: deck.user.profile?.displayName ?? deck.user.name ?? deck.user.handle ?? '',
+                handle: deck.user.handle,
+              },
+              editors: (await editorCounts([deck.id])).get(deck.id) ?? 0,
+            },
+          }
+        : {}),
     },
+    ...(invitation ? { invitation } : {}),
     updates:
       isOwner && deck.clonedFromId && (deck.notifyUpdates ?? true)
         ? await deckUpdatesSummary(viewer.id as string, deck.id).catch(() => null)
@@ -538,6 +662,13 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
  * read the deck.
  */
 export async function getTestCards(deckId: string, viewerId: string | null = null): Promise<TestCard[]> {
+  // The caller has checked the viewer may read the deck; this checks again, so no route can hand a pending invitee
+  // (or a removed editor) the cards of a private deck.
+  const gate = await prisma.flashcardDeck.findUnique({
+    where: { id: deckId },
+    select: { id: true, isPublic: true, userId: true },
+  });
+  if (!gate || !(viewerId ? await canReadDeck(viewerId, gate) : gate.isPublic)) return [];
   const rows = await prisma.flashcard.findMany({
     where: { deckId, ...REVIEWABLE_WHERE },
     orderBy: CARD_ORDER,

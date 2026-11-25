@@ -44,6 +44,7 @@ const h = vi.hoisted(() => {
     findMany: vi.fn(async (_a: unknown) => state.fresh),
     findUnique: vi.fn(async (_a: unknown) => ({
       id: 'c1',
+      deckId: 'd1',
       deck: {
         isPublic: false,
         userId: 'me',
@@ -54,7 +55,12 @@ const h = vi.hoisted(() => {
   const log = {
     create: vi.fn(async (_a: unknown) => note('log')),
   };
+  // The access rule's two reads, for a card of a deck the member does not own: the deck, and an editor row (none).
+  const flashcardDeck = { findUnique: vi.fn(async (_a: unknown) => ({ userId: 'someone-else' })) };
+  const deckEditor = { findUnique: vi.fn(async (_a: unknown) => null) };
   const prisma = {
+    flashcardDeck,
+    deckEditor,
     flashcardReview,
     flashcard,
     flashcardReviewLog: log,
@@ -195,6 +201,7 @@ describe('reviewQueue', () => {
         {
           userId: 'me',
         },
+        { editors: { some: { userId: 'me', status: 'accepted' } } },
       ],
     });
     expect(args.where.card.NOT).toEqual({
@@ -216,8 +223,9 @@ describe('reviewQueue', () => {
       orderBy: unknown[];
     };
     expect(args.take).toBe(20);
+    // The member's own decks and the ones they edit (s11-10).
     expect(args.where.deck).toEqual({
-      userId: 'me',
+      OR: [{ userId: 'me' }, { editors: { some: { userId: 'me', status: 'accepted' } } }],
     });
     expect(args.where.reviews).toEqual({
       none: {
@@ -399,6 +407,7 @@ describe('suspend and unsuspend', () => {
   it('is a 404 for a deck the member cannot read', async () => {
     h.flashcard.findUnique.mockResolvedValueOnce({
       id: 'c1',
+      deckId: 'd1',
       deck: {
         isPublic: false,
         userId: 'someone-else',

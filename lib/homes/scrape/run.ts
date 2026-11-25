@@ -9,7 +9,7 @@
  * `RunPrisma` is structural so tests drive it with an in-memory fake.
  */
 
-import { processSource, type ProcessPrisma, type SourceRunStats } from './process-source';
+import { processSource, type PriceDropRecord, type ProcessPrisma, type SourceRunStats } from './process-source';
 import type { HomeProvider, HomeSourceConfig } from './types';
 
 interface SourceRow {
@@ -87,6 +87,8 @@ export async function runHomesScrape(
     sleepMs?: number;
     /** Fan-out for newly discovered listings (watch alerts). Best-effort. */
     onNewListing?: (listingId: string) => void | Promise<unknown>;
+    /** Fan-out for a price drop (the favouriters' notices). Best-effort, after the source's writes. */
+    onPriceDrop?: (drop: PriceDropRecord) => void | Promise<unknown>;
   },
   opts: {
     trigger: 'CRON' | 'MANUAL';
@@ -163,6 +165,14 @@ export async function runHomesScrape(
     for (const id of stats.newListingIds) {
       try {
         await deps.onNewListing?.(id);
+      } catch {
+        // ignore notification failures
+      }
+    }
+
+    for (const drop of stats.priceDrops) {
+      try {
+        await deps.onPriceDrop?.(drop);
       } catch {
         // ignore notification failures
       }

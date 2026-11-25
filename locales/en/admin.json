@@ -681,5 +681,10 @@
   "email-history-override": "Sent past the frequency cap",
   "email-override-cap": "Also send to people emailed in the last {{hours}} hours",
   "email-preview-override": "Includes people who had an email in the last {{hours}} hours.",
-  "audit-filter-target-id": "Target id"
+  "audit-filter-target-id": "Target id",
+  "field-email-images": "Choose pictures",
+  "field-rejection-reason": "Reason for rejection",
+  "field-triage-notes": "Triage notes",
+  "field-album-description": "Album description",
+  "field-new-album-title": "New album title"
 }

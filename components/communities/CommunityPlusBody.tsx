@@ -24,6 +24,7 @@ import { OnboardingSheet } from '@/components/communities/OnboardingSheet';
 import { CommunityRulesRail } from '@/components/communities/CommunityRules';
 import { ImageAltRule } from '@/components/communities/ImageAltRule';
 import { PublicModLog } from '@/components/communities/PublicModLog';
+import { ReadingTogether } from '@/components/communities/ReadingTogether';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
 import type { CommunityExtrasDTO } from '@/lib/communities/plus';
 import { HandoverBanner } from '@/components/communities/HandoverBanner';
@@ -239,6 +240,7 @@ export function CommunityPlusBody({
       {extras && <CommunityRulesRail rules={extras.rules} communityName={community.name} className={extrasArrival} />}
       {extras?.requireImageAlt && <ImageAltRule className={extrasArrival} />}
       {extras?.publicModLog && <PublicModLog slug={slug} communityName={community.name} className={extrasArrival} />}
+      <ReadingTogether slug={slug} />
       {extras && <RelatedRail sisters={extras.sisters} className={extrasArrival} />}
 
       {community.joined && !composerLocked && (

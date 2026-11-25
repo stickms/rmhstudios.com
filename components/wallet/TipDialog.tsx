@@ -105,7 +105,7 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
           </span>
         </label>
 
-        <Textarea
+        <Textarea aria-label={t('field-tip-note', { defaultValue: 'Tip note' })}
           value={note}
           onChange={(e) => setNote(e.target.value)}
           maxLength={TIP_NOTE_MAX}

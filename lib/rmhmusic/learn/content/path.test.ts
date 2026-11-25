@@ -3,7 +3,7 @@ import { DECKS } from './decks';
 import { CHORDS } from '../theory/chords';
 import { INTERVALS } from '../theory/intervals';
 import { rhythmActivity } from '../machines/rhythm';
-import { PATH, PIANO_PATH, VOICE_PATH, VOICE_RANGE_DECK, getLesson, isKnownLesson } from './path';
+import { CHORDS_UNIT_ID, PATH, PIANO_PATH, VOICE_PATH, VOICE_RANGE_DECK, getLesson, isKnownLesson } from './path';
 import { ROUTED_MODES, isPlayable } from './routing';
 
 // Every path's lessons, once each (the rhythm unit is on all of them).
@@ -55,6 +55,11 @@ describe('learning path', () => {
       'scales-major-all',
       'key-signatures-minor',
       'scales-minor-natural',
+      'chords-ear-four-qualities',
+      'chords-read-root-position',
+      'chords-play-major-minor',
+      'chords-play-dim-aug',
+      'chords-read-inversions',
       'intervals-read-second-third',
       'intervals-read-fourth-fifth-octave',
       'intervals-read-all-sizes',
@@ -99,6 +104,43 @@ describe('learning path', () => {
       expect(l.unit).toBe('scales-and-keys');
       expect(isPlayable(l), l.id).toBe(true);
     }
+  });
+  it('has the Chords in every key unit after Scales and keys, on the guitar and piano paths and not the voice path', () => {
+    const ids = [
+      'chords-ear-four-qualities',
+      'chords-read-root-position',
+      'chords-play-major-minor',
+      'chords-play-dim-aug',
+      'chords-read-inversions',
+    ];
+    for (const path of [PATH, PIANO_PATH]) {
+      const at = path.findIndex((u) => u.id === CHORDS_UNIT_ID);
+      expect(at).toBe(path.findIndex((u) => u.id === 'scales-and-keys') + 1);
+      expect(path[at]?.title).toBe('Chords in every key');
+      expect(path[at]?.lessons.map((l) => l.id)).toEqual(ids);
+    }
+    expect(VOICE_PATH.some((u) => u.id === CHORDS_UNIT_ID)).toBe(false);
+    for (const id of ids) {
+      expect(
+        VOICE_PATH.flatMap((u) => u.lessons).some((l) => l.id === id),
+        id,
+      ).toBe(false);
+      expect(isPlayable(getLesson(id)), id).toBe(true);
+      expect(getLesson(id)?.unit).toBe(CHORDS_UNIT_ID);
+    }
+    expect(getLesson('chords-ear-four-qualities')?.pool).toEqual(['major', 'minor', 'diminished', 'augmented']);
+    expect(getLesson('chords-read-root-position')?.mode).toBe('staff-chords');
+    expect(getLesson('chords-read-inversions')?.mode).toBe('staff-chords');
+    expect(getLesson('chords-play-major-minor')?.mode).toBe('play-chord');
+    expect(getLesson('chords-play-dim-aug')?.mode).toBe('play-chord');
+  });
+  it('leaves the first chord lesson where it was', () => {
+    const lesson = getLesson('chord-play-c-major');
+    expect(lesson?.unit).toBe('train-your-ear');
+    expect(lesson?.mode).toBe('play-chord');
+    expect(lesson?.title).toBe('Play a C major chord');
+    expect(lesson?.summary).toBe('Play C, E and G together, then F major and G major.');
+    expect(lesson?.pool).toBeUndefined();
   });
   it('wires every available lesson to an activity the lesson screen runs', () => {
     for (const l of lessons.filter((x) => x.available)) {

@@ -45,11 +45,14 @@ import {
 } from '../../../server/socket-server/party-contract';
 import type { PartyMember, PartyTicket } from '../../../server/socket-server/party-contract';
 import {
+  BOT_MAX_PLAYS_PER_TURN,
+  BOT_THINK_MS,
   CHAT_HISTORY,
   CHAT_MAX_LENGTH,
   COUNTDOWN_SECONDS,
   DIE_FACES,
   HAND_LIMIT,
+  isBotLevel,
   LOG_HISTORY,
   MAX_PLAYERS,
   MIN_PLAYERS,
@@ -61,6 +64,7 @@ import {
   type Card,
   type Phase,
 } from '../engine/constants';
+import { decideBotAction, type BotAction } from '../engine/bot';
 import { buildDeck, shuffle, sortHand } from '../engine/deck';
 import { DEFAULT_HOUSE_RULES, clampHouseRules, diffHouseRules, type HouseRules } from '../engine/house-rules';
 import { emptyAcc, recordCall, recordClaim, type ReadAcc, type TableReadRow } from '../engine/table-read';
@@ -68,6 +72,7 @@ import {
   C2S,
   ROOM_PREFIX,
   S2C,
+  type BotInfo,
   type CallOutcome,
   type ChatMessage,
   type ClaimView,
@@ -98,6 +103,8 @@ const MAX_TURNS = 400;
 
 interface Seat {
   socketId: string;
+  /** Stable for the life of the lobby (a reconnect keeps it); public, unlike the socket id. */
+  seatNo: number;
   userId: string;
   name: string;
   avatarUrl: string | null;
@@ -111,6 +118,7 @@ interface Seat {
   scry: {
     socketId: string;
     name: string;
+    bot: BotInfo | null;
     cards: Card[];
   } | null;
   /** Took its one turn after the horn. */
@@ -119,6 +127,10 @@ interface Seat {
   connected: boolean;
   /** When the socket dropped, for the GC to reap against. */
   droppedAt: number;
+  /** Set for a computer player. Its `socketId` is `bot:<n>`, its `userId` empty, its `name` empty. */
+  bot: BotInfo | null;
+  /** Cards a bot has spent this turn, a stop on a play loop. */
+  botPlays: number;
 }
 
 interface Lobby {
@@ -171,6 +183,14 @@ interface Lobby {
   countdownTimer: ReturnType<typeof setInterval> | null;
   /** Armed while a seat is being held open for a dropped player. */
   reapTimer: ReturnType<typeof setTimeout> | null;
+  /** A bot held a seat when the game started: a practice game, nothing is persisted. */
+  hasBots: boolean;
+  /** Bumped whenever the table moves on, so a bot's late timer can tell it is stale. */
+  botEpoch: number;
+  /** Last seat number handed out. */
+  seatSeq: number;
+  /** Every pending bot decision. Lives on the lobby so `clearTimers` reaches it. */
+  botTimers: Set<ReturnType<typeof setTimeout>>;
 }
 
 const lobbies = new Map<string, Lobby>();
@@ -232,15 +252,37 @@ function activeSeat(lobby: Lobby): Seat | null {
   return lobby.seats.get(activeSocketId(lobby)) ?? null;
 }
 
-/**
- * Seats with somebody actually behind them.
- *
- * The distinction matters everywhere a turn could stall: a dropped player keeps
- * their chair and their cards for the grace window, but the table never waits
- * on them, and once this reaches zero there is no game left to run.
- */
-function connectedSeats(lobby: Lobby): Seat[] {
-  return Array.from(lobby.seats.values()).filter((seat) => seat.connected);
+/** Computer players are seats with no socket behind them. */
+function humanSeats(lobby: Lobby): Seat[] {
+  return Array.from(lobby.seats.values()).filter((seat) => !seat.bot);
+}
+
+/** People actually at the table now. Bots never keep a game or a lobby alive. */
+function connectedHumans(lobby: Lobby): Seat[] {
+  return humanSeats(lobby).filter((seat) => seat.connected);
+}
+
+function botCount(lobby: Lobby): number {
+  return lobby.seats.size - humanSeats(lobby).length;
+}
+
+/** Log fields naming the seat that acted. A bot has no name to send, only `actorBot`. */
+function who(seat: Seat): Partial<LogEntry> {
+  return {
+    actorName: seat.name,
+    actorSeat: seat.seatNo,
+    ...(seat.bot ? { actorBot: seat.bot } : {}),
+  };
+}
+
+/** Log fields naming the seat that was aimed at. */
+function whom(seat: Seat | null | undefined): Partial<LogEntry> {
+  if (!seat) return {};
+  return {
+    targetName: seat.name,
+    targetSeat: seat.seatNo,
+    ...(seat.bot ? { targetBot: seat.bot } : {}),
+  };
 }
 
 function pushLog(lobby: Lobby, kind: LogKind, fields: Partial<LogEntry> = {}): void {
@@ -286,14 +328,14 @@ function drawCards(lobby: Lobby, seat: Seat, count: number): number {
 function penalize(lobby: Lobby, seat: Seat, amount = lobby.rules.penaltyDraw): number {
   if (seat.warded) {
     pushLog(lobby, 'ward', {
-      actorName: seat.name,
+      ...who(seat),
     });
     return 0;
   }
   const drawn = drawCards(lobby, seat, amount);
   if (drawn > 0)
     pushLog(lobby, 'draw', {
-      actorName: seat.name,
+      ...who(seat),
       amount: drawn,
     });
   return drawn;
@@ -309,10 +351,12 @@ function snapshot(lobby: Lobby): LobbySnapshot {
     isPublic: lobby.isPublic,
     state: lobby.state,
     maxPlayers: MAX_PLAYERS,
+    practice: botCount(lobby) > 0,
     players: Array.from(lobby.seats.values()).map((seat) => ({
       socketId: seat.socketId,
       userId: seat.userId,
       name: seat.name,
+      bot: seat.bot,
       avatarUrl: seat.avatarUrl,
       ready: seat.ready,
       isHost: seat.socketId === lobby.hostSocketId,
@@ -330,6 +374,7 @@ function publicInfo(lobby: Lobby): PublicLobbyInfo {
     code: lobby.code,
     hostName: host?.name ?? 'Host',
     playerCount: lobby.seats.size,
+    bots: botCount(lobby),
     maxPlayers: MAX_PLAYERS,
   };
 }
@@ -340,8 +385,10 @@ function tablePlayers(lobby: Lobby): TablePlayer[] {
     .filter((seat): seat is Seat => Boolean(seat))
     .map((seat) => ({
       socketId: seat.socketId,
+      seatNo: seat.seatNo,
       userId: seat.userId,
       name: seat.name,
+      bot: seat.bot,
       avatarUrl: seat.avatarUrl,
       handCount: seat.hand.length,
       warded: seat.warded,
@@ -394,6 +441,7 @@ function viewFor(lobby: Lobby, seat: Seat): GameView {
     endCalledBy: lobby.endCalledBy,
     outcome: revealed ? lobby.outcome : null,
     scry: seat.scry,
+    practice: lobby.hasBots,
     rules: lobby.rules,
     log: lobby.log,
   };
@@ -404,14 +452,20 @@ function emitState(io: Server, lobby: Lobby): void {
   for (const seat of lobby.seats.values()) {
     // A dropped seat's socket id no longer resolves to anything; skipping it
     // saves building a view nobody receives.
-    if (!seat.connected) continue;
+    if (!seat.connected || seat.bot) continue;
     io.to(seat.socketId).emit(S2C.STATE, viewFor(lobby, seat));
   }
 }
 
 // ─── Phase machine ──────────────────────────────────────────────────────────
 
+function clearBotTimers(lobby: Lobby): void {
+  for (const timer of lobby.botTimers) clearTimeout(timer);
+  lobby.botTimers.clear();
+}
+
 function clearTimers(lobby: Lobby): void {
+  clearBotTimers(lobby);
   if (lobby.phaseTimer) clearTimeout(lobby.phaseTimer);
   if (lobby.countdownTimer) clearInterval(lobby.countdownTimer);
   if (lobby.reapTimer) clearTimeout(lobby.reapTimer);
@@ -436,6 +490,10 @@ function phaseDuration(lobby: Lobby, phase: Exclude<Phase, 'over'>): number {
 
 function setPhase(io: Server, lobby: Lobby, phase: Exclude<Phase, 'over'>): void {
   if (lobby.phaseTimer) clearTimeout(lobby.phaseTimer);
+  // The table moved on: a bot's pending decision belongs to the phase before.
+  clearBotTimers(lobby);
+  lobby.botEpoch++;
+  if (phase === 'action' || phase === 'final') for (const seat of lobby.seats.values()) seat.botPlays = 0;
   const duration = phaseDuration(lobby, phase);
   lobby.phase = phase;
   lobby.phaseEndsAt = Date.now() + duration;
@@ -443,6 +501,7 @@ function setPhase(io: Server, lobby: Lobby, phase: Exclude<Phase, 'over'>): void
   touch(lobby);
   emitState(io, lobby);
   lobby.phaseTimer = setTimeout(() => onPhaseTimeout(io, lobby), duration);
+  scheduleBots(io, lobby);
 }
 
 function beginTurn(io: Server, lobby: Lobby): void {
@@ -453,7 +512,7 @@ function beginTurn(io: Server, lobby: Lobby): void {
   // Nobody is behind any of the remaining chairs. Skipping would spin forever,
   // so the game ends here rather than running an empty table until the GC gets
   // to it.
-  if (connectedSeats(lobby).length === 0) {
+  if (connectedHumans(lobby).length === 0) {
     finishGame(io, lobby, true);
     return;
   }
@@ -477,7 +536,7 @@ function beginTurn(io: Server, lobby: Lobby): void {
   // seat is connected, so at most one lap is skipped.
   if (!seat.connected) {
     pushLog(lobby, 'skipped', {
-      actorName: seat.name,
+      ...who(seat),
     });
     advanceTurn(io, lobby);
     return;
@@ -521,7 +580,7 @@ function rollDice(io: Server, lobby: Lobby): void {
   lobby.rolled = true;
   // Deliberately no total on this entry: the roller reads the same log.
   pushLog(lobby, 'roll', {
-    actorName: seat.name,
+    ...who(seat),
   });
 
   // Anyone who is not there answers truthfully and immediately, the same as a
@@ -573,8 +632,8 @@ function resolveCall(io: Server, lobby: Lobby, caller: Seat, targetSocketId: str
   recordCall(readFor(lobby, caller.socketId), correct);
 
   pushLog(lobby, 'call', {
-    actorName: caller.name,
-    targetName: target.name,
+    ...who(caller),
+    ...whom(target),
     verdict,
     correct,
     total,
@@ -632,7 +691,7 @@ function onPhaseTimeout(io: Server, lobby: Lobby): void {
       if (seat) {
         seat.finalDone = true;
         pushLog(lobby, 'pass', {
-          actorName: seat.name,
+          ...who(seat),
         });
       }
       lobby.finalQueue.shift();
@@ -649,7 +708,7 @@ function onPhaseTimeout(io: Server, lobby: Lobby): void {
 function soundEnd(io: Server, lobby: Lobby, seat: Seat): void {
   lobby.endCalledBy = seat.socketId;
   pushLog(lobby, 'end-called', {
-    actorName: seat.name,
+    ...who(seat),
   });
 
   // Everyone else, once, in turn order starting after the caller. This is what
@@ -674,7 +733,7 @@ function nextFinalTurn(io: Server, lobby: Lobby): void {
     if (next) {
       next.finalDone = true;
       pushLog(lobby, 'skipped', {
-        actorName: next.name,
+        ...who(next),
       });
     }
     lobby.finalQueue.shift();
@@ -724,6 +783,7 @@ function buildStandings(lobby: Lobby): FinalStanding[] {
     socketId: seat.socketId,
     userId: seat.userId,
     name: seat.name,
+    bot: seat.bot,
     avatarUrl: seat.avatarUrl,
     handCount: seat.hand.length,
     place: placement,
@@ -757,6 +817,7 @@ function finishGame(io: Server, lobby: Lobby, abandoned: boolean): void {
     endCalledBy: lobby.endCalledBy,
     rounds: lobby.round,
     abandoned,
+    practice: lobby.hasBots,
     tableRead: standings.map((row): TableReadRow => ({
       socketId: row.socketId,
       ...readFor(lobby, row.socketId),
@@ -764,12 +825,16 @@ function finishGame(io: Server, lobby: Lobby, abandoned: boolean): void {
   };
   pushLog(lobby, 'over', {
     actorName: standings[0]?.name,
+    ...(standings[0]?.bot ? { actorBot: standings[0].bot } : {}),
   });
   emitState(io, lobby);
   io.to(roomName(lobby.code)).emit(S2C.RESULTS, results);
 
-  // Never block gameplay on a DB write (server/CLAUDE.md §Gotchas 4).
-  if (!abandoned) {
+  // Never block gameplay on a DB write (server/CLAUDE.md §Gotchas 4). A table
+  // that had a bot at the start is a practice table: no board row, no table
+  // read, and the bot's rows are not filtered out of a persisted game because
+  // there is no persisted game.
+  if (!abandoned && !lobby.hasBots) {
     void persistResults(standings).catch((error) => {
       logger.error({
         event: 'gabriels_horn_persist_failed',
@@ -797,19 +862,21 @@ function finishGame(io: Server, lobby: Lobby, abandoned: boolean): void {
       socketLobby.delete(seat.socketId);
       continue;
     }
-    seat.ready = false;
+    // A bot is always ready: only people press the button.
+    seat.ready = Boolean(seat.bot);
     seat.hand = [];
     seat.warded = false;
     seat.glimpsed = false;
     seat.scry = null;
     seat.finalDone = false;
+    seat.botPlays = 0;
   }
-  if (lobby.seats.size === 0) {
+  if (humanSeats(lobby).length === 0) {
     destroyLobby(lobby.code);
     return;
   }
   if (!lobby.seats.has(lobby.hostSocketId)) {
-    const next = lobby.seats.keys().next().value;
+    const next = humanSeats(lobby)[0]?.socketId;
     if (next) lobby.hostSocketId = next;
   }
   broadcastLobby(io, lobby);
@@ -854,9 +921,12 @@ function startGame(io: Server, lobby: Lobby): void {
   lobby.log = [];
   lobby.logSeq = 0;
   lobby.read = new Map();
+  // Fixed at the start: a bot that holds a seat now makes this a practice game.
+  lobby.hasBots = botCount(lobby) > 0;
 
   for (const seat of lobby.seats.values()) {
     seat.hand = [];
+    seat.botPlays = 0;
     seat.warded = false;
     seat.glimpsed = false;
     seat.scry = null;
@@ -924,6 +994,10 @@ function createLobby(options: {
     phaseTimer: null,
     countdownTimer: null,
     reapTimer: null,
+    hasBots: false,
+    botEpoch: 0,
+    seatSeq: 0,
+    botTimers: new Set(),
   };
   lobbies.set(lobby.code, lobby);
   return lobby;
@@ -972,7 +1046,7 @@ function rebindSeat(io: Server, socket: Socket, lobby: Lobby, seat: Seat): void 
   }
 
   pushLog(lobby, 'returned', {
-    actorName: seat.name,
+    ...who(seat),
   });
   logger.info({
     event: 'gabriels_horn_reconnect',
@@ -986,7 +1060,7 @@ function rebindSeat(io: Server, socket: Socket, lobby: Lobby, seat: Seat): void 
  * rather than doubling it.
  */
 function seatSocket(io: Server, socket: Socket, lobby: Lobby): boolean {
-  const who = identity(socket);
+  const me = identity(socket);
 
   // socket.io's connection-state recovery can hand the SAME id back after a
   // drop. The seat is then still keyed by it but marked away, and nothing
@@ -997,7 +1071,7 @@ function seatSocket(io: Server, socket: Socket, lobby: Lobby): boolean {
     returning.connected = true;
     returning.droppedAt = 0;
     pushLog(lobby, 'returned', {
-      actorName: returning.name,
+      ...who(returning),
     });
     socketLobby.set(socket.id, lobby.code);
     socket.join(roomName(lobby.code));
@@ -1017,9 +1091,7 @@ function seatSocket(io: Server, socket: Socket, lobby: Lobby): boolean {
     // A seat held open for this account after a drop. Reclaiming it is what
     // makes a locked phone screen survivable — the hand and the place in turn
     // order are exactly as they were left.
-    const held = who.userId
-      ? [...lobby.seats.values()].find((s) => !s.connected && s.userId === who.userId)
-      : undefined;
+    const held = me.userId ? [...lobby.seats.values()].find((s) => !s.connected && s.userId === me.userId) : undefined;
     if (held) {
       rebindSeat(io, socket, lobby, held);
       socketLobby.set(socket.id, lobby.code);
@@ -1049,9 +1121,10 @@ function seatSocket(io: Server, socket: Socket, lobby: Lobby): boolean {
     }
     lobby.seats.set(socket.id, {
       socketId: socket.id,
-      userId: who.userId,
-      name: who.name,
-      avatarUrl: who.avatarUrl,
+      seatNo: ++lobby.seatSeq,
+      userId: me.userId,
+      name: me.name,
+      avatarUrl: me.avatarUrl,
       ready: false,
       hand: [],
       warded: false,
@@ -1060,12 +1133,14 @@ function seatSocket(io: Server, socket: Socket, lobby: Lobby): boolean {
       finalDone: false,
       connected: true,
       droppedAt: 0,
+      bot: null,
+      botPlays: 0,
     });
   }
 
   // A party room is created before its leader connects; whoever arrives holding
   // that identity takes the chair.
-  if (lobby.pendingHostUserId && who.userId === lobby.pendingHostUserId) {
+  if (lobby.pendingHostUserId && me.userId === lobby.pendingHostUserId) {
     lobby.hostSocketId = socket.id;
     lobby.pendingHostUserId = null;
   }
@@ -1153,14 +1228,14 @@ function unseat(io: Server, socketId: string, reason: 'leave' | 'drop' = 'leave'
     seat.connected = false;
     seat.droppedAt = Date.now();
     pushLog(lobby, 'away', {
-      actorName: seat.name,
+      ...who(seat),
     });
     touch(lobby);
     // The chair stays in the room and in `socketLobby`, so a rebind can find it
     // and the reaper can still reach it.
     armReaper(io, lobby);
 
-    if (connectedSeats(lobby).length === 0) {
+    if (connectedHumans(lobby).length === 0) {
       finishGame(io, lobby, true);
       return;
     }
@@ -1208,13 +1283,14 @@ function unseat(io: Server, socketId: string, reason: 'leave' | 'drop' = 'leave'
   }
   touch(lobby);
 
-  if (lobby.seats.size === 0) {
+  // The last person leaving ends the table; bots never hold one open.
+  if (humanSeats(lobby).length === 0) {
     destroyLobby(code);
     return;
   }
 
   if (lobby.hostSocketId === socketId) {
-    const next = lobby.seats.keys().next().value;
+    const next = humanSeats(lobby)[0]?.socketId;
     if (next) {
       lobby.hostSocketId = next;
       io.to(roomName(code)).emit(S2C.HOST_CHANGED, {
@@ -1229,10 +1305,10 @@ function unseat(io: Server, socketId: string, reason: 'leave' | 'drop' = 'leave'
   }
 
   pushLog(lobby, 'left', {
-    actorName: seat.name,
+    ...who(seat),
   });
 
-  if (lobby.order.length < MIN_PLAYERS || connectedSeats(lobby).length === 0) {
+  if (lobby.order.length < MIN_PLAYERS || connectedHumans(lobby).length === 0) {
     finishGame(io, lobby, true);
     return;
   }
@@ -1250,6 +1326,288 @@ function unseat(io: Server, socketId: string, reason: 'leave' | 'drop' = 'leave'
     return;
   }
   emitState(io, lobby);
+}
+
+// ─── Table actions ──────────────────────────────────────────────────────────
+//
+// Every move a seat can make lives here, called by the socket handler for a
+// person and by the bot scheduler for a computer player, so every rule check
+// runs for a bot exactly as it does for anybody. Each returns an error code for
+// the caller to refuse with, or `null` when it was applied (or silently ignored,
+// as the socket events always did).
+
+function botSocketId(n: number): string {
+  return `bot:${n}`;
+}
+
+function playCard(io: Server, lobby: Lobby, seat: Seat, payload: unknown): string | null {
+  if (lobby.phase === 'action' && lobby.rolled) return 'already-rolled';
+
+  const p = (payload ?? {}) as Record<string, unknown>;
+  const cardId = typeof p.cardId === 'string' ? p.cardId : '';
+  const card = seat.hand.find((c) => c.id === cardId);
+  if (!card) return 'no-such-card';
+
+  // A house rule can switch a colour (or the seven) off. Refuse the play
+  // outright rather than spending the card on nothing.
+  const wouldSwap = card.rank === SWAP_RANK && lobby.rules.swapEnabled;
+  if (card.rank === SWAP_RANK && !lobby.rules.swapEnabled && !lobby.rules.effects[card.color]) {
+    return 'rule-disabled';
+  }
+  if (card.rank !== SWAP_RANK && !lobby.rules.effects[card.color]) {
+    return 'rule-disabled';
+  }
+
+  // Validate the target BEFORE spending the card, so a mis-aimed play costs
+  // nothing rather than burning a seven into the discard.
+  let target: Seat | null = null;
+  if (TARGETED_EFFECTS.includes(wouldSwap ? 'swap' : COLOR_EFFECT[card.color])) {
+    const targetId = typeof p.targetSocketId === 'string' ? p.targetSocketId : '';
+    const found = lobby.seats.get(targetId);
+    if (!found || found.socketId === seat.socketId) return 'invalid-target';
+    target = found;
+  }
+
+  seat.hand = seat.hand.filter((c) => c.id !== card.id);
+  lobby.discard.push(card);
+  const effect = wouldSwap ? 'swap' : COLOR_EFFECT[card.color];
+  // The discard's two cards land before the effect resolves — which is why a
+  // seven you play is a seven you swap away *after* paying for it.
+  drawCards(lobby, seat, lobby.rules.playDraw);
+  pushLog(lobby, 'play', {
+    ...who(seat),
+    ...whom(target),
+    color: card.color,
+    effect,
+    amount: lobby.rules.playDraw,
+  });
+
+  switch (effect) {
+    case 'swap': {
+      if (!target) break;
+      const mine = seat.hand;
+      seat.hand = target.hand;
+      target.hand = mine;
+      pushLog(lobby, 'swap', {
+        ...who(seat),
+        ...whom(target),
+      });
+      break;
+    }
+    case 'accuse': {
+      if (target) penalize(lobby, target);
+      break;
+    }
+    case 'ward': {
+      seat.warded = true;
+      break;
+    }
+    case 'scry': {
+      if (target) {
+        seat.scry = {
+          socketId: target.socketId,
+          name: target.name,
+          bot: target.bot,
+          cards: [...target.hand],
+        };
+        pushLog(lobby, 'scry', {
+          ...who(seat),
+          ...whom(target),
+        });
+      }
+      break;
+    }
+    case 'glimpse': {
+      seat.glimpsed = true;
+      pushLog(lobby, 'glimpse', {
+        ...who(seat),
+      });
+      break;
+    }
+  }
+
+  touch(lobby);
+  emitState(io, lobby);
+  return null;
+}
+
+function soundHorn(io: Server, lobby: Lobby, seat: Seat): string | null {
+  if (lobby.endCalledBy) return null;
+  if (lobby.rolled) return 'already-rolled';
+  // Not before everyone has played: on turn one the caller holds the same four
+  // cards as everybody else, so it would not be a bluff, just a short game.
+  if (lobby.turnsTaken < Math.max(lobby.rules.minTurnsBeforeEnd, lobby.order.length)) {
+    return 'too-early';
+  }
+  soundEnd(io, lobby, seat);
+  return null;
+}
+
+function passTurn(io: Server, lobby: Lobby, seat: Seat): void {
+  seat.finalDone = true;
+  pushLog(lobby, 'pass', {
+    ...who(seat),
+  });
+  lobby.finalQueue.shift();
+  nextFinalTurn(io, lobby);
+}
+
+function claimTotal(io: Server, lobby: Lobby, seat: Seat, raw: unknown): string | null {
+  // The roller is the one person who does not get to say a number.
+  if (activeSocketId(lobby) === seat.socketId) return 'roller-cannot-claim';
+  if (lobby.claims.has(seat.socketId)) return 'already-claimed';
+
+  const total = typeof raw === 'number' && Number.isFinite(raw) ? Math.floor(raw) : NaN;
+  // The legal range moves with the dice count, which a house rule can change.
+  const low = lobby.rules.diceCount;
+  const high = lobby.rules.diceCount * DIE_FACES;
+  if (!Number.isInteger(total) || total < low || total > high) {
+    return 'invalid-claim';
+  }
+
+  lobby.claims.set(seat.socketId, total);
+  recordClaim(readFor(lobby, seat.socketId), total !== diceTotal(lobby), Date.now() - lobby.claimOpenedAt);
+  pushLog(lobby, 'claim', {
+    ...who(seat),
+    total,
+  });
+  touch(lobby);
+
+  if (allClaimsIn(lobby)) {
+    setPhase(io, lobby, 'call');
+    return null;
+  }
+  emitState(io, lobby);
+  return null;
+}
+
+function callClaim(io: Server, lobby: Lobby, seat: Seat, targetRaw: unknown, verdictRaw: unknown): string | null {
+  const targetSocketId = typeof targetRaw === 'string' ? targetRaw : '';
+  const verdict = verdictRaw === 'lie' ? 'lie' : verdictRaw === 'truth' ? 'truth' : null;
+  if (!verdict) return 'invalid-call';
+  if (!lobby.claims.has(targetSocketId)) return 'no-such-claim';
+
+  resolveCall(io, lobby, seat, targetSocketId, verdict);
+  return null;
+}
+
+// ─── Bots ───────────────────────────────────────────────────────────────────
+
+/** A random think time inside the range, never longer than half what is left on the clock. */
+function thinkDelay(lobby: Lobby): number {
+  const wanted = BOT_THINK_MS.min + Math.random() * (BOT_THINK_MS.max - BOT_THINK_MS.min);
+  const left = Math.max(0, lobby.phaseEndsAt - Date.now());
+  return Math.max(0, Math.min(wanted, left / 2));
+}
+
+/** Queue one bot decision for the phase that is open now. Cleared with the lobby's timers. */
+function scheduleBot(io: Server, lobby: Lobby, socketId: string): void {
+  const epoch = lobby.botEpoch;
+  const timer = setTimeout(() => {
+    lobby.botTimers.delete(timer);
+    botAct(io, lobby, socketId, epoch);
+  }, thinkDelay(lobby));
+  lobby.botTimers.add(timer);
+}
+
+/** Arm every bot that has something to do in the phase that just opened. */
+function scheduleBots(io: Server, lobby: Lobby): void {
+  if (lobby.state !== 'playing') return;
+  for (const seat of lobby.seats.values()) {
+    if (!seat.bot) continue;
+    const mine = activeSocketId(lobby) === seat.socketId;
+    switch (lobby.phase) {
+      case 'action':
+      case 'call':
+      case 'final':
+        if (mine) scheduleBot(io, lobby, seat.socketId);
+        break;
+      case 'claim':
+        // Everyone but the roller speaks at once, each after its own think.
+        if (!mine && !lobby.claims.has(seat.socketId)) scheduleBot(io, lobby, seat.socketId);
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+/** Apply one decision through the same functions a person's event reaches. */
+function applyBotAction(io: Server, lobby: Lobby, seat: Seat, action: BotAction): string | null {
+  switch (action.type) {
+    case 'play':
+      return playCard(io, lobby, seat, { cardId: action.cardId, targetSocketId: action.targetSocketId });
+    case 'roll':
+      if (!lobby.rolled) rollDice(io, lobby);
+      return null;
+    case 'end':
+      return soundHorn(io, lobby, seat);
+    case 'pass':
+      passTurn(io, lobby, seat);
+      return null;
+    case 'claim':
+      return claimTotal(io, lobby, seat, action.total);
+    case 'call':
+      return callClaim(io, lobby, seat, action.targetSocketId, action.verdict);
+  }
+}
+
+/** What a bot does when its first choice was refused: the move that always works. */
+function botFallback(io: Server, lobby: Lobby, seat: Seat): void {
+  switch (lobby.phase) {
+    case 'action':
+      if (!lobby.rolled) rollDice(io, lobby);
+      return;
+    case 'final':
+      passTurn(io, lobby, seat);
+      return;
+    case 'claim':
+      claimTotal(io, lobby, seat, diceTotal(lobby));
+      return;
+    case 'call': {
+      const first = lobby.claims.keys().next().value;
+      if (first !== undefined) callClaim(io, lobby, seat, first, 'lie');
+      return;
+    }
+    default:
+      return;
+  }
+}
+
+/**
+ * A bot's turn to act. The input is `viewFor(lobby, seat)` and nothing else, so
+ * it sees exactly what a person in that seat sees: when it is rolling, its own
+ * dice are `null`.
+ */
+function botAct(io: Server, lobby: Lobby, socketId: string, epoch: number): void {
+  if (lobbies.get(lobby.code) !== lobby || lobby.state !== 'playing' || lobby.botEpoch !== epoch) return;
+  const seat = lobby.seats.get(socketId);
+  if (!seat?.bot) return;
+
+  const view = viewFor(lobby, seat);
+  let action = decideBotAction(view, lobby.rules, seat.bot.level, Math.random);
+  if (!action) return;
+  if (action.type === 'play' && seat.botPlays >= BOT_MAX_PLAYS_PER_TURN) {
+    action = lobby.phase === 'final' ? { type: 'pass' } : { type: 'roll' };
+  }
+  const spending = action.type === 'play';
+  const refused = applyBotAction(io, lobby, seat, action);
+  if (refused) {
+    botFallback(io, lobby, seat);
+    return;
+  }
+  if (spending) {
+    seat.botPlays++;
+    // Still the same phase and the same turn: think again about what is left.
+    if (lobbies.get(lobby.code) === lobby && lobby.botEpoch === epoch) scheduleBot(io, lobby, socketId);
+  }
+}
+
+/** Test hook: the view a seat is handed, exactly as `emitState` builds it. */
+export function viewForSeatForTest(code: string, socketId: string): GameView | null {
+  const lobby = lobbies.get(code);
+  const seat = lobby?.seats.get(socketId);
+  return lobby && seat ? viewFor(lobby, seat) : null;
 }
 
 // ─── Persistence ────────────────────────────────────────────────────────────
@@ -1405,7 +1763,7 @@ function ensureGc(): void {
       // every seat change, so this window means "empty and nothing has
       // happened", which is the condition actually being tested for.
       const idleFor = now - lobby.lastActivityAt;
-      const abandoned = lobby.seats.size === 0 && idleFor > PARTY_ROOM_GRACE_MS;
+      const abandoned = humanSeats(lobby).length === 0 && idleFor > PARTY_ROOM_GRACE_MS;
       if (abandoned || idleFor > LOBBY_IDLE_TIMEOUT_MS) {
         destroyLobby(code);
       }
@@ -1557,7 +1915,7 @@ export function registerGabrielsHornHandlers(io: Server, socket: Socket): void {
     const open: PublicLobbyInfo[] = [];
     for (const lobby of lobbies.values()) {
       if (!lobby.isPublic || lobby.state !== 'waiting') continue;
-      if (lobby.seats.size === 0 || lobby.seats.size >= MAX_PLAYERS) continue;
+      if (humanSeats(lobby).length === 0 || lobby.seats.size >= MAX_PLAYERS) continue;
       open.push(publicInfo(lobby));
       if (open.length >= BROWSE_CAP) break;
     }
@@ -1647,7 +2005,7 @@ export function registerGabrielsHornHandlers(io: Server, socket: Socket): void {
         | undefined
     )?.socketId;
     if (typeof targetId !== 'string' || targetId === socket.id) return;
-    if (!lobby.seats.has(targetId)) return;
+    if (!lobby.seats.has(targetId) || lobby.seats.get(targetId)?.bot) return;
 
     io.sockets.sockets.get(targetId)?.emit(S2C.KICKED, {});
     unseat(io, targetId);
@@ -1746,93 +2104,8 @@ export function registerGabrielsHornHandlers(io: Server, socket: Socket): void {
     // auto-win rather than a bet.
     const turn = requireTurn(['action', 'final']);
     if (!turn) return;
-    const { lobby, seat } = turn;
-    if (lobby.phase === 'action' && lobby.rolled) return fail(socket, 'already-rolled');
-
-    const p = (payload ?? {}) as Record<string, unknown>;
-    const cardId = typeof p.cardId === 'string' ? p.cardId : '';
-    const card = seat.hand.find((c) => c.id === cardId);
-    if (!card) return fail(socket, 'no-such-card');
-
-    // A house rule can switch a colour (or the seven) off. Refuse the play
-    // outright rather than spending the card on nothing.
-    const wouldSwap = card.rank === SWAP_RANK && lobby.rules.swapEnabled;
-    if (card.rank === SWAP_RANK && !lobby.rules.swapEnabled && !lobby.rules.effects[card.color]) {
-      return fail(socket, 'rule-disabled');
-    }
-    if (card.rank !== SWAP_RANK && !lobby.rules.effects[card.color]) {
-      return fail(socket, 'rule-disabled');
-    }
-
-    // Validate the target BEFORE spending the card, so a mis-aimed play costs
-    // nothing rather than burning a seven into the discard.
-    let target: Seat | null = null;
-    if (TARGETED_EFFECTS.includes(wouldSwap ? 'swap' : COLOR_EFFECT[card.color])) {
-      const targetId = typeof p.targetSocketId === 'string' ? p.targetSocketId : '';
-      const found = lobby.seats.get(targetId);
-      if (!found || found.socketId === seat.socketId) return fail(socket, 'invalid-target');
-      target = found;
-    }
-
-    seat.hand = seat.hand.filter((c) => c.id !== card.id);
-    lobby.discard.push(card);
-    const effect = wouldSwap ? 'swap' : COLOR_EFFECT[card.color];
-    // The discard's two cards land before the effect resolves — which is why a
-    // seven you play is a seven you swap away *after* paying for it.
-    drawCards(lobby, seat, lobby.rules.playDraw);
-    pushLog(lobby, 'play', {
-      actorName: seat.name,
-      targetName: target?.name,
-      color: card.color,
-      effect,
-      amount: lobby.rules.playDraw,
-    });
-
-    switch (effect) {
-      case 'swap': {
-        if (!target) break;
-        const mine = seat.hand;
-        seat.hand = target.hand;
-        target.hand = mine;
-        pushLog(lobby, 'swap', {
-          actorName: seat.name,
-          targetName: target.name,
-        });
-        break;
-      }
-      case 'accuse': {
-        if (target) penalize(lobby, target);
-        break;
-      }
-      case 'ward': {
-        seat.warded = true;
-        break;
-      }
-      case 'scry': {
-        if (target) {
-          seat.scry = {
-            socketId: target.socketId,
-            name: target.name,
-            cards: [...target.hand],
-          };
-          pushLog(lobby, 'scry', {
-            actorName: seat.name,
-            targetName: target.name,
-          });
-        }
-        break;
-      }
-      case 'glimpse': {
-        seat.glimpsed = true;
-        pushLog(lobby, 'glimpse', {
-          actorName: seat.name,
-        });
-        break;
-      }
-    }
-
-    touch(lobby);
-    emitState(io, lobby);
+    const refused = playCard(io, turn.lobby, turn.seat, payload);
+    if (refused) fail(socket, refused);
   });
 
   socket.on(C2S.ROLL, () => {
@@ -1847,28 +2120,15 @@ export function registerGabrielsHornHandlers(io: Server, socket: Socket): void {
     if (!checkRateLimit(socket.id, C2S.SOUND_END)) return fail(socket, 'rate-limited');
     const turn = requireTurn(['action']);
     if (!turn) return;
-    const { lobby, seat } = turn;
-    if (lobby.endCalledBy) return;
-    if (lobby.rolled) return fail(socket, 'already-rolled');
-    // Not before everyone has played: on turn one the caller holds the same four
-    // cards as everybody else, so it would not be a bluff, just a short game.
-    if (lobby.turnsTaken < Math.max(lobby.rules.minTurnsBeforeEnd, lobby.order.length)) {
-      return fail(socket, 'too-early');
-    }
-    soundEnd(io, lobby, seat);
+    const refused = soundHorn(io, turn.lobby, turn.seat);
+    if (refused) fail(socket, refused);
   });
 
   socket.on(C2S.PASS, () => {
     if (!checkRateLimit(socket.id, C2S.PASS)) return fail(socket, 'rate-limited');
     const turn = requireTurn(['final']);
     if (!turn) return;
-    const { lobby, seat } = turn;
-    seat.finalDone = true;
-    pushLog(lobby, 'pass', {
-      actorName: seat.name,
-    });
-    lobby.finalQueue.shift();
-    nextFinalTurn(io, lobby);
+    passTurn(io, turn.lobby, turn.seat);
   });
 
   socket.on(C2S.CLAIM, (payload: unknown) => {
@@ -1877,53 +2137,76 @@ export function registerGabrielsHornHandlers(io: Server, socket: Socket): void {
     if (!lobby || lobby.state !== 'playing' || lobby.phase !== 'claim') return;
     const seat = lobby.seats.get(socket.id);
     if (!seat) return;
-    // The roller is the one person who does not get to say a number.
-    if (activeSocketId(lobby) === socket.id) return fail(socket, 'roller-cannot-claim');
-    if (lobby.claims.has(socket.id)) return fail(socket, 'already-claimed');
-
-    const raw = (
-      payload as
-        | {
-            total?: unknown;
-          }
-        | undefined
-    )?.total;
-    const total = typeof raw === 'number' && Number.isFinite(raw) ? Math.floor(raw) : NaN;
-    // The legal range moves with the dice count, which a house rule can change.
-    const low = lobby.rules.diceCount;
-    const high = lobby.rules.diceCount * DIE_FACES;
-    if (!Number.isInteger(total) || total < low || total > high) {
-      return fail(socket, 'invalid-claim');
-    }
-
-    lobby.claims.set(socket.id, total);
-    recordClaim(readFor(lobby, socket.id), total !== diceTotal(lobby), Date.now() - lobby.claimOpenedAt);
-    pushLog(lobby, 'claim', {
-      actorName: seat.name,
-      total,
-    });
-    touch(lobby);
-
-    if (allClaimsIn(lobby)) {
-      setPhase(io, lobby, 'call');
-      return;
-    }
-    emitState(io, lobby);
+    const refused = claimTotal(
+      io,
+      lobby,
+      seat,
+      (
+        payload as
+          | {
+              total?: unknown;
+            }
+          | undefined
+      )?.total,
+    );
+    if (refused) fail(socket, refused);
   });
 
   socket.on(C2S.CALL, (payload: unknown) => {
     if (!checkRateLimit(socket.id, C2S.CALL)) return fail(socket, 'rate-limited');
     const turn = requireTurn(['call']);
     if (!turn) return;
-    const { lobby, seat } = turn;
-
     const p = (payload ?? {}) as Record<string, unknown>;
-    const targetSocketId = typeof p.targetSocketId === 'string' ? p.targetSocketId : '';
-    const verdict = p.verdict === 'lie' ? 'lie' : p.verdict === 'truth' ? 'truth' : null;
-    if (!verdict) return fail(socket, 'invalid-call');
-    if (!lobby.claims.has(targetSocketId)) return fail(socket, 'no-such-claim');
+    const refused = callClaim(io, turn.lobby, turn.seat, p.targetSocketId, p.verdict);
+    if (refused) fail(socket, refused);
+  });
 
-    resolveCall(io, lobby, seat, targetSocketId, verdict);
+  // ── Bots ─────────────────────────────────────────────────────────────────
+
+  socket.on(C2S.ADD_BOT, (payload: unknown) => {
+    if (!checkRateLimit(socket.id, C2S.ADD_BOT)) return fail(socket, 'rate-limited');
+    const lobby = requireHost();
+    if (!lobby) return;
+    if (lobby.state !== 'waiting') return fail(socket, 'not-waiting');
+    const level = (payload as { level?: unknown } | undefined)?.level;
+    if (!isBotLevel(level)) return fail(socket, 'invalid-bot-level');
+    if (lobby.seats.size >= MAX_PLAYERS) return fail(socket, 'lobby-full');
+
+    // The smallest number not in use, so "Bot 2" is never a bot that left.
+    const taken = new Set(Array.from(lobby.seats.values()).map((seat) => seat.bot?.n));
+    let n = 1;
+    while (taken.has(n)) n++;
+    lobby.seats.set(botSocketId(n), {
+      socketId: botSocketId(n),
+      seatNo: ++lobby.seatSeq,
+      userId: '',
+      name: '',
+      avatarUrl: null,
+      ready: true,
+      hand: [],
+      warded: false,
+      glimpsed: false,
+      scry: null,
+      finalDone: false,
+      connected: true,
+      droppedAt: 0,
+      bot: { n, level },
+      botPlays: 0,
+    });
+    touch(lobby);
+    broadcastLobby(io, lobby);
+  });
+
+  socket.on(C2S.REMOVE_BOT, (payload: unknown) => {
+    if (!checkRateLimit(socket.id, C2S.REMOVE_BOT)) return fail(socket, 'rate-limited');
+    const lobby = requireHost();
+    if (!lobby) return;
+    if (lobby.state !== 'waiting') return fail(socket, 'not-waiting');
+    const seatId = (payload as { seatId?: unknown } | undefined)?.seatId;
+    if (typeof seatId !== 'string' || !lobby.seats.get(seatId)?.bot) return;
+    lobby.seats.delete(seatId);
+    touch(lobby);
+    broadcastLobby(io, lobby);
   });
 }
 

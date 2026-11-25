@@ -186,7 +186,7 @@ export default function StoryEditor({
             if (isBeingEdited) {
               return (
                 <span key={token.index} className="inline-flex items-center gap-1">
-                  <input
+                  <input aria-label={t('field-edit-word', { defaultValue: 'Replacement word' })}
                     type="text"
                     value={editValue}
                     onChange={(e) =>

@@ -24,6 +24,14 @@ import {
   updateRmhTypeTextApi,
 } from '@/lib/rmhtype/texts.contract';
 import {
+  declineRmhTypeChallengeApi,
+  listRmhTypeChallengeMutualsApi,
+  listRmhTypeChallengeableRunsApi,
+  listRmhTypeChallengesApi,
+  sendRmhTypeChallengeApi,
+  setRmhTypeChallengeSettingsApi,
+} from '@/lib/rmhtype/challenges.contract';
+import {
   buildRmhTypePracticeTestApi,
   clearRmhTypeKeyStatsApi,
   getRmhTypeKeyStatsApi,
@@ -62,8 +70,12 @@ export const lessonProgressQuery = () =>
 
 export const recordLessonRun = (body: ApiInput<typeof recordLessonRunApi>['body']) => api(recordLessonRunApi, { body });
 
-/** The worst-keys practice text, generated on the server from the member's key statistics. */
-export const buildPracticeDrill = (length: number) => api(buildRmhTypePracticeTestApi, { body: { length } });
+/**
+ * The worst-keys practice text, generated on the server from the member's key statistics. Statistics are stored per
+ * layout (by character), so the drill is built from the layout the runs were recorded under.
+ */
+export const buildPracticeDrill = (length: number, layout?: TypingLayout) =>
+  api(buildRmhTypePracticeTestApi, { body: layout ? { length, layout } : { length } });
 
 export const recordKeyStats = (body: ApiInput<typeof recordRmhTypeKeyStatsApi>['body']) =>
   api(recordRmhTypeKeyStatsApi, { body });
@@ -148,3 +160,37 @@ export const deleteRmhTypeText = (textId: string) => api(deleteRmhTypeTextApi, {
 
 export const recordRmhTypeTextRun = (textId: string, body: ApiInput<typeof recordRmhTypeTextRunApi>['body']) =>
   api(recordRmhTypeTextRunApi, { params: { textId }, body });
+
+/* Challenges (s11-12) */
+
+export const RMHTYPE_CHALLENGES_KEY = ['rmhtype', 'challenges'] as const;
+
+/** The member's received, sent and settled challenges, with the switch. */
+export const rmhTypeChallengesQuery = () =>
+  contractQuery(RMHTYPE_CHALLENGES_KEY, listRmhTypeChallengesApi, { retries: 0 }, { staleTime: 15_000 });
+
+/** The members the caller can challenge. Read when the dialog opens. */
+export const rmhTypeChallengeMutualsQuery = (enabled: boolean) =>
+  contractQuery(
+    [...RMHTYPE_CHALLENGES_KEY, 'mutuals'],
+    listRmhTypeChallengeMutualsApi,
+    { retries: 0 },
+    { staleTime: 15_000, enabled },
+  );
+
+/** The caller's own bests that can be sent. Read when the dialog opens without a passage chosen. */
+export const rmhTypeChallengeRunsQuery = (enabled: boolean) =>
+  contractQuery(
+    [...RMHTYPE_CHALLENGES_KEY, 'runs'],
+    listRmhTypeChallengeableRunsApi,
+    { retries: 0 },
+    { staleTime: 15_000, enabled },
+  );
+
+export const sendRmhTypeChallenge = (body: ApiInput<typeof sendRmhTypeChallengeApi>['body']) =>
+  api(sendRmhTypeChallengeApi, { body });
+
+export const declineRmhTypeChallenge = (id: string) => api(declineRmhTypeChallengeApi, { params: { id } });
+
+export const setRmhTypeChallengesEnabled = (enabled: boolean) =>
+  api(setRmhTypeChallengeSettingsApi, { body: { enabled } });

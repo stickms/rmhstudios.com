@@ -1,0 +1,17 @@
+{
+  "back-language": "Back language",
+  "blank": "blank",
+  "delay-3": "3 seconds",
+  "delay-5": "5 seconds",
+  "delay-8": "8 seconds",
+  "delay-label": "Show the answer after",
+  "delay-wait": "Wait for me",
+  "front-language": "Front language",
+  "lang-hint": "Listen reads each side of a card in the language you choose for it.",
+  "lang-same": "Same as the site",
+  "listen": "Listen",
+  "picture-card": "This card has a picture; look to answer",
+  "replay": "Play again",
+  "speed-label": "Speed",
+  "unsupported": "Your browser cannot read aloud"
+}

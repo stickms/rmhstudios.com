@@ -72,6 +72,9 @@ model FlashcardDeck {
   extraNew     Int      @default(0)
   /// The author lets people who study this deck suggest a corrected card; off for every deck until they turn it on (s10-04).
   acceptsSuggestions Boolean @default(false)
+  /// The languages the owner's cards are written in (BCP 47, from `lib/study/listen.ts`), so Listen reads each side in its own voice (s11-17). Null: the site's language. Describes the cards, so a copy takes it; sync never changes it.
+  frontLang    String?  @db.VarChar(16)
+  backLang     String?  @db.VarChar(16)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -80,6 +83,7 @@ model FlashcardDeck {
   cards       Flashcard[]
   testResults FlashcardTestResult[]
   suggestions DeckSuggestion[]
+  editors     DeckEditor[]
 
   @@index([userId])
   @@index([isPublic, updatedAt(sort: Desc)])
@@ -379,4 +383,26 @@ model DeckSuggestion {
   @@index([suggesterId, createdAt])
   @@index([cardId])
   @@map("deck_suggestion")
+}
+
+/// s11-10 — a member the deck's owner invited to add, edit and study cards with them. `pending` until the invitee accepts
+/// (an invitation lapses after 14 days: read at request time, never swept). Only an `accepted` row gives access; the
+/// owner is never a row. `invitedById` is the deck's owner when invited.
+model DeckEditor {
+  deckId      String
+  userId      String
+  invitedById String
+  /// pending | accepted
+  status      String    @default("pending") @db.VarChar(10)
+  createdAt   DateTime  @default(now())
+  acceptedAt  DateTime?
+
+  deck      FlashcardDeck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  user      User          @relation("DeckEditorOf", fields: [userId], references: [id], onDelete: Cascade)
+  invitedBy User          @relation("DeckEditorInvites", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@id([deckId, userId])
+  @@index([userId, status])
+  @@index([invitedById, status])
+  @@map("deck_editor")
 }

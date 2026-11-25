@@ -602,6 +602,11 @@ const EXEMPT: Record<string, string> = {
   // s10-13 api-moderation
 
   // s10-17 admin-communities
+
+  // Sprint 11 (docs/autonomous/sprint-11/plan.md §Anchors)
+  // s11-05 lights-out-maker
+
+  // s11-09 read-alongs
 };
 
 const V1_SERIALISER = /serializePublicPost\(.*, (?:input\.)?(?:userId|viewerId)\)/;

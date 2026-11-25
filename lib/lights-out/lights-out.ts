@@ -10,6 +10,7 @@
 import type { GridShape } from './shapes';
 import { isActiveCell } from './shapes';
 import { shuffle } from '@/lib/core/rng';
+import { solveMinimum } from './solve';
 
 export type Grid = boolean[][];
 
@@ -112,10 +113,20 @@ export function isSolved(grid: Grid, shape: GridShape): boolean {
 }
 
 /**
- * Brute-force solver: try all subsets of cells. Returns a minimum-length solution or null.
- * Feasible for up to ~15 cells (2^15 = 32k iterations).
+ * A minimum-length solution, or null when the board cannot be solved. Exact for every shape (GF(2) elimination in
+ * `solve.ts`); a board that is already dark answers `[]`.
  */
 export function solvePuzzle(grid: Grid, shape: GridShape): [number, number][] | null {
+  return solveMinimum(grid, shape);
+}
+
+/**
+ * FROZEN. The solver `generatePuzzle` used before the exact one: a brute force over the first 15 cells only, so it is
+ * wrong (often null) on boards of more than 15 cells. Board generation keeps asking it, because the daily board for a
+ * date, every stored replay (re-simulated from the seed, `lo-1`) and every speedrun verification must keep rebuilding
+ * the same board. Do not use it for anything shown to a player; `solvePuzzle` is the exact one.
+ */
+function legacyGenerationSolve(grid: Grid, shape: GridShape): [number, number][] | null {
   const cells = getAllCells(shape);
   const n = cells.length;
   const maxMask = Math.min(1 << n, 1 << 15);
@@ -172,7 +183,7 @@ export function generatePuzzle(random: () => number, shape: GridShape): Grid {
     if (isSolved(grid, shape)) continue;
 
     // Verify solvable and solution requires at least minMoves
-    const solution = solvePuzzle(grid, shape);
+    const solution = legacyGenerationSolve(grid, shape);
     if (!solution || solution.length < minMoves) continue;
 
     return grid;

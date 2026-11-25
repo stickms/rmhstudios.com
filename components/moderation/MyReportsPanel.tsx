@@ -97,6 +97,11 @@ export function MyReportsPanel() {
     'jam-feedback': t('kind-jam-feedback', { defaultValue: 'Jam feedback' }),
     'build-comment': t('kind-build-comment', { defaultValue: 'Build comment' }),
     'build-issue': t('kind-build-issue', { defaultValue: 'Build issue' }),
+    // Sprint 11 (docs/autonomous/sprint-11/plan.md §Anchors)
+    // s11-05 lights-out-maker
+    'lights-out-board': t('kind-lights-out-board', { defaultValue: 'Lights Out board' }),
+    // s11-07 studio-share
+    'studio-share': t('kind-studio-share', { defaultValue: 'Shared Studio project' }),
   };
   const GONE: Partial<Record<ReportEntityType, string>> = {
     rmhark: t('gone-rmhark', { defaultValue: 'A post that is no longer available' }),
@@ -105,6 +110,11 @@ export function MyReportsPanel() {
     build: t('gone-build', { defaultValue: 'A build that is no longer available' }),
     'build-comment': t('gone-build-comment', { defaultValue: 'A build comment that is no longer available' }),
     'build-issue': t('gone-build-issue', { defaultValue: 'A build issue that is no longer available' }),
+    // Sprint 11 (docs/autonomous/sprint-11/plan.md §Anchors)
+    // s11-05 lights-out-maker
+    'lights-out-board': t('gone-lights-out-board', { defaultValue: 'A Lights Out board that is no longer available' }),
+    // s11-07 studio-share
+    'studio-share': t('gone-studio-share', { defaultValue: 'A shared Studio project that is no longer available' }),
   };
 
   const whatOf = (r: MyReport): string =>

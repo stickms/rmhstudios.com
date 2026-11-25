@@ -8,7 +8,8 @@
  * ## Shape of the course
  *
  * Six units, one new group of keys per lesson, and a review ending each unit.
- * QWERTY only. Every lesson is open (nothing is locked behind a speed target);
+ * QWERTY by construction; `courseFor(layout)` maps it by key position onto Dvorak, Colemak and AZERTY
+ * (`layouts.ts`). Every lesson is open (nothing is locked behind a speed target);
  * `recommendedNext` only says where to go next.
  *
  * ## Drills
@@ -23,6 +24,8 @@
 
 import { mulberry32, shuffle } from '@/lib/core/rng';
 import { wordListFor } from '@/lib/rmhtype/custom-test';
+import { DEFAULT_LAYOUT, KEYBOARD_ROWS, TYPING_LAYOUTS, type TypingLayout } from '@/lib/rmhtype/keystats';
+import { LAYOUT_ID_PREFIX, mapKey } from '@/lib/rmhtype/layouts';
 
 /* -------------------------------------------------------------------------- */
 /* Fingers                                                                    */
@@ -279,20 +282,56 @@ const COURSE_SPEC: readonly {
   },
 ];
 
-function buildCourse(): {
+/** Units each layout's course has. AZERTY's digits and punctuation need Shift, so its course stops after the capitals. */
+const LAST_UNIT: Record<TypingLayout, number> = { qwerty: 6, dvorak: 6, colemak: 6, azerty: 4 };
+
+/** Units a layout's course leaves out, for the index to say so. */
+export function unitsNotInCourse(layout: TypingLayout): number[] {
+  return [1, 2, 3, 4, 5, 6].filter((unit) => unit > LAST_UNIT[layout]);
+}
+
+/**
+ * The keys one spec line teaches on `layout`, by position. Units 1-3 map each QWERTY key to the key at the same
+ * place. Capitals follow the mapped letters (a position that holds punctuation on the layout has no capital).
+ * Digits and punctuation are kept: the layouts here have them, and a lesson teaches the character wherever it sits.
+ */
+function mapSpecKeys(unit: number, keys: string, layout: TypingLayout): string[] {
+  if (layout === 'qwerty' || unit >= 5) return [...keys];
+  if (unit === 4) {
+    return [...keys].flatMap((key) => {
+      const mapped = mapKey(key.toLowerCase(), layout);
+      return /^[a-z]$/.test(mapped) ? [mapped.toUpperCase()] : [];
+    });
+  }
+  return [...keys].map((key) => mapKey(key, layout));
+}
+
+function buildCourse(layout: TypingLayout): {
   lessons: Lesson[];
   units: Unit[];
 } {
   const lessons: Lesson[] = [];
   const seen: string[] = [];
   const unitKeys: Record<number, string[]> = {};
-  for (const [index, spec] of COURSE_SPEC.entries()) {
+  const specs = COURSE_SPEC.filter((spec) => spec.unit <= LAST_UNIT[layout]);
+  // Letters that sit where QWERTY has punctuation (AZERTY's m, Dvorak's w v z) have no capital in the spec: the
+  // last capitals lesson picks them up.
+  const covered = new Set(
+    specs.filter((spec) => spec.unit === 4 && spec.keys).flatMap((spec) => mapSpecKeys(4, spec.keys ?? '', layout)),
+  );
+  const extraCapitals = [...new Set(KEYBOARD_ROWS[layout].flat())]
+    .filter((key) => /^[a-z]$/.test(key) && !covered.has(key.toUpperCase()))
+    .map((key) => key.toUpperCase());
+  const lastCapitals = specs.findLastIndex((spec) => spec.unit === 4 && spec.keys !== null);
+  const prefix = LAYOUT_ID_PREFIX[layout];
+  for (const [index, spec] of specs.entries()) {
     const n = index + 1;
-    const newKeys = spec.keys ? [...spec.keys] : [];
+    const newKeys = spec.keys ? mapSpecKeys(spec.unit, spec.keys, layout) : [];
+    if (index === lastCapitals && layout !== 'qwerty') newKeys.push(...extraCapitals);
     seen.push(...newKeys);
     unitKeys[spec.unit] = [...(unitKeys[spec.unit] ?? []), ...newKeys];
     lessons.push({
-      id: `l${String(n).padStart(2, '0')}`,
+      id: `${prefix}l${String(n).padStart(2, '0')}`,
       n,
       unit: spec.unit,
       review: spec.keys === null,
@@ -318,16 +357,37 @@ function buildCourse(): {
   };
 }
 
-const COURSE = buildCourse();
+const COURSES: Record<TypingLayout, ReturnType<typeof buildCourse>> = {
+  qwerty: buildCourse('qwerty'),
+  dvorak: buildCourse('dvorak'),
+  colemak: buildCourse('colemak'),
+  azerty: buildCourse('azerty'),
+};
 
-export const LESSONS: readonly Lesson[] = COURSE.lessons;
-export const UNITS: readonly Unit[] = COURSE.units;
+/** The QWERTY course: what every caller that predates layouts reads, unchanged. */
+export const LESSONS: readonly Lesson[] = COURSES.qwerty.lessons;
+export const UNITS: readonly Unit[] = COURSES.qwerty.units;
+
+/** The course for a layout, built from the QWERTY spec through the position map. `courseFor('qwerty')` is `LESSONS`. */
+export function courseFor(layout: TypingLayout): readonly Lesson[] {
+  return COURSES[layout].lessons;
+}
+
+export function unitsFor(layout: TypingLayout): readonly Unit[] {
+  return COURSES[layout].units;
+}
+
+/** The layout a lesson id belongs to: its prefix (`dv-`, `cm-`, `az-`), or QWERTY for a bare `l01`. */
+export function layoutOfLessonId(id: string): TypingLayout {
+  return TYPING_LAYOUTS.find((layout) => layout !== 'qwerty' && id.startsWith(LAYOUT_ID_PREFIX[layout])) ?? 'qwerty';
+}
 
 /** The route segment that opens a free drill on the member's worst keys instead of a lesson. */
 export const PRACTICE_ID = 'practice';
 
+/** A lesson of any layout's course by id; `undefined` for an id no course has. */
 export function lessonById(id: string): Lesson | undefined {
-  return LESSONS.find((lesson) => lesson.id === id);
+  return courseFor(layoutOfLessonId(id)).find((lesson) => lesson.id === id);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -383,10 +443,14 @@ export function isUnitComplete(progress: ReadonlyMap<string, Pick<LessonProgress
  * every lesson has one, the first with fewer than three; `null` when the course
  * is mastered.
  */
-export function recommendedNext(progress: ReadonlyMap<string, Pick<LessonProgressRow, 'stars'>>): string | null {
-  const firstUnstarred = LESSONS.find((lesson) => !isLessonDone(progress, lesson.id));
+export function recommendedNext(
+  progress: ReadonlyMap<string, Pick<LessonProgressRow, 'stars'>>,
+  layout: TypingLayout = DEFAULT_LAYOUT,
+): string | null {
+  const lessons = courseFor(layout);
+  const firstUnstarred = lessons.find((lesson) => !isLessonDone(progress, lesson.id));
   if (firstUnstarred) return firstUnstarred.id;
-  return LESSONS.find((lesson) => (progress.get(lesson.id)?.stars ?? 0) < 3)?.id ?? null;
+  return lessons.find((lesson) => (progress.get(lesson.id)?.stars ?? 0) < 3)?.id ?? null;
 }
 
 /* -------------------------------------------------------------------------- */

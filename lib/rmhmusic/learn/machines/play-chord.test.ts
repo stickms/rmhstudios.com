@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { chordNotes } from '../theory/chords';
 import { createRunner } from './runner';
 import {
   createPlayChordMachine,
   playChordMachine,
+  isKeyedChordLesson,
+  isRight,
   playChordQuestions,
   step,
   type ChordQuestion,
@@ -33,6 +36,87 @@ describe('playChordQuestions', () => {
       expect(q.quality).toBe('major');
       for (const s of [0, 4, 7]) expect([0, 2, 4, 5, 7, 9, 11]).toContain((q.root + s) % 12);
     }
+  });
+});
+
+describe('playChordQuestions: the chords in every key', () => {
+  const seeded = (seed: number) => () => {
+    seed = (seed * 1664525 + 1013904223) % 4294967296;
+    return seed / 4294967296;
+  };
+  const sameChord = (a: ChordQuestion, b: ChordQuestion) => a.root === b.root && a.quality === b.quality;
+
+  it('keeps the first lesson exactly as it was: three major chords, no spelling, whatever the random source', () => {
+    expect(playChordQuestions('chord-play-c-major')).toEqual([
+      { root: 60, quality: 'major' },
+      { root: 65, quality: 'major' },
+      { root: 67, quality: 'major' },
+    ]);
+    expect(playChordQuestions('chord-play-c-major', seeded(5))).toEqual(three);
+    for (const q of three) expect(q).not.toHaveProperty('spelled');
+  });
+
+  it('asks all twelve major and all twelve minor triads, each once, spelled', () => {
+    const qs = playChordQuestions('chords-play-major-minor', seeded(1));
+    expect(qs).toHaveLength(24);
+    expect(qs.filter((q) => q.quality === 'major')).toHaveLength(12);
+    expect(qs.filter((q) => q.quality === 'minor')).toHaveLength(12);
+    for (const quality of ['major', 'minor'] as const) {
+      expect(new Set(qs.filter((q) => q.quality === quality).map((q) => q.root % 12)).size).toBe(12);
+    }
+    expect(qs.every((q) => q.spelled !== undefined)).toBe(true);
+    const fsharp = qs.find((q) => q.quality === 'major' && q.root % 12 === 6);
+    expect(fsharp?.spelled).toEqual({ letter: 'F', accidental: 1 });
+  });
+
+  it('asks the diminished and augmented triads on the seven natural roots', () => {
+    const qs = playChordQuestions('chords-play-dim-aug', seeded(2));
+    expect(qs).toHaveLength(14);
+    for (const quality of ['diminished', 'augmented'] as const) {
+      const roots = qs.filter((q) => q.quality === quality).map((q) => q.spelled?.letter);
+      expect([...roots].sort()).toEqual(['A', 'B', 'C', 'D', 'E', 'F', 'G']);
+      for (const q of qs.filter((x) => x.quality === quality)) expect(q.spelled?.accidental).toBe(0);
+    }
+  });
+
+  it('shuffles with the random source it is given, and the same one gives the same order', () => {
+    const a = playChordQuestions('chords-play-major-minor', seeded(9));
+    const b = playChordQuestions('chords-play-major-minor', seeded(9));
+    const c = playChordQuestions('chords-play-major-minor', seeded(10));
+    expect(a).toEqual(b);
+    expect(a.every((q, i) => sameChord(q, c[i] as ChordQuestion))).toBe(false);
+  });
+
+  it('answers F♯ A♯ C♯ in any order or octave as F♯ major, and nothing else as it', () => {
+    const q = playChordQuestions('chords-play-major-minor', seeded(1)).find(
+      (x) => x.quality === 'major' && x.spelled?.letter === 'F' && x.spelled.accidental === 1,
+    ) as ChordQuestion;
+    for (const midis of [
+      [66, 70, 73],
+      [70, 73, 78], // A♯ C♯ F♯
+      [58, 61, 66],
+      [66, 70, 73, 78],
+    ]) {
+      expect(isRight(q, { midis }), midis.join()).toBe(true);
+    }
+    expect(isRight(q, { midis: [66, 69, 73] })).toBe(false); // F♯ minor
+    expect(isRight(q, { midis: [67, 71, 74] })).toBe(false); // G major
+  });
+
+  it('every question of the keyed lessons is graded right by its own notes', () => {
+    for (const id of ['chords-play-major-minor', 'chords-play-dim-aug']) {
+      for (const q of playChordQuestions(id, seeded(3))) {
+        expect(isRight(q, { midis: chordNotes(q.root, q.quality) }), id).toBe(true);
+        expect(isRight(q, { midis: chordNotes(q.root, q.quality).map((m) => m + 12) }), id).toBe(true);
+      }
+    }
+  });
+
+  it('knows which lessons are keyed', () => {
+    expect(isKeyedChordLesson('chords-play-major-minor')).toBe(true);
+    expect(isKeyedChordLesson('chords-play-dim-aug')).toBe(true);
+    expect(isKeyedChordLesson('chord-play-c-major')).toBe(false);
+    expect(isKeyedChordLesson('toString')).toBe(false);
   });
 });
 

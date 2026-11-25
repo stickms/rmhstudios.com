@@ -904,6 +904,48 @@ model ConnectionsPlay {
   @@map("connections_play")
 }
 
+// s11 05: a member-made Lights Out board. `shape` is the stored shape (a rectangle, a triangle, or a daily masked shape
+// by label); `cells` is the lit cells as a row-major string of 0/1 over the shape's active cells; `optimalMoves` is the
+// exact minimum from the GF(2) solver, computed by the server at publish.
+model LightsOutBoard {
+  id           String   @id @default(cuid())
+  authorId     String
+  title        String   @db.VarChar(60)
+  shape        Json
+  cells        String   @db.VarChar(64)
+  optimalMoves Int
+  playCount    Int      @default(0)
+  solveCount   Int      @default(0)
+  hidden       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  author User                 @relation("LightsOutBoards", fields: [authorId], references: [id], onDelete: Cascade)
+  plays  LightsOutBoardPlay[]
+
+  @@index([hidden, createdAt])
+  @@index([hidden, playCount])
+  @@index([authorId, createdAt])
+  @@map("lights_out_board")
+}
+
+// s11 05: one row per member per board; `bestMoves` is the fewest presses of a solve the server replayed.
+model LightsOutBoardPlay {
+  id        String    @id @default(cuid())
+  boardId   String
+  userId    String
+  bestMoves Int?
+  solvedAt  DateTime?
+  updatedAt DateTime  @updatedAt
+
+  board LightsOutBoard @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  user  User           @relation("LightsOutBoardPlays", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, userId])
+  @@index([userId])
+  @@index([boardId, bestMoves])
+  @@map("lights_out_board_play")
+}
+
 // ── P25 action: R5 ──
 // One saved Neon Driftway livery per member, stored as its shareable code
 // (`ND1-base-accent1-accent2-stripe`); the format is validated on write.

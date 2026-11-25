@@ -16,6 +16,8 @@ import { CARD_SOUND_SELECT, soundFields, soundsOfRow } from '@/lib/study/card-so
 import { reviewDataFor } from '@/lib/study/occlusion';
 import { applyAllowances, dayStartUtc, isPaced, newAllowance, todayKey, zoneOrUtc } from '@/lib/study/pace';
 import { newIntroducedToday } from '@/lib/study/pace.server';
+import { readDeckLanguage } from '@/lib/study/listen';
+import { canReadDeck, readableDeckWhere, studiedDeckWhere } from '@/lib/study/deck-access.server';
 
 const EXPORT_CAP = 50_000;
 
@@ -38,6 +40,8 @@ const cardSelect = {
     select: {
       title: true,
       userId: true,
+      frontLang: true,
+      backLang: true,
     },
   },
 } satisfies Prisma.FlashcardSelect;
@@ -53,6 +57,8 @@ const freshSelect = {
     select: {
       title: true,
       userId: true,
+      frontLang: true,
+      backLang: true,
       newPerDay: true,
       extraNewDay: true,
       extraNew: true,
@@ -64,6 +70,15 @@ type CardRow = Prisma.FlashcardGetPayload<{
   select: typeof cardSelect;
 }>;
 
+function deckLanguageFields(deck: { frontLang: string | null; backLang: string | null }) {
+  const frontLang = readDeckLanguage(deck.frontLang);
+  const backLang = readDeckLanguage(deck.backLang);
+  return {
+    ...(frontLang ? { frontLang } : {}),
+    ...(backLang ? { backLang } : {}),
+  };
+}
+
 function toQueueCard(c: CardRow, viewerId: string): QueueCard {
   return {
     id: c.id,
@@ -74,6 +89,8 @@ function toQueueCard(c: CardRow, viewerId: string): QueueCard {
     sourceId: c.sourceId,
     deckId: c.deckId,
     deckTitle: c.deck.title,
+    // What the deck's cards are written in, for Listen (s11-17); absent when the deck names none.
+    ...deckLanguageFields(c.deck),
     ...(() => {
       const review = c.kind === 'occlusion' ? reviewDataFor(c.source, c.clozeIndex) : null;
       return review ? { occlusion: review } : {};
@@ -109,17 +126,8 @@ export function decodeCursor(after: string | undefined): Date | null {
   return Number.isFinite(ms) && ms > 0 ? new Date(ms) : null;
 }
 
-/** A deck the member can still read: their own, or a public one. A deck made private drops out. */
-const readableDeck = (userId: string) => ({
-  OR: [
-    {
-      isPublic: true,
-    },
-    {
-      userId,
-    },
-  ],
-});
+/** A deck the member can still read: their own, one they edit, or a public one. A deck made private drops out. */
+const readableDeck = readableDeckWhere;
 
 /**
  * The decks a session draws scheduled cards from: every readable deck, or, for a folder session, only the
@@ -249,16 +257,10 @@ export async function reviewQueue(
   let includesNew = false;
   let learnMore: { deckId: string; deckTitle: string }[] = [];
   if (room > 0) {
+    // The member's own decks, and the ones they edit; a folder session is the owner's folder, so their own decks only.
     const freshWhere = {
       ...REVIEWABLE_WHERE,
-      deck: {
-        userId,
-        ...(folderId
-          ? {
-              folderId,
-            }
-          : {}),
-      },
+      deck: folderId ? { userId, folderId } : studiedDeckWhere(userId),
       reviews: {
         none: {
           userId,
@@ -276,20 +278,22 @@ export async function reviewQueue(
       },
       ...CARD_ORDER,
     ];
-    const fetchFresh = (excluded: string[], take: number = room) =>
-      prisma.flashcard.findMany({
-        where: excluded.length
-          ? {
-              ...freshWhere,
-              deckId: {
-                notIn: excluded,
-              },
-            }
-          : freshWhere,
-        orderBy: freshOrder,
-        take,
-        select: freshSelect,
-      });
+    const fetchFresh = async (excluded: string[], take: number = room) =>
+      (
+        await prisma.flashcard.findMany({
+          where: excluded.length
+            ? {
+                ...freshWhere,
+                deckId: {
+                  notIn: excluded,
+                },
+              }
+            : freshWhere,
+          orderBy: freshOrder,
+          take,
+          select: freshSelect,
+        })
+      ).map(ownPaceOnly(userId));
     let fresh = await fetchFresh([]);
     // Only when a deck has a pace: a deck without one is the single query above and nothing else.
     if (fresh.some((c) => isPaced(c.deck))) {
@@ -315,6 +319,14 @@ export async function reviewQueue(
 type FreshRow = Prisma.FlashcardGetPayload<{
   select: typeof freshSelect;
 }>;
+
+/** A deck's pace is its owner's setting: an editor studying the deck sees it as having none. */
+const ownPaceOnly =
+  (viewerId: string) =>
+  (row: FreshRow): FreshRow =>
+    row.deck.userId === viewerId
+      ? row
+      : { ...row, deck: { ...row.deck, newPerDay: null, extraNewDay: null, extraNew: 0 } };
 
 /**
  * Trim a batch of never-reviewed cards to each paced deck's allowance for today (its pace, plus "Learn more",
@@ -414,13 +426,15 @@ export async function dueByDeck(userId: string, now: Date = new Date(), tz?: str
     SELECT c."deckId" AS "deckId",
            (COUNT(*) FILTER (WHERE r."id" IS NULL OR (r."suspendedAt" IS NULL AND r."dueAt" <= ${now})))::int AS "due",
            (COUNT(*) FILTER (WHERE r."id" IS NULL))::int AS "fresh",
-           MAX(d."newPerDay") AS "newPerDay",
-           MAX(d."extraNewDay") AS "extraNewDay",
-           MAX(d."extraNew") AS "extraNew"
+           MAX(CASE WHEN d."userId" = ${userId} THEN d."newPerDay" END) AS "newPerDay",
+           MAX(CASE WHEN d."userId" = ${userId} THEN d."extraNewDay" END) AS "extraNewDay",
+           MAX(CASE WHEN d."userId" = ${userId} THEN d."extraNew" END) AS "extraNew"
     FROM flashcard c
     JOIN flashcard_deck d ON d."id" = c."deckId"
     LEFT JOIN flashcard_review r ON r."cardId" = c."id" AND r."userId" = ${userId}
-    WHERE d."userId" = ${userId}
+    WHERE (d."userId" = ${userId}
+           OR EXISTS (SELECT 1 FROM deck_editor e
+                      WHERE e."deckId" = d."id" AND e."userId" = ${userId} AND e."status" = 'accepted'))
       AND NOT (c."kind" = 'cloze' AND c."sourceId" IS NULL)
       AND NOT (c."kind" = 'occlusion' AND c."sourceId" IS NULL)
     GROUP BY c."deckId"`;
@@ -451,9 +465,7 @@ export async function dueByDeck(userId: string, now: Date = new Date(), tz?: str
 export async function reviewAllCount(userId: string, now: Date = new Date(), tz?: string): Promise<number> {
   const freshWhere = {
     ...REVIEWABLE_WHERE,
-    deck: {
-      userId,
-    },
+    deck: studiedDeckWhere(userId),
     reviews: {
       none: {
         userId,
@@ -561,6 +573,7 @@ export async function setSuspended(
     },
     select: {
       id: true,
+      deckId: true,
       deck: {
         select: {
           isPublic: true,
@@ -570,7 +583,7 @@ export async function setSuspended(
     },
   });
   if (!card) return null;
-  if (!card.deck.isPublic && card.deck.userId !== userId) return null;
+  if (!(await canReadDeck(userId, { id: card.deckId, ...card.deck }))) return null;
 
   const targets = await prisma.flashcard.findMany({
     where: {

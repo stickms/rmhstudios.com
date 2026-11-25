@@ -1,0 +1,7 @@
+{
+  "alerts-switch": "Tell me if the price drops",
+  "filter-reduced": "Reduced in the last 30 days",
+  "history-error": "Could not load the price history.",
+  "history-title": "Price history",
+  "reduced-amount": "Reduced {{amount}}"
+}

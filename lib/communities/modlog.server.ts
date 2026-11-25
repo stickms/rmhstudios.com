@@ -28,6 +28,9 @@ import {
 
 const DAY_MS = 86_400_000;
 
+/** The public actions that name an event, whose visibility decides whether the row is public. */
+const EVENT_MOD_ACTIONS: ReadonlySet<string> = new Set(['event_hosted', 'event_cancelled']);
+
 /** Append one row. Call it inside the transaction that performs the action. */
 export async function logModAction(tx: Prisma.TransactionClient, input: ModActionInput): Promise<bigint> {
   const row = await tx.communityModAction.create({
@@ -228,11 +231,30 @@ export async function listPublicModLog(
       ruleTitle: true,
       reason: true,
       createdAt: true,
+      // Read only to look an event's visibility up; `toPublicEntry` never returns it.
+      targetId: true,
     },
   });
   const page = rows.slice(0, MOD_LOG_PAGE_SIZE);
+  // An event row is public only while its event is: an invite-only or draft event, and one that no longer
+  // exists, leave the public log (the moderators' log keeps every row; none is deleted).
+  const eventIds = [
+    ...new Set(page.flatMap((r) => (EVENT_MOD_ACTIONS.has(r.action) && r.targetId ? [r.targetId] : []))),
+  ];
+  const publicEvents = new Set<string>(
+    eventIds.length === 0
+      ? []
+      : (
+          await prisma.event.findMany({
+            where: { id: { in: eventIds }, visibility: 'PUBLIC' },
+            select: { id: true },
+            take: eventIds.length,
+          })
+        ).map((e) => e.id),
+  );
   return {
     entries: page.flatMap((r) => {
+      if (EVENT_MOD_ACTIONS.has(r.action) && !(r.targetId && publicEvents.has(r.targetId))) return [];
       const e = toPublicEntry(r);
       return e ? [e] : [];
     }),

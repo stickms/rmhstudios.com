@@ -440,7 +440,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
         <p className="text-sm text-site-text-muted mb-2">{t('bet-amount', { defaultValue: 'Bet amount:' })}</p>
         <div className="flex flex-col gap-2">
           <div className="relative">
-            <input
+            <input aria-label={t('field-bet-amount', { defaultValue: 'Bet amount' })}
               type="number"
               min={1}
               max={coins}

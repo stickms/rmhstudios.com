@@ -25,6 +25,7 @@ import {
 import { runHomesScrape, type RunPrisma } from '../../lib/homes/scrape/run';
 import { seedHomeSources, type SeedPrisma } from '../../lib/homes/scrape/seed';
 import {
+  notifyFavouritersOfExternalDrop,
   notifyWatchersOfExternalListing,
   type NotifyPrisma,
 } from '../../lib/homes/scrape/notify.server';
@@ -76,6 +77,7 @@ async function tick() {
       {
         prisma: runPrisma,
         onNewListing: (id) => notifyWatchersOfExternalListing(notifyPrisma, id),
+        onPriceDrop: (drop) => notifyFavouritersOfExternalDrop(notifyPrisma, drop),
       },
       { trigger: 'CRON' },
     );

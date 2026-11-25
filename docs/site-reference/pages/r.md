@@ -108,6 +108,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmhtube/party/:roomId` | RMHTube watch party | sign-in | `app/routes/rmhtube/party.$roomId.tsx` |
 | `/rmhtype` | — | sign-in | `app/routes/rmhtype/index.tsx` |
 | `/rmhtype/:roomId` | — | sign-in | `app/routes/rmhtype/$roomId.tsx` |
+| `/rmhtype/challenges` | — | sign-in | `app/routes/rmhtype/challenges.tsx` |
 | `/rmhtype/daily` | — | sign-in | `app/routes/rmhtype/daily.tsx` |
 | `/rmhtype/lessons` | — | sign-in | `app/routes/rmhtype/lessons.index.tsx` |
 | `/rmhtype/lessons/:lessonId` | — | sign-in | `app/routes/rmhtype/lessons.$lessonId.tsx` |

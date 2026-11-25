@@ -35,6 +35,11 @@ export interface ReaderOptions {
   pitch?: number;
   /** 0–1, default 1. */
   volume?: number;
+  /**
+   * BCP 47 tag to speak in, for text that is not in the page's language (a flashcard in Spanish on an English
+   * page). Absent: the document's language, read at speak time, exactly as before.
+   */
+  lang?: string;
 }
 
 export interface Reader {
@@ -138,6 +143,7 @@ export function createReader(
     voiceURI: initialVoice = null,
     pitch = 1,
     volume = 1,
+    lang: requestedLang,
   }: ReaderOptions = {},
 ): Reader | null {
   if (!speechSupported()) return null;
@@ -183,7 +189,8 @@ export function createReader(
     // swaps `<html lang>` when the visitor changes locale, and a hardcoded
     // 'en-US' here would read Arabic, Japanese and Turkish articles with an
     // English voice, i.e. as gibberish.
-    const lang = document.documentElement.lang || 'en';
+    // A caller that knows the text's own language passes it, and it wins over the page's.
+    const lang = requestedLang || document.documentElement.lang || 'en';
     utterance.lang = lang;
     const voice = pickVoice(synth, lang, voiceURI);
     if (voice) utterance.voice = voice;

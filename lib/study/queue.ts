@@ -51,6 +51,9 @@ export interface QueueCard {
   sourceId: string | null;
   deckId: string;
   deckTitle: string;
+  /** The languages the deck's fronts and backs are written in, for Listen (s11-17); absent when it names none. */
+  frontLang?: string;
+  backLang?: string;
   /** The pictures the card shows, a generated card's read from its source; absent when it has none (s08-15). */
   frontImage?: CardImage;
   backImage?: CardImage;

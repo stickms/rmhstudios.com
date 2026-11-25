@@ -486,7 +486,7 @@ function AnnounceDialog({
  {t('post-announcement-title', { defaultValue:'Post an announcement'})}
  </DialogTitle>
  </DialogHeader>
- <textarea
+ <textarea aria-label={t('field-announcement', { defaultValue: 'Announcement' })}
  autoFocus
  value={body}
  maxLength={2000}

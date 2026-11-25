@@ -71,6 +71,8 @@ describe('action codes', () => {
       'pins_reordered',
       'event_hosted',
       'event_cancelled',
+      'read_along_started',
+      'read_along_cancelled',
     ]);
     for (const a of MOD_ACTIONS_BY_GROUP.members) {
       expect(

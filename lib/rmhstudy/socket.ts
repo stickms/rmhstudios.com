@@ -15,6 +15,7 @@ import { useRmhStudyStore } from './store';
 import { S2C } from './events';
 import { toast } from '@/lib/shared/app-toast';
 import type { ChatMessage, TimerState, PhaseCompleteEvent, Task } from './types';
+import type { EndView, PublicQuestion, QuizSnapshot, RevealView } from './quiz';
 
 let client: RealtimeClient | null = null;
 let pendingRoomCode: string | null = null;
@@ -108,6 +109,12 @@ function registerHandlers(socket: Socket) {
 
   // ─── Tasks ────────────────────────────────────────────────────────────
   socket.on(S2C.TASK_LIST, (data: { tasks: Task[] }) => store().setTasks(data.tasks));
+
+  // ─── Room quiz (s11-15): in memory only, nothing is stored ───────────────
+  socket.on(S2C.QUIZ_QUESTION, (data: PublicQuestion) => store().setQuizQuestion(data));
+  socket.on(S2C.QUIZ_REVEAL, (data: RevealView) => store().setQuizReveal(data));
+  socket.on(S2C.QUIZ_END, (data: EndView) => store().setQuizEnd(data));
+  socket.on(S2C.QUIZ_STATE, (data: { quiz: QuizSnapshot | null }) => store().setQuizSnapshot(data?.quiz ?? null));
 
   // ─── Removal / errors ─────────────────────────────────────────────────
   socket.on(S2C.ROOM_KICKED, () => {

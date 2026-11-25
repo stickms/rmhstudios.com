@@ -85,9 +85,24 @@ const prismaMock = vi.hoisted(() => {
     findUnique: async ({ where }: { where: { id: string } }) => {
       const d = state.decks.find((x) => x.id === where.id);
       return d
-        ? { ...d, title: 't', description: null, cardCount: 0, clonedFromId: null, notifyUpdates: true, cards: [] }
+        ? {
+            ...d,
+            title: 't',
+            description: null,
+            cardCount: 0,
+            clonedFromId: null,
+            notifyUpdates: true,
+            cards: [],
+            user: { name: null, handle: null, profile: null },
+          }
         : null;
     },
+  };
+  // Editors of a deck (s11-10): none here; the access rule reads this model for anyone who is not the owner.
+  const deckEditor = {
+    findUnique: async () => null,
+    findFirst: async () => null,
+    groupBy: async () => [],
   };
   const flashcardReview = {
     findMany: async (args: unknown) => {
@@ -105,6 +120,7 @@ const prismaMock = vi.hoisted(() => {
   return {
     deckFolder,
     flashcardDeck,
+    deckEditor,
     flashcardReview,
     flashcard,
     $transaction: async (cb: (t: typeof tx) => Promise<unknown>) => cb(tx),
@@ -286,9 +302,14 @@ describe('the review queue’s folder filter', () => {
   it('without a folder keeps reading every readable deck', async () => {
     await reviewQueue('u1', undefined, now);
     const scheduled = state.reviewFindMany[0] as { where: { card: { deck: unknown } } };
-    expect(scheduled.where.card.deck).toEqual({ OR: [{ isPublic: true }, { userId: 'u1' }] });
+    expect(scheduled.where.card.deck).toEqual({
+      OR: [{ isPublic: true }, { userId: 'u1' }, { editors: { some: { userId: 'u1', status: 'accepted' } } }],
+    });
+    // New cards come from the member's own decks and the ones they edit.
     const fresh = state.cardFindMany[0] as { where: { deck: unknown } };
-    expect(fresh.where.deck).toEqual({ userId: 'u1' });
+    expect(fresh.where.deck).toEqual({
+      OR: [{ userId: 'u1' }, { editors: { some: { userId: 'u1', status: 'accepted' } } }],
+    });
   });
 
   it('the review route answers 404 for a folder that is not the caller’s', () => {

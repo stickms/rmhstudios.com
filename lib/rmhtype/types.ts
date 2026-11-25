@@ -107,6 +107,29 @@ export interface ClientRoomState {
 
 // ─── Solo Mode ──────────────────────────────────────────────────
 
+/** A challenge race (s11-12) the solo run is: the challenger's snapshot is the ghost, drawn as their caret. */
+export interface SoloChallenge {
+  id: string;
+  challengerName: string;
+  ghost: { passageId: string; wpm: number; timeMs: number; samples: number[] };
+}
+
+/** How a challenge race was settled, as the server tells the opponent when their run finishes. */
+export interface SoloChallengeResult {
+  id: string;
+  outcome: 'challenger' | 'opponent' | 'draw';
+  /** `false` is "Did not finish". */
+  finished: boolean;
+  challengerWpm: number;
+  opponentWpm: number | null;
+}
+
+/** A challenge race the server would not start: its English sentence and the taxonomy code beside it. */
+export interface SoloChallengeRefusal {
+  error: string;
+  code?: string;
+}
+
 export interface SoloResult {
   wpm: number;
   accuracy: number;

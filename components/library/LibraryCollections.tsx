@@ -633,7 +633,7 @@ function AddBooksModal({
             ×
           </button>
         </div>
-        <input
+        <input aria-label={t('field-search-books', { defaultValue: 'Search your books' })}
           className="surface-field lib-upload__input"
           value={query}
           onChange={(e) => setQuery(e.target.value)}

@@ -60,6 +60,8 @@ export interface Listing {
   images: string[];
   /** Subset of `images` that were AI-generated (show the disclaimer on these). */
   aiImages: string[];
+  /** What each photo shows, same length and order as `images`; `''` = not described (s11 14). */
+  imageAlts: string[];
   viewsCount: number;
 
   createdAt: string;
@@ -75,6 +77,10 @@ export interface Listing {
   favorited: boolean;
   /** Whether the requesting user is the author (can edit/delete). */
   isOwner: boolean;
+  /** Cents the price fell by, when the last change in the last 30 days was a drop (the "Reduced" line). */
+  reducedByCents?: number;
+  /** The viewer's "Tell me if the price drops" switch on their favourite (present when signed in). */
+  priceAlerts?: boolean;
 }
 
 export type SortOrder = 'newest' | 'price_asc' | 'price_desc';
@@ -101,6 +107,8 @@ export interface SearchFilters {
   minBeds?: number;
   minBaths?: number;
   petsAllowed?: boolean;
+  /** Only listings whose price dropped in the last 30 days. */
+  reduced?: boolean;
 
   sort: SortOrder;
   page: number;
@@ -154,6 +162,8 @@ export interface ListingInput {
   images: string[];
   /** URLs in `images` that were AI-generated. */
   aiImages: string[];
+  /** Descriptions of the photos, in the order of `images`; the server pads or truncates to match. */
+  imageAlts?: string[];
 }
 
 /** A saved-search watch as returned to the client. */

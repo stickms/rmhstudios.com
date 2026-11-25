@@ -55,6 +55,11 @@ import { registerResync, syncStats } from '@/lib/rmhtube/sync-stats';
 import { getServerNow, hasClockSync } from '@/lib/rmhtube/clock';
 import { toast } from '@/lib/shared/app-toast';
 import { bindMediaElement } from '@/lib/media/media-session';
+import { useQuery } from '@tanstack/react-query';
+import { apiQuery } from '@/lib/contract/client';
+import { getSubtitleCuesApi } from '@/lib/rmhtube/subtitles.contract';
+import { createPositionBus, pickTrack, useSubtitlePrefs } from '@/lib/rmhtube/subtitle-prefs';
+import SubtitleOverlay from './SubtitleOverlay';
 import type { ClientQueueItem, VideoState } from '@/lib/rmhtube/types';
 
 const ReactPlayer = lazy(() => import('react-player'));
@@ -226,6 +231,21 @@ const VideoPlayer = function VideoPlayer({
   const updateSettings = useRmhTubeStore((s) => s.updateSettings);
   const roomRate = useRmhTubeStore((s) => s.room?.videoState.playbackRate ?? 1);
   const isLive = useRmhTubeStore((s) => s.room?.videoState.mode === 'live');
+
+  // Subtitles (sprint 11 16): the viewer's chosen track of this item, its cues fetched once, drawn over the stage.
+  const roomId = useRmhTubeStore((s) => s.room?.roomId);
+  const subtitleLabel = useSubtitlePrefs((s) => s.label);
+  const subtitleSize = useSubtitlePrefs((s) => s.size);
+  const subtitleBus = useMemo(() => createPositionBus(), []);
+  const subtitleTrack = item && !item.live && !isLive ? pickTrack(item.subtitles, subtitleLabel) : null;
+  const subtitleCues = useQuery({
+    ...apiQuery(getSubtitleCuesApi, {
+      params: { roomId: roomId ?? '', itemId: item?.id ?? '', subtitleId: subtitleTrack?.id ?? '' },
+    }),
+    enabled: !!roomId && !!item && !!subtitleTrack,
+    staleTime: Infinity,
+    retry: false,
+  });
 
   const [ready, setReady] = useState(false);
   /** The environment paused us and only a gesture can resume. */
@@ -469,6 +489,8 @@ const VideoPlayer = function VideoPlayer({
     const state = room.videoState;
     const now = Date.now();
     const sample = readSample(el);
+    // The overlay looks up its cue on this tick; it has no timer of its own.
+    subtitleBus.set(Math.round(sample.position * 1000));
     const previous = outOfBand ? null : lastSampleRef.current;
     if (!outOfBand)
       lastSampleRef.current = {
@@ -1064,6 +1086,10 @@ const VideoPlayer = function VideoPlayer({
           }}
         />
       </Suspense>
+
+      {subtitleTrack && subtitleCues.data && (
+        <SubtitleOverlay cues={subtitleCues.data.cues} bus={subtitleBus} size={subtitleSize} />
+      )}
 
       {isLive && (
         <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 rounded-full bg-black/70 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-app-text">

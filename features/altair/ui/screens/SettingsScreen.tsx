@@ -87,7 +87,7 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
           ] as { label: string; value: number; setter: (v: number) => void }[]).map(({ label, value, setter }) => (
             <div key={label} className="flex items-center gap-3 py-2.5 px-4 rounded-(--altair-radius) bg-(--altair-surface) border border-(--altair-border)">
               <span className="text-sm text-(--altair-text) w-14 shrink-0">{label}</span>
-              <input
+              <input aria-label={label}
                 type="range"
                 min={0}
                 max={100}
@@ -153,7 +153,7 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
           </label>
           <div className="flex items-center gap-3 py-2.5 px-4 rounded-(--altair-radius) bg-(--altair-surface) border border-(--altair-border)">
             <span className="text-sm text-(--altair-text) w-14 shrink-0">{t("zoom", { defaultValue: "Zoom" })}</span>
-            <input
+            <input aria-label={t('zoom', { defaultValue: 'Zoom' })}
               type="range"
               min={4}
               max={20}

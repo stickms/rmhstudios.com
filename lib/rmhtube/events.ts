@@ -75,6 +75,10 @@ export const C2S = {
   PARTY_BINGO_CALL: 'rmhtube:party:bingo_call',
   PARTY_BINGO_CLAIM: 'rmhtube:party:bingo_claim',
   PARTY_BINGO_END: 'rmhtube:party:bingo_end',
+
+  // Subtitles on a queue item (sprint 11 16): the item's adder or the host attaches or removes a track
+  SUBTITLE_ADD: 'rmhtube:subtitle:add',
+  SUBTITLE_REMOVE: 'rmhtube:subtitle:remove',
 } as const;
 
 // ─── Server → Client Events ─────────────────────────────────────

@@ -56,6 +56,7 @@ import {
   listProjectVersionsApi,
   restoreProjectVersionApi,
 } from '@/lib/studio/project-history.contract';
+import { copyFromShare } from '@/lib/studio/share';
 import { useStudioStore } from '@/lib/studio/store';
 import type { Project } from '@/lib/studio/types';
 
@@ -104,6 +105,8 @@ export interface ProjectSession {
   restoreVersion: (versionId: string) => Promise<boolean>;
   /** Open an earlier version as a new local project named `copyName`, leaving the account copy alone. */
   openVersionAsCopy: (versionId: string, copyName: string) => Promise<boolean>;
+  /** Open a shared snapshot as a new local project of the viewer's own (fresh ids); false when not opened. */
+  openSharedCopy: (data: Project, name: string) => Promise<boolean>;
   /** The keybind handler for Ctrl/Cmd+S and Ctrl+Shift+S. */
   onProjectAction: (action: 'save' | 'saveAs') => void;
 }
@@ -557,6 +560,21 @@ export function useProjectSession(): ProjectSession {
     [applyProject, canDiscard, noticeMissingSamples, t, writeLocal],
   );
 
+  const openSharedCopy = useCallback(
+    async (data: Project, copyName: string): Promise<boolean> => {
+      if (!(await canDiscard())) return false;
+      const name = copyName.trim().slice(0, MAX_PROJECT_NAME) || 'Untitled Project';
+      const copy = copyFromShare(data, { name });
+      applyProject(copy, name);
+      if (!(await writeLocal())) {
+        toast.error(t('save-failed', { defaultValue: 'Could not save this project on this device.' }));
+        return false;
+      }
+      return true;
+    },
+    [applyProject, canDiscard, t, writeLocal],
+  );
+
   const resolveConflict = useCallback(
     async (choice: 'overwrite' | 'open-newer' | 'cancel') => {
       const pending = conflict;
@@ -683,6 +701,7 @@ export function useProjectSession(): ProjectSession {
       deleteCloudById,
       restoreVersion,
       openVersionAsCopy,
+      openSharedCopy,
       onProjectAction,
     }),
     [
@@ -710,6 +729,7 @@ export function useProjectSession(): ProjectSession {
       deleteCloudById,
       restoreVersion,
       openVersionAsCopy,
+      openSharedCopy,
       onProjectAction,
     ],
   );

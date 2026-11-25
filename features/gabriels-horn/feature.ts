@@ -12,6 +12,6 @@ export default defineFeature({
     'features/gabriels-horn/api/gabriels-horn.table-read.server.ts',
     'app/routes/gabriels-horn.tsx',
   ],
-  namespaces: ['c-gabriels-horn'],
+  namespaces: ['c-gabriels-horn', 'gabriels-horn-bots'],
   catalog: 'features/gabriels-horn/catalog.ts',
 });

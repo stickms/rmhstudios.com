@@ -19,6 +19,7 @@ import { createNotification } from '@/lib/notifications.server';
 import { takedownRing } from '@/lib/profile/webrings.server';
 import { hideMusicContent } from '@/lib/rmhmusic/learn/moderation.server';
 import { notifyReportersOfOutcome } from '@/lib/moderation/my-reports.server';
+import { takedownShare } from '@/lib/studio/share.server';
 import { noteCountsFor } from '@/lib/moderation/notes.server';
 import { snippet, windowStart } from '@/lib/moderation/my-reports';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
@@ -146,6 +147,17 @@ export async function takedownReportedContent(entityType: string, entityId: stri
   } else if (entityType === 'build-issue') {
     // s10-09: the issue (and its "me too" marks) is removed.
     await moderatorRemoveIssue(entityId);
+  }
+  // Sprint 11 (docs/autonomous/sprint-11/plan.md §Anchors)
+  // s11-05 lights-out-maker
+  if (entityType === 'lights-out-board') {
+    // The board leaves the boards page, its link and every list; its plays are kept (the author may appeal).
+    await (await import('@/lib/lights-out/boards.server')).hideLightsOutBoard(entityId);
+  }
+  // s11-07 studio-share
+  if (entityType === 'studio-share') {
+    // s11-07: the share is revoked (its data cleared); the copies already opened live on the openers' devices.
+    await takedownShare(entityId);
   }
 }
 
@@ -485,6 +497,25 @@ async function previewsFor(targets: readonly DecideTarget[]): Promise<Map<string
           },
         })
       : [],
+    // Sprint 11 (docs/autonomous/sprint-11/plan.md §Anchors)
+    // s11-05 lights-out-maker
+    // An admin reading a lights-out-board report sees the reported title (whatever the board's state).
+    idsOf('lights-out-board').length
+      ? (await import('@/lib/lights-out/boards.server'))
+          .lightsOutBoardTitles(idsOf('lights-out-board'))
+          .then((titles) => {
+            for (const [id, title] of titles) out.set(groupKey('lights-out-board', id), snippet(title, 160));
+          })
+      : undefined,
+    // s11-07: an admin reading a studio-share report sees the shared project's name (member text, whatever its state).
+    // The entity id is the share's token; the name is added to `out` here, so no new slot joins the destructuring.
+    idsOf('studio-share').length
+      ? prisma.studioProjectShare
+          .findMany({ where: { token: { in: idsOf('studio-share') } }, select: { token: true, name: true } })
+          .then((rows) => {
+            for (const r of rows) out.set(groupKey('studio-share', r.token), snippet(r.name, 160));
+          })
+      : Promise.resolve(),
   ]);
   for (const bi of buildIssues)
     out.set(groupKey('build-issue', bi.id), snippet(`${bi.build.title}: ${bi.title}. ${bi.body}`, 160));

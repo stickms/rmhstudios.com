@@ -158,3 +158,27 @@ export const CHAT_HISTORY = 60;
 
 /** How much of the round-by-round record a joining client is handed. */
 export const LOG_HISTORY = 40;
+
+// ─── Bots ───────────────────────────────────────────────────────────────────
+
+/** The levels a host can seat a computer player at, easiest first. */
+export const BOT_LEVELS = ['easy', 'steady', 'sharp'] as const;
+export type BotLevel = (typeof BOT_LEVELS)[number];
+
+export function isBotLevel(value: unknown): value is BotLevel {
+  return typeof value === 'string' && (BOT_LEVELS as readonly string[]).includes(value);
+}
+
+/**
+ * A bot acts this long after its turn or phase opens (random within the range),
+ * so it reads like somebody thinking and never like a script. Every phase clock
+ * is far longer, and the handler clamps the wait inside the clock anyway: a bot
+ * never waits for the timeout.
+ */
+export const BOT_THINK_MS = {
+  min: 600,
+  max: 1_800,
+} as const;
+
+/** Cards one bot may spend in a single turn, a stop on a play loop. */
+export const BOT_MAX_PLAYS_PER_TURN = 2;

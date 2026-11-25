@@ -301,6 +301,7 @@ export function ReportDialog({ open, onOpenChange, entityType, entityId, communi
 
         {reason !== COMMUNITY_RULE && (
           <Textarea
+            aria-label={t('field-report-details', { defaultValue: 'Report details' })}
             value={details}
             onChange={(e) => setDetails(e.target.value)}
             maxLength={REPORT_DETAILS_MAX}

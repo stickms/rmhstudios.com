@@ -5,14 +5,18 @@ import { useTranslation } from 'react-i18next';
 import { Heart, Loader2 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import { favoriteHomeListingApi, unfavoriteHomeListingApi } from '@/lib/homes/homes.contract';
+import { setHomePriceAlertsApi } from '@/lib/homes/prices.contract';
 
 interface FavoriteButtonProps {
   listingId: string;
   favorited: boolean;
+  /** The saved listing's "Tell me if the price drops" switch (on by default). Full-size variant only. */
+  priceAlerts?: boolean;
   onChange?: (favorited: boolean) => void;
   /** Compact icon-only variant for cards. */
   compact?: boolean;
@@ -29,6 +33,7 @@ interface FavoriteButtonProps {
 export function FavoriteButton({
   listingId,
   favorited,
+  priceAlerts = true,
   onChange,
   compact,
   onMedia = true,
@@ -37,6 +42,8 @@ export function FavoriteButton({
   const refusalText = useRefusalText();
   const [isFav, setIsFav] = useState(favorited);
   const [busy, setBusy] = useState(false);
+  const [alerts, setAlerts] = useState(priceAlerts);
+  const [alertsBusy, setAlertsBusy] = useState(false);
 
   async function toggle(e: React.MouseEvent) {
     e.preventDefault();
@@ -63,6 +70,23 @@ export function FavoriteButton({
       );
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function toggleAlerts(enabled: boolean) {
+    if (alertsBusy) return;
+    setAlerts(enabled);
+    setAlertsBusy(true);
+    try {
+      await api(setHomePriceAlertsApi, { params: { id: listingId }, body: { enabled } });
+    } catch (err) {
+      setAlerts(!enabled);
+      toast.error(
+        refusalText.maybe(err) ??
+          t('homes-save-error', { defaultValue: 'Something went wrong. Try again.' }),
+      );
+    } finally {
+      setAlertsBusy(false);
     }
   }
 
@@ -98,17 +122,32 @@ export function FavoriteButton({
   }
 
   return (
-    <Button
-      type="button"
-      variant={isFav ? 'default' : 'default'}
-      onClick={toggle}
-      loading={busy}
-      className={isFav ? 'border-site-danger/40 text-site-danger hover:bg-site-danger/10' : ''}
-    >
-      {!busy && <Heart className={`h-4 w-4 ${isFav ? 'fill-site-danger text-site-danger' : ''}`} />}
-      {isFav
-        ? t('homes-saved', { defaultValue: 'Saved' })
-        : t('homes-save', { defaultValue: 'Save' })}
-    </Button>
+    <div className="flex flex-col items-end gap-2">
+      <Button
+        type="button"
+        variant={isFav ? 'default' : 'default'}
+        onClick={toggle}
+        loading={busy}
+        className={isFav ? 'border-site-danger/40 text-site-danger hover:bg-site-danger/10' : ''}
+      >
+        {!busy && <Heart className={`h-4 w-4 ${isFav ? 'fill-site-danger text-site-danger' : ''}`} />}
+        {isFav
+          ? t('homes-saved', { defaultValue: 'Saved' })
+          : t('homes-save', { defaultValue: 'Save' })}
+      </Button>
+      {isFav && (
+        <div className="flex min-h-11 items-center gap-2">
+          <span id={`price-alerts-${listingId}`} className="t-body">
+            {t('alerts-switch', { ns: 'listing-prices', defaultValue: 'Tell me if the price drops' })}
+          </span>
+          <Switch
+            checked={alerts}
+            onCheckedChange={(v) => void toggleAlerts(v)}
+            disabled={alertsBusy}
+            aria-labelledby={`price-alerts-${listingId}`}
+          />
+        </div>
+      )}
+    </div>
   );
 }

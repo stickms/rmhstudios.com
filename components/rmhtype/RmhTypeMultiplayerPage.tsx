@@ -146,7 +146,7 @@ export default function RmhTypeMultiplayer() {
 
                 <div>
                   <label className="block text-sm font-medium mb-2 text-app-text-muted">{t("rounds-label", { defaultValue: "Rounds: {{count}}", count: roomRounds })}</label>
-                  <input
+                  <input aria-label={t('field-rounds', { defaultValue: 'Rounds' })}
                     type="range"
                     min={1}
                     max={10}
@@ -173,7 +173,7 @@ export default function RmhTypeMultiplayer() {
                 {t("join-room-desc", { defaultValue: "Enter a 6-character room code to join a friend." })}
               </p>
               <form onSubmit={(e) => { e.preventDefault(); handleJoinRoom(); }} className="flex gap-2">
-                <input
+                <input aria-label={t('field-room-code', { defaultValue: 'Room code' })}
                   type="text"
                   maxLength={6}
                   value={joinCode}

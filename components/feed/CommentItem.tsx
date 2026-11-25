@@ -610,7 +610,7 @@ export function CommentItem({
             linkToProfile={false}
           />
           <div className="min-w-0 flex-1">
-            <MentionTextarea
+            <MentionTextarea aria-label={t('field-reply', { defaultValue: 'Your reply' })}
               ref={replyRef}
               autoFocus
               value={replyContent}

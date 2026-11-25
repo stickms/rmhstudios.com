@@ -81,6 +81,7 @@ export const STATIC_CARD_INDEX: readonly (readonly [string, string])[] = [
   ['/arcade', 'arcade'],
   ['/compete', 'compete'],
   ['/connections', 'connections'],
+  ['/lights-out/boards', 'lights-out-boards'],
   ['/quotes', 'quotes'],
   ['/rmhbox-packs', 'rmhbox-packs'],
   ['/kaikaidebtcounter', 'kaikaidebtcounter'],

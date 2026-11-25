@@ -412,7 +412,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  </div>
 
  <div className="flex-1 min-w-0">
- <MentionTextarea
+ <MentionTextarea aria-label={t('field-post-body', { defaultValue: 'Post text' })}
  ref={textareaRef}
  autoFocus
  value={content}
@@ -458,7 +458,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  </button>
  </div>
 
- <input
+ <input aria-label={t('field-poll-question', { defaultValue: 'Poll question' })}
  type="text"
  value={poll.question}
  onChange={(e) => setPoll((p) => ({ ...p, question: e.target.value }))}
@@ -472,7 +472,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  <div className="space-y-2">
  {poll.options.map((opt, i) => (
  <div key={i} className="flex items-center gap-2">
- <input
+ <input aria-label={t('field-poll-option', { defaultValue: 'Poll option {{index}}', index: i + 1 })}
  type="text"
  value={opt}
  onChange={(e) => {
@@ -599,7 +599,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  {vibe && <VibeComposeChip title={vibe.title} onRemove={() => setVibe(null)} />}
 
  {/* Hidden file input */}
- <input
+ <input aria-label={t('field-attach-images', { defaultValue: 'Attach images' })}
  ref={imageInputRef}
  type="file"
  accept="image/png,image/jpeg,image/gif,image/webp"

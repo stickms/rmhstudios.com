@@ -21,6 +21,7 @@ import { toast } from '@/lib/toast';
 import { cardLabel } from '@/lib/study/card-types';
 import type { ParsedCard } from '@/lib/study/import';
 import { MAX_DECK_CARDS } from '@/lib/study/limits';
+import { isDeckLanguageTag } from '@/lib/study/listen';
 import {
   addDeckCardApi,
   deleteCardApi,
@@ -30,6 +31,7 @@ import {
   updateCardApi,
   updateDeckApi,
 } from '@/lib/study/decks.contract';
+import { DeckLanguages } from '@/components/study/DeckLanguages';
 import type { DeckDetail } from '@/lib/study.server';
 
 type TabId = 'cards' | 'suggestions' | 'import' | 'settings';
@@ -37,7 +39,10 @@ type TabId = 'cards' | 'suggestions' | 'import' | 'settings';
 /** How long a deleted card can be brought back. */
 const UNDO_MS = 8000;
 
-/** The owner's editor for one deck: cards, import and export, deck settings. */
+/**
+ * The editor for one deck: cards, import and export, and (for the owner) suggestions and deck settings. An editor
+ * (s11-10) sees the cards and the import: no settings, no suggestions, no sound recorder.
+ */
 export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckDetail }) {
   const { t } = useTranslation('study-editor');
   const { t: ts } = useTranslation('flashcard-types');
@@ -49,9 +54,12 @@ export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckD
   // generated) and the 2,000-card cap counts every row.
   const [counts, setCounts] = useState({ review: initial.reviewCount, rows: initial.rowCount });
   // Open suggestions from people who study the deck (s10-04): the tab's count (the panel reads the same query).
+  const isOwner = initial.deck.isOwner;
   const suggestionsQuery = useQuery({
     ...apiQuery(listSuggestionsApi, { params: { id: deckId }, query: { scope: 'author' } }),
     retry: false,
+    // Suggestions go to the owner only.
+    enabled: isOwner,
   });
   const openSuggestions = suggestionsQuery.data?.author.length ?? null;
 
@@ -224,7 +232,7 @@ export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckD
   }
 
   // The tab is there for a public deck, and for any deck that still has suggestions to decide.
-  const showSuggestions = meta.isPublic || (openSuggestions ?? 0) > 0;
+  const showSuggestions = isOwner && (meta.isPublic || (openSuggestions ?? 0) > 0);
   const tabs = [
     { id: 'cards', label: t('tab-cards', { defaultValue: 'Cards' }), count: cards.length },
     ...(showSuggestions
@@ -237,7 +245,7 @@ export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckD
         ]
       : []),
     { id: 'import', label: t('tab-import', { defaultValue: 'Import' }) },
-    { id: 'settings', label: t('tab-settings', { defaultValue: 'Settings' }) },
+    ...(isOwner ? [{ id: 'settings', label: t('tab-settings', { defaultValue: 'Settings' }) }] : []),
   ];
   const panel = (id: TabId) => ({
     id: `${base}-panel-${id}`,
@@ -287,6 +295,7 @@ export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckD
               <CardForm
                 submitLabel={ts('add-card-submit', { defaultValue: 'Add card' })}
                 resetOnSave
+                allowSound={isOwner}
                 onSubmit={addCard}
               />
             </div>
@@ -308,27 +317,33 @@ export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckD
                 onReorder={reorder}
                 itemLabel={(c) => cardLabel(c)}
                 className="gap-0 divide-y divide-site-border border-y border-site-border"
-                renderItem={(card) => <CardRow card={card} onSave={saveCard} onDelete={deleteCard} />}
+                renderItem={(card) => (
+                  <CardRow card={card} allowSound={isOwner} onSave={saveCard} onDelete={deleteCard} />
+                )}
               />
             )}
           </div>
         </section>
 
-        <section {...panel('suggestions')}>
-          <DeckSuggestions
-            deckId={deckId}
-            acceptsSuggestions={meta.acceptsSuggestions}
-            onAccepted={() => void reloadCards()}
-          />
-        </section>
+        {isOwner && (
+          <section {...panel('suggestions')}>
+            <DeckSuggestions
+              deckId={deckId}
+              acceptsSuggestions={meta.acceptsSuggestions}
+              onAccepted={() => void reloadCards()}
+            />
+          </section>
+        )}
 
         <section {...panel('import')}>
           <ImportPanel existingFronts={cards.map((c) => c.front)} cardCount={counts.rows} onImport={importCards} />
         </section>
 
-        <section {...panel('settings')}>
-          <SettingsForm deckId={deckId} meta={meta} onSaved={(next) => setMeta((m) => ({ ...m, ...next }))} />
-        </section>
+        {isOwner && (
+          <section {...panel('settings')}>
+            <SettingsForm deckId={deckId} meta={meta} onSaved={(next) => setMeta((m) => ({ ...m, ...next }))} />
+          </section>
+        )}
       </div>
     </PageLayout>
   );
@@ -347,6 +362,8 @@ function SettingsForm({
     isPublic: boolean;
     notifyUpdates: boolean;
     acceptsSuggestions: boolean;
+    frontLang: string | null;
+    backLang: string | null;
   }) => void;
 }) {
   const { t } = useTranslation('study-editor');
@@ -356,6 +373,8 @@ function SettingsForm({
   const [description, setDescription] = useState(meta.description ?? '');
   const [isPublic, setIsPublic] = useState(meta.isPublic);
   const [acceptsSuggestions, setAcceptsSuggestions] = useState(meta.acceptsSuggestions);
+  const [frontLang, setFrontLang] = useState(meta.frontLang ?? '');
+  const [backLang, setBackLang] = useState(meta.backLang ?? '');
   const [busy, setBusy] = useState(false);
 
   const dirty =
@@ -363,6 +382,8 @@ function SettingsForm({
     description.trim() !== (meta.description ?? '') ||
     isPublic !== meta.isPublic ||
     acceptsSuggestions !== meta.acceptsSuggestions ||
+    frontLang !== (meta.frontLang ?? '') ||
+    backLang !== (meta.backLang ?? '') ||
     (meta.isCopy && notifyUpdates !== meta.notifyUpdates);
 
   async function save() {
@@ -376,6 +397,8 @@ function SettingsForm({
           description: description.trim(),
           isPublic,
           acceptsSuggestions,
+          frontLang: isDeckLanguageTag(frontLang) ? frontLang : null,
+          backLang: isDeckLanguageTag(backLang) ? backLang : null,
           ...(meta.isCopy ? { notifyUpdates } : {}),
         },
       });
@@ -385,6 +408,8 @@ function SettingsForm({
         isPublic,
         notifyUpdates,
         acceptsSuggestions,
+        frontLang: frontLang || null,
+        backLang: backLang || null,
       });
       toast.success(t('settings-saved', { defaultValue: 'Deck saved' }));
     } catch {
@@ -459,6 +484,12 @@ function SettingsForm({
           />
         </div>
       )}
+      <DeckLanguages
+        frontLang={frontLang}
+        backLang={backLang}
+        onFrontChange={setFrontLang}
+        onBackChange={setBackLang}
+      />
       {meta.isCopy && <NotifyUpdatesRow checked={notifyUpdates} onChange={setNotifyUpdates} />}
       <div>
         <Button variant="primary" disabled={!dirty || !title.trim()} loading={busy} onClick={save}>

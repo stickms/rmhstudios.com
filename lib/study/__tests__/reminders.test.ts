@@ -89,9 +89,10 @@ vi.mock('@/lib/prisma.server', () => ({
       })),
     },
     flashcard: {
-      count: vi.fn(async ({ where }: { where: { deck: { userId: string } } }) => {
+      // The member's decks are their own and the ones they edit: `{ OR: [{ userId }, { editors: … }] }` (s11-10).
+      count: vi.fn(async ({ where }: { where: { deck: { OR: [{ userId: string }, unknown] } } }) => {
         state.freshWheres.push(where);
-        return state.fresh[where.deck.userId] ?? 0;
+        return state.fresh[where.deck.OR[0].userId] ?? 0;
       }),
     },
     flashcardReview: {
@@ -195,7 +196,10 @@ describe('the sweep', () => {
     await runDueReminderSweep(new Date(SIX_PM.getTime() + 1_000));
     expect(state.countWheres[0]).toMatchObject({
       userId: 'u1',
-      card: { NOT: { kind: { in: ['cloze', 'occlusion'] }, sourceId: null }, deck: { userId: 'u1' } },
+      card: {
+        NOT: { kind: { in: ['cloze', 'occlusion'] }, sourceId: null },
+        deck: { OR: [{ userId: 'u1' }, { editors: { some: { userId: 'u1', status: 'accepted' } } }] },
+      },
     });
   });
 
@@ -208,7 +212,7 @@ describe('the sweep', () => {
     });
     expect(state.freshWheres[0]).toMatchObject({
       NOT: { kind: { in: ['cloze', 'occlusion'] }, sourceId: null },
-      deck: { userId: 'u1' },
+      deck: { OR: [{ userId: 'u1' }, { editors: { some: { userId: 'u1', status: 'accepted' } } }] },
       reviews: { none: { userId: 'u1' } },
     });
   });

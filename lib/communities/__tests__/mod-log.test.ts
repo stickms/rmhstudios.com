@@ -1373,11 +1373,49 @@ describe('the public log', () => {
       'pins_reordered',
       'event_hosted',
       'event_cancelled',
+      'read_along_started',
+      'read_along_cancelled',
     ]);
     expect(Object.keys(args.select).sort()).toEqual(
-      ['action', 'createdAt', 'id', 'reason', 'ruleTitle', 'targetType'].sort(),
+      ['action', 'createdAt', 'id', 'reason', 'ruleTitle', 'targetId', 'targetType'].sort(),
     );
     expect(mock('user.findMany')).not.toHaveBeenCalled();
+  });
+
+  it('leaves out event rows whose event is not public or is gone, and keeps them in the moderators log', async () => {
+    const evRow = (id: bigint, action: string, targetId: string) => ({
+      id,
+      action,
+      targetType: 'event',
+      targetId,
+      ruleTitle: null,
+      reason: null,
+      createdAt: new Date('2026-11-20T10:00:00Z'),
+    });
+    const rows = [
+      evRow(9n, 'event_hosted', 'ev-private'),
+      evRow(8n, 'event_cancelled', 'ev-gone'),
+      evRow(7n, 'event_hosted', 'ev-public'),
+      ...publicRows,
+    ];
+    community('MEMBER', { publicModLog: true });
+    mock('communityModAction.findMany').mockResolvedValue(rows);
+    mock('event.findMany').mockResolvedValue([{ id: 'ev-public' }]);
+    const res = await (await load('modlog', 'GET'))(ctx({ userId: 'member1', query: { scope: 'public' } }));
+    const body = (await res.json()) as { entries: { id: string }[] };
+    expect(body.entries.map((e) => e.id)).toEqual(['7', '5']);
+    const q = mock('event.findMany').mock.calls[0]![0] as { where: { id: { in: string[] }; visibility: string } };
+    expect(q.where.visibility).toBe('PUBLIC');
+    expect([...q.where.id.in].sort()).toEqual(['ev-gone', 'ev-private', 'ev-public']);
+
+    // The moderators' log reads every row, with no visibility filter.
+    community('MOD');
+    mock('communityModAction.findMany').mockResolvedValue(rows.slice(0, 2));
+    mock('user.findMany').mockResolvedValue([]);
+    mock('communityMember.findMany').mockResolvedValue([]);
+    const full = await (await load('modlog', 'GET'))(ctx({ query: { scope: 'full' } }));
+    const fullBody = (await full.json()) as { entries: { id: string }[] };
+    expect(fullBody.entries.map((e) => e.id)).toEqual(['9', '8']);
   });
 
   it('can be read signed out on a public community, and not on a private one', async () => {

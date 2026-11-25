@@ -13,5 +13,6 @@
   "unnamed-token": "Unnamed token",
   "your-tokens": "Your Tokens",
   "expires-soon": "Expires soon",
-  "expires-date": "Expires {{date}}"
+  "expires-date": "Expires {{date}}",
+  "field-token-name": "Token name"
 }

@@ -113,7 +113,7 @@ export default function RhymeTimeInput({
 
         {/* Input + submit */}
         <div className="flex w-full max-w-md gap-2">
-          <input
+          <input aria-label={t('field-rhyme', { defaultValue: 'Your rhyme' })}
             ref={inputRef}
             type="text"
             value={value}

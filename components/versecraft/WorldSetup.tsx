@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { m as motion } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
 import { GeneratingState } from './GeneratingState';
@@ -12,6 +13,7 @@ const EXAMPLE_PROMPTS = [
 ];
 
 export function WorldSetup() {
+  const { t } = useTranslation('c-versecraft');
   const startGeneratedGame = useGameStore(s => s.startGeneratedGame);
   const setScreen = useGameStore(s => s.setScreen);
   const settings = useGameStore(s => s.settings);
@@ -96,8 +98,8 @@ export function WorldSetup() {
 
         <div className="space-y-5">
           <div>
-            <label className="block text-sm mb-1.5" style={label}>Your name</label>
-            <input className={field} style={fieldStyle} value={name} onChange={e => setName(e.target.value)} placeholder="What should they call you?" />
+            <label htmlFor="vc-setup-name" className="block text-sm mb-1.5" style={label}>Your name</label>
+            <input id="vc-setup-name" className={field} style={fieldStyle} value={name} onChange={e => setName(e.target.value)} placeholder="What should they call you?" />
           </div>
 
           <div>
@@ -133,7 +135,7 @@ export function WorldSetup() {
               </button>
             </div>
             {customOn && (
-              <input
+              <input aria-label={t('field-custom-pronouns', { defaultValue: 'Custom pronouns' })}
                 className={`${field} mt-2`} style={fieldStyle}
                 value={customPronouns} onChange={e => setCustomPronouns(e.target.value)}
                 placeholder="e.g. ze/zir/zirs"
@@ -173,10 +175,10 @@ export function WorldSetup() {
           </div>
 
           <div>
-            <label className="block text-sm mb-1.5" style={label}>
+            <label htmlFor="vc-setup-experience" className="block text-sm mb-1.5" style={label}>
               Describe the experience you want <span style={{ color: '#666' }}>(optional)</span>
             </label>
-            <textarea
+            <textarea id="vc-setup-experience"
               dir="auto"
               className={field} style={{ ...fieldStyle, minHeight: '90px', resize: 'vertical' }}
               value={prompt} onChange={e => setPrompt(e.target.value)}
@@ -234,9 +236,9 @@ export function WorldSetup() {
 
           {/* Shared version */}
           <div className="pt-4 mt-2" style={{ borderTop: '1px solid rgba(196, 163, 90, 0.12)' }}>
-            <label className="block text-sm mb-1.5" style={label}>Play a shared version</label>
+            <label htmlFor="vc-setup-seed" className="block text-sm mb-1.5" style={label}>Play a shared version</label>
             <div className="flex gap-2">
-              <input
+              <input id="vc-setup-seed"
                 className={field} style={fieldStyle} value={seedInput}
                 onChange={e => setSeedInput(e.target.value)}
                 placeholder="enter a seed code, e.g. ember-tide-hush-417"

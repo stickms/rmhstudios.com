@@ -294,7 +294,7 @@ export function HoldemControls() {
 
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <input type="number" min={minRaiseTotal} max={myChips + (myPlayer?.currentBet ?? 0)}
+              <input aria-label={t('field-raise-amount', { defaultValue: 'Raise amount' })} type="number" min={minRaiseTotal} max={myChips + (myPlayer?.currentBet ?? 0)}
                 placeholder={t("min-raise-placeholder", { defaultValue: "Min {{min}}", min: minRaiseTotal })}
                 value={raiseAmount}
                 onChange={(e) => setRaiseAmount(e.target.value)}

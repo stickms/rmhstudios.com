@@ -414,7 +414,7 @@ export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) { co
               indexArrival,
             )}
           >
-            <Input
+            <Input aria-label={t('field-setlist-name', { defaultValue: 'New setlist name' })}
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               maxLength={80}
@@ -594,7 +594,7 @@ export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) { co
           {open.isOwner && (
             <div className={cn('neumorphic rounded-3xl p-4 flex flex-col gap-3', openArrival)}>
               <div className="flex flex-wrap items-center gap-3">
-                <Input
+                <Input aria-label={t('field-setlist-search', { defaultValue: 'Search tracks to add' })}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => {
