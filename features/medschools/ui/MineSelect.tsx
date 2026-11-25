@@ -14,6 +14,7 @@ export function MineSelect({
   onChange,
   compact,
   containerClassName,
+  schools,
 }: {
   value: MineChoice | null;
   lists: { lists: readonly (MineLists['lists'][number] & { name: string })[] } | undefined;
@@ -21,16 +22,39 @@ export function MineSelect({
   compact?: boolean;
   /** On the field's wrapper (the toolbar's and the rail's grid place that). */
   containerClassName?: string;
+  /**
+   * The live page's one "Schools" control: every school after the member's own sets, so the page has one select
+   * reading "All schools", not two (owner 2026-11-24: no repeated text). Choosing a school clears "My schools".
+   */
+  schools?: {
+    options: readonly { slug: string; shortName: string }[];
+    value: string | undefined;
+    onChange: (slug: string | undefined) => void;
+  };
 }) {
   const { t } = useTranslation('medschools');
-  const shown = value && (value.kind !== 'list' || !lists || mineIsKnown(value, lists)) ? encodeMine(value) : '';
+  const mineShown = value && (value.kind !== 'list' || !lists || mineIsKnown(value, lists)) ? encodeMine(value) : '';
+  const shown = schools?.value ? `school:${schools.value}` : mineShown;
   return (
     <MedSelect
-      aria-label={t('index-mine-label', { defaultValue: 'My schools' })}
+      aria-label={
+        schools
+          ? t('live-schools-label', { defaultValue: 'Schools' })
+          : t('index-mine-label', { defaultValue: 'My schools' })
+      }
       className={cn(compact && 'medapp-select--compact')}
       {...(containerClassName ? { containerClassName } : {})}
       value={shown}
-      onChange={(e) => onChange(decodeMine(e.target.value))}
+      onChange={(e) => {
+        const v = e.target.value;
+        if (schools && v.startsWith('school:')) {
+          onChange(null);
+          schools.onChange(v.slice('school:'.length));
+          return;
+        }
+        schools?.onChange(undefined);
+        onChange(decodeMine(v));
+      }}
     >
       <option value="">{t('index-mine-none', { defaultValue: 'All schools' })}</option>
       <option value="cycle">{t('index-mine-cycle', { defaultValue: 'My cycle' })}</option>
@@ -40,6 +64,15 @@ export function MineSelect({
           {l.name}
         </option>
       ))}
+      {schools && schools.options.length > 0 ? (
+        <optgroup label={t('live-schools-group', { defaultValue: 'One school' })}>
+          {schools.options.map((sc) => (
+            <option key={sc.slug} value={`school:${sc.slug}`}>
+              {sc.shortName}
+            </option>
+          ))}
+        </optgroup>
+      ) : null}
     </MedSelect>
   );
 }

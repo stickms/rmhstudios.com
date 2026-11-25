@@ -111,21 +111,33 @@ export function LivePage() {
               </option>
             ))}
           </MedSelect>
-          <MedSelect
-            aria-label={t('live-school-label', { defaultValue: 'School' })}
-            value={search.school ?? ''}
-            onChange={(e) => setSearch({ school: e.target.value || undefined })}
-          >
-            <option value="">{t('live-school-all', { defaultValue: 'All schools' })}</option>
-            {(schools.data?.schools ?? []).map((s) => (
-              <option key={s.slug} value={s.slug}>
-                {s.shortName}
-              </option>
-            ))}
-          </MedSelect>
+          {mine.signedIn ? (
+            <MineSelect
+              value={mine.choice}
+              lists={mine.lists}
+              onChange={setMine}
+              schools={{
+                options: schools.data?.schools ?? [],
+                value: search.school,
+                onChange: (school) => setSearch({ school }),
+              }}
+            />
+          ) : (
+            <MedSelect
+              aria-label={t('live-school-label', { defaultValue: 'School' })}
+              value={search.school ?? ''}
+              onChange={(e) => setSearch({ school: e.target.value || undefined })}
+            >
+              <option value="">{t('live-school-all', { defaultValue: 'All schools' })}</option>
+              {(schools.data?.schools ?? []).map((s) => (
+                <option key={s.slug} value={s.slug}>
+                  {s.shortName}
+                </option>
+              ))}
+            </MedSelect>
+          )}
           <StateMultiSelect states={schools.data?.states ?? []} value={states.value} onChange={setStates} />
           <ProgramMultiSelect value={view.programs} onChange={(programs) => setView({ programs })} />
-          {mine.signedIn ? <MineSelect value={mine.choice} lists={mine.lists} onChange={setMine} /> : null}
         </div>
         {mine.signedIn ? null : <MineSignedOutNote search={search} />}
         <PrefsNote fromPrefs={view.fromPrefs} fromDevice={fromDevice} onClearSaved={() => clearSavedFilters('page')} />

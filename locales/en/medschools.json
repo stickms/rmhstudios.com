@@ -461,6 +461,8 @@
   "live-row-place": "{{program}} · {{city}}, {{state}}",
   "live-school-all": "All schools",
   "live-school-label": "School",
+  "live-schools-group": "One school",
+  "live-schools-label": "Schools",
   "live-title": "Live reported events",
   "live-today-active-count": "reported events",
   "live-today-active-title": "Most active, last 24 hours",

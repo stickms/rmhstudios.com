@@ -371,7 +371,11 @@ describe('My schools (owner 2026-11-24): My cycle, All my lists, one list', () =
       <LivePage />,
     );
     expect(html).toContain('href="/med/duke"');
-    expect(html).toContain('aria-label="My schools"');
+    // Signed in, the live page has ONE schools control (no second "All schools"): my sets, then each school.
+    expect(html).toContain('aria-label="Schools"');
+    expect(html).not.toContain('aria-label="School"');
+    expect(html.match(/>All schools</g)).toHaveLength(1);
+    expect(html).toContain('<optgroup label="One school"><option value="school:duke">');
     h.session = null;
   });
 
