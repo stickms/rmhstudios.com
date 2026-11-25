@@ -2,13 +2,13 @@
 import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Loader2, Users, X } from 'lucide-react';
+import { Loader2, UserPlus, Users, X } from 'lucide-react';
+import { IconButton } from '@/components/ui/icon-button';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useArrival } from '@/components/ui/arrive';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
-import { Spine, SpineItem } from '@/components/ui/spine';
 import { HandleInput } from './HandleInput';
 import { ColumnHeader } from './ColumnHeader';
 import { useTranslation } from 'react-i18next';
@@ -158,15 +158,17 @@ export function GroupChatsColumn({
       )}
       <div className="flex flex-wrap items-center gap-2 pb-3">
         <SearchField
-          containerClassName="min-w-full sm:min-w-0 sm:flex-1"
+          containerClassName="min-w-full sm:min-w-48 sm:flex-1"
           value={query}
           onValueChange={setQuery}
           placeholder={t('search-groups-placeholder', { defaultValue: 'Search groups…' })}
           aria-label={t('search-groups', { defaultValue: 'Search groups' })}
         />
-        <Button variant="ghost" onClick={() => setShowForm((v) => !v)}>
-          {t('new-group', { defaultValue: 'New group' })}
-        </Button>
+        <IconButton
+          icon={UserPlus}
+          label={t('new-group', { defaultValue: 'New group' })}
+          onClick={() => setShowForm((v) => !v)}
+        />
       </div>
       <ChatFolderBar value={folder} onChange={setFolder} />
 
@@ -226,9 +228,9 @@ export function GroupChatsColumn({
           description={t('no-groups-match', { defaultValue: 'No groups match your search.' })}
         />
       ) : (
-        <Spine>
+        <div>
           {visibleGroups.map((g) => (
-            <SpineItem key={g.id} dot={!!g.unread} className="row-hover">
+            <div key={g.id} className="rule-row row-hover py-3.5">
               <Link
                 to={`/groups/${g.id}` as string}
                 className="block after:absolute after:inset-x-0 after:-inset-y-px after:content-['']"
@@ -245,9 +247,9 @@ export function GroupChatsColumn({
                     t('member-count', { count: g.memberCount, defaultValue_one: '{{count}} member', defaultValue: '{{count}} members' })}
                 </p>
               </Link>
-            </SpineItem>
+            </div>
           ))}
-        </Spine>
+        </div>
       )}
     </div>
   );

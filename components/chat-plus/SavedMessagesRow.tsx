@@ -7,7 +7,6 @@ import { api } from '@/lib/contract/client';
 import { getSavedMessagesApi, openSavedMessagesApi } from '@/lib/messages/messages.contract';
 import { toast } from '@/lib/toast';
 import { useIdleReady } from '@/hooks/useIdleReady';
-import { SpineItem } from '@/components/ui/spine';
 import { InboxAvatar } from '@/components/feed/InboxAvatar';
 
 /**
@@ -57,7 +56,7 @@ export function SavedMessagesRow() {
           : t('saved-empty', { defaultValue: 'Notes, links and media just for you' });
 
   return (
-    <SpineItem dot={false} className="row-hover">
+    <div className="rule-row row-hover py-3.5">
       <button
         type="button"
         onClick={() => void open()}
@@ -71,7 +70,7 @@ export function SavedMessagesRow() {
           <span className="t-body block truncate text-site-text-muted">{preview}</span>
         </span>
       </button>
-    </SpineItem>
+    </div>
   );
 }
 

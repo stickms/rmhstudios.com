@@ -121,7 +121,7 @@ export default function RemindMeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="grid-cols-[minmax(0,1fr)] gap-6 sm:max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlarmClock className="h-5 w-5 text-site-accent" aria-hidden />
@@ -132,7 +132,7 @@ export default function RemindMeDialog({
           <DialogDescription className="truncate">{target.label}</DialogDescription>
         </DialogHeader>
         <div
-          className="flex flex-col"
+          className="-mx-3 flex flex-col gap-1"
           role="menu"
           aria-label={t('remind-presets', {
             defaultValue: 'Quick times',
@@ -142,7 +142,7 @@ export default function RemindMeDialog({
             <MenuItem
               key={p.id}
               // A list in a dialog, not a dropdown panel that clips its rows: keep the row's own shape.
-              className="rounded-site-sm"
+              className="min-h-11 rounded-site-sm"
               icon={p.icon}
               disabled={saving}
               hint={fmt.dateTime(resolvePreset(p.id), {
@@ -157,14 +157,14 @@ export default function RemindMeDialog({
           ))}
         </div>
         <form
-          className="flex items-end gap-2"
+          className="flex items-end gap-3 border-t border-site-border pt-5"
           onSubmit={(e) => {
             e.preventDefault();
             const at = new Date(custom);
             if (!Number.isNaN(at.getTime())) void save(at);
           }}
         >
-          <label className="min-w-0 flex-1 text-xs text-site-text-muted">
+          <label className="flex min-w-0 flex-1 flex-col gap-2 text-xs text-site-text-muted">
             {t('remind-pick', {
               defaultValue: 'Pick a time',
             })}
@@ -173,7 +173,7 @@ export default function RemindMeDialog({
               value={custom}
               min={toLocalInput(new Date())}
               onChange={(e) => setCustom(e.target.value)}
-              className="mt-1"
+              className="w-full min-w-0"
             />
           </label>
           <Button type="submit" variant="default" loading={saving}>

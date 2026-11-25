@@ -2,13 +2,13 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useTranslation } from 'react-i18next';
-import { Search } from 'lucide-react';
+import { CheckCheck, Moon, Search, SquarePen } from 'lucide-react';
+import { IconButton } from '@/components/ui/icon-button';
 import { Spinner } from '@/components/ui/spinner';
 import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { SearchField } from '@/components/ui/search-field';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { Spine, SpineItem } from '@/components/ui/spine';
 import { InboxAvatar } from '@/components/feed/InboxAvatar';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useSession } from '@/components/Providers';
@@ -316,10 +316,10 @@ export function MessagesColumn({
 
   return (
     <div className="flex flex-col">
-      {/* The search field, and the two actions as words: New chat, Mark all as read. No primary here (section 10). */}
+      {/* The search field, and the actions as icons: New chat, Mark all as read, Set an away message. No primary here (section 10). */}
       <div className="flex flex-wrap items-center gap-2 pb-3">
         <SearchField
-          containerClassName="min-w-full sm:min-w-0 sm:flex-1"
+          containerClassName="min-w-full sm:min-w-48 sm:flex-1"
           value={query}
           onValueChange={setQuery}
           placeholder={t('search-messages-placeholder', {
@@ -327,16 +327,23 @@ export function MessagesColumn({
           })}
           aria-label={t('search-messages', { defaultValue: 'Search messages' })}
         />
-        <Button variant="ghost" onClick={() => setNewChatOpen(true)}>
-          {t('new-chat', { defaultValue: 'New chat' })}
-        </Button>
-        <Button variant="ghost" onClick={markAllAsRead} disabled={!hasUnread || markingAll}>
-          {t('mark-all-as-read', { defaultValue: 'Mark all as read' })}
-        </Button>
+        <IconButton
+          icon={SquarePen}
+          label={t('new-chat', { defaultValue: 'New chat' })}
+          onClick={() => setNewChatOpen(true)}
+        />
+        <IconButton
+          icon={CheckCheck}
+          label={t('mark-all-as-read', { defaultValue: 'Mark all as read' })}
+          onClick={markAllAsRead}
+          disabled={!hasUnread || markingAll}
+        />
         {!awayQuery.data?.away && (
-          <Button variant="ghost" onClick={() => setAwayOpen(true)}>
-            {t('set-away-message', { ns: 'away-message', defaultValue: 'Set an away message' })}
-          </Button>
+          <IconButton
+            icon={Moon}
+            label={t('set-away-message', { ns: 'away-message', defaultValue: 'Set an away message' })}
+            onClick={() => setAwayOpen(true)}
+          />
         )}
       </div>
       <AwayInboxLine onEdit={() => setAwayOpen(true)} />
@@ -359,7 +366,7 @@ export function MessagesColumn({
             {t('no-search-results', { defaultValue: 'No people or messages match your search.' })}
           </p>
         ) : (
-          <Spine className={searchArrival}>
+          <div className={searchArrival}>
             {searchResults.map((conv) => (
               <ConversationRow
                 key={conv.id}
@@ -371,7 +378,7 @@ export function MessagesColumn({
                 formatTime={formatTime}
               />
             ))}
-          </Spine>
+          </div>
         )
       ) : loading ? (
         <div className="flex items-center justify-center py-12">
@@ -384,10 +391,10 @@ export function MessagesColumn({
       ) : conversations.length === 0 ? (
         <>
           {/* Saved Messages (M2) is always there, even in an empty inbox. */}
-          <Spine className={listArrival}>
+          <div className={listArrival}>
             <RequestsEntry />
             <SavedMessagesRow />
-          </Spine>
+          </div>
           <EmptyState
             className={listArrival}
             title={t('no-messages-yet', { defaultValue: 'No messages yet' })}
@@ -403,8 +410,7 @@ export function MessagesColumn({
         </>
       ) : (
         <>
-          {/* One dot per unread thread (section 10, Inbox): the rows hang on the spine, read ones with no dot. */}
-          <Spine className={listArrival}>
+          <div className={listArrival}>
             {folder === 'all' && <RequestsEntry />}
             {folder === 'all' && <SavedMessagesRow />}
             {conversations.map((conv) => (
@@ -419,7 +425,7 @@ export function MessagesColumn({
                 formatTime={formatTime}
               />
             ))}
-          </Spine>
+          </div>
 
           {loadingMore && (
             <div className="flex items-center justify-center py-8">
@@ -492,7 +498,7 @@ function ConversationRow({
   const unread = conv.unreadCount > 0;
   const isSelf = conv.otherUser.id === currentUserId;
   return (
-    <SpineItem dot={unread} className={cn('row-hover', className)}>
+    <div className={cn('rule-row row-hover py-3.5', className)}>
       <Link
         to={`/messages/${conv.id}` as string}
         className="flex items-start gap-3 after:absolute after:inset-x-0 after:-inset-y-px after:content-['']"
@@ -546,7 +552,7 @@ function ConversationRow({
           )}
         </div>
       </Link>
-    </SpineItem>
+    </div>
   );
 }
 
