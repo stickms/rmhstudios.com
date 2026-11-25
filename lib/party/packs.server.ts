@@ -1,9 +1,9 @@
 import { randomInt } from 'node:crypto';
 import { prisma } from '@/lib/prisma.server';
+import { filePackReport } from '@/lib/party/pack-moderation.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import {
   MAX_PACKS_PER_MEMBER,
-  PACK_AUTOHIDE_REPORTS,
   PACK_CODE_ALPHABET,
   PACK_CODE_LEN,
   normalizePrompts,
@@ -25,6 +25,7 @@ const select = {
   promptCount: true,
   featured: true,
   hidden: true,
+  moderatedAt: true,
   ownerId: true,
   owner: { select: userDisplaySelect },
 } as const;
@@ -37,6 +38,7 @@ type Row = {
   promptCount: number;
   featured: boolean;
   hidden: boolean;
+  moderatedAt?: Date | null;
   ownerId: string;
   owner: Parameters<typeof resolveUser>[0];
 };
@@ -51,22 +53,26 @@ function view(r: Row, userId: string | null, isAdmin: boolean): PackView {
     promptCount: r.promptCount,
     featured: r.featured,
     ...(isAdmin || r.ownerId === userId ? { hidden: r.hidden } : {}),
+    ...(r.moderatedAt && (isAdmin || r.ownerId === userId) ? { moderated: true } : {}),
     mine: r.ownerId === userId,
     author: u ? { name: u.name ?? null, handle: u.handle ?? null } : null,
   };
 }
 
-/** Featured shelf, newest community packs, and the caller's own (hidden ones included). */
+/**
+ * Featured shelf, newest community packs, and the caller's own (hidden ones included, a removed one marked). A pack a
+ * moderator removed is on no shelf but its owner's own.
+ */
 export async function listPacks(userId: string | null, isAdmin: boolean) {
   const [featured, recent, mine] = await Promise.all([
     prisma.rmhboxPack.findMany({
-      where: { featured: true, hidden: false },
+      where: { featured: true, hidden: false, moderatedAt: null },
       orderBy: { createdAt: 'desc' },
       take: 12,
       select,
     }),
     prisma.rmhboxPack.findMany({
-      where: { featured: false, hidden: false },
+      where: { featured: false, hidden: false, moderatedAt: null },
       orderBy: { createdAt: 'desc' },
       take: 30,
       select,
@@ -119,34 +125,42 @@ export async function deletePack(userId: string, id: string, isAdmin: boolean) {
   return r.count === 1;
 }
 
-/** One report per member; enough distinct reporters hide the pack until an admin looks. */
+/**
+ * The old report route (kept for old clients): files the same `ContentReport` the pack page's dialog does, with reason
+ * `OTHER` and the text as its details, so there is one queue. Three distinct open reports hide the pack.
+ */
 export async function reportPack(userId: string, id: string, reason: string) {
-  const pack = await prisma.rmhboxPack.findUnique({ where: { id }, select: { ownerId: true } });
-  if (!pack) return { ok: false as const, status: 404, error: 'Not found' };
-  if (pack.ownerId === userId) return { ok: false as const, status: 400, error: 'Your own pack' };
-  try {
-    await prisma.rmhboxPackReport.create({ data: { packId: id, reporterId: userId, reason } });
-  } catch (e) {
-    if ((e as { code?: string }).code === 'P2002') return { ok: true as const, duplicate: true };
-    throw e;
+  const r = await filePackReport({ reporterId: userId, packId: id, reason: 'OTHER', details: reason.trim() || null });
+  if (!r.ok) {
+    return r.reason === 'own-pack'
+      ? { ok: false as const, status: 400, error: 'Your own pack' }
+      : { ok: false as const, status: 404, error: 'Not found' };
   }
-  const updated = await prisma.rmhboxPack.update({
-    where: { id },
-    data: { reportCount: { increment: 1 } },
-    select: { id: true, reportCount: true },
-  });
-  if (updated.reportCount >= PACK_AUTOHIDE_REPORTS) {
-    await prisma.rmhboxPack.update({ where: { id }, data: { hidden: true, featured: false } });
-  }
-  return { ok: true as const, duplicate: false };
+  return { ok: true as const, duplicate: r.duplicate };
 }
 
+/**
+ * An admin's feature / hide. A pack a moderator removed cannot be unhidden or featured. An admin's own hide is a
+ * decision, not a waiting state, so it clears `autoHiddenAt` and a dismissal of reports never restores it.
+ */
 export async function adminSetPack(id: string, patch: { featured?: boolean; hidden?: boolean }) {
-  const data = { ...patch, ...(patch.hidden ? { featured: false } : {}) };
+  const data = {
+    ...patch,
+    ...(patch.hidden ? { featured: false } : {}),
+    ...(patch.hidden !== undefined ? { autoHiddenAt: null } : {}),
+  };
+  const asks = patch.hidden === false || patch.featured === true;
   try {
-    await prisma.rmhboxPack.update({ where: { id }, data });
-    return true;
+    const done = await prisma.rmhboxPack.updateMany({
+      // Unhiding or featuring is refused for a removed pack; hiding or unfeaturing one is harmless.
+      where: asks ? { id, moderatedAt: null } : { id },
+      data,
+    });
+    if (done.count === 1) return 'ok' as const;
+    if (!asks) return 'not-found' as const;
+    const row = await prisma.rmhboxPack.findUnique({ where: { id }, select: { moderatedAt: true } });
+    return row ? ('removed' as const) : ('not-found' as const);
   } catch {
-    return false;
+    return 'not-found' as const;
   }
 }

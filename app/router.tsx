@@ -138,9 +138,16 @@ export function getRouter() {
   // the only navigations it could miss are ones made before a small chunk arrives.
   if (typeof document !== 'undefined' && !routeAnnouncerInstalled) {
     routeAnnouncerInstalled = true;
-    void import('@/lib/router/route-announce-client').then(({ installRouteAnnouncer }) =>
-      installRouteAnnouncer(router),
-    );
+    // A navigation resolved before the chunk arrives is remembered here (one function, no import) and announced once
+    // on install; the recorder stops at that point and the announcer's own subscription takes over.
+    let before: { fromLocation?: { pathname: string }; toLocation: { pathname: string } } | null = null;
+    const stopRecording = router.subscribe('onResolved', (event) => {
+      if (event.fromLocation?.pathname !== event.toLocation.pathname) before = event;
+    });
+    void import('@/lib/router/route-announce-client').then(({ installRouteAnnouncer }) => {
+      stopRecording();
+      installRouteAnnouncer(router, undefined, before);
+    });
   }
 
   // Steel 4.3: chrome reflections load at idle, on pages that have a chrome element.

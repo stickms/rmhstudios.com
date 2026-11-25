@@ -9,7 +9,7 @@ export const LEASE_MS = 120_000;
 /** The reclaim sweep re-queues a run at most this many times; the next time it is stopped as FAILED. */
 export const MAX_RECLAIMS = 5;
 
-export const FANOUT_KINDS = ['post-alert', 'event-update'] as const;
+export const FANOUT_KINDS = ['post-alert', 'event-update', 'tube-party', 'news-story-article'] as const;
 export type FanoutKind = (typeof FANOUT_KINDS)[number];
 
 export type FanoutStatusName = 'RUNNING' | 'DONE' | 'FAILED';

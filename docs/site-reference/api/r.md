@@ -15,6 +15,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/ranked` | `GET` `POST` | `lib/ranked/api/ranked.server.ts` |
 | `/api/ranked/:game/leaderboard` | `GET` | `lib/ranked/api/ranked.$game.leaderboard.server.ts` |
 | `/api/ranked/challenge/:id` | `POST` | `lib/ranked/api/ranked.challenge.$id.server.ts` |
+| `/api/ranked/standing` | `GET` | `lib/ranked/api/ranked.standing.server.ts` |
 
 ## `/api/reading`
 
@@ -218,6 +219,8 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/rmhladder/offers` | `GET` `POST` | `lib/rmhladder/api/rmhladder.offers.server.ts` |
 | `/api/rmhladder/offers/:id` | `DELETE` `PATCH` | `lib/rmhladder/api/rmhladder.offers.$id.server.ts` |
 | `/api/rmhladder/offers/:id/decide` | `POST` | `lib/rmhladder/api/rmhladder.offers.$id.decide.server.ts` |
+| `/api/rmhladder/own-jobs` | `POST` | `lib/rmhladder/api/rmhladder.own-jobs.server.ts` |
+| `/api/rmhladder/own-jobs/:id` | `DELETE` `PATCH` | `lib/rmhladder/api/rmhladder.own-jobs.$id.server.ts` |
 | `/api/rmhladder/prep` | `POST` | `lib/rmhladder/api/rmhladder.prep.server.ts` |
 | `/api/rmhladder/referral-requests/:id` | `PATCH` | `lib/rmhladder/api/rmhladder.referral-requests.$id.server.ts` |
 | `/api/rmhladder/referrals` | `GET` `POST` | `lib/rmhladder/api/rmhladder.referrals.server.ts` |
@@ -274,7 +277,8 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/rmhtube/rooms/:roomId/items/:itemId/subtitles/:subtitleId` | `GET` | `lib/rmhtube/api/rmhtube.rooms.$roomId.items.$itemId.subtitles.$subtitleId.server.ts` |
 | `/api/rmhtube/stats` | `DELETE` `GET` | `lib/rmhtube/api/rmhtube.stats.server.ts` |
 | `/api/rmhtube/stats/pause` | `PUT` | `lib/rmhtube/api/rmhtube.stats.pause.server.ts` |
-| `/api/rmhtube/subscribe/:channelId` | `POST` | `lib/rmhtube/api/rmhtube.subscribe.$channelId.server.ts` |
+| `/api/rmhtube/subscribe/:channelId` | `DELETE` `PUT` | `lib/rmhtube/api/rmhtube.subscribe.$channelId.server.ts` |
+| `/api/rmhtube/subscriptions` | `GET` | `lib/rmhtube/api/rmhtube.subscriptions.server.ts` |
 | `/api/rmhtube/timed-comments` | `DELETE` `GET` `POST` | `lib/rmhtube/api/rmhtube.timed-comments.server.ts` |
 | `/api/rmhtube/watch-later` | `DELETE` `GET` `POST` | `lib/rmhtube/api/rmhtube.watch-later.server.ts` |
 

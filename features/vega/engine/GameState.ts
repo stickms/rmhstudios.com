@@ -5,6 +5,7 @@
 import { create } from 'zustand';
 import type { EnemyType, MapId, TargetMode, TowerType } from './data';
 import type { RunStats } from './Simulation';
+import { NO_VEGA_ASSIST, type VegaAssistFlags } from './assist-profile';
 import { initialTutorial, tutorialReducer, type TutorialEvent, type TutorialState } from './tutorial';
 
 export type Screen = 'menu' | 'play' | 'end';
@@ -18,7 +19,8 @@ export interface HudSnapshot {
   score: number;
   /** A wave can be started (build) or called early (during a wave, once the newest finished spawning). */
   canStart: boolean;
-  speed: 1 | 2;
+  /** The run clock's speed: the normal speed (1, or the speed floor) or 2. */
+  speed: number;
   next: { type: EnemyType; count: number }[];
   nextBoss: EnemyType | null;
   introduces: EnemyType[];
@@ -99,6 +101,8 @@ interface VegaStore {
   result: EndResult | null;
   /** A specimen catalogued for the first time this run, shown as a dossier card until dismissed. */
   dossier: EnemyType | null;
+  /** This run's assist flags, set once at run start from the server's claim. */
+  assist: VegaAssistFlags;
 
   setScreen: (s: Screen) => void;
   setMap: (m: MapId) => void;
@@ -113,6 +117,7 @@ interface VegaStore {
   pushLog: (l: Omit<LogLine, 'id'>) => void;
   setResult: (r: EndResult | null) => void;
   setDossier: (e: EnemyType | null) => void;
+  setAssist: (a: VegaAssistFlags) => void;
   resetRun: () => void;
 }
 
@@ -131,6 +136,7 @@ export const useGameStore = create<VegaStore>()((set) => ({
   log: [],
   result: null,
   dossier: null,
+  assist: NO_VEGA_ASSIST,
 
   setScreen: (screen) => set({ screen }),
   setMap: (mapId) => set({ mapId }),
@@ -145,6 +151,7 @@ export const useGameStore = create<VegaStore>()((set) => ({
   pushLog: (l) => set((s) => ({ log: [{ ...l, id: logId++ }, ...s.log].slice(0, 6) })),
   setResult: (result) => set({ result }),
   setDossier: (dossier) => set({ dossier }),
+  setAssist: (assist) => set({ assist }),
   resetRun: () =>
     set({
       hud: EMPTY_HUD,
@@ -155,5 +162,6 @@ export const useGameStore = create<VegaStore>()((set) => ({
       log: [],
       result: null,
       dossier: null,
+      assist: NO_VEGA_ASSIST,
     }),
 }));

@@ -16,6 +16,7 @@ Standard pages, rendered inside the sidebar shell.
 | --- | ----- | ------ | ------ |
 | `/news` | RMH News | public | `app/routes/_site/news/index.tsx` |
 | `/news/:slug` | Article not found \| RMH News | public | `app/routes/_site/news/$slug.tsx` |
+| `/news/stories` | Stories \| RMH News | public | `app/routes/_site/news/stories/index.tsx` |
 | `/news/stories/:slug` | — | public | `app/routes/_site/news/stories/$slug.tsx` |
 
 ## Full-screen
@@ -26,4 +27,5 @@ Games, apps and standalone pages that intentionally render without the site shel
 | --- | ----- | ------ | ------ |
 | `/neon-driftway` | — | public | `app/routes/neon-driftway.tsx` |
 | `/news/rss.xml` | RMH News | public | `app/routes/news.rss[.]xml.ts` |
+| `/news/stories/:slug/rss.xml` | — | public | `app/routes/news.stories.$slug.rss[.]xml.ts` |
 | `/nightrail` | — | public | `app/routes/nightrail.tsx` |

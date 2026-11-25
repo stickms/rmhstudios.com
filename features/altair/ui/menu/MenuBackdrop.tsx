@@ -83,7 +83,9 @@ export default function MenuBackdrop() {
         last = now;
         pointer.x += (pointer.tx - pointer.x) * 0.06;
         pointer.y += (pointer.ty - pointer.y) * 0.06;
-        renderCorridor(scene, (now - origin) / 1000, pointer.x, pointer.y);
+        // A frame's timestamp can predate the `performance.now()` read at setup, so the first one is clamped: a
+        // negative time made the drone's frame index negative and threw.
+        renderCorridor(scene, Math.max(0, now - origin) / 1000, pointer.x, pointer.y);
         ctx.putImageData(image, 0, 0);
         if (!painted) {
           painted = true;

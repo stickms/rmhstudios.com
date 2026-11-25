@@ -175,6 +175,15 @@ describe('system notification labels', () => {
 
       // s12-19 notice-helpers
 
+      // Sprint 13 system labels (docs/autonomous/sprint-13/plan.md §Anchors)
+      // s13-07 tube-subscriptions
+
+      // s13-12 news-stories
+      news_story: 'News story',
+
+      // s13-20 message-push
+      dm: 'Message',
+
       default: 'RMH Studios',
     });
   });

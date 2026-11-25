@@ -47,13 +47,21 @@ import {
   registerSohumTrackerAlertCron,
 } from '@/lib/sohumtracker/alerts.server';
 import { AFTER_ERASURE_QUEUE, registerAfterErasureWorker } from '@/lib/account/after-erasure-jobs.server';
+import {
+  BILLING_RECONCILE_QUEUE,
+  registerBillingReconcileCron,
+} from '@/lib/account/deletion-billing-reconcile.server';
 import { registerAltairVerifyWorker } from '@features/altair/engine/verify/queue.server';
 import { registerAltairSoloWorker } from '@features/altair/engine/solo/queue.server';
 import { VERIFY_SOLO_QUEUE } from '@features/altair/engine/solo/job';
 import { VERIFY_COOP_QUEUE } from '@features/altair/engine/verify/job';
 import { registerPostsPlusCrons } from '@/lib/posts-plus/jobs.server';
 import { SEND_SCHEDULED_QUEUE, registerSendScheduledMessagesCron } from '@/lib/messages/scheduled-jobs.server';
+import { EDIT_PRUNE_QUEUE, registerMessageEditPruneCron } from '@/lib/messages/edit-history.server';
 import { PARTY_REMINDERS_QUEUE, registerPartyRemindersCron } from '@/lib/rmhtube/parties-jobs.server';
+import { CHAT_PRUNE_QUEUE, registerChatPruneCron } from '@/lib/rmhtube/chat-reports.server';
+import { PARTY_FANOUT_QUEUE, registerTubePartyFanoutWorker } from '@/lib/rmhtube/subscriptions.server';
+import { STORY_FANOUT_QUEUE, registerStoryArticleFanoutWorker } from '@/lib/reading/story-follows.server';
 import { DAILY_PUZZLE_PREWARM_QUEUE, registerDailyPuzzlePrewarmCron } from '@/lib/daily-puzzles/prewarm.server';
 import { MATCH_CLAIM_QUEUE, registerMatchClaimCron } from '@/lib/tournaments/match-results.server';
 import { MATCH_SCHEDULE_QUEUE, registerMatchScheduleCron } from '@/lib/tournaments/scheduling.server';
@@ -354,6 +362,28 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   // s12-18 deletion-billing
   // s12-18: a work queue fed by a deletion request and by signing back in (one job per member); stops or resumes the membership to match the member's latest choice, retried with backoff.
   { queue: BILLING_SYNC_QUEUE, register: registerBillingSyncWorker },
+
+  // Sprint 13 (docs/autonomous/sprint-13/plan.md §Anchors)
+  // s13-06 tube-chat-reports
+  // s13-06: daily at 04:17 UTC, delete RMHTube chat messages older than 90 days beyond each room's newest 200
+  // (none an open report names) in batches of 1,000.
+  { queue: CHAT_PRUNE_QUEUE, register: registerChatPruneCron },
+
+  // s13-07 tube-subscriptions
+  // s13-07: a work queue fed when a host schedules a public party; tells each subscriber once on a durable fan-out run.
+  { queue: PARTY_FANOUT_QUEUE, register: registerTubePartyFanoutWorker },
+
+  // s13-12 news-stories
+  // s13-12: a work queue fed when an admin links a published article to a story; tells each follower once.
+  { queue: STORY_FANOUT_QUEUE, register: registerStoryArticleFanoutWorker },
+
+  // s13-17 dm-reports
+  // s13-17: nightly, deletes message edit versions older than 30 days unless a report about the message is open.
+  { queue: EDIT_PRUNE_QUEUE, register: registerMessageEditPruneCron },
+
+  // s13-18 billing-hardening
+  // s13-18: hourly at minute 23, queue the billing sync for every deletion hold whose sync has not finished (the queue was down), at most 500, oldest first.
+  { queue: BILLING_RECONCILE_QUEUE, register: registerBillingReconcileCron },
 ];
 
 /**

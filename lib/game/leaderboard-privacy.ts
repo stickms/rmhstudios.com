@@ -121,6 +121,10 @@ export const BOARD_PRIVACY_READ_PATHS = [
   // Sprint 12
   // s12-03 friend-ghosts
   'lib/game/friend-ghosts.server.ts',
+
+  // Sprint 13
+  // s13-05 games-friends
+  'lib/games/activity.server.ts',
 ] as const;
 
 /**

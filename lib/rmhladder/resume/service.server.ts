@@ -5,6 +5,7 @@ import type { LadderAiProviderName } from '../ai/provider.server';
 import { analyzeRedactedResume } from '../ai/resume-review.server';
 import { ensureCachedJobProfile } from '../ai/job-profile.server';
 import { scoreCandidateForJob } from '../matching/score';
+import { catalogJobWhere } from '../own-jobs';
 import type { MatchUserPreferences } from '../matching/score';
 import {
   decryptResumeFile,
@@ -293,6 +294,7 @@ async function refreshMatches(
   const [jobs, prefs, keywords] = await Promise.all([
     prisma.ladderJob.findMany({
       where: {
+        ...catalogJobWhere(),
         status: 'active',
         earlyCareerClassification: { in: ['yes', 'probable'] },
         company: { enabled: true },

@@ -9,18 +9,25 @@ import { WAVES } from '@features/vega/engine/data';
 import type { EndResult } from '@features/vega/engine/GameState';
 import { useVegaNames } from './names';
 import { BestRuns, MenuBackdrop, type BoardRow } from './Menu';
+import { EndNotRanked } from './AssistBits';
 
 export type SubmitState = 'idle' | 'sending' | 'saved' | 'record' | 'refused' | 'offline' | 'signed-out';
 
 export function EndScreen({
   result,
   submit,
+  ranked,
+  assisted,
   board,
   onAgain,
   onMenu,
 }: {
   result: EndResult;
   submit: SubmitState;
+  /** The server's answer; false when assists kept the run off the board. */
+  ranked: boolean | null;
+  /** The run's claim said assists were on (decides the line before the server answers; achievements are withheld). */
+  assisted: boolean;
   board: BoardRow[] | null;
   onAgain: () => void;
   onMenu: () => void;
@@ -105,6 +112,7 @@ export function EndScreen({
         >
           {submitText}
         </p>
+        <EndNotRanked ranked={assisted ? false : ranked} />
 
         <hr className="vg-rule" style={{ margin: '18px 0' }} />
         <dl
@@ -147,7 +155,7 @@ export function EndScreen({
           </div>
         </dl>
 
-        {earned.length > 0 && (
+        {earned.length > 0 && !assisted && (
           <>
             <hr className="vg-rule" style={{ margin: '18px 0' }} />
             <h2 className="vg-tag">{t('end-achievements', { defaultValue: 'Achievements this run' })}</h2>

@@ -1,0 +1,12 @@
+{
+  "conversation-direct": "Direct conversation",
+  "conversation-group": "Group conversation",
+  "earlier-versions": "Edited — earlier versions",
+  "has-image": "Has an image",
+  "no-text": "No text",
+  "no-versions": "No earlier versions are kept.",
+  "removed": "Unsent or removed",
+  "replaced-at": "Replaced {{time}}",
+  "report-message": "Report message",
+  "sent-at": "Sent {{time}}"
+}

@@ -63,6 +63,7 @@ model PredictionPosition {
   yesShares    Float   @default(0)
   noShares     Float   @default(0)
   spent        Int     @default(0) // net coins spent (cost basis)
+  received     Int     @default(0) // coins taken out by selling shares back before resolution
   settled      Boolean @default(false)
   lastP        Float? // implied P(YES) right after the member's latest trade (forecast for scoring)
 

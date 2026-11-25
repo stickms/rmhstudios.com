@@ -54,6 +54,9 @@ const UndercoverEditorHistoryDetail = lazy(
 const RankingFileHistoryDetail = lazy(
   () => import('@/components/rmhbox/minigames/ranking-file/RankingFileHistoryDetail'),
 );
+const SequenceSamHistoryDetail = lazy(
+  () => import('@/components/rmhbox/minigames/sequence-sam/SequenceSamHistoryDetail'),
+);
 
 // ─── Rhyme Time ──────────────────────────────────────────────────
 
@@ -566,5 +569,20 @@ registerHistoryDisplay({
   getSummary: (log: GameLog) => {
     const rounds = log.actions.filter((a) => a.type === 'round_reveal');
     return `${rounds.length} rounds — Ranking trivia`;
+  },
+});
+
+// ─── Sequence Sam ────────────────────────────────────────────────
+
+registerHistoryDisplay({
+  minigameId: 'sequence-sam',
+  DetailComponent: SequenceSamHistoryDetail,
+  searchableFields: [],
+  filterableFields: [],
+  getSummary: (log: GameLog) => {
+    const rounds = log.actions.filter((a) => a.type === 'round_result');
+    const last = rounds[rounds.length - 1]?.payload as Record<string, unknown> | undefined;
+    const longest = typeof last?.length === 'number' ? last.length : 0;
+    return `${rounds.length} rounds, up to ${longest} steps — Memory`;
   },
 });

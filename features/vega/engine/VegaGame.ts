@@ -17,6 +17,7 @@ import { Renderer, type Cursor } from './Renderer';
 import { Simulation, type RunSave, type SimEvent } from './Simulation';
 import { TimeManager } from './TimeManager';
 import { vegaAchievementsFor } from './achievements';
+import { NO_VEGA_ASSIST, type VegaAssistFlags } from './assist-profile';
 import type { EndResult } from './GameState';
 
 export type SfxName =
@@ -39,6 +40,8 @@ export interface VegaGameOptions {
   save?: RunSave | null;
   /** The element whose box the board fits into (defaults to the canvas's parent). */
   container?: HTMLElement | null;
+  /** This run's assist flags (from the server's run claim); none for a plain run. */
+  assist?: VegaAssistFlags;
   /** Ambient motion off (Globe motion: Still). */
   still: () => boolean;
   sfx: (name: SfxName) => void;
@@ -60,6 +63,8 @@ export class VegaGame {
   private renderer: Renderer;
   private time: TimeManager;
   private opts: VegaGameOptions;
+  /** Read once per run: nothing in the frame loop looks the profile up. */
+  private readonly assist: VegaAssistFlags;
   private resizeObserver: ResizeObserver | null = null;
   private animationId = 0;
   private lastFrame = 0;
@@ -81,8 +86,10 @@ export class VegaGame {
     this.ctx = canvas.getContext('2d')!;
     this.opts = opts;
     this.sim = opts.save ? Simulation.restore(opts.save) : new Simulation(opts.map, opts.seed);
-    this.time = new TimeManager(opts.save?.elapsedMs ?? 0);
+    this.assist = opts.assist ?? NO_VEGA_ASSIST;
+    this.time = new TimeManager(opts.save?.elapsedMs ?? 0, this.assist.minSpeed);
     this.renderer = new Renderer(this.ctx);
+    this.renderer.setAssist(this.assist);
     this.seen = new Set(readCatalogued());
 
     this.handleResize();
@@ -434,13 +441,18 @@ export class VegaGame {
     return { cx: c.x, cy: c.y };
   }
 
+  /** Paused blocks the board, unless the no-timed-input assist lets a paused run be played on. */
+  private inputLocked(paused: boolean): boolean {
+    return paused && !this.assist.pauseAnywhere;
+  }
+
   private onPointerDown = (e: PointerEvent) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     const cell = this.cellFromEvent(e);
     if (!cell) return;
     this.keyCursor = null;
     const store = useGameStore.getState();
-    if (store.paused) return;
+    if (this.inputLocked(store.paused)) return;
     // Touch with an instrument chosen: the first tap previews, a second tap on the same bench places.
     if (e.pointerType !== 'mouse' && store.build && !this.sim.entities.getTowerAt(cell.cx, cell.cy)) {
       if (!this.pendingTouch || this.pendingTouch.cx !== cell.cx || this.pendingTouch.cy !== cell.cy) {
@@ -479,7 +491,7 @@ export class VegaGame {
       e.preventDefault();
       return;
     }
-    if (store.paused) return;
+    if (this.inputLocked(store.paused)) return;
     const digit = Number.parseInt(e.key, 10);
     if (digit >= 1 && digit <= TOWER_ORDER.length) {
       const type = TOWER_ORDER[digit - 1]!;

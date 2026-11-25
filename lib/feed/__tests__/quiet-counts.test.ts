@@ -612,6 +612,9 @@ const EXEMPT: Record<string, string> = {
   // s12-06 connections-maker
 
   // s12-07 profile-made
+
+  // Sprint 13 (docs/autonomous/sprint-13/plan.md §Anchors)
+  // s13-05 games-friends
 };
 
 const V1_SERIALISER = /serializePublicPost\(.*, (?:input\.)?(?:userId|viewerId)\)/;

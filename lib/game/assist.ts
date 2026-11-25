@@ -146,13 +146,15 @@ export function profileFor(game: string, settings: AssistSettings): AssistProfil
 
 /**
  * Settings a game honours only in part (sprint 09 17). Neon Driftway has no tap input or reaction
- * window; Laundry Sort has no flash, no shake, no tap input and no clock to slow. A game not listed
+ * window; Laundry Sort has no flash, no shake, no tap input and no clock to slow; Vega has no held input. A game not listed
  * honours all five. A setting a game does not honour is dropped from its profile, so switching on
  * (say) hold to press never costs a Laundry Sort player a ranked run for an assist that does nothing.
  */
 export const HONOURED_SETTINGS: Readonly<Record<string, readonly (keyof AssistSettings)[]>> = {
   'neon-driftway': ['speedFloor', 'calmVisuals', 'colorSafe'],
   'laundry-sort': ['colorSafe', 'noTimedInput'],
+  // Vega has no held input; the other four are real (features/vega/engine/assist-profile.ts).
+  vega: ['speedFloor', 'calmVisuals', 'colorSafe', 'noTimedInput'],
 };
 
 /** The member's settings restricted to what `game` honours; every other field is its default. */
@@ -171,7 +173,7 @@ export function honouredSettings(game: string, settings: AssistSettings): Assist
 /**
  * Games whose client actually honours an assist profile.
  *
- * **Six games today: Synapse Storm, Void Breaker, Dream Rift, Nightrail, Neon Driftway and Laundry Sort.** See the module header: a game
+ * **Seven games today: Synapse Storm, Void Breaker, Dream Rift, Nightrail, Neon Driftway, Laundry Sort and Vega.** See the module header: a game
  * added here without client support trades its players' leaderboard
  * eligibility for nothing. Adding an entry is part of the change that teaches
  * the game to read the profile, alongside the `accessibility` entries in
@@ -185,6 +187,7 @@ export const ASSIST_CAPABLE: ReadonlySet<string> = new Set<string>([
   'nightrail',
   'neon-driftway',
   'laundry-sort',
+  'vega',
 ]);
 
 /**

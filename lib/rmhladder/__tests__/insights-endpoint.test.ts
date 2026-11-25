@@ -183,9 +183,20 @@ describe('GET /api/rmhladder/insights', () => {
   it("reads only the caller's applications, events and preferences", async () => {
     const res = await get();
     expect(res.status).toBe(200);
+    // the caller's applications, on catalogue jobs or the caller's own jobs (feature 08), never another member's
     expect(db.appWheres).toEqual([
       {
         userId: 'u1',
+        job: {
+          OR: [
+            {
+              ownerId: null,
+            },
+            {
+              ownerId: 'u1',
+            },
+          ],
+        },
       },
     ]);
     expect(db.eventWheres).toHaveLength(1);

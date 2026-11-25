@@ -7,6 +7,7 @@
  */
 import { prisma } from '@/lib/prisma.server';
 import { isValidTimeZone } from '@/lib/calendar/tz';
+import { ownerOrCatalogJobWhere } from '@/lib/rmhladder/own-jobs';
 import {
   DEFAULT_QUIET_DAYS,
   computeInsights,
@@ -37,6 +38,8 @@ export async function loadInsights(
     prisma.ladderApplication.findMany({
       where: {
         userId,
+        // Own jobs count in the member's insights; another member's never could.
+        job: ownerOrCatalogJobWhere(userId),
       },
       orderBy: {
         createdAt: 'desc',

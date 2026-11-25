@@ -5,6 +5,7 @@
 import { endpoint } from '@/lib/contract/endpoint';
 import type { RankedChallengeRow, RankedOverview } from '@/lib/ranked.server';
 import type { RankTier } from '@/lib/ranked/tiers';
+import type { RankedStandingResponse } from '@/lib/ranked/standing';
 
 /** The viewer's ratings plus pending / active challenges (the games list alone when signed out). */
 export const getRankedOverviewApi = endpoint<{
@@ -83,4 +84,12 @@ export const actOnRankedChallengeApi = endpoint<{
 }>()({
   method: 'POST',
   path: '/api/ranked/challenge/$id',
+});
+
+/** The signed-in member's own standing in every ranked game this season. The endpoint takes no user id. */
+export const getRankedStandingApi = endpoint<{
+  res: RankedStandingResponse;
+}>()({
+  method: 'GET',
+  path: '/api/ranked/standing',
 });

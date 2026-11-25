@@ -191,6 +191,15 @@ export function systemLabels(t: TFunction): Record<string, string> {
 
     // s12-19 notice-helpers
 
+    // Sprint 13 system labels (docs/autonomous/sprint-13/plan.md §Anchors)
+    // s13-07 tube-subscriptions
+
+    // s13-12 news-stories
+    news_story: t('system-label-news_story', { ns: 'feed', defaultValue: 'News story' }),
+
+    // s13-20 message-push
+    dm: t('system-label-dm', { ns: 'feed', defaultValue: 'Message' }),
+
     default: t('system-label-default', { ns: 'feed', defaultValue: 'RMH Studios' }),
   };
 }

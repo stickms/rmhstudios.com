@@ -3,6 +3,7 @@ import { Send, MessageCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ChatOffNotice } from './RideSafety';
 
 export interface RideChatMessage {
   id: string;
@@ -16,10 +17,12 @@ interface RideChatProps {
   currentUserId: string;
   onSend: (content: string) => Promise<void> | void;
   disabled?: boolean;
+  /** Chat is off for this trip (a block, or the trip ended): the box is replaced by one line. */
+  closed?: boolean;
   otherName?: string;
 }
 
-export function RideChat({ messages, currentUserId, onSend, disabled, otherName }: RideChatProps) {
+export function RideChat({ messages, currentUserId, onSend, disabled, closed, otherName }: RideChatProps) {
   const { t } = useTranslation('c-rideshare');
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -85,7 +88,7 @@ export function RideChat({ messages, currentUserId, onSend, disabled, otherName 
                       : 'rounded-bl-sm bg-site-surface-hover text-site-text'
                   }`}
                 >
-                  {m.content}
+                  <span dir="auto">{m.content}</span>
                 </div>
               </div>
             );
@@ -93,37 +96,41 @@ export function RideChat({ messages, currentUserId, onSend, disabled, otherName 
         )}
       </div>
 
-      <form onSubmit={submit} className="flex items-center gap-2 border-t border-site-border p-3">
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          disabled={disabled}
-          maxLength={500}
-          aria-label={t('type-message', {
-            defaultValue: 'Type a message…',
-          })}
-          placeholder={
-            disabled
-              ? t('chat-unavailable', {
-                  defaultValue: 'Chat unavailable',
-                })
-              : t('type-message', {
-                  defaultValue: 'Type a message…',
-                })
-          }
-          className="min-w-0 flex-1"
-        />
-        <Button
-          type="submit"
-          size="icon"
-          disabled={disabled || sending || !input.trim()}
-          aria-label={t('send-message', {
-            defaultValue: 'Send message',
-          })}
-        >
-          <Send aria-hidden />
-        </Button>
-      </form>
+      {closed ? (
+        <ChatOffNotice />
+      ) : (
+        <form onSubmit={submit} className="flex items-center gap-2 border-t border-site-border p-3">
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            disabled={disabled}
+            maxLength={500}
+            aria-label={t('type-message', {
+              defaultValue: 'Type a message…',
+            })}
+            placeholder={
+              disabled
+                ? t('chat-unavailable', {
+                    defaultValue: 'Chat unavailable',
+                  })
+                : t('type-message', {
+                    defaultValue: 'Type a message…',
+                  })
+            }
+            className="min-w-0 flex-1"
+          />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={disabled || sending || !input.trim()}
+            aria-label={t('send-message', {
+              defaultValue: 'Send message',
+            })}
+          >
+            <Send aria-hidden />
+          </Button>
+        </form>
+      )}
     </div>
   );
 }

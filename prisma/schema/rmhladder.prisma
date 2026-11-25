@@ -103,6 +103,9 @@ model LadderCompany {
   notes            String?
   enabled          Boolean  @default(true)
   createdAt        DateTime @default(now())
+  /// Null for the shared catalogue; a member's own company ("a job found elsewhere") is theirs alone.
+  ownerId          String?
+  owner            User?    @relation("LadderOwnCompanies", fields: [ownerId], references: [id], onDelete: Cascade)
 
   sources          LadderSource[]
   jobs             LadderJob[]
@@ -192,6 +195,9 @@ model LadderJob {
   lastSeenAt                DateTime?
   lastCheckedAt             DateTime?
   lastVerifiedAt            DateTime?
+  /// Null for the shared catalogue; a job a member added themselves is read by its owner alone.
+  ownerId                   String?
+  owner                     User?                @relation("LadderOwnJobs", fields: [ownerId], references: [id], onDelete: Cascade)
 
   verifications LadderVerification[]
   reviewTasks   LadderReviewTask[]
@@ -209,6 +215,7 @@ model LadderJob {
   @@index([companyId, status])
   @@index([dedupeHash])
   @@index([status, payMaxAnnual])
+  @@index([ownerId])
   @@map("ladder_job")
 }
 
@@ -349,6 +356,8 @@ model LadderUserPrefs {
   quietHoursStart       Int?
   quietHoursEnd         Int?
   resumeMatchThreshold  Int?
+  // s13-09: interviews, follow-ups and deadlines on /calendar "Yours" and in the private feed (opt-in).
+  calendarInFeed        Boolean               @default(false)
 
   @@map("ladder_user_prefs")
 }

@@ -11,6 +11,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { NoteCount } from '@/components/admin/reports/NoteCount';
+import { DmReportMessage } from '@/components/moderation/DmReportMessage';
+import type { DmReportView } from '@/lib/messages/dm-report';
 import { MacroField } from '@/components/safety/MacroField';
 import { useArrival } from '@/components/ui/arrive';
 import { toast } from '@/lib/toast';
@@ -45,6 +47,7 @@ interface Report {
   reporter: ReportUser;
   targetUser: ReportUser | null;
   targetNoteCount: number;
+  dm?: DmReportView | null;
 }
 
 /** Where the reported thing lives, when the report names enough to link to it. */
@@ -242,6 +245,8 @@ export function ReportList({
                 </div>
 
                 {r.details && <p className="t-body text-site-text">{r.details}</p>}
+
+                {r.dm && <DmReportMessage view={r.dm} />}
 
                 <div className="t-body flex flex-wrap items-center gap-x-4 gap-y-2 text-site-text-muted">
                   <span className="inline-flex items-center gap-2">

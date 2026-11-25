@@ -11,7 +11,7 @@
  * `icons-*` chunk into the bundle graph.
  *
  * So the map is explicit, the same way `CommandPalette`'s `DESTINATION_ICONS`
- * already does it. Only the ten lucide
+ * already does it. Only the eleven lucide
  * names the registry actually uses are imported; registry entries whose `icon`
  * is an emoji resolve to `null` here and the caller renders the character.
  *
@@ -23,6 +23,7 @@ import {
   Clapperboard,
   Flame,
   Globe,
+  Grid2x2,
   ListCollapse,
   ListOrdered,
   MicVocal,
@@ -47,6 +48,7 @@ export const MINIGAME_ICONS: Record<string, LucideIcon> = {
   clapperboard: Clapperboard,
   flame: Flame,
   globe: Globe,
+  'grid-2x2': Grid2x2,
   'list-collapse': ListCollapse,
   'list-ordered': ListOrdered,
   'mic-vocal': MicVocal,

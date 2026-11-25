@@ -208,8 +208,8 @@ export interface PartyRoll {
   visibility: RollVisibility;
   dc: number | null;
   degree: Degree | null;
-  /** Who rolled: a character (named from the party's current seat), the game master, or one who left. */
-  who: { kind: 'character'; name: string } | { kind: 'gm' } | { kind: 'left' };
+  /** Who rolled: a character (named from the party's current seat), the game master, or one who left. `hidden`: a player the reader is blocked with. */
+  who: { kind: 'character'; name: string } | { kind: 'gm' } | { kind: 'left' } | { kind: 'hidden' };
   /** Whether the viewer made this roll. */
   mine: boolean;
 }

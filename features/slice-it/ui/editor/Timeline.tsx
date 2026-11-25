@@ -34,6 +34,7 @@ import { activePlaytest } from '@features/slice-it/engine/editor/playtest';
 import { useLintIssues } from '@features/slice-it/engine/editor/useLint';
 import type { DifficultyPlan } from '@features/slice-it/engine/editor/generate';
 import { QUANT_COLORS, readEditorTheme, type EditorTheme } from './theme';
+import { HeatRow } from './HeatRow';
 
 /** Left gutter, in CSS pixels, holding the bar/beat ruler (§4.2). */
 const GUTTER = 58;
@@ -659,50 +660,54 @@ export function Timeline() {
   const position = barBeatAt(playhead, timingPoints);
 
   return (
-    <div ref={wrapperRef} className="editor-timeline relative h-full w-full overflow-hidden">
-      <canvas
-        ref={canvasRef}
-        tabIndex={0}
-        role="application"
-        aria-label={t('editor-timeline-label', {
-          defaultValue: 'Chart timeline. Bar {{bar}}, beat {{beat}}.',
-          bar: position.bar,
-          beat: position.beat,
-        })}
-        className="h-full w-full touch-none outline-none"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        onPointerLeave={() => {
-          hoverRef.current = null;
-          dirtyRef.current = true;
-        }}
-        onContextMenu={(event) => event.preventDefault()}
-      />
-      <ul
-        role="listbox"
-        aria-label={t('editor-note-list-label', {
-          defaultValue: 'Notes in view',
-        })}
-        aria-multiselectable
-        className="sr-only"
-      >
-        {visibleNotes.map((note) => {
-          const at = barBeatAt(note.time, timingPoints);
-          return (
-            <li key={note.id} role="option" aria-selected={Boolean(note.selected)}>
-              {t('editor-note-option', {
-                defaultValue: '{{type}} note, lane {{lane}}, bar {{bar}} beat {{beat}}',
-                type: note.type,
-                lane: note.lane + 1,
-                bar: at.bar,
-                beat: at.beat,
-              })}
-            </li>
-          );
-        })}
-      </ul>
+    <div className="flex h-full w-full flex-col">
+      {/* The canvas is sized from this wrapper alone, so the heat row below it never changes the canvas. */}
+      <div ref={wrapperRef} className="editor-timeline relative min-h-0 w-full flex-1 overflow-hidden">
+        <canvas
+          ref={canvasRef}
+          tabIndex={0}
+          role="application"
+          aria-label={t('editor-timeline-label', {
+            defaultValue: 'Chart timeline. Bar {{bar}}, beat {{beat}}.',
+            bar: position.bar,
+            beat: position.beat,
+          })}
+          className="h-full w-full touch-none outline-none"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          onPointerLeave={() => {
+            hoverRef.current = null;
+            dirtyRef.current = true;
+          }}
+          onContextMenu={(event) => event.preventDefault()}
+        />
+        <ul
+          role="listbox"
+          aria-label={t('editor-note-list-label', {
+            defaultValue: 'Notes in view',
+          })}
+          aria-multiselectable
+          className="sr-only"
+        >
+          {visibleNotes.map((note) => {
+            const at = barBeatAt(note.time, timingPoints);
+            return (
+              <li key={note.id} role="option" aria-selected={Boolean(note.selected)}>
+                {t('editor-note-option', {
+                  defaultValue: '{{type}} note, lane {{lane}}, bar {{bar}} beat {{beat}}',
+                  type: note.type,
+                  lane: note.lane + 1,
+                  bar: at.bar,
+                  beat: at.beat,
+                })}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+      <HeatRow />
     </div>
   );
 }
@@ -766,8 +771,6 @@ function draw(
   drawHitMarks(ctx, view, notes);
   drawSelectionBox(ctx, theme, options.drag);
   drawPlayhead(ctx, view, theme);
-
-  // TODO(phase 8 — §4.4b): the aggregate miss-rate heat tint, once O1 exists.
 }
 
 /**

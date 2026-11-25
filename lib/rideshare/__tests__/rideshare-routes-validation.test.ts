@@ -83,6 +83,8 @@ interface Case {
   body: unknown;
   status: number;
   error: string;
+  /** The taxonomy code the route now answers with (the five ride routes, s13-15). */
+  code?: string;
 }
 
 const VALID_RIDE = {
@@ -102,7 +104,8 @@ const CASES: Case[] = [
     method: 'POST',
     body: { rating: 9 },
     status: 400,
-    error: 'Rating must be 1–5.',
+    error: 'Check the form and try again',
+    code: 'INVALID_INPUT',
   },
   {
     name: 'rate: malformed JSON (was a 500 before)',
@@ -110,7 +113,8 @@ const CASES: Case[] = [
     method: 'POST',
     body: '{nope',
     status: 400,
-    error: 'Rating must be 1–5.',
+    error: 'Check the form and try again',
+    code: 'INVALID_INPUT',
   },
   {
     name: 'messages: empty',
@@ -118,7 +122,8 @@ const CASES: Case[] = [
     method: 'POST',
     body: { content: '   ' },
     status: 400,
-    error: 'Message is empty or too long.',
+    error: 'Check the form and try again',
+    code: 'INVALID_INPUT',
   },
   {
     name: 'messages: too long',
@@ -126,7 +131,8 @@ const CASES: Case[] = [
     method: 'POST',
     body: { content: 'x'.repeat(501) },
     status: 400,
-    error: 'Message is empty or too long.',
+    error: 'Check the form and try again',
+    code: 'INVALID_INPUT',
   },
   {
     name: 'ride action: unknown action',
@@ -134,7 +140,8 @@ const CASES: Case[] = [
     method: 'POST',
     body: { action: 'explode' },
     status: 400,
-    error: 'Invalid action',
+    error: 'Check the form and try again',
+    code: 'INVALID_INPUT',
   },
   {
     name: 'ride action: tip over the cap',
@@ -142,7 +149,8 @@ const CASES: Case[] = [
     method: 'POST',
     body: { action: 'tip', tipCents: 10_000_000 },
     status: 400,
-    error: 'Invalid action',
+    error: 'Check the form and try again',
+    code: 'INVALID_INPUT',
   },
   {
     name: 'location: not numbers',
@@ -190,7 +198,8 @@ const CASES: Case[] = [
     method: 'POST',
     body: { ...VALID_RIDE, rideClass: 'NOPE' },
     status: 400,
-    error: 'Invalid ride class',
+    error: 'Check the form and try again',
+    code: 'INVALID_INPUT',
   },
   {
     name: 'ride create: coordinates outside the globe',
@@ -198,7 +207,8 @@ const CASES: Case[] = [
     method: 'POST',
     body: { ...VALID_RIDE, pickupLat: 999 },
     status: 400,
-    error: 'Invalid coordinates',
+    error: 'Check the form and try again',
+    code: 'INVALID_INPUT',
   },
   {
     name: 'ride create: schedule too soon',
@@ -206,7 +216,8 @@ const CASES: Case[] = [
     method: 'POST',
     body: { ...VALID_RIDE, scheduledFor: new Date(Date.now() + 60_000).toISOString() },
     status: 400,
-    error: 'Please choose a pickup time at least 5 minutes from now.',
+    error: 'Choose a pickup time at least 5 minutes from now',
+    code: 'RIDE_SCHEDULE_TOO_SOON',
   },
   {
     name: 'ride create: schedule too far',
@@ -214,7 +225,8 @@ const CASES: Case[] = [
     method: 'POST',
     body: { ...VALID_RIDE, scheduledFor: new Date(Date.now() + 40 * 86_400_000).toISOString() },
     status: 400,
-    error: 'You can schedule rides up to 30 days ahead.',
+    error: 'You can schedule rides up to 30 days ahead',
+    code: 'RIDE_SCHEDULE_TOO_FAR',
   },
   {
     name: 'saved place: coordinates outside the globe',
@@ -242,7 +254,7 @@ const CASES: Case[] = [
   },
 ];
 
-describe('rideshare routes keep their bespoke 400 messages', () => {
+describe('rideshare routes keep their bespoke 400 messages (the ride routes answer with codes)', () => {
   for (const c of CASES) {
     it(c.name, async () => {
       if (c.mod.includes('admin.rideshare.applications')) {
@@ -256,7 +268,7 @@ describe('rideshare routes keep their bespoke 400 messages', () => {
         expect(json.error.length).toBeGreaterThan(0);
         expect(json.error).not.toBe('Invalid input');
       } else {
-        expect(json).toEqual({ error: c.error });
+        expect(json).toEqual(c.code ? { error: c.error, code: c.code } : { error: c.error });
       }
     });
   }

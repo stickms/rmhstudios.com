@@ -9,6 +9,7 @@ import { validateScore } from '@/lib/game/registry';
 import { grantAchievement } from '@/lib/achievements/engine.server';
 import { prisma } from '@/lib/prisma.server';
 import { recordGamePlay } from '@/lib/quests/engine.server';
+import { consumeAssistRun } from '@/lib/game/assist-run.server';
 
 /**
  * Record a finished Project Vega run.
@@ -21,6 +22,10 @@ import { recordGamePlay } from '@/lib/quests/engine.server';
  * Checks, in order: the catalog rules (ceiling, wave cap, score per second, minimum duration), the score formula's
  * bound for the waves cleared on that map, and the consistency of the achievement facts. A run that fails the
  * first two is refused; implausible facts only withhold the achievements.
+ *
+ * An assisted run (P7) never reaches the board. The server decides, from the claim made at run start
+ * (`consumeAssistRun`), never from the body: the player row IS this game's board, so it is left alone, no
+ * achievement is granted, and the play still counts toward quests. The response says `ranked: false`.
  */
 export const route = apiRoute('/api/vega/score', {
   POST: implement(
@@ -39,6 +44,20 @@ export const route = apiRoute('/api/vega/score', {
       }
 
       const userId = session.user.id;
+
+      if (await consumeAssistRun(userId, 'vega')) {
+        await recordGamePlay(userId);
+        const best = await prisma.vegaPlayer.findUnique({ where: { userId } });
+        return Response.json({
+          success: true,
+          isRecord: false,
+          bestScore: best?.highestLevel ?? 0,
+          bestWave: best?.highestLoop ?? 0,
+          unlocked: [],
+          ranked: false,
+        });
+      }
+
       const username = session.user.name || session.user.email || 'Anonymous';
       const existing = await prisma.vegaPlayer.findUnique({ where: { userId } });
       const isRecord = !existing || score > existing.highestLevel;
@@ -71,6 +90,7 @@ export const route = apiRoute('/api/vega/score', {
         bestScore: row.highestLevel,
         bestWave: row.highestLoop,
         unlocked,
+        ranked: true,
       });
     },
   ),

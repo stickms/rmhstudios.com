@@ -415,7 +415,10 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     // Best score and wave ride the player's own VegaPlayer row; the run in progress is kept in localStorage
     // between waves (resume from the menu).
     save: 'own-table',
-    accessibility: [],
+    // Shared assists (features/vega/engine/assist-profile.ts): a slower run clock, calm visuals (no leak flash,
+    // stains or muzzle flashes), a colour-safe palette with an outline glyph per specimen, and a paused run
+    // that can still place, sell and upgrade. An assisted run stays off the board.
+    accessibility: ['assist-mode', 'reduced-flashing', 'colorblind-safe', 'no-timed-input'],
     // Clinical body horror: specimens burst and stain the board when they die.
     descriptors: ['violence'],
   },

@@ -832,6 +832,7 @@ model CustomFeed {
   owner         User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   subscriptions CustomFeedSubscription[]
   members       CustomFeedMember[]
+  leaves        ListLeave[]
 
   @@index([ownerId])
   @@index([ownerId, kind])
@@ -865,6 +866,21 @@ model CustomFeedMember {
   @@id([feedId, userId])
   @@index([userId]) // "lists you're on"
   @@map("custom_feed_member")
+}
+
+/// s13-11 — a member left a list and stays off it: the owner can never add them to that list again (the site and the
+/// developer API both refuse). Erased with the member; the rows on a list go with the list.
+model ListLeave {
+  feedId String
+  userId String
+  at     DateTime @default(now())
+
+  feed CustomFeed @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([feedId, userId])
+  @@index([userId])
+  @@map("custom_feed_leave")
 }
 
 /// A5 — a row means the member opted in to "On this day" notifications.

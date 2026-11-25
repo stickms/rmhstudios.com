@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
+import { ownerOrCatalogJobWhere } from '@/lib/rmhladder/own-jobs';
 import { getClientIp, rateLimit } from '@/lib/rate-limit';
 import { readTextBodyLimited, RequestBodyTooLargeError } from '@/lib/http-body.server';
 
@@ -61,8 +62,9 @@ export const Route = createFileRoute('/api/rmhladder/events')({
         if (!session?.user) return new Response(null, { status: 204 });
 
         if (parsed.data.jobId) {
-          const exists = await prisma.ladderJob.findUnique({
-            where: { id: parsed.data.jobId },
+          // An event may name a catalogue job or the caller's own job, never another member's.
+          const exists = await prisma.ladderJob.findFirst({
+            where: { id: parsed.data.jobId, ...ownerOrCatalogJobWhere(session.user.id) },
             select: { id: true },
           });
           if (!exists) return Response.json({ error: 'Job not found' }, { status: 404 });

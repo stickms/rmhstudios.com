@@ -9,6 +9,7 @@ import { CalendarClock, Users } from 'lucide-react';
 import { apiQuery } from '@/lib/contract/client';
 import { listPartiesApi, type PartyDTO } from '@/lib/rmhtube/parties.contract';
 import { useArrival } from '@/components/ui/arrive';
+import SubscribeButton from './SubscribeButton';
 import { formatPartyTime, formatRelativeStart } from './party-format';
 
 function Row({ party, locale, nowMs }: { party: PartyDTO; locale: string; nowMs: number }) {
@@ -50,6 +51,15 @@ function Row({ party, locale, nowMs }: { party: PartyDTO; locale: string; nowMs:
           </span>
         </div>
       </Link>
+      <p className="flex items-center gap-2 pb-3 text-xs text-app-text-muted">
+        <span>
+          {t('hosted-by', {
+            defaultValue: 'Hosted by {{name}}',
+            name: party.host.name ?? '',
+          })}
+        </span>
+        <SubscribeButton hostId={party.host.id} hostName={party.host.name} isSelf={party.viewerIsHost} />
+      </p>
     </li>
   );
 }

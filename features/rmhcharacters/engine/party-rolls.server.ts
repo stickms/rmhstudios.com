@@ -25,6 +25,7 @@ import { prisma } from '@/lib/prisma.server';
 import type { WordSource } from '@/lib/toolbox/random';
 import { loadDnd5e, loadPf2e } from './data';
 import { normalizeCharacter } from './factory';
+import { hiddenFrom, partyAccess } from './party-access.server';
 import {
   cursorOf,
   damageTextFor,
@@ -71,23 +72,6 @@ async function partyFor(userId: string, partyId: string) {
   });
 }
 
-/** A player under a ban, or blocked in either direction with the game master, is shut out of the table. */
-async function shutOut(userId: string, party: { ownerId: string }): Promise<boolean> {
-  const me = await prisma.user.findUnique({ where: { id: userId }, select: { bannedUntil: true } });
-  if (!me || (me.bannedUntil && me.bannedUntil.getTime() > Date.now())) return true;
-  if (party.ownerId === userId) return false;
-  const block = await prisma.userBlock.findFirst({
-    where: {
-      OR: [
-        { blockerId: userId, blockedId: party.ownerId },
-        { blockerId: party.ownerId, blockedId: userId },
-      ],
-    },
-    select: { id: true },
-  });
-  return !!block;
-}
-
 interface Seat {
   characterId: string;
   name: string;
@@ -128,10 +112,18 @@ const ROLL_SELECT = {
 } as const;
 
 /** One stored row as a viewer sees it. `seats` is the party's current seating (player → character and name). */
-function viewOf(row: StoredRoll, ownerId: string, seats: ReadonlyMap<string, Seat>, viewerId: string): PartyRoll {
+function viewOf(
+  row: StoredRoll,
+  ownerId: string,
+  seats: ReadonlyMap<string, Seat>,
+  viewerId: string,
+  hidden: ReadonlySet<string> = new Set(),
+): PartyRoll {
   const seat = seats.get(row.userId);
-  const who: PartyRoll['who'] =
-    row.characterId === null
+  // A player the reader is blocked with is "a player" here too, as in the party view: no character name.
+  const who: PartyRoll['who'] = hidden.has(row.userId)
+    ? { kind: 'hidden' }
+    : row.characterId === null
       ? row.userId === ownerId
         ? { kind: 'gm' }
         : { kind: 'left' }
@@ -214,7 +206,7 @@ export async function rollForParty(
   if (!party) return refuse('NOT_FOUND');
   const isGm = party.ownerId === userId;
 
-  if (await shutOut(userId, party)) return refuse('FORBIDDEN');
+  if (!(await partyAccess(userId, party))) return refuse('FORBIDDEN');
 
   const seat = await prisma.rmhCharacterPartyMember.findFirst({
     where: { partyId, userId },
@@ -372,7 +364,7 @@ export async function listPartyRolls(userId: string, partyId: string, after?: st
   const party = await partyFor(userId, partyId);
   if (!party) return null;
   // A banned or blocked player reads nothing: the same 404 as a removed one.
-  if (await shutOut(userId, party)) return null;
+  if (!(await partyAccess(userId, party))) return null;
   const viewer = { userId, isGm: party.ownerId === userId };
 
   const and: Record<string, unknown>[] = [visibilityWhere(viewer)];
@@ -392,8 +384,12 @@ export async function listPartyRolls(userId: string, partyId: string, after?: st
   const last = page[page.length - 1];
   const seats = page.length > 0 ? await seatsOf(partyId) : new Map<string, Seat>();
   const mine = seats.get(userId) ?? (await ownSeat(partyId, userId));
+  const hidden = await hiddenFrom(
+    userId,
+    page.map((r) => r.userId),
+  );
   return {
-    rolls: page.map((r) => viewOf(r, party.ownerId, seats, userId)),
+    rolls: page.map((r) => viewOf(r, party.ownerId, seats, userId, hidden)),
     next: rows.length > PARTY_ROLL_PAGE && last ? cursorOf(last) : null,
     mine: { characterId: mine?.characterId ?? null },
   };

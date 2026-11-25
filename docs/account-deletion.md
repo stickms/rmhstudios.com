@@ -22,11 +22,11 @@ The `User` row is anonymised in place, never removed, so `onDelete: Cascade` fro
 
 The clearly private leaf tables (birthday, reminders, drafts, saves, history, settings, notifications, and private reading highlights) are erased by `coverageErasureOps` in `lib/account/erasure-coverage.server.ts`.
 
-409 models are classified.
+413 models are classified.
 
 ## Erased
 
-Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row stays with its member reference replaced or nulled; a `cascade` row goes with its parent in the database. 253 models.
+Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row stays with its member reference replaced or nulled; a `cascade` row goes with its parent in the database. 257 models.
 
 | Model | Decision | Reason |
 | --- | --- | --- |
@@ -144,6 +144,8 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `LadderAnswerBank` | erase | Private RMHLadder data (resumes, applications, salary and EEO answers, alerts, offers) erased in the sprint 02 and 03 passes. |
 | `LadderApplication` | erase | Private RMHLadder data (resumes, applications, salary and EEO answers, alerts, offers) erased in the sprint 02 and 03 passes. |
 | `LadderApplicationEvent` | cascade | Timeline rows of an application, deleted by the database with the application. Parent: `LadderApplication`. |
+| `LadderCompany` | erase | A company row the member created for a job they found elsewhere (s13-08); deleted by ownerId after their own jobs. The shared catalogue rows have no owner and are never touched. Scope: rows the member owns (ownerId). |
+| `LadderJob` | erase | A job the member added themselves (s13-08); deleted by ownerId, which takes its applications, events and offer with it. The shared catalogue rows have no owner and are never touched. Scope: rows the member owns (ownerId). |
 | `LadderJobAction` | erase | Private RMHLadder data (resumes, applications, salary and EEO answers, alerts, offers) erased in the sprint 02 and 03 passes. |
 | `LadderJobMatch` | erase | Explicit delete by userId (not `cascade`: the coverage test needs a direct cascade relation to an erase parent). The database cascade also fires when the resume goes. |
 | `LadderKeyword` | erase | Private RMHLadder data (resumes, applications, salary and EEO answers, alerts, offers) erased in the sprint 02 and 03 passes. |
@@ -164,6 +166,7 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `LibraryReaderMark` | erase | Synced reading places, bookmarks and notes (sprint 04 reading-sync). |
 | `LightsOutBoardPlay` | erase | The member's own plays and best moves (their row on a board's fewest-moves list). No children: it is the child of `LightsOutBoard`, whose anonymous play and solve tallies stay (counter rule). |
 | `Listing` | erase | Live market listings (the escrowed card goes with the inventory); finished sales stay as anonymous price history. Scope: active listings only. |
+| `ListLeave` | erase | The member's own leave rows are deleted with the account (`listLeaveErasureOps`); the rows on a list the member owns go with the list by the cascade. |
 | `LoadoutPreset` | erase | Saved cosmetic loadouts; the items stay with the inventory decision. |
 | `MarathonList` | erase | A personal reading list; its shareId page 404s afterwards (the share page reads only this row). |
 | `MedApplicantProfile` | erase | The member's private applicant stats (MCAT attempts, GPAs, hours, notes); attempts, hours and activities go by the database cascade. Never aggregated or public. |
@@ -187,6 +190,7 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `MusicSprintDaily` | erase | Every RMH Music learning table (owner decision Q4). |
 | `NdwLivery` | erase | A cosmetic save; no board. |
 | `NeonDriftwayPlayer` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
+| `NewsStoryFollow` | erase | Rule 1: the member's own story follows, erased by storyFollowErasureOps (sprint 13 news-stories). |
 | `NightrailPlayer` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
 | `Notification` | erase | Rule 1: notifications addressed to the member (userId); notifications about them sent to others (actorId, onDelete SetNull) stay and render "Deleted user". Scope: rows addressed to the member (userId). |
 | `NotificationPreference` | erase | Rule 1: settings only the member sees. |

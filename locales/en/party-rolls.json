@@ -43,6 +43,7 @@
   "what.save": "{{name}} save",
   "what.strike": "Strike, attack {{n}}",
   "who.gm": "Game master",
+  "who.hidden": "A player",
   "who.left": "A character who left",
   "who.unnamed": "Unnamed character"
 }

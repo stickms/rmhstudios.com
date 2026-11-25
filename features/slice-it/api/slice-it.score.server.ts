@@ -21,6 +21,8 @@ import { evaluateQualification, toRankStatus } from '@features/slice-it/engine/r
 import { scheduleSkillRecompute } from '@features/slice-it/engine/rating.server';
 import { gradeFor } from '@features/slice-it/engine/scoring';
 import { getPracticeStreak, reportSliceItRun } from '@features/slice-it/engine/progression.server';
+import { recordNoteStats } from '@features/slice-it/engine/ops.server';
+import { validateMissTimes } from '@features/slice-it/engine/miss-times';
 import type { Difficulty } from '@features/slice-it/engine/constants';
 import type { SuspicionCode } from '@features/slice-it/engine/integrity';
 
@@ -125,6 +127,10 @@ export const route = apiRoute('/api/slice-it/score', {
         return Response.json({ error: 'Song not found' }, { status: 404 });
       }
 
+      // Resolved before the integrity checks: a chart run is bounded by the chart's own notes, not by the song's
+      // generated ones.
+      const chart = await resolveChart(body.chartId, song.id);
+
       const scoreCeiling = maxPlausibleScore(song.duration, modifiers);
       const comboCeiling = maxPlausibleCombo(song.duration);
       if (body.score > scoreCeiling || body.maxCombo > comboCeiling) {
@@ -158,7 +164,9 @@ export const route = apiRoute('/api/slice-it/score', {
           accuracy: body.accuracy,
           maxCombo: body.maxCombo,
           notesResolved: body.notesResolved,
-          chartNotes: chartNoteCount(song.analysisData, modifiers.difficulty),
+          chartNotes: chart
+            ? judgedEvents(Array.isArray(chart.notes) ? chart.notes : [])
+            : chartNoteCount(song.analysisData, modifiers.difficulty),
           durationSeconds: song.duration,
           modifiers,
         }),
@@ -198,7 +206,23 @@ export const route = apiRoute('/api/slice-it/score', {
       // — or to somebody else's song entirely.
       const difficulty: Difficulty = modifiers.difficulty;
       const modPool = poolOf(modifiers);
-      const chart = await resolveChart(body.chartId, song.id);
+
+      // ── A run on a picked chart is not on the song's board ────────────
+      //
+      // The board key (`songId, difficulty, modPool, userId`) has no chart dimension, so a member chart's run would
+      // overwrite the player's best on the generated chart. Decided from the submission, not from whether the id
+      // resolved: a chart that was unpublished mid-run still names a chart, and its run is still not a board run.
+      const isChartRun = body.chartId !== undefined;
+      // For a chart run the best to beat is the player's own best on this chart, read BEFORE this run is written
+      // below (or it would be its own previous best).
+      const previousChartBest =
+        isChartRun && chart
+          ? await prisma.sliceRun.findFirst({
+              where: { userId, chartId: chart.id, difficulty, modPool },
+              orderBy: { score: 'desc' },
+              select: { score: true },
+            })
+          : null;
 
       // ── R6: the run, appended before anything is overwritten ──────────
       //
@@ -209,7 +233,7 @@ export const route = apiRoute('/api/slice-it/score', {
       //
       // Best-effort on purpose: a failed history write must not cost the
       // player the personal best they just set. It is logged, not raised.
-      await prisma.sliceRun
+      const storedRun = await prisma.sliceRun
         .create({
           data: {
             userId,
@@ -247,6 +271,7 @@ export const route = apiRoute('/api/slice-it/score', {
             songId: song.id,
             error: error instanceof Error ? error.message : String(error),
           });
+          return null;
         });
 
       // Career totals. `upsert` on the unique `userId` replaces a
@@ -279,21 +304,24 @@ export const route = apiRoute('/api/slice-it/score', {
         songId_difficulty_modPool_userId: { songId: song.id, difficulty, modPool, userId },
       };
 
-      const previous = await prisma.songLeaderboard.findUnique({
-        where: boardKey,
-        select: { score: true },
-      });
-      const isNewBest = !previous || score > previous.score;
+      const previous = isChartRun
+        ? previousChartBest
+        : await prisma.songLeaderboard.findUnique({
+            where: boardKey,
+            select: { score: true },
+          });
+      // A run that names a chart which no longer resolves has nothing to be a best of.
+      const isNewBest = isChartRun && !chart ? false : !previous || score > previous.score;
 
-      if (isNewBest) {
+      if (isNewBest && !isChartRun) {
         const best = {
           score,
           maxCombo,
           accuracy,
           speedMod: modifiers.speed,
           modifiers: modifiers as unknown as Prisma.InputJsonValue,
-          chartId: chart?.id ?? null,
-          chartHash: chart?.chartHash ?? null,
+          chartId: null,
+          chartHash: null,
           // Denormalised from the run so `H8`'s lamp survives into the board
           // without a join back to a `SliceRun` row. Decorative — see
           // `ScoreSubmissionZ`.
@@ -371,6 +399,25 @@ export const route = apiRoute('/api/slice-it/score', {
       // response, only the number in it.
       const practiceStreak = await getPracticeStreak(userId).catch(() => null);
 
+      // The sampled miss heat. Telemetry: decided after everything above, never awaited, and a failure in it (a bad
+      // list, a database error) is logged and changes nothing the player was told.
+      if (chart && storedRun && body.cleared) {
+        const outcomes = validateMissTimes(chart.notes, body.missedNoteMs, body.noteCount);
+        if (outcomes) {
+          void recordNoteStats({
+            runId: storedRun.id.toString(),
+            chartId: chart.id,
+            chartHash: chart.chartHash,
+            outcomes: outcomes.outcomes,
+          }).catch((error: unknown) => {
+            console.warn('[slice-it] note stats write failed', {
+              chartId: chart.id,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          });
+        }
+      }
+
       return Response.json({
         success: true,
         ranked: true,
@@ -411,11 +458,13 @@ export const route = apiRoute('/api/slice-it/score', {
 async function resolveChart(
   chartId: string | undefined,
   songId: string,
-): Promise<{ id: string; chartHash: string; rankStatus: string } | null> {
+): Promise<{ id: string; chartHash: string; rankStatus: string; notes: unknown } | null> {
   if (!chartId) return null;
+  // Published charts only. A draft is its author's playtest and is never submitted: a run that names one is recorded
+  // without a chart identity (and, like every run that names a chart, stays off the board).
   const chart = await prisma.chart.findFirst({
-    where: { id: chartId, songId },
-    select: { id: true, chartHash: true, rankStatus: true },
+    where: { id: chartId, songId, status: { in: ['public', 'ranked'] } },
+    select: { id: true, chartHash: true, rankStatus: true, notes: true },
   });
   return chart ?? null;
 }

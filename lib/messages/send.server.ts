@@ -31,6 +31,7 @@ import { groupMessageSelect, serializeGroupMessages } from '@/lib/group-chat/ser
 import type { SentDirectMessage } from '@/lib/messages/messages.contract';
 import { afterGroupMessage } from '@/lib/group-chat/mentions.server';
 import { afterDirectMessage } from '@/lib/messages/away.server';
+import { afterDirectMessagePush } from '@/lib/messages/message-push.server';
 import { clearStaleDraft, openRequest, requestGate } from '@/lib/messages/requests.server';
 import {
   gateRefusalCopy,
@@ -323,6 +324,8 @@ export async function sendDirectMessage(opts: SendDirectOptions): Promise<
     });
     // s06-18: an active away message answers once per conversation per period (best-effort, never throws).
     void afterDirectMessage({ senderId: userId, recipientId, chatId: conversationId });
+    // s13-20: a push that names the sender and never the text (best-effort, never throws).
+    void afterDirectMessagePush({ senderId: userId, recipientId, conversationId });
   }
 
   return {

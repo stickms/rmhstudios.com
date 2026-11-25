@@ -11,6 +11,9 @@ import { userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
 import { NOW_PLAYING_WINDOW_S, assembleActivity } from '@/lib/games/activity';
 import type { FriendActivity, NowPlaying } from '@/lib/games/activity-types';
 import { canViewPlaytime, isPlaytimePrivacy } from '@/lib/playtime/privacy';
+import { isDeletedAccount } from '@/lib/account-lifecycle';
+import { filterBlocked } from '@/lib/social/follow-list-privacy.server';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 
 const DAY_MS = 86_400_000;
 const FEED_DAYS = 14;
@@ -38,13 +41,25 @@ export async function getNowPlayingFor(
   return title ? { gameId: row.gameId, title } : null;
 }
 
-/** Who the viewer follows is in a game right now, and what they have been up to lately. */
+/**
+ * Who the viewer follows is in a game right now, and what they have been up to lately.
+ *
+ * Only the viewer's own follows are read. Anyone blocked in either direction, banned, awaiting deletion or already
+ * erased is left out before anything else is read. A member hidden from boards keeps their reviews and threads (public
+ * posts, as on their profile) but shows no achievements or badges, which are board standing.
+ */
 export async function getFriendActivity(viewerId: string): Promise<FriendActivity> {
   const follows = await prisma.follow.findMany({
-    where: { followerId: viewerId },
+    where: {
+      followerId: viewerId,
+      following: {
+        deletionScheduledAt: null,
+        OR: [{ bannedUntil: null }, { bannedUntil: { lte: new Date() } }],
+      },
+    },
     orderBy: { createdAt: 'desc' },
     take: FRIENDS_CONSIDERED,
-    select: { following: { select: { ...userDisplaySelect, playtimePrivacy: true } } },
+    select: { following: { select: { ...userDisplaySelect, playtimePrivacy: true, banReason: true } } },
   });
   const people = new Map<string, { userId: string; handle: string | null; name: string; image: string | null; playtimePrivacy: string }>();
   for (const f of follows) {
@@ -52,7 +67,9 @@ export async function getFriendActivity(viewerId: string): Promise<FriendActivit
       id: string;
       handle: string | null;
       playtimePrivacy: string;
+      banReason: string | null;
     };
+    if (isDeletedAccount(u)) continue;
     const d = resolveUserDisplay(u);
     people.set(u.id, {
       userId: u.id,
@@ -62,20 +79,24 @@ export async function getFriendActivity(viewerId: string): Promise<FriendActivit
       playtimePrivacy: u.playtimePrivacy,
     });
   }
+  const unblocked = new Set(await filterBlocked(viewerId, [...people.keys()]));
+  for (const id of [...people.keys()]) if (!unblocked.has(id)) people.delete(id);
   const ids = [...people.keys()];
-  if (ids.length === 0) return { inGame: [], events: [] };
+  if (ids.length === 0) return { followed: 0, inGame: [], events: [] };
+  const hidden = await leaderboardHiddenUserIds();
+  const standingIds = ids.filter((id) => !hidden.has(id));
 
   const since = new Date(Date.now() - FEED_DAYS * DAY_MS);
   const playedSince = new Date(Date.now() - PLAYED_DAYS * DAY_MS);
   const [achievements, badges, reviews, threads, played, live] = await Promise.all([
     prisma.userAchievement.findMany({
-      where: { userId: { in: ids }, unlockedAt: { gte: since } },
+      where: { userId: { in: standingIds }, unlockedAt: { gte: since } },
       orderBy: { unlockedAt: 'desc' },
       take: 40,
       select: { userId: true, achievementId: true, unlockedAt: true },
     }),
     prisma.gameBadge.findMany({
-      where: { userId: { in: ids }, craftedAt: { gte: since } },
+      where: { userId: { in: standingIds }, craftedAt: { gte: since } },
       orderBy: { craftedAt: 'desc' },
       take: 40,
       select: { userId: true, gameId: true, foil: true, level: true, craftedAt: true },
@@ -118,7 +139,7 @@ export async function getFriendActivity(viewerId: string): Promise<FriendActivit
     reviews,
     threads: threads.map((t) => ({ userId: t.authorId, gameId: t.gameId, id: t.id, title: t.title, createdAt: t.createdAt })),
     played,
-    limit: 40,
+    limit: 30,
   });
 
   // In-game now: one entry per person (their most recent beat), if they let followers see it.
@@ -136,5 +157,5 @@ export async function getFriendActivity(viewerId: string): Promise<FriendActivit
       game: { gameId: l.gameId, title },
     });
   }
-  return { inGame, events };
+  return { followed: ids.length, inGame, events };
 }

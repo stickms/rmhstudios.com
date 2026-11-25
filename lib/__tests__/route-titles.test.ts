@@ -207,7 +207,8 @@ describe('the route announcer', () => {
 
   it('is installed by the router, once', () => {
     const router = stripComments(read('app/router.tsx'));
-    expect(router.match(/installRouteAnnouncer\(router\)/g) ?? []).toHaveLength(1);
+    // The router passes its own instance first; later arguments (the pre-install recorder's replay, s13-19) vary.
+    expect(router.match(/installRouteAnnouncer\(router[,)]/g) ?? []).toHaveLength(1);
   });
 
   it('observes nothing and schedules no frame or timer', () => {

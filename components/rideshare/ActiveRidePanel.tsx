@@ -7,6 +7,7 @@ import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { RideMap } from './RideMap';
 import { RideChat, type RideChatMessage } from './RideChat';
+import { ReportTripButton } from './RideSafety';
 import { FareBreakdown } from './FareBreakdown';
 import { PayoutBreakdown } from './PayoutBreakdown';
 import { TipPrompt } from './TipPrompt';
@@ -16,6 +17,7 @@ import { rideClassName } from '@/lib/rideshare/classes';
 import { formatDistance, formatDuration, type LatLng } from '@/lib/rideshare/geo';
 import { useDriverLocationShare } from '@/lib/rideshare/useDriverLocationShare';
 import { Spinner } from '@/components/ui/spinner';
+import { withinRideReportWindow } from '@/lib/rideshare/report-window';
 import { api } from '@/lib/contract/client';
 import {
   rateRideApi,
@@ -61,6 +63,9 @@ interface SyncRide {
   tipCents: number;
   ratingByRider: number | null;
   ratingByDriver: number | null;
+  acceptedAt: string | null;
+  completedAt: string | null;
+  chatClosed: boolean;
   rider: Person;
   driver: (Person & { rideshareDriver: Vehicle | null }) | null;
   messages: RideChatMessage[];
@@ -359,8 +364,14 @@ export function ActiveRidePanel({
         currentUserId={currentUserId}
         onSend={sendMessage}
         disabled={chatDisabled}
+        closed={ride.chatClosed && !chatDisabled}
         otherName={other?.name ?? undefined}
       />
+
+      {/* A trip with a matched driver can be reported by either party, for 30 days after it ends */}
+      {ride.driver && ride.acceptedAt && withinRideReportWindow(ride.completedAt) && (
+        <ReportTripButton rideId={ride.id} />
+      )}
 
       {/* Completed → rate */}
       {status === 'COMPLETED' && (

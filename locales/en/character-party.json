@@ -73,6 +73,7 @@
   "table.character": "Character",
   "table.conditions": "Conditions",
   "table.gm": "game master",
+  "table.hiddenPlayer": "A player",
   "table.hp": "HP",
   "table.initiative": "Initiative",
   "table.level": "Level {{n}}",

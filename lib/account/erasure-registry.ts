@@ -815,10 +815,22 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason: 'Timeline rows of an application, deleted by the database with the application.',
     parent: 'LadderApplication',
   },
+  LadderCompany: {
+    decision: 'erase',
+    scope: 'rows the member owns (ownerId)',
+    reason:
+      'A company row the member created for a job they found elsewhere (s13-08); deleted by ownerId after their own jobs. The shared catalogue rows have no owner and are never touched.',
+  },
   LadderInterviewReport: {
     decision: 'keep',
     reason:
       'Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member\'s record on it is not ours to remove.',
+  },
+  LadderJob: {
+    decision: 'erase',
+    scope: 'rows the member owns (ownerId)',
+    reason:
+      'A job the member added themselves (s13-08); deleted by ownerId, which takes its applications, events and offer with it. The shared catalogue rows have no owner and are never touched.',
   },
   LadderJobAction: {
     decision: 'erase',
@@ -915,6 +927,11 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason:
       "The member's own plays and best moves (their row on a board's fewest-moves list). No children: it is the child of `LightsOutBoard`, whose anonymous play and solve tallies stay (counter rule).",
   },
+  ListLeave: {
+    decision: 'erase',
+    reason:
+      "The member's own leave rows are deleted with the account (`listLeaveErasureOps`); the rows on a list the member owns go with the list by the cascade.",
+  },
   Listing: {
     decision: 'erase',
     reason:
@@ -995,6 +1012,10 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     decision: 'keep',
     reason:
       'Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member\'s record on it is not ours to remove.',
+  },
+  NewsStoryFollow: {
+    decision: 'erase',
+    reason: "Rule 1: the member's own story follows, erased by storyFollowErasureOps (sprint 13 news-stories).",
   },
   NightrailPlayer: {
     decision: 'erase',

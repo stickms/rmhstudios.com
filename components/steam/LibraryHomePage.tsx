@@ -13,6 +13,7 @@ import {
 } from '@/lib/games/library';
 import { CAPSULE_SIZES, TitleArt } from './TitleArt';
 import { capsuleTilt } from './tilt';
+import { FriendActivity } from './FriendActivity';
 
 const layoutApi =
   getRouteApi(
@@ -35,6 +36,7 @@ export function LibraryHomePage() {
   const {
     recentIds,
     followedIds,
+    signedIn,
   } =
     layoutApi.useLoaderData();
   const {
@@ -106,6 +108,8 @@ export function LibraryHomePage() {
           },
         )}
       </h1>
+
+      <FriendActivity signedIn={signedIn} />
 
       {recent.length >
       0 && !following ? (

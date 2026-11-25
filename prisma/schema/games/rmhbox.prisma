@@ -75,6 +75,10 @@ model RmhboxPack {
   featured    Boolean  @default(false)
   hidden      Boolean  @default(false)
   reportCount Int      @default(0)
+  /// s13-16: a moderator removed the pack; its owner cannot unhide or feature it again.
+  moderatedAt DateTime?
+  /// s13-16: the reports hid the pack (three open ones); dismissing the last restores it. An admin's own hide clears it.
+  autoHiddenAt DateTime?
   createdAt   DateTime @default(now())
 
   owner   User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)

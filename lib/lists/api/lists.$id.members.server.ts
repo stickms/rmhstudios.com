@@ -3,6 +3,7 @@ import { implement } from '@/lib/api/implement.server';
 import { addListMemberApi, removeListMemberApi } from '@/lib/lists/lists.contract';
 import { listMemberSchema } from '@/lib/lists/constants';
 import { addMember, removeMember, ListError } from '@/lib/lists/lists.server';
+import { refusalBody } from '@/lib/errors/codes';
 
 /**
  * PUT    /api/lists/:id/members { userId } — add a member (owner).
@@ -20,6 +21,10 @@ export const route = apiRoute('/api/lists/$id/members', {
         await addMember(session.user.id, params.id, body.userId);
       } catch (e) {
         if (e instanceof ListError) {
+          // One sentence for every reason an add is refused (left, blocked, banned, erased), so it reveals nothing.
+          if (e.message === 'MEMBER_REFUSED') {
+            return Response.json({ ...refusalBody('LIST_MEMBER_REFUSED') }, { status: 409 });
+          }
           return Response.json(
             { error: e.message },
             { status: e.message === 'NOT_FOUND' ? 404 : 400 },

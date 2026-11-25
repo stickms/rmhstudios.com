@@ -123,6 +123,9 @@ export const S2C = {
   // Phase 1: Typing Indicators
   CHAT_TYPING_INDICATOR: 'rmhtube:chat:typing_indicator',
 
+  // s13-06: a moderator removed a message; every client in the room drops it (server to client only)
+  CHAT_REMOVED: 'rmhtube:chat:removed',
+
   // Phase 4: Invite Links
   ROOM_INVITE_CREATED: 'rmhtube:room:invite_created',
   ROOM_HISTORY_STATUS: 'rmhtube:room:history_status',
@@ -130,3 +133,9 @@ export const S2C = {
   // Watch-party extras (P20): full party state, to the room or one socket
   PARTY_STATE: 'rmhtube:party:state',
 } as const;
+
+/**
+ * s13-06: the Redis channel the web tier publishes `{ roomId, messageId }` on when a moderator removes a room message.
+ * The hub subscribes once and re-emits it to the room as `S2C.CHAT_REMOVED`.
+ */
+export const CHAT_REMOVED_CHANNEL = 'rmhtube:chat:removed';

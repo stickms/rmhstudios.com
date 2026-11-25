@@ -7,6 +7,7 @@
  */
 import { endpoint } from '@/lib/contract/endpoint';
 import type { IssuedRun } from '@features/altair/engine/solo/issue.server';
+import type { RunsPage } from '@features/altair/engine/runs';
 
 export interface AltairLeaderboardEntry {
   username: string;
@@ -154,4 +155,19 @@ export const submitAltairScoreApi = endpoint<{
 }>()({
   method: 'POST',
   path: '/api/altair/score',
+});
+
+/**
+ * The caller's own finished runs, newest first, 20 a page: `kind=solo` answers `{ kind: 'solo', runs, nextCursor }`
+ * and `kind=coop` answers `{ kind: 'coop', matches, nextCursor }`. The endpoint takes no user id.
+ */
+export const getAltairRunsApi = endpoint<{
+  query: {
+    kind: 'solo' | 'coop';
+    cursor?: string | undefined;
+  };
+  res: RunsPage;
+}>()({
+  method: 'GET',
+  path: '/api/altair/runs',
 });

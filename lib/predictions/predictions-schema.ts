@@ -22,6 +22,23 @@ export const predictionListQuery = z.object({
 export const tradeSchema = z.object({
   side: z.enum(['YES', 'NO']),
   amount: z.number().int().min(MIN_TRADE_AMOUNT).max(MAX_TRADE_AMOUNT),
+  /** The quote less its allowance; a buy that would land below it is refused. */
+  minShares: z.number().finite().positive().optional(),
+});
+
+/**
+ * Selling shares back. `key` makes a retry a no-op; it is at most 36 characters
+ * so the ledger key `prediction-sale:<market>:<member>:<key>` fits its 128-character column.
+ */
+export const sellSchema = z.object({
+  side: z.enum(['YES', 'NO']),
+  shares: z.number().finite().positive(),
+  minProceeds: z.number().int().min(0),
+  key: z
+    .string()
+    .min(8)
+    .max(36)
+    .regex(/^[A-Za-z0-9_-]+$/),
 });
 
 export const resolveSchema = z.object({
@@ -34,5 +51,6 @@ export const moderateSchema = z.object({
 
 export type CreatePredictionInput = z.infer<typeof createPredictionSchema>;
 export type TradeInput = z.infer<typeof tradeSchema>;
+export type SellInput = z.infer<typeof sellSchema>;
 export type ResolveInput = z.infer<typeof resolveSchema>;
 export type ModerateInput = z.infer<typeof moderateSchema>;

@@ -15,7 +15,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
-import { saveChartApi } from '@features/slice-it/engine/charts.contract';
+import { getChartApi, saveChartApi } from '@features/slice-it/engine/charts.contract';
 import { prisma } from '@/lib/prisma.server';
 import { ERROR_CODES, refusalBody } from '@/lib/errors/codes';
 import type { Difficulty } from '@features/slice-it/engine/constants';
@@ -51,7 +51,7 @@ const CHART_DTO_SELECT = {
 } as const;
 
 export const route = apiRoute('/api/slice-it/charts/$id', {
-  GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ userId, params }) => {
+  GET: implement(getChartApi, { auth: 'optional', rateLimit: 'read' }, async ({ userId, params }) => {
     const chart = await prisma.chart.findUnique({ where: { id: params.id } });
     if (!chart) return Response.json({ error: 'Not found' }, { status: 404 });
     // A draft is the author's private working copy — §1.1 `status`.

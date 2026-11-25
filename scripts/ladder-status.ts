@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import 'dotenv/config';
 import { prisma } from '@/lib/prisma.server';
+import { catalogCompanyWhere, catalogJobWhere } from '@/lib/rmhladder/own-jobs';
 import { formatCoverageSnapshot, type CoverageSnapshot } from '@/lib/rmhladder/coverage';
 import { detectLadderHealthAlerts, resolveAlertThresholds } from '@/lib/rmhladder/health-alerts';
 import { resumeSubsystemReadiness } from '@/lib/rmhladder/resume/readiness.server';
@@ -28,11 +29,13 @@ async function main(): Promise<void> {
     }),
     prisma.ladderJob.count({
       where: {
+        ...catalogJobWhere(),
         status: 'active',
       },
     }),
     prisma.ladderJob.count({
       where: {
+        ...catalogJobWhere(),
         status: 'expired',
       },
     }),
@@ -76,6 +79,7 @@ async function main(): Promise<void> {
   const [companiesWithActive, enabledCompanies, activeJobsGrouped] = await Promise.all([
     prisma.ladderCompany.count({
       where: {
+        ...catalogCompanyWhere(),
         enabled: true,
         sources: {
           some: {
@@ -86,12 +90,14 @@ async function main(): Promise<void> {
     }),
     prisma.ladderCompany.count({
       where: {
+        ...catalogCompanyWhere(),
         enabled: true,
       },
     }),
     prisma.ladderJob.groupBy({
       by: ['companyId'],
       where: {
+        ...catalogJobWhere(),
         status: 'active',
       },
       _count: {
@@ -101,6 +107,7 @@ async function main(): Promise<void> {
   ]);
   const manualOnly = await prisma.ladderCompany.count({
     where: {
+      ...catalogCompanyWhere(),
       enabled: true,
       sources: {
         none: {
@@ -115,6 +122,7 @@ async function main(): Promise<void> {
   const companiesUnconfigured = Math.max(0, enabledCompanies - companiesWithActive - manualOnly);
   // Active jobs by firm type (join companyId → firmType).
   const companies = await prisma.ladderCompany.findMany({
+    where: catalogCompanyWhere(),
     select: {
       id: true,
       firmType: true,

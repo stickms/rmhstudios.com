@@ -54,6 +54,7 @@ export const STATIC_CARD_INDEX: readonly (readonly [string, string])[] = [
   ['/blog', 'blog'],
   ['/elections', 'elections'],
   ['/news', 'news'],
+  ['/news/stories', 'news-stories'],
   ['/rmhladder', 'rmhladder'],
   ['/library', 'library'],
   ['/daily', 'daily'],

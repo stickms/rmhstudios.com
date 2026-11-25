@@ -8,6 +8,16 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { lockKey } from '@/lib/db/advisory-lock.server';
+import { enqueueStoryArticleFanout } from '@/lib/reading/story-follows.server';
+import { NEWS_STORY_FOLLOW_LIMIT, atStoryFollowCap } from '@/lib/reading/story-follows';
+import {
+  STORIES_PAGE_SIZE,
+  aggregatePublished,
+  pageStories,
+  sortStories,
+  type StoryIndexRow,
+} from '@/lib/reading/stories-index';
 import { isEmbeddingStoreReady, similarTo } from '@/lib/search/embeddings.server';
 import {
   storySlug,
@@ -57,19 +67,95 @@ export async function getStoryPage(slug: string): Promise<StoryPageData | null> 
   return { slug: story.slug, title: story.title, summary: story.summary, articles };
 }
 
-/** Published stories with at least one published article, newest activity first. */
-export async function listPublicStories(take = 40) {
-  const rows = await prisma.newsStory.findMany({
-    orderBy: { updatedAt: 'desc' },
-    take,
-    select: { slug: true, title: true, summary: true, _count: { select: { articles: true } } },
+/**
+ * Stories with at least one published article, newest published article first, one page after `cursor`
+ * (`/news/stories`). A story whose articles are all drafts or hidden is not listed.
+ */
+export async function listPublicStories(
+  cursor: string | null = null,
+  size: number = STORIES_PAGE_SIZE,
+): Promise<{ stories: StoryIndexRow[]; nextCursor: string | null }> {
+  const links = await prisma.newsStoryArticle.findMany({
+    take: 5000,
+    select: { storyId: true, articleSlug: true },
   });
-  return rows.map((r) => ({
-    slug: r.slug,
-    title: r.title,
-    summary: r.summary,
-    count: r._count.articles,
-  }));
+  if (links.length === 0) return { stories: [], nextCursor: null };
+  const articles = await prisma.newsArticle.findMany({
+    where: { slug: { in: links.map((l) => l.articleSlug) }, status: 'PUBLISHED' },
+    select: { slug: true, date: true, status: true },
+  });
+  const byArticle = new Map(articles.map((a) => [a.slug, a]));
+  const aggregates = aggregatePublished(
+    links.flatMap((l) => {
+      const a = byArticle.get(l.articleSlug);
+      return a ? [{ storyId: l.storyId, status: a.status, date: a.date }] : [];
+    }),
+  );
+  if (aggregates.length === 0) return { stories: [], nextCursor: null };
+  const stories = await prisma.newsStory.findMany({
+    where: { id: { in: aggregates.map((a) => a.storyId) } },
+    select: { id: true, slug: true, title: true, summary: true },
+  });
+  const byId = new Map(stories.map((s) => [s.id, s]));
+  const rows = aggregates.flatMap((a) => {
+    const s = byId.get(a.storyId);
+    return s ? [{ slug: s.slug, title: s.title, summary: s.summary, count: a.count, latest: a.latest }] : [];
+  });
+  return pageStories(sortStories(rows), cursor, size);
+}
+
+/** The story's published articles, newest first, for its RSS feed. Null when the story does not exist. */
+export async function getStoryFeed(slug: string) {
+  const story = await getStoryPage(slug);
+  if (!story) return null;
+  return { ...story, articles: [...story.articles].reverse() };
+}
+
+/* ── following ────────────────────────────────────────────────────────────── */
+
+export type FollowStoryResult =
+  | { ok: true; following: true }
+  | { ok: false; code: 'NOT_FOUND' }
+  | { ok: false; code: 'NEWS_STORY_FOLLOW_LIMIT'; max: number };
+
+/** Follow a story. Following twice is the same as once; past {@link NEWS_STORY_FOLLOW_LIMIT} stories is refused. */
+export async function followStory(userId: string, slug: string): Promise<FollowStoryResult> {
+  const story = await prisma.newsStory.findUnique({ where: { slug }, select: { id: true } });
+  if (!story) return { ok: false, code: 'NOT_FOUND' };
+  return prisma.$transaction(async (tx): Promise<FollowStoryResult> => {
+    // The cap is a check-then-insert: two requests must not both pass it.
+    await lockKey(tx, `news-story-follows:${userId}`);
+    const existing = await tx.newsStoryFollow.findUnique({
+      where: { storyId_userId: { storyId: story.id, userId } },
+      select: { storyId: true },
+    });
+    if (existing) return { ok: true, following: true };
+    const count = await tx.newsStoryFollow.count({ where: { userId } });
+    if (atStoryFollowCap(count)) return { ok: false, code: 'NEWS_STORY_FOLLOW_LIMIT', max: NEWS_STORY_FOLLOW_LIMIT };
+    await tx.newsStoryFollow.create({ data: { storyId: story.id, userId } });
+    return { ok: true, following: true };
+  });
+}
+
+/**
+ * Stop following. Not following is the same as having stopped. A story has one follow from the member's view: the
+ * story-page follow and the older reading subscription (settings, daily email) are the same toggle, so this removes
+ * both.
+ */
+export async function unfollowStory(userId: string, slug: string): Promise<void> {
+  await prisma.newsStoryFollow.deleteMany({ where: { userId, story: { slug } } });
+  await prisma.readingSubscription.deleteMany({ where: { userId, kind: 'news_story', target: slug } });
+}
+
+/** True when the member follows the story either way: the story follow or a reading subscription to it. */
+export async function isFollowingStory(userId: string, slug: string): Promise<boolean> {
+  const row = await prisma.newsStoryFollow.findFirst({ where: { userId, story: { slug } }, select: { storyId: true } });
+  if (row) return true;
+  const sub = await prisma.readingSubscription.findFirst({
+    where: { userId, kind: 'news_story', target: slug },
+    select: { id: true },
+  });
+  return !!sub;
 }
 
 /* ── admin ────────────────────────────────────────────────────────────────── */
@@ -142,11 +228,14 @@ export async function deleteStory(id: string): Promise<boolean> {
   return count > 0;
 }
 
-/** Link an article to a story, moving it out of any story it was in. */
+/**
+ * Link an article to a story, moving it out of any story it was in. When the article is published, the story's
+ * followers are told once, on a durable fan-out queued after the link is written; an unlink tells nobody.
+ */
 export async function linkArticle(storyId: string, articleSlug: string): Promise<boolean> {
   const [story, article] = await Promise.all([
     prisma.newsStory.findUnique({ where: { id: storyId }, select: { id: true } }),
-    prisma.newsArticle.findUnique({ where: { slug: articleSlug }, select: { slug: true } }),
+    prisma.newsArticle.findUnique({ where: { slug: articleSlug }, select: { slug: true, status: true } }),
   ]);
   if (!story || !article) return false;
   await prisma.newsStoryArticle.upsert({
@@ -155,6 +244,7 @@ export async function linkArticle(storyId: string, articleSlug: string): Promise
     update: { storyId },
   });
   await prisma.newsStory.update({ where: { id: storyId }, data: { updatedAt: new Date() } });
+  if (article.status === 'PUBLISHED') await enqueueStoryArticleFanout(storyId, articleSlug);
   return true;
 }
 

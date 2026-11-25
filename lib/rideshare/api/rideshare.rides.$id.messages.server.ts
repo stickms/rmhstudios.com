@@ -5,13 +5,14 @@ import { sendRideMessageBody } from '@/lib/rideshare/rideshare-schema';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { notifyNewMessage } from '@/lib/rideshare/notify.server';
+import { refuse, rideChatClosed } from '@/lib/rideshare/safety.server';
 
 export const route = apiRoute('/api/rideshare/rides/$id/messages', {
   POST: implement(
     C.sendRideMessageApi,
     {
       body: sendRideMessageBody,
-      invalid: () => Response.json({ error: 'Message is empty or too long.' }, { status: 400 }),
+      invalid: () => refuse('INVALID_INPUT'),
     },
     async ({ request, params, session, body }) => {
       const userId = session.user.id;
@@ -23,10 +24,7 @@ export const route = apiRoute('/api/rideshare/rides/$id/messages', {
         prefix: 'rideshare-message',
       });
       if (!allowed) {
-        return Response.json(
-          { error: 'Slow down a moment.' },
-          { status: 429, headers: { 'Retry-After': String(retryAfter) } },
-        );
+        return refuse('RATE_LIMITED', undefined, { 'Retry-After': String(retryAfter) });
       }
 
       const ride = await prisma.ride.findUnique({
@@ -34,20 +32,17 @@ export const route = apiRoute('/api/rideshare/rides/$id/messages', {
         select: { id: true, riderId: true, driverId: true, status: true },
       });
       if (!ride) {
-        return Response.json({ error: 'Ride not found' }, { status: 404 });
+        return refuse('NOT_FOUND');
       }
       const isRider = ride.riderId === userId;
       const isDriver = ride.driverId === userId;
       if (!isRider && !isDriver) {
-        return Response.json({ error: 'Not your ride.' }, { status: 403 });
+        return refuse('FORBIDDEN');
       }
-      if (ride.status !== 'ACCEPTED' && ride.status !== 'IN_PROGRESS') {
-        return Response.json(
-          {
-            error: 'Chat is only available once a driver is matched and before the trip ends.',
-          },
-          { status: 409 },
-        );
+      // Off once the trip is not under way, and off for both when either has blocked the other. The same code for
+      // both, so the sender cannot tell a block from an ended trip.
+      if (await rideChatClosed(ride, userId)) {
+        return refuse('RIDE_CHAT_CLOSED');
       }
 
       const message = await prisma.rideMessage.create({

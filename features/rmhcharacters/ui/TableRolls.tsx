@@ -85,6 +85,7 @@ function useWho() {
   const { t } = useTranslation('party-rolls');
   return (who: PartyRoll['who']): { text: string; member: boolean } => {
     if (who.kind === 'gm') return { text: t('who.gm', { defaultValue: 'Game master' }), member: false };
+    if (who.kind === 'hidden') return { text: t('who.hidden', { defaultValue: 'A player' }), member: false };
     if (who.kind === 'left') return { text: t('who.left', { defaultValue: 'A character who left' }), member: false };
     return { text: who.name || t('who.unnamed', { defaultValue: 'Unnamed character' }), member: true };
   };

@@ -160,6 +160,11 @@ describe('keys, docs and filtering', () => {
     expect(docsPathForGroup('Nope')).toBeNull();
   });
 
+  it('has a docs page for the RMHLadder group (s13-10) and for every group the registry declares', () => {
+    expect(docsPathForGroup('RMHLadder')).toBe('developer-api/endpoints/rmhladder');
+    expect(endpointsByGroup().map((g) => g.group)).toContain('RMHLadder');
+  });
+
   it('filters on method, path, summary and scope, all words required', () => {
     const groups = endpointsByGroup();
     const count = (q: string) => filterGroups(groups, q).reduce((n, g) => n + g.endpoints.length, 0);

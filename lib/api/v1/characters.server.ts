@@ -176,12 +176,18 @@ export async function getPartyForKey(userId: string, id: string): Promise<ApiPar
     gm: p.gm,
     members: p.members.map((m) => ({
       userId: m.userId,
-      name: m.name,
+      name: m.hidden ? 'A player' : m.name,
       joinedAt: new Date(m.joinedAt).toISOString(),
       isGm: m.isGm,
       summary: m.summary,
     })),
-    order: p.order.map((l) => ({ id: l.id, kind: l.kind, userId: l.userId, name: l.name, value: l.value })),
+    order: p.order.map((l) => ({
+      id: l.id,
+      kind: l.kind,
+      userId: l.userId,
+      name: l.hidden ? 'A player' : l.name,
+      value: l.value,
+    })),
     turnIndex: p.turnIndex,
   };
 }

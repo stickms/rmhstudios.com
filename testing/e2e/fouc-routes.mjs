@@ -452,6 +452,7 @@ export const DYNAMIC_ROUTE_FIXTURES = {
   '/c/$slug/rss.xml': { path: null, fidelity: 'shell', why: 'RSS feed — not an HTML document.' },
   '/builds/$slug/rss.xml': { path: null, fidelity: 'shell', why: 'RSS feed — not an HTML document.' },
   '/games/$gameId/updates/rss.xml': { path: null, fidelity: 'shell', why: 'RSS feed — not an HTML document.' },
+  '/news/stories/$slug/rss.xml': { path: null, fidelity: 'shell', why: 'RSS feed — not an HTML document.' },
   '/thread/$rootId': {
     path: '/thread/fouc-audit',
     fidelity: 'shell',

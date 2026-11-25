@@ -59,6 +59,7 @@ import { WitWarMinigame } from './minigames/wit-war';
 import { FactOrFrictionGame } from './minigames/fact-or-friction';
 import { UndercoverEditorGame } from './minigames/undercover-editor';
 import { RankingFileGame } from './minigames/ranking-file';
+import { SequenceSamGame } from './minigames/sequence-sam';
 
 // ─── Minigame Server Registry ────────────────────────────────────
 
@@ -77,6 +78,7 @@ export const MINIGAME_SERVER_REGISTRY = new Map<string, new (context: MinigameCo
   ['fact-or-friction', FactOrFrictionGame],
   ['undercover-editor', UndercoverEditorGame],
   ['ranking-file', RankingFileGame],
+  ['sequence-sam', SequenceSamGame],
 ]);
 
 // ─── Per-lobby lifecycle tracking ────────────────────────────────

@@ -140,7 +140,17 @@ beforeEach(() => {
       keyIds: ['k1', 'k2'],
       webhookIds: ['w1'],
       subscriptionIds: ['s1'],
+      billingSyncedAt: new Date(NOW.getTime() - 24 * DAY),
       createdAt: new Date(NOW.getTime() - 25 * DAY),
+    },
+    // Synced with nothing recorded: there was nothing to stop.
+    {
+      userId: 'over-1',
+      keyIds: [],
+      webhookIds: [],
+      subscriptionIds: [],
+      billingSyncedAt: new Date(NOW.getTime() - 3 * DAY),
+      createdAt: new Date(NOW.getTime() - 33 * DAY),
     },
   ];
   h.attempts = [
@@ -217,6 +227,32 @@ describe('GET /api/admin/deletions', () => {
     expect(body.finished.at(-1)!.day).toBe('2026-12-05');
     expect(body.finishedTotal).toBe(1);
     expect(body.finished.find((d) => d.day === '2026-12-02')!.count).toBe(1);
+  });
+
+  it('says whether the billing of each pending account has stopped, from the hold alone', async () => {
+    admin();
+    h.holds.push({
+      userId: 'due-1',
+      keyIds: [],
+      webhookIds: [],
+      subscriptionIds: ['s9'],
+      billingSyncedAt: null,
+      createdAt: new Date(NOW.getTime() - 2 * DAY),
+    });
+    const body = (await call('GET')).json as { waiting: Row[]; overdue: Row[] };
+    const billing = (rows: Row[], id: string) => rows.find((r) => r.userId === id)?.billing;
+    expect(billing(body.waiting, 'wait-1')).toBe('stopped');
+    expect(billing(body.overdue, 'over-1')).toBe('none');
+    expect(billing(body.waiting, 'due-1')).toBe('pending');
+  });
+
+  it('shows no hold at all as not stopped yet, and exposes no subscription id', async () => {
+    admin();
+    h.holds = [];
+    const out = await call('GET');
+    const body = out.json as { waiting: Row[] };
+    expect(body.waiting.every((r) => r.billing === 'pending')).toBe(true);
+    expect(out.text).not.toMatch(/"s1"|"s9"|subscriptionIds/);
   });
 
   it('carries no e-mail address', async () => {

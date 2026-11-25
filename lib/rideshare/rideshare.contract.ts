@@ -168,6 +168,8 @@ export interface RideSyncView {
       })
     | null;
   messages: RideMessageView[];
+  /** Chat is off for this trip: not under way, or one party has blocked the other. */
+  chatClosed: boolean;
 }
 
 export const syncRideApi = endpoint<{

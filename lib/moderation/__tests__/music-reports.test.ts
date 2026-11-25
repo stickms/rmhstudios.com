@@ -60,6 +60,15 @@ describe('RMH Music in the moderation queue', () => {
     for (const type of ['connections-grid', 'study-deck', 'persona', 'home-listing']) {
       expect(REMOVABLE_REPORT_ENTITY_TYPES).toContain(type);
     }
+    // s13-06: a message in an RMHTube room is removable too, and its branch deletes the row.
+    expect(REMOVABLE_REPORT_ENTITY_TYPES).toContain('tube-chat');
+    expect(body).toContain('takeDownChatMessage');
+    // s13-16: an RMHBox prompt pack is removable too, and its branch stamps the pack removed for good.
+    expect(REMOVABLE_REPORT_ENTITY_TYPES).toContain('rmhbox-pack');
+    expect(body).toContain('takeDownPack');
+    // s13-17: a message in a direct or group conversation is removable too, and its branch removes it as a moderator.
+    expect(REMOVABLE_REPORT_ENTITY_TYPES).toContain('dm');
+    expect(body).toContain('takeDownDmMessage');
   });
 
   it('the admin page offers removal from the one list, and the report route resolves music owners', () => {

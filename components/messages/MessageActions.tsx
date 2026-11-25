@@ -5,6 +5,7 @@ import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem } from '@/components/ui/menu';
 import { EditDescriptionsMenuItem } from '@/components/feed/EditDescriptionsMenuItem';
 import { SavedRepliesDialog } from '@/components/messages/SavedRepliesDialog';
+import { MessageReportRow, ReportMessageDialog } from '@/components/messages/ReportMessage';
 import { cn } from '@/lib/utils';
 import { canEdit, editWindowRemainingMs, MESSAGE_EDIT_WINDOW_MS } from '@/lib/messages/edit-policy';
 
@@ -44,6 +45,8 @@ export function MessageActions({
     content: string;
     createdAt: string;
     deletedAt: string | null;
+    /** Message kind; a system or tip line cannot be reported. */
+    kind?: string | null | undefined;
   };
   viewerId: string;
   onEdit: () => void;
@@ -63,6 +66,8 @@ export function MessageActions({
   // s05-13: "Save as reply" opens the saved-replies editor on this message's text.
   const [savingAsReply, setSavingAsReply] = useState(false);
   const [open, setOpen] = useState(false);
+  // s13-17: "Report message" opens the report dialog for this message.
+  const [reporting, setReporting] = useState(false);
 
   const isSender = message.senderId === viewerId;
   const deleted = !!message.deletedAt;
@@ -185,6 +190,15 @@ export function MessageActions({
 
         {extra?.(() => setOpen(false))}
 
+        <MessageReportRow
+          message={message}
+          viewerId={viewerId}
+          onReport={() => {
+            setOpen(false);
+            setReporting(true);
+          }}
+        />
+
         <MenuItem
           icon={EyeOff}
           onSelect={() => {
@@ -213,6 +227,7 @@ export function MessageActions({
         )}
       </AnchoredMenu>
       {savingAsReply && <SavedRepliesDialog open onOpenChange={setSavingAsReply} prefill={message.content} />}
+      {reporting && <ReportMessageDialog messageId={message.id} onClose={() => setReporting(false)} />}
     </>
   );
 }

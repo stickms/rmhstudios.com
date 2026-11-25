@@ -160,11 +160,6 @@ function createStub(name: string): ComponentType<MinigameProps> {
  */
 const MINIGAME_COMPONENTS: Record<string, React.LazyExoticComponent<ComponentType<MinigameProps>>> = {
   ...Object.fromEntries(Object.entries(MINIGAME_LOADERS).map(([id, load]) => [id, lazy(load)])),
-  'sequence-sam': lazy(() =>
-    Promise.resolve({
-      default: createStub('Sequence Sam'),
-    }),
-  ),
   'human-keyboard': lazy(() =>
     Promise.resolve({
       default: createStub('Human Keyboard'),

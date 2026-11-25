@@ -425,6 +425,15 @@ export const STATIC_ROUTES: SitemapEntry[] = [
     changefreq: 'daily',
     priority: 0.5,
   },
+
+  // Sprint 13 (docs/autonomous/sprint-13/plan.md §Anchors)
+  // s13-12 news-stories
+  // (/news/stories, with its card)
+  {
+    loc: '/news/stories',
+    changefreq: 'daily',
+    priority: 0.5,
+  },
 ];
 
 // ────────────────────── games, apps and their hubs ──────────────────────
@@ -674,6 +683,10 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   // s12-15 admin-homes
   // (/admin/homes, 'admin')
   '/admin/homes': 'admin',
+
+  // Sprint 13 (docs/autonomous/sprint-13/plan.md §Anchors)
+  // s13-11 lists-on
+  '/settings/lists': 'personal',
 
   '/account/connect': 'personal', // the account-merge step after a new sign-in; needs a session
   '/settings': 'personal',

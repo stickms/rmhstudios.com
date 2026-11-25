@@ -172,6 +172,18 @@ const db = {
     findFirst: async ({ where }: { where: { OR: { blockerId: string; blockedId: string }[] } }) =>
       store.blocks.find((b) => where.OR.some((w) => w.blockerId === b.blockerId && w.blockedId === b.blockedId)) ??
       null,
+    // `hiddenFrom`: blocks between the viewer and a list of other players, either way.
+    findMany: async ({
+      where,
+    }: {
+      where: { OR: { blockerId: string | { in: string[] }; blockedId: string | { in: string[] } }[] };
+    }) => {
+      const is = (cond: string | { in: string[] }, v: string) =>
+        typeof cond === 'string' ? cond === v : cond.in.includes(v);
+      return store.blocks.filter((b) =>
+        where.OR.some((w) => is(w.blockerId, b.blockerId) && is(w.blockedId, b.blockedId)),
+      );
+    },
   },
   $executeRaw: async (strings: TemplateStringsArray, ...values: unknown[]) => {
     store.locks.push(String(values[0]));

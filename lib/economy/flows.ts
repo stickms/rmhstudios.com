@@ -151,6 +151,15 @@ export const COIN_FLOWS: readonly CoinFlow[] = [
     pairsWith: 'prediction-stake',
   },
   {
+    id: 'prediction-sale',
+    kind: 'faucet',
+    surface: '/predictions — selling shares back',
+    source: 'lib/predictions/predictions.server.ts',
+    bounded: false,
+    note: 'Pays whole coins, rounded down, for shares sold back before resolution. The market takes the same shares out of its books, so the market can never pay out more than it took in.',
+    pairsWith: 'prediction-stake',
+  },
+  {
     id: 'prediction-bot-grant',
     kind: 'faucet',
     surface: 'Synthetic market-makers',

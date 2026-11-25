@@ -134,6 +134,8 @@ export interface RmhTubeStore {
   setConnectionStatus: (status: RmhTubeStore['connectionStatus']) => void;
   setPeersWaiting: (waiting: PeerWaitState | null) => void;
   applyAction: (action: RoomAction) => void;
+  /** s13-06: a moderator removed a message; drop it here and blank the quote in replies to it. */
+  removeChatMessage: (messageId: string) => void;
   applyFullSync: (fullState: ClientRoomState) => void;
   /** Apply an anchor from the server, dropping any that arrives out of order. */
   applyVideoState: (videoState: VideoState) => void;
@@ -187,6 +189,11 @@ export const useRmhTubeStore = create<RmhTubeStore>()(
           room: updatedRoom,
           lastSeq: action.seq,
         });
+      },
+
+      removeChatMessage: (messageId) => {
+        const room = get().room;
+        if (room) set({ room: withoutChatMessage(room, messageId) });
       },
 
       applyFullSync: (fullState) => {
@@ -331,6 +338,19 @@ export const useRmhTubeStore = create<RmhTubeStore>()(
 );
 
 // ─── Room Action Reducer ─────────────────────────────────────────
+
+/** The room without one removed chat message: its reactions go with it, replies to it say it was removed. */
+export function withoutChatMessage(room: ClientRoomState, messageId: string): ClientRoomState {
+  return {
+    ...room,
+    chat: room.chat
+      .filter((m) => m.id !== messageId)
+      .map((m) =>
+        m.replyToId === messageId ? { ...m, replyToContent: null, replyToUserName: null, replyToRemoved: true } : m,
+      ),
+    pinnedMessage: room.pinnedMessage?.id === messageId ? null : room.pinnedMessage,
+  };
+}
 
 export function applyRoomAction(room: ClientRoomState, action: RoomAction, store?: RmhTubeStore): ClientRoomState {
   const { type, payload } = action;

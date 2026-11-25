@@ -1,0 +1,119 @@
+# Sprint 13 — summary
+
+Twenty features shipped on `claude/autonomous-sprint-13`. Each was built from its brief in its own worktree, reviewed by a fresh reviewer who fixed what they found, and merged wave by wave (plan: [plan.md](plan.md)).
+
+## What shipped
+- **01 Sequence Sam.** The RMHBox stub is a playable minigame. Everyone watches the same four-pad sequence light up, then plays it back, and each round adds a step. The server draws and judges: a step is sent only as it is shown, taps are judged as they arrive, and the speed bonus is timed on the server clock. Two misses and a player watches. Pads have a colour, a shape and a name, keys 1 to 4 work, and each step is announced with a tone under the RMHBox mute. History shows each round's length and every player's steps and points. Review made the tone create its `AudioContext` only after the player has acted.
+- **02 Game assists in Vega.** Vega joins the site's game assists: a speed floor, calm visuals, colour-safe palettes with one glyph per specimen, and building while paused. The server decides at run start that a run is assisted, and the score route reads that claim, never the body. An assisted run gets no board row and no achievement, still counts for quests, and says "Not ranked". Review loaded the shared `game-assists` namespace in the island.
+- **03 Your Altair runs.** The menu opens "Your runs": finished solo runs with the replay's own numbers and the verifier's reason in words, and co-op matches with teammates' current names ("A player" across a block, "Deleted user" for an erased one). Both lists are keyset paged on (time, id). The export gains `altairRuns`, without seeds or loadouts. Review stopped sending teammates' user ids to the client.
+- **04 Play the chart you pick in Slice It.** The run plays the picked chart's notes and submits its id. A chart run never writes `SongLeaderboard`, whose key has no chart dimension. The skill rating now reads the player's `SliceRun` rows, one best cleared row per ranked chart, so ranked charts still count. One cleared run in ten on a published chart feeds a miss heat, checked against the chart's note times. The chart's author sees a four-step tint under the editor timeline and a per-note rate in the inspector. The picker starts on the generated chart, so an author's own draft is never chosen by default.
+- **05 What the people you follow are playing.** The games library home has a Friends section: who is playing now, then recent events by day. `getFriendActivity` drops blocked, banned, pending-deletion and erased members, and members hidden from boards, before it reads anything. It is listed in the board privacy registry and served by `GET /api/games/friends/activity`.
+- **06 Report a message in an RMHTube room.** A member who was ever in the room can report another member's message (type `tube-chat`). A takedown deletes the row and tells the hub over Redis. The hub drops it from its ring buffer and the room, and replies to it read "Message removed". An erased member's messages say "Deleted user". A nightly prune deletes messages older than 90 days beyond each room's newest 200, and spares any message an open report names.
+- **07 Subscribe to an RMHTube host.** "Subscribe" appears on the party page and on each host line of the upcoming list, and the landing lists "Hosts you follow". When a host schedules a public party, each subscriber gets one notice through a new durable fan-out (`tube-party`). Blocked, banned, leaving and already-going members are skipped. The toggle is `PUT`/`DELETE` on a contract, refuses an unknown or blocked host with the same answer, and caps a member at 200 hosts under a lock. No response carries a count or a subscriber list. The export gains `rmhtubeSubscriptions`.
+- **08 Track a job you found elsewhere.** A member can add, edit and delete up to 300 jobs of their own in the RMHLadder pipeline. Each is a `ladder_job` row (with its own company row) carrying a new `ownerId`. Every catalogue reader uses one fragment per model, including the sitemap and the Open Graph card, which answers 404 for an own job. A source scan over both models holds the readers in `CATALOG_JOB_READ_PATHS` and `OWNER_JOB_READ_PATHS`. `assertJobUsable` guards every write that takes a `jobId`. The `ownerId` index is built `CONCURRENTLY`, with an `_ensure_valid` repair migration. Own jobs are erased and exported. Review put edit and delete under the same per-member lock as add.
+- **09 Your job search on your calendar.** An opt-in "Show on my calendar" puts interviews (30 minutes), follow-ups and deadlines (all day) in the `/calendar` "Yours" week and the private feed. Entries have stable UIDs and a rising SEQUENCE. The read selects dates and names only, so notes, contacts, referrals and pay are never loaded. The one-off download stops writing notes too. Review marked all-day entries as all-day on the page (they had printed 12:00) and put `dir=auto` on titles.
+- **10 Your job search in the developer API.** New `read:ladder` and `write:ladder` scopes read applications and timelines, move an application along, and add an own job. Writes go through the site's own `updateApplication` and `createOwnJob`. Both scopes are explicit. `READ_SCOPES`, and so a new key's default grant, now leaves out explicit scopes, and a test pins the old set. Offers, pay, resumes, referrals and contacts are never selected.
+- **11 The lists you are on.** `/settings/lists` shows the public and unlisted lists that include the member, never a private one and never one whose owner is blocked either way. "Leave this list" records a `ListLeave` the owner cannot override, through the site or the developer API, which reports a left member as `left`. `addMember` checks the cap and every refusal under a per-list lock, and answers every refusal with one sentence. Blocking takes each member off the other's lists inside its own transaction, under the same locks.
+- **12 News stories you can browse and follow.** `/news/stories` lists stories that have a published article, and each story has a page and its own RSS. Following is capped at 200 stories under a lock. When an admin links a published article, a durable fan-out (`news-story-article`) tells each follower once. Review made the story follow and the older reading subscription one toggle: either shows "Following", unfollowing removes both, and a member is told once.
+- **13 Your standing in a ranked season.** The Ranked tab shows "Your season" above the ladder: rating and tier or the placement matches left, the record, the place, the decay sentence and the season's end. The place is a count of the placed, visible rows above, with decay applied as the ladder does. A hidden member sees their numbers and "Not on the ladder". At the 5,000-row read cap the place is "outside the top 5,000". Review replaced composed ordinals with a translatable "Place N of M".
+- **14 See the price first, and sell your shares.** A prediction card quotes shares, average price and the new odds from the server's own LMSR functions, and a buy carries `minShares`. A member can sell shares back before resolution. The sale runs under the market's row lock with a member-scoped idempotency key and a conditional position decrement, lowers the market's `q`, and rounds proceeds down. It is a new `prediction-sale` faucet, and positions join the export. Review found that a same-key retry queued behind its own sale took the shares unpaid. It now replays after the lock.
+- **15 Blocks and reports in Rideshare.** The available list leaves blocked riders out. Accepting a blocked pair, or as a banned driver, is refused. A block mid-trip closes the chat without cancelling the trip, answering as a closed chat. The rider or the driver can report an accepted trip (type `ride`) for 30 days. The moderator sees times, place labels, both parties and the chat, never coordinates. The five ride routes' refusals have codes. Review kept the schedule refusals' own messages and redacted addresses in the moderator's preview.
+- **16 RMHBox packs in the report queue.** A pack is a report type (`rmhbox-pack`), filed from the site's report dialog. Three distinct open reports still hide it, counted and hidden in one transaction under a lock that stamps `autoHiddenAt`. A removal stamps `moderatedAt`, which the owner cannot undo and every shelf and the lobby honour. Dismissing or withdrawing the last open report restores a pack the reports hid, but never one an admin hid. A migration copies the old reports.
+- **17 Report a message.** A conversation member can report another member's message (type `dm`) from its menu. The moderator sees the message and its earlier versions from a new `chat_message_edit` table. Each version is written in the edit's own transaction, replacing the Redis store, and kept for 30 days or while a report waits. A group-message takedown tells open group views.
+- **18 A billing stop that cannot lose a subscription.** The stop writes a Stripe metadata marker in the same call as the flip, so a crash before the hold write still leaves a marker the resume finds. A withdrawal keeps the hold and always reconciles. Subscription lists are paged up to 1,000. An hourly sweep queues the sync for holds without a done-stamp. `/admin/deletions` shows each pending account's billing state. Review matched the marker by value to its hold, wrote the hold before the first flip, made the done-stamp a compare-and-set, and re-marked billing pending after the schedule commits.
+- **19 Close the sprint 12 gaps.**
+  - (a) A banned or blocked player no longer reads a party: one `partyAccess` gate covers the party, its sheets and the roll log.
+  - (b) Both mod logs page by an opaque (time, id) cursor.
+  - (c) A deck a moderator took down takes no suggestions.
+  - (d) The route announcer alternates two live regions and replays a navigation made before it loaded.
+  - Review hid a blocked player's rolls and filtered the party list by the same gate.
+- **20 A push when someone messages you.** A direct message pushes to its recipient through `dispatch()` in a new push-only `messages` category. The push names the sender and carries no text, and there is one per conversation per two minutes. A direct conversation gains "Mute notifications" (1 hour, 8 hours, 1 week, or until turned back on). Review checked the mute before the coalescing window is claimed, so a muted message no longer swallows the next one.
+
+## Fixes made at integration
+- **Merge of main.** None was needed: `origin/main` had not moved since the sprint branched. The route table, the site reference, the account-deletion doc, the SDK and the API docs were checked for freshness, not hand-merged.
+- **Type errors (04, 11, 14).** No feature had run tsc. The sliced check found 18 errors in 9 files. Three of the source errors were real bugs:
+  - Slice It's `collectContributions` (04) filtered `accuracy: { not: null }` and ordered with `nulls: 'last'` on `SliceRun.accuracy`, a required column. Against Postgres 16, Prisma rejects both at run time, so every skill recompute threw. The unit test had pinned the invalid arguments, and now pins the query that runs.
+  - A replayed prediction sale (14) returned the ledger's BigInt `amount` as `proceeds`. `Response.json` cannot serialise a BigInt, so a double-clicked sale answered 500.
+  - The lists-on visibility filter (11) was a readonly `as const`. It is now `satisfies Prisma.CustomFeedWhereInput`, which is type-only.
+  - The other seven errors were in test fakes and fixtures (03, 08, 12, 14, 19, 20). None changes an assertion.
+- **Ratchets (01, 12, 17, 19).** The first full `pnpm test` failed four cross-feature gates:
+  - Sequence Sam's tone made its own `new AudioContext()`. It now uses the page's shared context from `lib/shared/platform`.
+  - `GET /api/news/stories` declared no cache policy. It takes `liveList`.
+  - 17 removed a per-process TTL map, so the ad-hoc cache baseline moved down from 41 to 40.
+  - 19 installs the announcer with extra arguments. The gate still requires exactly one install by the router.
+- **Ladder calendar (09), found in the browser.** With "Show on my calendar" on, `/calendar`'s Yours tab and the private ICS feed answered 500: the read selected `job.updatedAt`, and `LadderJob` has no such column. Prisma's nested select type let it through tsc, and every test used a fake. The deadline entry's SEQUENCE now follows the newest of the application's `updatedAt` and the job's `lastSeenAt` (or `discoveredAt`); the scraper stamps `lastSeenAt` in the write that stores a deadline. An own-job edit now touches the member's application, so an edited deadline raises the SEQUENCE too. A new test holds both.
+- **Altair menu (03's surface; predates the sprint).** Every load of `/altair` threw a page error. The first animation frame can carry a timestamp earlier than the `performance.now()` read at setup, so the corridor was drawn at a negative time and `drone[-1]` was undefined. The time is now clamped at zero.
+- **Site CSS (18).** The overdue table on `/admin/deletions` moved to `min-w-[56rem]`, a utility no other page uses, and the site CSS grew from 31.3 to 31.4 KB brotli. B5 and the plan say this sprint uses existing utilities only, so the table is back on `min-w-[48rem]`, and the CSS is 31.3 KB again.
+- **Bundle.** The entry is 699.0 KB against sprint 12's 697.7 KB. The growth is the new pages' route records (the story index and page, `/settings/lists`), the twenty namespace names and four report types. Searching the entry for the sprint's own identifiers (quotes, sale functions, own-job, list, mute, standing and fan-out code) found no feature code. No budget was raised.
+
+## Verification
+- **Typecheck.**
+  - A cold `tsc -b` cannot run on this 15 GB box. Each slice now has a floor of about 11.5 GB, because the route tree pulls in every route. The `server` slice and the second features half were killed by the out-of-memory killer even alone.
+  - The site project was checked in 20 single-threaded slices, each with the route tree and the ambient declarations: app; components; lib; features as altair to hearthworks, slice-it, vega with void-breaker, and each of the other six alone; server as rmhbox, rmhtube, jobs and the rest; hooks with stores; testing; deploy, packages, docs, rmhcode, eslint-local-rules and prisma; and the root configs.
+  - All 20 slices have 0 errors. Peaks were 11.4 to 13.4 GB, and Med Schools (main's code) was the heaviest.
+  - Core and engine are clean, and `typecheck:strict` is clean.
+- **Lint.** 374 changed files against `origin/main`: 0 errors and 27 warnings, none of them new: no file has more warnings than on main. `lint:ratchet` OK (59 entries). `check:consistency --fast --base origin/main` is green over 481 files.
+- **Tests.** `pnpm test` passed 21,709 tests in 1,855 files, with 14 skipped, in 4 min 31 s. `pnpm test:product` passed 2,893 tests in 195 files. Every failure in the first run was a real gate (above), not a timeout.
+- **Build.**
+  - Entry 699.0 / 702.1 KB raw.
+  - Critical path 916.0 / 919.1 KB raw and 239.7 / 242.6 KB brotli.
+  - Site CSS 31.3 / 32.0 KB brotli.
+  - Every island is within budget.
+- **Generated docs.** `api:routes`, `docs:site`, `docs:api`, `sdk:check`, `docs:deletion`, `images:variants` and `fonts:check` are up to date. The facts were regenerated (untracked).
+- **Postgres 16** (local cluster, no pgvector). 524 migrations apply from empty with 0 invalid indexes. The only schema drift is the hand-written trigram and tsvector indexes, plus the embedding table that is skipped without pgvector. On a fresh database, 44 checks against the real functions pass:
+  - 06: the prune keeps each room's newest 200 plus a message a pending report names, drops one a dismissed report names, sets a reply's `replyToId` to null, and a second run is a no-op.
+  - 17: two racing edits both land with a version each. The prune keeps a reported message's versions and drops the rest.
+  - 08: the `CONCURRENTLY` index is valid. Two concurrent creates at 299 leave exactly 300. `job: { OR: [...] }` returns catalogue and own jobs, never another member's.
+  - 11: two concurrent adds at the 500 cap leave 500. A member who left cannot be re-added. A block racing an add, through the block route's own handler, twelve times, never leaves the blocked member on the list.
+  - 04: one best cleared row per ranked chart, with failed runs and unranked charts left out.
+  - 13: `placeOf` matches the public ladder's order for every entry, with decay reordering and a hidden member. `getStandings` gives the same place, and none to the hidden member.
+  - 14: of two concurrent same-key sells, one sells and one replays, and the shares fall once. Of two concurrent full sells, one wins. Buying then selling everything never profits, and `q` returns to 0. Racing buys and sells leave `q` equal to the positions.
+  - 16: the legacy copy, run twice, copies each report once. Three concurrent reporters hide the pack once. A dismissal restores it only after the last report, and never a pack an admin hid.
+  - 19: both mod logs page 130 out-of-order rows exactly once, the public one through the raw `(createdAt, id)` row comparison.
+  - 12: two concurrent follows at 199 leave 200. A fan-out to 900 followers, killed with SIGKILL after 184 notices and resumed by two concurrent runners, tells each follower exactly once.
+  - 18 with Stripe faked: a crash after Stripe applied the stop leaves a hold and two marked subscriptions, and the withdrawal resumes exactly those, never the member's own cancellation. 250 subscriptions across three pages are flipped, recorded and resumed with no `cancel`, and a second stop is a no-op. Two concurrent sweeps against real pg-boss queue each waiting member once.
+  - Erasure end to end: an erased member's RMHTube chat reads "Deleted user", and their edit versions, own jobs, list leaves and story follows are gone. A re-run is a no-op, and `TODO_CEILING` stays 4.
+- **Browser.** The production build was loaded 125 times: 22 surfaces in Day and Night at 390 and 1280 px, and in `ar` (110 loads), then the Slice It picker, the editor's heat row with sampled misses, and the deletions page after the CSS fix (15 more). After the fixes there was no horizontal scroll and no console or hydration error.
+  - Surfaces: settings lists; the ladder pipeline, the own-job dialog, a job page and settings; `/calendar` Yours with all-day entries; the stories index and a story page; Ranked "Your season"; the games library's Friends; Altair "Your runs"; the prediction card quote and the sell dialog; Slice It's chart picker (a phone opens it from the options sheet) and heat row; RMHTube "Hosts you follow"; the report dialogs for a pack, a trip and a message; the message mute control; and the admin deletions billing column and reports.
+  - The private ICS feed served the follow-up, the deadline and the interview with no note, contact or pay.
+- **Size.** About 23,800 lines of code (TypeScript, TSX, SQL, CSS and `data/` JSON) were added across the twenty merges, excluding generated files. The largest are 08 (2,751 lines), 01 (2,135) and 12 (1,465); the smallest is 05 (564). The `serverError` ratchet fell from 18 to 17 (14).
+
+## Owner follow-ups
+- **S13-02:** the assist claim is not consumed on a rejected (400) run, so a re-POST after turning assists off ranks; Vega scores are client-claimed anyway. A save resumed with assists off starts a fresh ranked claim.
+- **S13-03:** opening Altair's "Your runs" does not move focus into the screen.
+- **S13-06:** an erased member's name stays in a running room's ring buffer until the hub restarts. The composer's reply target is not cleared when the message it quotes is removed.
+- **S13-09:**
+  - All-day ladder entries are bucketed at noon UTC on the `/calendar` grid, so viewers at UTC+13/14 or UTC-12 may see them a day off.
+  - Integration: `LadderJob` has no `updatedAt`, so a deadline's SEQUENCE follows `lastSeenAt`. The scraper stamps that on every re-see, so a subscribed calendar rewrites an unchanged deadline after each scrape. That is harmless, but a real `updatedAt` would need a schema change.
+- **S13-12:** two story follows coexist: `NewsStoryFollow`, and the older `news_story` reading subscription with its daily email. The page merges them, but retiring one is an owner decision. The `part-of-story` reading key is now unused.
+- **S13-13:** ranked tier words (`tierForRating().label`) are English only, as on the existing ladder.
+- **S13-14:**
+  - Payout `Math.round` lets a member tune a holding to about 0.5 shares for +0.5 coin per position per market. This happens with buys already.
+  - A member who sold everything is still scored on `lastP`.
+- **S13-15:** an accept racing a block can leave an accepted trip; the chat closes, and the spec allows this. `ActiveRidePanel` hides Report for a cancelled trip, because sync has no `cancelledAt`.
+- **S13-16:**
+  - A "resolve" without a takedown on the last open report leaves an auto-hidden pack hidden.
+  - Three sock accounts can auto-hide any pack until a moderator dismisses; the spec has no trust gate.
+- **S13-17:**
+  - A group-message takedown hard-deletes, cascading thread replies, reactions and versions, and the parent's `replyCount` goes stale.
+  - Two truly concurrent edits may snapshot the same text.
+  - Erasure deletes edit versions even under an open report (the spec's tradeoff).
+- **S13-18:**
+  - A member who un-cancels and then re-cancels in the Stripe portal during a pending request (same hold) would have that cancellation resumed. A fix needs subscription webhooks.
+  - A customer with more than 1,000 subscriptions is retried hourly forever and never erased. Watch the overdue list and the too-many-subscriptions log.
+  - The sweep's queued count includes deduped sends.
+- **S13-19:** the developer API's hidden-player name "A player" is hard-coded English. The screen-reader pass on the alternating announcer is still pending.
+- **S13-20:** a push received on a real device was not tested here; the payloads and coalescing are covered by tests.
+- **Not loaded in the browser pass**, because the production-build pass runs no realtime hub: Sequence Sam (01), Vega's assists in a run (02), and the RMHTube room's report item (06). Their handler, unit and capability tests cover them.
+- **Integration:**
+  - A Prisma nested `select` accepted a field the model does not have (09), and fakes hid three runtime failures (04, 09, 14). Each new query is worth one test against the integration suite's real Postgres.
+  - A cold `tsc -b` does not fit in 15 GB, and the route tree alone puts each slice at about 11.5 GB. The commit gate's tsc step needs more memory or a split.
+  - The `ar` pass checked direction and layout only. The non-English catalogs were not pulled, so pages served English text.
+- **Found at integration, predating the sprint:**
+  - Altair's menu music creates its `AudioContext` before the first gesture, and Chrome logs an autoplay warning.
+  - `/admin/deletions` says "1 accounts", and shows "No attempt failed yet" in the danger colour (S12-14).
+  - On a phone, Slice It's song-details sheet gives its scroll area about 270 px of an 844 px screen.
+- **Open owner decisions the sprint met, each kept at its default:**
+  - A deleted member's follows, beside 07: RMHTube subscriptions stay `owner` at erasure.
+  - Game reviews, beside 05: shown as on the profile, and their erasure is left alone.
+  - Refunds, beside 18: no refund and no proration.

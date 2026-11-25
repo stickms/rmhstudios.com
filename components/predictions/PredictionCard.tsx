@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Sparkles,
@@ -13,11 +13,13 @@ import type { Market } from './types';
 import { useSignInPrompt } from '@/hooks/useSignInPrompt';
 import { MarketExtras } from '@/components/forecasting/MarketExtras';
 import { api } from '@/lib/contract/client';
-import {
-  HttpError,
-  serverError,
-} from '@/lib/http';
+import { HttpError } from '@/lib/http';
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { tradePredictionApi } from '@/lib/predictions/predictions.contract';
+import { quoteTrade } from '@/lib/predictions/quote';
+
+// The sale dialog loads when a member first opens it.
+const SellDialog = lazy(() => import('./SellDialog').then((m) => ({ default: m.SellDialog })));
 
 interface Props {
   market: Market;
@@ -49,6 +51,8 @@ export function PredictionCard({
 }: Props) {
   const promptSignIn =
     useSignInPrompt();
+  const refusalText = useRefusalText();
+  const [sellOpen, setSellOpen] = useState(false);
   const {
     t,
   } =
@@ -94,6 +98,11 @@ export function PredictionCard({
     market.status ===
       'OPEN' &&
     !closed;
+
+  const quotes = {
+    YES: quoteTrade(market, 'YES', amount),
+    NO: quoteTrade(market, 'NO', amount),
+  };
 
   async function trade(
     side:
@@ -166,6 +175,8 @@ export function PredictionCard({
             body: {
               side,
               amount,
+              // The quote less 2%: the server refuses a buy the price has moved past.
+              ...(quotes[side].minShares > 0 ? { minShares: quotes[side].minShares } : {}),
             },
           },
         ).catch(
@@ -180,7 +191,7 @@ export function PredictionCard({
             )
               throw e;
             toast.error(
-              serverError(
+              refusalText.maybe(
                 e,
               ) ??
                 t(
@@ -511,6 +522,24 @@ export function PredictionCard({
               {`${t('buy-no', { defaultValue: 'Buy NO' })} · ${no}%`}
             </Button>
           </div>
+          {amount >= 1 && (
+            <div className="flex flex-col gap-1 t-meta" aria-live="polite">
+              {(['YES', 'NO'] as const).map((sd) =>
+                quotes[sd].shares > 0 ? (
+                  <span key={sd}>
+                    {t('quote', {
+                      ns: 'prediction-trades',
+                      defaultValue: '{{side}}: {{shares}} shares, average {{price}} each; YES would move to {{percent}}%',
+                      side: sd,
+                      shares: Math.round(quotes[sd].shares * 10) / 10,
+                      price: quotes[sd].averagePrice.toFixed(2),
+                      percent: quotes[sd].newYesPercent,
+                    })}
+                  </span>
+                ) : null,
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -528,7 +557,7 @@ export function PredictionCard({
           )}
         </span>
         {hasPos && (
-          <span className="tabular-nums">
+          <span className="flex items-center gap-2 tabular-nums">
             {t(
               'your-position',
               {
@@ -544,9 +573,33 @@ export function PredictionCard({
                 ),
               },
             )}
+            <span>
+              {t('spent-received', {
+                ns: 'prediction-trades',
+                defaultValue: 'spent {{spent}}, received {{received}}',
+                spent: pos!.spent,
+                received: pos!.received,
+              })}
+            </span>
+            {tradable && signedIn && (
+              <Button type="button" size="xs" variant="default" onClick={() => setSellOpen(true)}>
+                {t('sell', { ns: 'prediction-trades', defaultValue: 'Sell' })}
+              </Button>
+            )}
           </span>
         )}
       </div>
+      {sellOpen && hasPos && (
+        <Suspense fallback={null}>
+          <SellDialog
+            market={market}
+            open={sellOpen}
+            onOpenChange={setSellOpen}
+            setCoins={setCoins}
+            onUpdated={onUpdated}
+          />
+        </Suspense>
+      )}
       <MarketExtras
         marketId={
           market.id

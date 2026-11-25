@@ -12,7 +12,7 @@ import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { api } from '@/lib/contract/client';
 import { listAdminDeletionsApi, retryAdminErasureApi } from '@/lib/admin/deletions.contract';
-import type { HoldCounts, OverdueDeletionRow, WaitingDeletionRow } from '@/lib/admin/deletions';
+import type { BillingState, HoldCounts, OverdueDeletionRow, WaitingDeletionRow } from '@/lib/admin/deletions';
 
 /**
  * /admin/deletions: three sections on rules. Waiting (scheduled deletions, oldest due first, with what the deletion
@@ -52,6 +52,17 @@ export function DeletionsAdmin() {
       webhooks: fmt.number(h.webhooks),
       subscriptions: fmt.number(h.subscriptions),
     });
+
+  const billing = (b: BillingState) => {
+    switch (b) {
+      case 'stopped':
+        return t('billing-stopped', { defaultValue: 'Stopped' });
+      case 'none':
+        return t('billing-none', { defaultValue: 'Nothing to stop' });
+      case 'pending':
+        return t('billing-pending', { defaultValue: 'Not stopped yet' });
+    }
+  };
 
   const retry = async (row: OverdueDeletionRow) => {
     const ok = await confirm({
@@ -111,6 +122,7 @@ export function DeletionsAdmin() {
         <td className="py-3 pe-3">{member(r)}</td>
         <td className="t-meta py-3 pe-3 text-site-text">{fmt.date(r.requestedAt)}</td>
         <td className="t-meta py-3 pe-3 text-site-text">{fmt.date(r.dueAt)}</td>
+        <td className="t-meta py-3 pe-3 text-site-text">{billing(r.billing)}</td>
         <td className="t-meta py-3 text-site-text-muted">{held(r.held)}</td>
       </tr>
     ));
@@ -136,7 +148,7 @@ export function DeletionsAdmin() {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[40rem] border-collapse text-start">
+            <table className="w-full min-w-[48rem] border-collapse text-start">
               <caption className="sr-only">{t('waiting-caption', { defaultValue: 'Deletions waiting' })}</caption>
               <thead>
                 <tr className="border-b border-site-border">
@@ -148,6 +160,9 @@ export function DeletionsAdmin() {
                   </th>
                   <th scope="col" className={th}>
                     {t('col-due', { defaultValue: 'Due' })}
+                  </th>
+                  <th scope="col" className={th}>
+                    {t('col-billing', { defaultValue: 'Billing' })}
                   </th>
                   <th scope="col" className="t-label py-2 text-start">
                     {t('col-paused', { defaultValue: 'Paused by the hold' })}
@@ -188,6 +203,9 @@ export function DeletionsAdmin() {
                     {t('col-due', { defaultValue: 'Due' })}
                   </th>
                   <th scope="col" className={th}>
+                    {t('col-billing', { defaultValue: 'Billing' })}
+                  </th>
+                  <th scope="col" className={th}>
                     {t('col-attempts', { defaultValue: 'Attempts' })}
                   </th>
                   <th scope="col" className={th}>
@@ -203,6 +221,7 @@ export function DeletionsAdmin() {
                   <tr key={r.userId} className="border-b border-site-border align-top">
                     <td className="py-3 pe-3">{member(r)}</td>
                     <td className="t-meta py-3 pe-3 text-site-text">{fmt.date(r.dueAt)}</td>
+                    <td className="t-meta py-3 pe-3 text-site-text">{billing(r.billing)}</td>
                     <td className="t-meta py-3 pe-3 text-site-text">{fmt.number(r.attempts)}</td>
                     <td className="t-meta py-3 pe-3 break-all text-site-danger" dir="ltr">
                       {r.running

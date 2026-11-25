@@ -149,6 +149,7 @@ model ChatMessage {
   threadParent  ChatMessage?          @relation("ChatMessageThread", fields: [threadParentId], references: [id], onDelete: Cascade)
   threadReplies ChatMessage[]         @relation("ChatMessageThread")
   mentions      ChatMention[]
+  edits         ChatMessageEdit[]
 
   @@index([chatId, createdAt])
   @@index([senderId])
@@ -158,6 +159,21 @@ model ChatMessage {
   // DM unread badge: chatId IN (...) AND read = false AND senderId <> me.
   @@index([chatId, read, senderId])
   @@map("chat_message")
+}
+
+/// s13-17: what a message said before an edit replaced it, written in the edit's own transaction. Read only by the
+/// moderation view of a reported message; no participant ever receives it. Kept 30 days, or while a report waits.
+/// No `User` relation (the erasure operation and its test are the record).
+model ChatMessageEdit {
+  id         String   @id @default(cuid())
+  messageId  String
+  content    String   @db.VarChar(2000)
+  replacedAt DateTime @default(now())
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId, replacedAt])
+  @@map("chat_message_edit")
 }
 
 /// s07-05: a current member @mentioned in a group message. "Your mentions" in the group info dialog is one indexed read.

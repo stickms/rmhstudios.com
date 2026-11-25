@@ -19,6 +19,7 @@ import type { GameEngine } from './engine';
 import { useSliceItStore } from './store';
 import type { Modifiers } from './types';
 import { type TimingSummary } from './integrity';
+import { missedTimesMs } from './miss-times';
 import type { SliceItReplay } from '@/lib/game/replay';
 
 import { api } from '@/lib/contract/client';
@@ -73,6 +74,17 @@ export interface RunSummary {
   runToken?: string;
   /** Hit-timing distribution; see `integrity.ts`. */
   timing?: TimingSummary;
+  /**
+   * The published chart the run played, when the player picked one (`undefined` for the generated chart). A run with
+   * a chart id never writes the song's board; see `/api/slice-it/score`.
+   */
+  chartId?: string;
+  /** Whether the run reached the end of the chart. Sent for a chart run, where the miss heat counts cleared runs only. */
+  cleared?: boolean;
+  /** The times, in milliseconds, of the chart's notes this run missed. Sent with `chartId`. */
+  missedNoteMs?: number[];
+  /** How many notes the played chart has. Sent with `chartId`. */
+  noteCount?: number;
   /**
    * Song identity for the local timing history, from the engine's loaded map.
    *
@@ -220,8 +232,13 @@ export function useRunSummary(multiplayer: boolean, engine?: GameEngine | null):
   const modifiers = useSliceItStore((s) => s.modifiers);
   const runToken = useSliceItStore((s) => s.runToken);
   const practiceAids = useSliceItStore((s) => s.metronome || s.assistTick);
+  const playingChart = useSliceItStore((s) => s.playingChart);
 
   if (status !== 'FINISHED' || !songId) return null;
+
+  // An author's playtest of their own draft is never submitted: the chart is not published, and the server would
+  // only record it without an identity.
+  if (playingChart && playingChart.status === 'draft') return null;
 
   // P1/P3/R4 — practice, autoplay and replay playback are unrankable BY
   // CONSTRUCTION. The guard is here, at the only place a submittable summary is
@@ -272,9 +289,19 @@ export function useRunSummary(multiplayer: boolean, engine?: GameEngine | null):
           durationSec: Math.ceil(slices[slices.length - 1]!.time),
         }
       : {}),
+    // A run on a picked chart: its identity, whether it was cleared, and where it missed. No replay: the replay
+    // viewer plays the song's generated chart, which is not the notes this run was judged on.
+    ...(playingChart
+      ? {
+          chartId: playingChart.id,
+          cleared: engine ? !engine.getRunStats().failed : true,
+          missedNoteMs: missedTimesMs(slices),
+          noteCount: playingChart.noteCount,
+        }
+      : {}),
     // Carried as a thunk, not sent: `submit` strips it out of the score body and
     // calls it only if the server says this was a new best.
-    ...(engine
+    ...(engine && !playingChart
       ? {
           getReplay: () => engine.getReplay(),
         }

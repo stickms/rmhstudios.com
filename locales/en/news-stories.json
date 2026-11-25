@@ -1,0 +1,17 @@
+{
+  "back-to-news": "Back to News",
+  "description": "Running stories from RMH News: related articles kept together on one dated timeline.",
+  "empty": "No stories yet",
+  "error-more": "Could not load more stories. Try again.",
+  "error-toggle": "Could not update your follow. Try again.",
+  "follow": "Follow",
+  "follow-label": "Follow this story",
+  "following": "Following",
+  "list-label": "Stories, newest activity first",
+  "more": "More stories",
+  "part-of": "Part of",
+  "rss": "RSS feed",
+  "story-count_one": "{{count}} article",
+  "story-count_other": "{{count}} articles",
+  "title": "Stories"
+}

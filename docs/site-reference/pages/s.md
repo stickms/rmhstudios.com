@@ -34,6 +34,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/settings/game-assists` | — | public | `app/routes/_site/settings/game-assists.tsx` |
 | `/settings/keyboard` | Keyboard | public | `app/routes/_site/settings/keyboard.tsx` |
 | `/settings/layout` | Sidebar | public | `app/routes/_site/settings/layout.tsx` |
+| `/settings/lists` | — | public | `app/routes/_site/settings/lists.tsx` |
 | `/settings/notifications` | Notifications | public | `app/routes/_site/settings/notifications.tsx` |
 | `/settings/preview` | — | public | `app/routes/_site/settings/preview.tsx` |
 | `/settings/privacy` | Privacy & data | public | `app/routes/_site/settings/privacy.tsx` |

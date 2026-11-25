@@ -7,6 +7,7 @@
 
 import { canViewPlaytime, isPlaytimePrivacy } from '@/lib/playtime/privacy';
 import type { ActivityEvent } from '@/lib/games/activity-types';
+import { dayOf } from '@/lib/calendar/tz';
 import type { PersonRef } from '@/lib/games/community-types';
 
 /** A heartbeat this recent means the title is open and in use (beats come every 30 s). */
@@ -183,4 +184,28 @@ export function assembleActivity(input: ActivityInput): ActivityEvent[] {
   }
 
   return out.sort((a, b) => b.at.localeCompare(a.at) || a.id.localeCompare(b.id)).slice(0, input.limit);
+}
+
+export type ActivityDay = { day: string; events: ActivityEvent[] };
+
+/**
+ * Events (already newest first) grouped under the calendar day they fall on in the viewer's time zone, newest day
+ * first, keeping each day's order. An unreadable time stamp is dropped.
+ */
+export function groupEventsByDay(events: ActivityEvent[], timeZone: string): ActivityDay[] {
+  const days: ActivityDay[] = [];
+  const byDay = new Map<string, ActivityDay>();
+  for (const e of events) {
+    const ms = Date.parse(e.at);
+    if (Number.isNaN(ms)) continue;
+    const day = dayOf(ms, timeZone);
+    let g = byDay.get(day);
+    if (!g) {
+      g = { day, events: [] };
+      byDay.set(day, g);
+      days.push(g);
+    }
+    g.events.push(e);
+  }
+  return days;
 }

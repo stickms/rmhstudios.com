@@ -5,7 +5,7 @@
  */
 
 export type { NotifPrefsInput } from './categories-schema';
-export const NOTIFY_CATEGORIES = ['social', 'replies', 'follows', 'economy', 'events', 'system'] as const;
+export const NOTIFY_CATEGORIES = ['social', 'replies', 'follows', 'economy', 'events', 'system', 'messages'] as const;
 export type NotifyCategory = (typeof NOTIFY_CATEGORIES)[number];
 
 export interface ChannelPrefs {
@@ -45,6 +45,12 @@ export const CATEGORY_DEFAULTS: Record<NotifyCategory, ChannelPrefs> = {
     inapp: true,
     push: true,
     email: true,
+  },
+  // s13-20: a direct message makes a push and no inbox row (the conversation list is the inbox).
+  messages: {
+    inapp: false,
+    push: true,
+    email: false,
   },
 };
 
@@ -103,4 +109,5 @@ export const CATEGORY_LABELS: Record<NotifyCategory, string> = {
   economy: 'Tips, awards & sales',
   events: 'Events & live',
   system: 'System',
+  messages: 'Messages',
 };

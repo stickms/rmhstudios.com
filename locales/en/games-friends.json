@@ -1,0 +1,12 @@
+{
+  "friends-empty": "Nobody you follow has played lately.",
+  "friends-error": "Could not load what the people you follow are playing.",
+  "friends-event-achievement": "unlocked {{name}}",
+  "friends-event-badge": "crafted a level {{level}} badge for {{game}}",
+  "friends-event-played": "played {{game}} for {{time}}",
+  "friends-event-review": "rated {{game}} {{stars}} out of 5",
+  "friends-event-thread": "started a thread in {{game}}",
+  "friends-playing-game": "is playing {{game}}",
+  "friends-playing-now": "Playing now",
+  "friends-title": "Friends"
+}

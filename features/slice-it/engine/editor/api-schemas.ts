@@ -94,6 +94,31 @@ export interface ChartDto {
   svPoints?: z.infer<typeof SvPointZ>[] | null;
 }
 
+/**
+ * Where players miss a chart (`GET /api/slice-it/charts/$id/misses`, the author only).
+ *
+ * Over the chart's current hash and the sampled runs on it. Under the minimum of sampled runs `buckets` and `notes`
+ * are empty: a rate over a handful of runs is not shown.
+ */
+export interface ChartMissesDto {
+  chartHash: string;
+  /** The most runs any note of this chart's current hash was counted over. */
+  sampledRuns: number;
+  buckets: {
+    /** Bucket start and end, seconds. */
+    from: number;
+    to: number;
+    attempts: number;
+    misses: number;
+    /** Null when nothing reached the bucket. */
+    rate: number | null;
+  }[];
+  notes: {
+    noteMs: number;
+    rate: number;
+  }[];
+}
+
 export interface ChartRevisionDto {
   id: string;
   kind: string;

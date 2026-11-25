@@ -168,6 +168,83 @@ async function targetsFor(viewerId: string, rows: Row[]): Promise<Map<string, Re
     }
   }
 
+  // Sprint 13 (docs/autonomous/sprint-13/plan.md §Anchors)
+  // s13-06 tube-chat-reports
+  // A reported room message shows the start of its text while it still exists; once a moderator removed it (or it was
+  // pruned) it is "no longer available". The reporter was a member of the room, so no block filter applies to the
+  // message's own words beyond the author block below.
+  const tubeChatIds = ids(rows, 'tube-chat');
+  if (tubeChatIds.length) {
+    const blocked = new Set(await getBlockedAuthorIds(viewerId));
+    const messages = await prisma.rmhTubeChatMessage.findMany({
+      where: { id: { in: tubeChatIds } },
+      select: { id: true, content: true, userId: true },
+    });
+    for (const m of messages) {
+      if (blocked.has(m.userId)) continue;
+      set('tube-chat', m.id, { kind: 'tube-chat', available: true, name: snippet(m.content), href: null });
+    }
+  }
+
+  // s13-15 rideshare-safety
+  // A reported trip names its two places while the reporter is still a party to it (they always were, to report it).
+  // Never coordinates, never the chat.
+  const rideIds = ids(rows, 'ride');
+  if (rideIds.length) {
+    const trips = await prisma.ride.findMany({
+      where: { id: { in: rideIds }, OR: [{ riderId: viewerId }, { driverId: viewerId }] },
+      select: { id: true, pickupLabel: true, dropoffLabel: true },
+    });
+    for (const r of trips) {
+      set('ride', r.id, {
+        kind: 'ride',
+        available: true,
+        name: snippet(`${r.pickupLabel} → ${r.dropoffLabel}`),
+        href: null,
+      });
+    }
+  }
+
+  // s13-16 pack-reports
+  // A reported pack shows its name until a moderator removed it (then it is "no longer available"). The reporter was
+  // not its owner, so the block filter applies to the owner like any other member's item.
+  const packIds = ids(rows, 'rmhbox-pack');
+  if (packIds.length) {
+    const packs = await prisma.rmhboxPack.findMany({
+      where: { id: { in: packIds }, moderatedAt: null, ...notBlocked('ownerId') },
+      select: { id: true, name: true },
+    });
+    for (const p of packs) {
+      set('rmhbox-pack', p.id, { kind: 'rmhbox-pack', available: true, name: snippet(p.name), href: '/rmhbox-packs' });
+    }
+  }
+
+  // s13-17 dm-reports
+  // A reported message shows the start of its text while it still exists, has not expired or been unsent or removed,
+  // and the reporter is still in its conversation. Earlier versions are never part of this view.
+  const dmIds = ids(rows, 'dm');
+  if (dmIds.length) {
+    const blocked = new Set(await getBlockedAuthorIds(viewerId));
+    const messages = await prisma.chatMessage.findMany({
+      where: {
+        id: { in: dmIds },
+        deletedAt: null,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        chat: { members: { some: { userId: viewerId } } },
+      },
+      select: { id: true, content: true, senderId: true, chatId: true, chat: { select: { kind: true } } },
+    });
+    for (const m of messages) {
+      if (blocked.has(m.senderId)) continue;
+      set('dm', m.id, {
+        kind: 'dm',
+        available: true,
+        name: snippet(m.content) || null,
+        href: m.chat.kind === 'group' ? `/groups/${m.chatId}` : `/messages/${m.chatId}`,
+      });
+    }
+  }
+
   return out;
 }
 
@@ -182,6 +259,19 @@ const LOOKED_UP: ReadonlySet<string> = new Set([
   'study-deck',
   'persona',
   'home-listing',
+
+  // Sprint 13 (docs/autonomous/sprint-13/plan.md §Anchors)
+  // s13-06 tube-chat-reports
+  'tube-chat',
+
+  // s13-15 rideshare-safety
+  'ride',
+
+  // s13-16 pack-reports
+  'rmhbox-pack',
+
+  // s13-17 dm-reports
+  'dm',
 ]);
 
 export async function listMyReports(
@@ -242,7 +332,21 @@ export async function withdrawReport(userId: string, reportId: string): Promise<
     where: { id: reportId, reporterId: userId, status: 'PENDING' },
     data: { status: 'DISMISSED', withdrawnAt: now, reporterNotifiedAt: now },
   });
-  if (claimed.count === 1) return 'withdrawn';
+  if (claimed.count === 1) {
+    // s13-16: taking back the last open report of a pack the reports hid brings the pack back, as a dismissal does.
+    try {
+      const row = await prisma.contentReport.findUnique({
+        where: { id: reportId },
+        select: { entityType: true, entityId: true },
+      });
+      if (row?.entityType === 'rmhbox-pack') {
+        await (await import('@/lib/party/pack-moderation.server')).restoreReportedPack(row.entityId);
+      }
+    } catch (e) {
+      console.error('Pack restore failed:', e);
+    }
+    return 'withdrawn';
+  }
   const mine = await prisma.contentReport.findFirst({
     where: { id: reportId, reporterId: userId },
     select: { id: true },

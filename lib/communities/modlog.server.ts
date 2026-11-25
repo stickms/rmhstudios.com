@@ -14,6 +14,8 @@ import {
   MOD_LOG_RETENTION_DAYS,
   MOD_LOG_RULE_TITLE_MAX,
   PUBLIC_MOD_ACTIONS,
+  decodeModLogCursor,
+  encodeModLogCursor,
   isModAction,
   modLogToCsv,
   toPublicEntry,
@@ -70,6 +72,8 @@ export interface ModLogFilter {
 }
 
 function whereFor(communityId: string, f: ModLogFilter): Prisma.CommunityModActionWhereInput {
+  // An old numeric cursor decodes to null: the list starts from the top (one repeated page at worst, never a gap).
+  const at = decodeModLogCursor(f.cursor);
   return {
     communityId,
     ...(f.group
@@ -84,11 +88,9 @@ function whereFor(communityId: string, f: ModLogFilter): Prisma.CommunityModActi
           actorId: f.actorId,
         }
       : {}),
-    ...(f.cursor
+    ...(at
       ? {
-          id: {
-            lt: BigInt(f.cursor),
-          },
+          OR: [{ createdAt: { lt: at.createdAt } }, { createdAt: at.createdAt, id: { lt: at.id } }],
         }
       : {}),
   };
@@ -163,7 +165,7 @@ export async function listModLog(communityId: string, filter: ModLogFilter): Pro
   const page = rows.slice(0, MOD_LOG_PAGE_SIZE);
   const [users, moderators] = await Promise.all([
     usersById(page.flatMap((r) => [r.actorId, r.targetUserId])),
-    filter.cursor ? Promise.resolve([]) : currentModerators(communityId),
+    decodeModLogCursor(filter.cursor) ? Promise.resolve([]) : currentModerators(communityId),
   ]);
   const entries: ModLogEntryDTO[] = page.flatMap((r) =>
     isModAction(r.action)
@@ -185,7 +187,7 @@ export async function listModLog(communityId: string, filter: ModLogFilter): Pro
   );
   return {
     entries,
-    nextCursor: rows.length > MOD_LOG_PAGE_SIZE ? String(page[page.length - 1]!.id) : null,
+    nextCursor: rows.length > MOD_LOG_PAGE_SIZE ? encodeModLogCursor(page[page.length - 1]!) : null,
     moderators,
   };
 }
@@ -205,18 +207,21 @@ export async function listPublicModLog(
   // exists, leave the public log (the moderators' log keeps every row; none is deleted). The exclusion is in the
   // query, so a page is full whenever more public rows exist. The tables and quoted columns are the schema's `@@map`s
   // (`community_mod_action`, `event`).
-  const found = await prisma.$queryRaw<{ id: bigint }[]>`
-    SELECT m."id"
+  const at = decodeModLogCursor(cursor);
+  const found = await prisma.$queryRaw<{ id: bigint; createdAt: Date }[]>`
+    SELECT m."id", m."createdAt"
     FROM community_mod_action m
     WHERE m."communityId" = ${communityId}
       AND m."action" = ANY(${[...PUBLIC_MOD_ACTIONS]}::text[])
-      ${cursor ? Prisma.sql`AND m."id" < ${BigInt(cursor)}` : Prisma.empty}
+      ${at ? Prisma.sql`AND (m."createdAt", m."id") < (${at.createdAt}, ${at.id})` : Prisma.empty}
       AND (m."action" <> ALL(${[...EVENT_MOD_ACTIONS]}::text[])
            OR EXISTS (SELECT 1 FROM event e WHERE e."id" = m."targetId" AND e."visibility" = 'PUBLIC'))
     ORDER BY m."createdAt" DESC, m."id" DESC
     LIMIT ${MOD_LOG_PAGE_SIZE + 1}`;
-  const ids = (Array.isArray(found) ? found : []).map((r) => r.id);
+  const foundRows = Array.isArray(found) ? found : [];
+  const ids = foundRows.map((r) => r.id);
   const pageIds = ids.slice(0, MOD_LOG_PAGE_SIZE);
+  const lastFound = foundRows[pageIds.length - 1];
   if (pageIds.length === 0) return { entries: [], nextCursor: null };
   const rows = await prisma.communityModAction.findMany({
     where: {
@@ -253,7 +258,7 @@ export async function listPublicModLog(
       const e = toPublicEntry(r);
       return e ? [e] : [];
     }),
-    nextCursor: ids.length > MOD_LOG_PAGE_SIZE ? String(pageIds[pageIds.length - 1]) : null,
+    nextCursor: ids.length > MOD_LOG_PAGE_SIZE && lastFound ? encodeModLogCursor(lastFound) : null,
   };
 }
 

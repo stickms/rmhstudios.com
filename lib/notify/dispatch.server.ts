@@ -122,6 +122,8 @@ export async function dispatch(input: DispatchInput): Promise<void> {
         title: pushTitleFor(input.type),
         body: noticeFallbackText(input.preview) ?? undefined,
         url: input.link ?? '/notifications',
+        // The tag the quiet-hours hold already carries: a newer push for the same thing replaces the older on the device.
+        ...(input.entityType && input.entityId ? { tag: `${input.entityType}:${input.entityId}` } : {}),
       });
     }
 

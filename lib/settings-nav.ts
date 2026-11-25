@@ -20,6 +20,7 @@
 import {
   Accessibility,
   HardDrive,
+  ListChecks,
   Bell,
   UserX,
   CloudUpload,
@@ -227,6 +228,19 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] = [
     label: 'This device',
     hint: 'What this site keeps in this browser, and clearing it',
     keywords: 'device storage browser cache indexeddb local clear sign out shared computer samples drafts offline',
+  },
+
+  // Sprint 13
+  // s13-11 lists-on
+  {
+    id: 'lists',
+    to: '/settings/lists',
+    group: 'account',
+    icon: ListChecks,
+    label: 'Lists you are on',
+    hint: 'The public lists that include you, and leaving them',
+    keywords: 'lists on added member leave remove me curated public unlisted',
+    requiresAuth: true,
   },
 
   // Sprint 10

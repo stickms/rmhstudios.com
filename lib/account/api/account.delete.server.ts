@@ -21,7 +21,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { deleteObject } from '@/lib/storage/s3.server';
 import { scheduleDeletion, DELETION_GRACE_DAYS } from '@/lib/account/deletion.server';
-import { pauseForDeletion, restoreAfterCancel } from '@/lib/account/deletion-hold.server';
+import { markBillingPending, pauseForDeletion, restoreAfterCancel } from '@/lib/account/deletion-hold.server';
 import { sendEmail } from '@/lib/email/send.server';
 import { SITE_URL } from '@/lib/seo';
 
@@ -115,6 +115,8 @@ export const route = apiRoute('/api/account/delete', {
         await restoreAfterCancel(userId).catch((e) => console.error('[account] undo pause failed:', e));
         throw err;
       });
+      // s13-18: the sync the pause queued may have run before the schedule landed; this one runs after it.
+      await markBillingPending(userId);
 
       // The address is read BEFORE scheduling (which nulls it), so the
       // notice can still be delivered. A failed send must not fail the

@@ -1,0 +1,18 @@
+{
+  "beyond-cap": "Outside the top {{top}}",
+  "decay_one": "Down {{count}} point: no ranked match in {{days}} days",
+  "decay_other": "Down {{count}} points: no ranked match in {{days}} days",
+  "empty": "No ranked matches this season",
+  "error": "Could not load your standing.",
+  "heading": "Your season",
+  "not-played": "Not played this season: {{games}}",
+  "off-ladder": "Not on the ladder",
+  "place": "Place {{place}}",
+  "place-of": "Place {{place}} of {{total}}",
+  "placement-left_one": "Placement: {{count}} match left",
+  "placement-left_other": "Placement: {{count}} matches left",
+  "record": "{{wins}}W {{losses}}L {{draws}}D",
+  "season-ends": "Season {{season}} ends {{date}}",
+  "season-progress": "Season progress",
+  "signed-out": "Sign in to see your standing this season."
+}

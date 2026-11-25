@@ -1,0 +1,10 @@
+{
+  "heat-bucket": "{{from}} to {{to}}: {{percent}}% missed",
+  "heat-bucket-empty": "{{from}} to {{to}}: no data",
+  "heat-caption": "Where players miss, based on {{runs}} sampled runs",
+  "heat-unavailable": "Where players miss is not available right now",
+  "note-miss-rate": "Missed in {{percent}}% of {{runs}} sampled runs",
+  "note-no-data": "No miss data for this note yet",
+  "played-draft": "Played on {{chart}} (a draft) — not submitted",
+  "played-on-chart": "Played on {{chart}} — not on the song's board"
+}

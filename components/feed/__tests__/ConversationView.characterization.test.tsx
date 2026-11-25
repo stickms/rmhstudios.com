@@ -105,6 +105,10 @@ function marker(name: string) {
     />
   );
 }
+vi.mock('@/components/messages/MuteConversationControl', () => ({
+  MuteConversationControl: () => null,
+  MutedUntilHeaderLine: () => null,
+}));
 vi.mock('@/components/call/CallButton', () => ({ CallButton: marker('CallButton') }));
 vi.mock('@/components/groupcall/GroupCallButton', () => ({
   GroupCallButton: marker('GroupCallButton'),

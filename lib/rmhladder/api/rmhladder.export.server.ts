@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { ownerOrCatalogJobWhere } from '@/lib/rmhladder/own-jobs';
 import { encodeCsv } from '@/lib/rmhladder/csv';
 import { offersToCsv } from '@/lib/rmhladder/offers';
 import { exportLadderOffers } from '@/lib/rmhladder/offers.server';
@@ -19,7 +20,7 @@ export const route = apiRoute('/api/rmhladder/export', {
       csv = offersToCsv(await exportLadderOffers(session.user.id));
     } else if (kind === 'saved') {
       const rows = await prisma.ladderJobAction.findMany({
-        where: { userId: session.user.id, action: 'saved' },
+        where: { userId: session.user.id, action: 'saved', job: ownerOrCatalogJobWhere(session.user.id) },
         include: { job: { include: { company: true } } },
         orderBy: { createdAt: 'desc' },
       });
@@ -36,7 +37,8 @@ export const route = apiRoute('/api/rmhladder/export', {
       );
     } else {
       const rows = await prisma.ladderApplication.findMany({
-        where: { userId: session.user.id },
+        // The member's own jobs are exported with their applications; no one else's ever is.
+        where: { userId: session.user.id, job: ownerOrCatalogJobWhere(session.user.id) },
         include: { job: { include: { company: true } }, selectedResumeVersion: true },
         orderBy: { updatedAt: 'desc' },
       });

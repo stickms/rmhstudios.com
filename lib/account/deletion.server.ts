@@ -834,6 +834,30 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     // The member's ratings, and each rated deck's sum and count corrected by what is removed (the decks stay, so no copyCount moves).
     ...(await (await import('@/lib/study/deck-ratings.server')).deckRatingErasureOps(userId)),
 
+    // Sprint 13 erasures (docs/autonomous/sprint-13/plan.md §Anchors): each feature adds its operations under its own line.
+    // s13-06 tube-chat-reports
+    // The erased member's messages in every RMHTube room lose their name (the text stays); `RmhTubeChatMessage` has no
+    // `User` relation, so this operation and its test are the record.
+    ...(await import('@/lib/rmhtube/chat-reports.server')).chatMessageErasureOps(userId),
+
+    // s13-08 ladder-own-jobs
+    // Jobs the member added themselves (their applications, events and offer go with each job), then their own
+    // companies, which those jobs referenced. The shared catalogue rows have no owner and are never touched.
+    ...(await import('@/lib/rmhladder/own-jobs.server')).ladderOwnJobErasureOps(userId),
+
+    // s13-11 lists-on
+    // The member's own leave rows (the ones on a list they own go with the list).
+    ...(await import('@/lib/lists/lists-on.server')).listLeaveErasureOps(userId),
+
+    // s13-12 news-stories
+    // The member's story follows (the cascade never fires: the account is anonymised in place).
+    ...(await import('@/lib/reading/story-follows.server')).storyFollowErasureOps(userId),
+
+    // s13-17 dm-reports
+    // Every earlier version of a message the member sent (the messages stay under "Deleted user"); the model has no
+    // `User` relation, so this operation and its test are the record.
+    ...(await import('@/lib/messages/edit-history.server')).messageEditErasureOps(userId),
+
     // med-schools-phase-4 tracker, lists, preferences (the shared anonymous events go in a pre-step, plan Task 6)
     ...medschoolsErasureOps(userId),
 

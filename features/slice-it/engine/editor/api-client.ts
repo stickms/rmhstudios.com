@@ -14,10 +14,11 @@ import type { EditorLoadPayload } from './store';
 import { toEditorNotes, type Charts, type Difficulty, type Slice, type SvPoint, type TimingPoint } from './types';
 import { sortNotes } from './commands';
 
-import { api } from '@/lib/contract/client';
+import { api, apiQuery } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
 import { getSliceSongApi } from '@features/slice-it/engine/play.contract';
 import {
+  getChartMissesApi,
   getChartRevisionApi,
   listChartRevisionsApi,
   publishChartApi,
@@ -234,4 +235,18 @@ export async function getRevision(chartId: string, revisionId: string): Promise<
       revisionId,
     },
   });
+}
+
+/**
+ * Where players miss a chart, for its author (`GET /api/slice-it/charts/$id/misses`).
+ *
+ * React Query options, so the timeline's heat row and the note inspector share one read. The figures are sampled one
+ * run in ten and move slowly: a minute is fresh enough, and a failure is not retried (the editor shows a quiet line).
+ */
+export function chartMissesQuery(chartId: string) {
+  return {
+    ...apiQuery(getChartMissesApi, { params: { id: chartId } }),
+    staleTime: 60_000,
+    retry: false,
+  };
 }

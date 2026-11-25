@@ -2,6 +2,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { getJobDetail, type QueriesPrisma } from '@/lib/rmhladder/server/queries';
+import { catalogJobWhere } from '@/lib/rmhladder/own-jobs';
 import { renderPageCard } from '@/lib/og/page-card.server';
 
 const queriesPrisma = prisma as unknown as QueriesPrisma;
@@ -42,11 +43,11 @@ function payLabel(job: Record<string, unknown>): string | null {
  */
 export const route = apiRoute('/api/og/job/$jobId', {
   GET: defineHandler({ auth: 'none' }, async ({ params }) => {
-    const job = (await getJobDetail(queriesPrisma, null, params.jobId)) as Record<
-      string,
-      unknown
-    > | null;
-    if (!job) return new Response('Not found', { status: 404 });
+    // The card is unauthenticated: a member's own job is a 404 whoever asks (`catalogJobWhere`), as is a missing one.
+    const job = (await getJobDetail(queriesPrisma, null, params.jobId, {
+      where: catalogJobWhere(),
+    })) as Record<string, unknown> | null;
+    if (!job || job.ownerId) return new Response('Not found', { status: 404 });
 
     const company = ((job.company as { name?: string } | null)?.name ?? '').trim();
     const pay = payLabel(job);

@@ -1,0 +1,21 @@
+{
+  "network-error": "Network error",
+  "quote": "{{side}}: {{shares}} shares, average {{price}} each; YES would move to {{percent}}%",
+  "sell": "Sell",
+  "sell-all": "All",
+  "sell-cancel": "Cancel",
+  "sell-confirm": "Sell",
+  "sell-description": "You get coins back at today’s price. Whole coins only, rounded down.",
+  "sell-failed": "The sale did not go through",
+  "sell-quote": "{{coins}} coins, average {{price}} each; YES would move to {{percent}}%",
+  "sell-quote-empty": "Enter a number of shares you hold",
+  "sell-shares": "Shares to sell",
+  "sell-side": "Side",
+  "sell-title": "Sell shares",
+  "sell-too-small": "That is less than one coin. Sell more shares",
+  "side-no": "NO",
+  "side-yes": "YES",
+  "sold": "Sold {{shares}} {{side}} shares for {{coins}} coins",
+  "sold-already": "That sale already went through for {{coins}} coins",
+  "spent-received": "spent {{spent}}, received {{received}}"
+}

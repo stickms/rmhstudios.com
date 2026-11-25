@@ -9,6 +9,8 @@ import { reclaimStalledFanouts, type ReclaimedRun } from '@/lib/fanout/run.serve
 import { POST_ALERT_QUEUE } from '@/lib/communities/post-alerts.server';
 import { UPDATE_FANOUT_QUEUE, updateJobKey } from '@/lib/events/updates';
 import { postAlertJobKey } from '@/lib/communities/post-alerts';
+import { PARTY_FANOUT_QUEUE, partyFanoutJobKey } from '@/lib/rmhtube/subscriptions';
+import { STORY_FANOUT_QUEUE, parseStoryFanoutSubject, storyFanoutJobKey } from '@/lib/reading/story-follows';
 
 export const FANOUT_RECLAIM_QUEUE = 'fanouts.reclaim';
 /** Every minute. */
@@ -24,6 +26,35 @@ export function reclaimJob(run: ReclaimedRun): {
     retryDelay: number;
   };
 } {
+  // s13-07: a party notice rides its own queue, keyed by the room.
+  if (run.kind === 'tube-party')
+    return {
+      queue: PARTY_FANOUT_QUEUE,
+      data: {
+        roomId: run.subjectId,
+      },
+      options: {
+        singletonKey: partyFanoutJobKey(run.subjectId),
+        retryLimit: 3,
+        retryDelay: 60,
+      },
+    };
+  // s13-12: an article notice rides its own queue, keyed by the (story, article) pair its subject names.
+  if (run.kind === 'news-story-article') {
+    const pair = parseStoryFanoutSubject(run.subjectId) ?? { storyId: run.subjectId, articleSlug: '' };
+    return {
+      queue: STORY_FANOUT_QUEUE,
+      data: {
+        storyId: pair.storyId,
+        articleSlug: pair.articleSlug,
+      },
+      options: {
+        singletonKey: storyFanoutJobKey(pair.storyId, pair.articleSlug),
+        retryLimit: 3,
+        retryDelay: 60,
+      },
+    };
+  }
   return run.kind === 'post-alert'
     ? {
         queue: POST_ALERT_QUEUE,

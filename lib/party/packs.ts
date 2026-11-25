@@ -32,6 +32,8 @@ export interface PackView {
   promptCount: number;
   featured: boolean;
   hidden?: boolean;
+  /** A moderator removed the pack (shown to its owner and admins only). */
+  moderated?: boolean;
   mine: boolean;
   author: {
     name: string | null;

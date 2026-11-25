@@ -4,6 +4,8 @@ import {
   MOD_ACTIONS,
   MOD_ACTIONS_BY_GROUP,
   MOD_LOG_CSV_COLUMNS,
+  decodeModLogCursor,
+  encodeModLogCursor,
   PUBLIC_MOD_ACTIONS,
   groupOfAction,
   isModAction,
@@ -193,5 +195,20 @@ describe('modLogToCsv', () => {
 
   it('is just the header for an empty log', () => {
     expect(modLogToCsv([])).toBe(`${MOD_LOG_CSV_COLUMNS.join(',')}\r\n`);
+  });
+});
+
+describe('mod log cursor', () => {
+  it('round-trips a (time, id) pair as one opaque string', () => {
+    const createdAt = new Date('2026-11-20T10:00:00.123Z');
+    const cursor = encodeModLogCursor({ createdAt, id: 9007199254740993n });
+    expect(cursor).toBe(`${createdAt.getTime()}.9007199254740993`);
+    expect(decodeModLogCursor(cursor)).toEqual({ createdAt, id: 9007199254740993n });
+  });
+
+  it('reads an old numeric cursor, and anything malformed, as the top of the list', () => {
+    for (const bad of ['42', '', undefined, null, 'x.1', '1.x', '1.2.3', '-1.2', '1e3.4', '99999999999999999.1']) {
+      expect(decodeModLogCursor(bad)).toBeNull();
+    }
   });
 });

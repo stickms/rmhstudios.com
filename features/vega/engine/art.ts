@@ -8,8 +8,9 @@
  * tones, the only warm colours on a green-black screen.
  */
 import type { EnemyType, TowerType } from './data';
+import { SPECIMEN_GLYPH, type SpecimenGlyph } from './assist-profile';
 
-export const P = {
+const P_DEFAULT = {
   void: '#020504',
   tile: '#06100D',
   tileLine: '#0E241D',
@@ -31,6 +32,28 @@ export const P = {
   sedative: '#7FD6C8',
 } as const;
 
+export const P = P_DEFAULT;
+
+/** The palette a colour-safe run draws with: the same keys, accents moved onto the Okabe-Ito set. */
+export const P_SAFE: Record<keyof typeof P_DEFAULT, string> = {
+  ...P_DEFAULT,
+  mint: '#56B4E9',
+  mintDim: '#2F7FB0',
+  blood: '#E69F00',
+  bloodDark: '#5A3A00',
+  thermal: '#E69F00',
+  electric: '#FFFFFF',
+  chemical: '#F0E442',
+  sedative: '#56B4E9',
+};
+
+export type VegaPalette = 'default' | 'safe';
+
+/** The palette for a run's assist profile. */
+export function paletteFor(palette: VegaPalette | undefined): Record<keyof typeof P_DEFAULT, string> {
+  return palette === 'safe' ? P_SAFE : P_DEFAULT;
+}
+
 const TAU = Math.PI * 2;
 
 // ── Instruments ──────────────────────────────────────────────────────────────
@@ -45,6 +68,8 @@ export interface InstrumentOpts {
   ghost?: boolean;
   /** Seconds since it last fired, for the recoil and muzzle light. */
   firedAge?: number;
+  /** Colour-safe palette (`assist-profile.ts`). */
+  palette?: VegaPalette;
 }
 
 /** Draw an instrument centred on (x, y) in a square of side `s`. */
@@ -56,6 +81,7 @@ export function drawInstrument(
   s: number,
   o: InstrumentOpts = {},
 ) {
+  const P = paletteFor(o.palette);
   const aim = o.aim ?? -Math.PI / 2;
   const h = s / 2;
   ctx.save();
@@ -113,7 +139,7 @@ export function drawInstrument(
       ctx.beginPath();
       ctx.arc(0, 0, s * 0.16, 0, TAU);
       ctx.fill();
-      light(ctx, 0, 0, s * 0.07);
+      light(ctx, 0, 0, s * 0.07, P.mint);
       break;
     }
     case 'SUPPRESSOR': {
@@ -132,7 +158,7 @@ export function drawInstrument(
       ctx.beginPath();
       ctx.arc(0, h * 0.5, s * 0.07, 0, TAU);
       ctx.fill();
-      light(ctx, 0, h * 0.5, s * 0.035);
+      light(ctx, 0, h * 0.5, s * 0.035, P.mint);
       break;
     }
     case 'CAUTERY': {
@@ -150,7 +176,7 @@ export function drawInstrument(
       ctx.closePath();
       ctx.fill();
       ctx.restore();
-      light(ctx, -s * 0.08 * Math.cos(aim), -s * 0.08 * Math.sin(aim), s * 0.04);
+      light(ctx, -s * 0.08 * Math.cos(aim), -s * 0.08 * Math.sin(aim), s * 0.04, P.mint);
       break;
     }
     case 'CENTRIFUGE': {
@@ -170,7 +196,7 @@ export function drawInstrument(
       ctx.arc(0, 0, s * 0.08, 0, TAU);
       ctx.fillStyle = P.enamel;
       ctx.fill();
-      light(ctx, 0, 0, s * 0.04);
+      light(ctx, 0, 0, s * 0.04, P.mint);
       break;
     }
     case 'DEFIBRILLATOR': {
@@ -192,7 +218,7 @@ export function drawInstrument(
       ctx.strokeStyle = P.ink;
       ctx.lineWidth = Math.max(1, s * 0.02);
       ctx.stroke();
-      light(ctx, 0, h * 0.62, s * 0.035);
+      light(ctx, 0, h * 0.62, s * 0.035, P.mint);
       break;
     }
     case 'LOBOTOMIZER': {
@@ -213,7 +239,7 @@ export function drawInstrument(
       ctx.lineTo(-h * 0.7, s * 0.12);
       ctx.stroke();
       ctx.restore();
-      light(ctx, -h * 0.35 * Math.cos(aim), -h * 0.35 * Math.sin(aim), s * 0.05);
+      light(ctx, -h * 0.35 * Math.cos(aim), -h * 0.35 * Math.sin(aim), s * 0.05, P.mint);
       break;
     }
     case 'ECHO': {
@@ -226,7 +252,7 @@ export function drawInstrument(
         ctx.arc(0, s * 0.02, s * (0.08 + i * 0.1), Math.PI * 1.2, Math.PI * 1.8);
         ctx.stroke();
       }
-      light(ctx, 0, s * 0.18, s * 0.04);
+      light(ctx, 0, s * 0.18, s * 0.04, P.mint);
       break;
     }
     case 'BIOBANK': {
@@ -273,9 +299,9 @@ export function drawInstrument(
 }
 
 /** The single status light every instrument carries: a mint dot in a dark ring. */
-function light(ctx: CanvasRenderingContext2D, x: number, y: number, r: number) {
+function light(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, color: string) {
   ctx.save();
-  ctx.fillStyle = P.mint;
+  ctx.fillStyle = color;
   ctx.beginPath();
   ctx.arc(x, y, r, 0, TAU);
   ctx.fill();
@@ -317,7 +343,36 @@ export const SPECIMEN_LOOK: Record<EnemyType, SpecimenLook> = {
   SPECIMEN: { body: '#C58B8E', edge: '#6A2E34', nucleus: '#2A0D10', r: 30 },
 };
 
+/**
+ * The colour-safe set: hues from the Okabe-Ito palette spread over lightness as well, so no two types sit on
+ * the same hue and lightness together. The outline glyph (`SPECIMEN_GLYPH`) is the other half: no type depends
+ * on colour alone. Radii match `SPECIMEN_LOOK`.
+ */
+export const SPECIMEN_LOOK_SAFE: Record<EnemyType, SpecimenLook> = {
+  ANXIETY: { body: '#E69F00', edge: '#7A5300', nucleus: '#2E1F00', r: 9 },
+  GUILT: { body: '#56B4E9', edge: '#1F5C82', nucleus: '#0B2433', r: 11 },
+  FRAGMENT: { body: '#B5DEF5', edge: '#3B7FA8', nucleus: '#0B2433', r: 6 },
+  DEPRESSION: { body: '#7C8B96', edge: '#2F3A43', nucleus: '#10161A', r: 15 },
+  MANIC: { body: '#D55E00', edge: '#6E2F00', nucleus: '#2A1100', r: 9 },
+  DOUBT: { body: '#F0E442', edge: '#807A12', nucleus: '#2D2B05', r: 11 },
+  OBSESSION: { body: '#CC79A7', edge: '#6B3A56', nucleus: '#2E1424', r: 12 },
+  PARANOIA: { body: '#F2F2F2', edge: '#7D7D7D', nucleus: '#1A1A1A', r: 11 },
+  DREAD: { body: '#0072B2', edge: '#00395A', nucleus: '#F2F2F2', r: 13 },
+  PATIENT: { body: '#FFD9A8', edge: '#8A5A1F', nucleus: '#3A2208', r: 28 },
+  SURGEON: { body: '#2D3B3F', edge: '#0E1517', nucleus: '#F2F2F2', r: 26 },
+  SPECIMEN: { body: '#009E73', edge: '#004A36', nucleus: '#021F17', r: 30 },
+};
+
+/** The look table for a palette. */
+export function specimenLookFor(palette: VegaPalette | undefined): Record<EnemyType, SpecimenLook> {
+  return palette === 'safe' ? SPECIMEN_LOOK_SAFE : SPECIMEN_LOOK;
+}
+
 export interface SpecimenOpts {
+  /** Colour-safe palette: swaps the look table and draws the type's outline glyph. */
+  palette?: VegaPalette;
+  /** Calm visuals: no white hit flash. */
+  calm?: boolean;
   t?: number;
   phase?: number;
   /** Heading in radians, for the specimens that stretch along their motion. */
@@ -345,7 +400,8 @@ export function drawSpecimen(
   y: number,
   o: SpecimenOpts = {},
 ) {
-  const look = SPECIMEN_LOOK[type];
+  const P = paletteFor(o.palette);
+  const look = specimenLookFor(o.palette)[type];
   const r = look.r * (o.scale ?? 1);
   const t = o.still ? 0 : (o.t ?? 0);
   const ph = o.phase ?? 0;
@@ -416,7 +472,7 @@ export function drawSpecimen(
   ctx.fillStyle = look.body;
   ctx.fill();
   ctx.lineWidth = Math.max(1.2, r * 0.12);
-  ctx.strokeStyle = o.hitAge !== undefined && o.hitAge < 0.07 ? P.white : look.edge;
+  ctx.strokeStyle = !o.calm && o.hitAge !== undefined && o.hitAge < 0.07 ? P.white : look.edge;
   ctx.stroke();
   ctx.restore();
 
@@ -550,6 +606,9 @@ export function drawSpecimen(
     }
   }
 
+  if (o.palette === 'safe')
+    drawSpecimenGlyph(ctx, SPECIMEN_GLYPH[type], r * 0.5, look.nucleus === '#F2F2F2' ? P.ink : '#F2F2F2');
+
   // Shield bubble (Doubt, the Specimen's shell), sized by what is left of it.
   if (o.shieldFrac && o.shieldFrac > 0) {
     ctx.strokeStyle = P.electric;
@@ -616,5 +675,102 @@ export function drawBiohazard(ctx: CanvasRenderingContext2D, x: number, y: numbe
   ctx.beginPath();
   ctx.arc(0, 0, r * 0.14, 0, TAU);
   ctx.fill();
+  ctx.restore();
+}
+
+/**
+ * An outline glyph centred on the origin, `g` px from centre to tip. A dark under-stroke and a light stroke over
+ * it, so it reads on any body colour; each specimen type has its own (`SPECIMEN_GLYPH`).
+ */
+export function drawSpecimenGlyph(ctx: CanvasRenderingContext2D, glyph: SpecimenGlyph, g: number, ink: string) {
+  const path = (k: SpecimenGlyph) => {
+    ctx.beginPath();
+    switch (k) {
+      case 'ring':
+        ctx.arc(0, 0, g, 0, TAU);
+        break;
+      case 'triangle':
+        ctx.moveTo(0, -g);
+        ctx.lineTo(g * 0.9, g * 0.7);
+        ctx.lineTo(-g * 0.9, g * 0.7);
+        ctx.closePath();
+        break;
+      case 'square':
+        ctx.rect(-g * 0.75, -g * 0.75, g * 1.5, g * 1.5);
+        break;
+      case 'diamond':
+        ctx.moveTo(0, -g);
+        ctx.lineTo(g, 0);
+        ctx.lineTo(0, g);
+        ctx.lineTo(-g, 0);
+        ctx.closePath();
+        break;
+      case 'plus':
+        ctx.moveTo(0, -g);
+        ctx.lineTo(0, g);
+        ctx.moveTo(-g, 0);
+        ctx.lineTo(g, 0);
+        break;
+      case 'cross':
+        ctx.moveTo(-g * 0.8, -g * 0.8);
+        ctx.lineTo(g * 0.8, g * 0.8);
+        ctx.moveTo(g * 0.8, -g * 0.8);
+        ctx.lineTo(-g * 0.8, g * 0.8);
+        break;
+      case 'bars':
+        for (const y of [-0.6, 0, 0.6]) {
+          ctx.moveTo(-g, y * g);
+          ctx.lineTo(g, y * g);
+        }
+        break;
+      case 'chevron':
+        ctx.moveTo(-g * 0.7, -g * 0.8);
+        ctx.lineTo(g * 0.7, 0);
+        ctx.lineTo(-g * 0.7, g * 0.8);
+        break;
+      case 'hexagon':
+        for (let i = 0; i < 6; i++) {
+          const a = (i * TAU) / 6;
+          if (i === 0) ctx.moveTo(Math.cos(a) * g, Math.sin(a) * g);
+          else ctx.lineTo(Math.cos(a) * g, Math.sin(a) * g);
+        }
+        ctx.closePath();
+        break;
+      case 'dots':
+        for (const x of [-0.6, 0.6]) {
+          ctx.moveTo(x * g + g * 0.22, 0);
+          ctx.arc(x * g, 0, g * 0.22, 0, TAU);
+        }
+        break;
+      case 'star':
+        for (let i = 0; i < 10; i++) {
+          const a = -Math.PI / 2 + (i * TAU) / 10;
+          const rr = i % 2 ? g * 0.45 : g;
+          if (i === 0) ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
+          else ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+        }
+        ctx.closePath();
+        break;
+      case 'wave':
+        for (let i = 0; i <= 12; i++) {
+          const x = -g + (i / 12) * g * 2;
+          const y = Math.sin((i / 12) * TAU * 1.5) * g * 0.45;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        break;
+    }
+  };
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  path(glyph);
+  ctx.strokeStyle = ink === '#F2F2F2' ? P_DEFAULT.ink : '#F2F2F2';
+  ctx.lineWidth = Math.max(2.6, g * 0.5);
+  ctx.stroke();
+  path(glyph);
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = Math.max(1.2, g * 0.26);
+  ctx.stroke();
   ctx.restore();
 }

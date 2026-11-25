@@ -12,7 +12,8 @@
 import type { Prediction, PredictionPosition, PredictionStatus, PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { creditCoins, debitCoins, getBalance, InsufficientFundsError } from '@/lib/economy/ledger.server';
-import { priceYes, sharesForBudget, costToBuyShares, type Side } from './lmsr';
+import type { ErrorCode } from '@/lib/errors/codes';
+import { priceYes, proceedsForShares, sharesForBudget, type Side } from './lmsr';
 
 /**
  * Lets the standalone bot-worker pass its own client (it doesn't share the
@@ -25,6 +26,8 @@ export class PredictionError extends Error {
     message: string,
     readonly code: string,
     readonly status = 400,
+    /** A taxonomy code (`lib/errors/codes.ts`) the route answers with, for a sentence in the reader's language. */
+    readonly refusal?: ErrorCode,
   ) {
     super(message);
   }
@@ -42,13 +45,17 @@ export interface SerializedMarket {
   /** In-app deep link to what an auto market is about (build, tournament, …). */
   subjectUrl: string | null;
   yesPercent: number; // 1..99 implied probability
+  /** Public LMSR state, already implied by the price; the card quotes a trade from it. */
+  qYes: number;
+  qNo: number;
+  b: number;
   volume: number;
   closesAt: string | null;
   resolvedAt: string | null;
   createdAt: string;
   creator: { id: string; name: string | null; handle: string | null; image: string | null } | null;
   // Present only when a viewer is supplied and holds a position.
-  position: { yesShares: number; noShares: number; spent: number; settled: boolean } | null;
+  position: { yesShares: number; noShares: number; spent: number; received: number; settled: boolean } | null;
 }
 
 type CreatorRel = {
@@ -72,13 +79,22 @@ export function serializeMarket(
     isAuto: p.resolverKey != null,
     subjectUrl: p.subjectUrl ?? null,
     yesPercent: Math.min(99, Math.max(1, Math.round(priceYes(p.qYes, p.qNo, p.b) * 100))),
+    qYes: p.qYes,
+    qNo: p.qNo,
+    b: p.b,
     volume: p.volume,
     closesAt: p.closesAt?.toISOString() ?? null,
     resolvedAt: p.resolvedAt?.toISOString() ?? null,
     createdAt: p.createdAt.toISOString(),
     creator: p.creator ?? null,
     position: pos
-      ? { yesShares: pos.yesShares, noShares: pos.noShares, spent: pos.spent, settled: pos.settled }
+      ? {
+          yesShares: pos.yesShares,
+          noShares: pos.noShares,
+          spent: pos.spent,
+          received: pos.received,
+          settled: pos.settled,
+        }
       : null,
   };
 }
@@ -98,10 +114,12 @@ export async function placeTrade(
     predictionId: string;
     side: Side;
     amount: number;
+    /** Refuse (`PREDICTION_PRICE_MOVED`) a trade that would buy fewer shares. Bots omit it. */
+    minShares?: number;
   },
   db: Db = prisma,
 ): Promise<{ market: SerializedMarket; sharesBought: number; newBalance: number }> {
-  const { userId, predictionId, side, amount } = opts;
+  const { userId, predictionId, side, amount, minShares } = opts;
   if (amount <= 0) throw new PredictionError('Invalid amount', 'INVALID_AMOUNT');
 
   return db.$transaction(async (tx) => {
@@ -138,6 +156,9 @@ export async function placeTrade(
     const shares = sharesForBudget(market.qYes, market.qNo, market.b, side, amount);
     if (!Number.isFinite(shares) || shares <= 0) {
       throw new PredictionError('Trade too small', 'TRADE_TOO_SMALL');
+    }
+    if (minShares != null && shares < minShares) {
+      throw new PredictionError('Price moved', 'PRICE_MOVED', 409, 'PREDICTION_PRICE_MOVED');
     }
 
     // Atomic conditional debit instead of writing an absolute precomputed balance:
@@ -205,11 +226,167 @@ export async function placeTrade(
   });
 }
 
-/** Estimate (without trading) how a coin `amount` would land on a market. */
-export function quoteTrade(market: Pick<Prediction, 'qYes' | 'qNo' | 'b'>, side: Side, amount: number) {
-  const shares = sharesForBudget(market.qYes, market.qNo, market.b, side, amount);
-  const cost = costToBuyShares(market.qYes, market.qNo, market.b, side, shares);
-  return { shares, cost };
+/** Fractional holdings: a sale may exceed the holding by this much and is clamped to it. */
+const SHARE_EPSILON = 1e-9;
+
+/**
+ * Sell `shares` of `side` back to the market maker before it resolves. One
+ * transaction, in this order: the member-scoped replay check (before any write),
+ * the OPEN guard that row-locks the market, then the market's q and the member's
+ * position read AFTER the lock, the proceeds (rounded down), and the writes —
+ * the position's conditional decrement, the market's q lowered by the shares
+ * sold, and the credit. Selling is not gated by the responsible-play checks.
+ */
+export async function sellShares(
+  opts: {
+    userId: string;
+    predictionId: string;
+    side: Side;
+    shares: number;
+    minProceeds: number;
+    key: string;
+  },
+  db: Db = prisma,
+): Promise<{
+  market: SerializedMarket;
+  sharesSold: number;
+  proceeds: number;
+  newBalance: number;
+  replayed: boolean;
+}> {
+  const { userId, predictionId, side, shares: requested, minProceeds, key } = opts;
+  if (!Number.isFinite(requested) || requested <= 0) throw new PredictionError('Invalid amount', 'INVALID_AMOUNT');
+  const idempotencyKey = `prediction-sale:${predictionId}:${userId}:${key}`;
+
+  return db.$transaction(async (tx) => {
+    const view = () =>
+      tx.prediction.findUniqueOrThrow({
+        where: { id: predictionId },
+        include: { creator: CREATOR_SELECT, positions: { where: { userId } } },
+      });
+
+    // 1. Replay: the key is scoped to the member and checked before anything is written.
+    const replay = async () => {
+      const prior = await tx.coinTransaction.findUnique({
+        where: { idempotencyKey },
+        select: { amount: true },
+      });
+      if (!prior) return null;
+      return {
+        market: serializeMarket(await view(), userId),
+        sharesSold: 0,
+        proceeds: Number(prior.amount),
+        newBalance: await getBalance(userId, tx),
+        replayed: true,
+      };
+    };
+    const early = await replay();
+    if (early) return early;
+
+    // 2. The same guards and row lock as a trade.
+    const seen = await tx.prediction.findUnique({ where: { id: predictionId } });
+    if (!seen) throw new PredictionError('Market not found', 'NOT_FOUND', 404);
+    if (seen.status !== 'OPEN') throw new PredictionError('Market is not open for trading', 'NOT_OPEN');
+    if (seen.closesAt && seen.closesAt.getTime() <= Date.now()) {
+      throw new PredictionError('Trading has closed for this market', 'CLOSED');
+    }
+    // The row lock: this write holds the market until the sale commits, so it queues behind every trade,
+    // sale and resolution on it, and what is read next is current.
+    const locked = await tx.prediction.updateMany({
+      where: { id: predictionId, status: 'OPEN' },
+      data: { volume: { increment: 0 } },
+    });
+    // A retry with the same key that queued behind the original: the original committed while this one
+    // waited for the lock, so the check above missed it. Look again now — otherwise this sale would take
+    // the shares a second time and the ledger, finding the key, would credit nothing for them.
+    const late = await replay();
+    if (late) return late;
+    if (locked.count === 0) throw new PredictionError('Market is not open for trading', 'NOT_OPEN');
+
+    // 3. q and the position are read only now, under the lock.
+    const market = await tx.prediction.findUniqueOrThrow({ where: { id: predictionId } });
+    const position = await tx.predictionPosition.findUnique({
+      where: { predictionId_userId: { predictionId, userId } },
+    });
+    const held = position ? (side === 'YES' ? position.yesShares : position.noShares) : 0;
+    if (!position || requested > held + SHARE_EPSILON) {
+      throw new PredictionError('Not enough shares', 'NOT_ENOUGH_SHARES', 409, 'PREDICTION_NOT_ENOUGH_SHARES');
+    }
+    const shares = Math.min(requested, held);
+
+    // 4. Proceeds, rounded down.
+    const proceeds = proceedsForShares(market.qYes, market.qNo, market.b, side, shares);
+    if (proceeds < 1) throw new PredictionError('Trade too small', 'TRADE_TOO_SMALL');
+    if (proceeds < minProceeds) {
+      throw new PredictionError('Price moved', 'PRICE_MOVED', 409, 'PREDICTION_PRICE_MOVED');
+    }
+
+    // 5. Writes. The position first, by a conditional decrement; zero rows means someone sold it already.
+    const lastP = priceYes(
+      market.qYes - (side === 'YES' ? shares : 0),
+      market.qNo - (side === 'NO' ? shares : 0),
+      market.b,
+    );
+    const moved = await tx.predictionPosition.updateMany({
+      where: {
+        id: position.id,
+        ...(side === 'YES' ? { yesShares: { gte: shares } } : { noShares: { gte: shares } }),
+      },
+      data: {
+        ...(side === 'YES' ? { yesShares: { decrement: shares } } : { noShares: { decrement: shares } }),
+        received: { increment: proceeds },
+        lastP,
+      },
+    });
+    if (moved.count === 0) {
+      throw new PredictionError('Not enough shares', 'NOT_ENOUGH_SHARES', 409, 'PREDICTION_NOT_ENOUGH_SHARES');
+    }
+    // The shares leave the market's books too; skipping this would pay the next seller for them again.
+    await tx.prediction.update({
+      where: { id: predictionId },
+      data: side === 'YES' ? { qYes: { decrement: shares } } : { qNo: { decrement: shares } },
+    });
+    // A unique-key race on the credit rethrows here, inside this transaction, so the whole sale rolls back.
+    const credit = await creditCoins(userId, proceeds, {
+      tx,
+      type: 'WAGER',
+      entityType: 'prediction',
+      entityId: predictionId,
+      note: `${side} shares sold`,
+      idempotencyKey,
+    });
+    // Inside a caller's transaction the ledger answers a key it already holds with `applied: false` and
+    // credits nothing. The shares must not leave the position unpaid, so undo the whole sale.
+    if (!credit.applied) throw new PredictionError('Sale already recorded', 'REPLAYED', 409);
+
+    return {
+      market: serializeMarket(await view(), userId),
+      sharesSold: shares,
+      proceeds,
+      newBalance: await getBalance(userId, tx),
+      replayed: false,
+    };
+  });
+}
+
+/** The member's positions for the account export: market title, shares, coins in and out, settled. */
+export async function exportPredictionPositions(userId: string) {
+  const rows = await prisma.predictionPosition.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'asc' },
+    include: { prediction: { select: { title: true, status: true } } },
+  });
+  return rows.map((r) => ({
+    predictionId: r.predictionId,
+    marketTitle: r.prediction.title,
+    marketStatus: r.prediction.status,
+    yesShares: r.yesShares,
+    noShares: r.noShares,
+    spent: r.spent,
+    received: r.received,
+    settled: r.settled,
+    createdAt: r.createdAt.toISOString(),
+  }));
 }
 
 /**

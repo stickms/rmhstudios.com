@@ -5,8 +5,9 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Play, ShoppingBag, Settings, Trophy, Zap, Users, Clock, Crosshair, Sparkles, Coins, RefreshCw, X, ScrollText, Book, LogOut } from 'lucide-react';
+import { Play, ShoppingBag, Settings, Trophy, Zap, Users, Clock, Crosshair, Sparkles, Coins, RefreshCw, X, ScrollText, Book, LogOut, History } from 'lucide-react';
 import PatchnotesModal from './PatchnotesModal';
+import RunsScreen from './RunsScreen';
 import MenuBackdrop from '../menu/MenuBackdrop';
 import { CodexBadge } from '../CodexPanel';
 import { useAltairMetaStore } from '@features/altair/engine/stores/meta-store';
@@ -34,6 +35,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
   const totalRuns = useAltairMetaStore((s) => s.totalRunsPlayed);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showPatchnotes, setShowPatchnotes] = useState(false);
+  const [showRuns, setShowRuns] = useState(false);
 
   const handleToggleLeaderboard = useCallback(() => {
     setShowLeaderboard((prev) => !prev);
@@ -51,20 +53,30 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
     setShowPatchnotes(false);
   }, []);
 
+  const handleOpenRuns = useCallback(() => {
+    setShowRuns(true);
+  }, []);
+
+  const handleCloseRuns = useCallback(() => {
+    setShowRuns(false);
+  }, []);
+
   const menuActions = useMemo(
-    () => [onPlay, onMultiplayer, onMetaShop, onSettings, handleToggleLeaderboard, onBestiary, handleOpenPatchnotes, quit],
-    [onPlay, onMultiplayer, onMetaShop, onSettings, handleToggleLeaderboard, onBestiary, handleOpenPatchnotes, quit],
+    () => [onPlay, onMultiplayer, onMetaShop, onSettings, handleToggleLeaderboard, onBestiary, handleOpenRuns, handleOpenPatchnotes, quit],
+    [onPlay, onMultiplayer, onMetaShop, onSettings, handleToggleLeaderboard, onBestiary, handleOpenRuns, handleOpenPatchnotes, quit],
   );
   const { focusedIndex } = useKeyboardNav({
-    itemCount: 8,
+    itemCount: 9,
     onSelect: (i) => menuActions[i](),
     orientation: 'vertical',
-    enabled: !showLeaderboard && !showPatchnotes,
+    enabled: !showLeaderboard && !showPatchnotes && !showRuns,
   });
 
   // Keyboard focus is a data attribute the theme styles (altair.css `.altair-btn`),
   // not a per-button ring + scale, so every control lights the same way.
   const focused = (i: number) => (focusedIndex === i ? 'true' : undefined);
+
+  if (showRuns) return <RunsScreen onBack={handleCloseRuns} />;
 
   return (
     <div className="altair-scan flex flex-col items-center justify-center flex-1 px-4 py-8">
@@ -151,8 +163,17 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
         </button>
 
         <button
-          onClick={handleOpenPatchnotes}
+          onClick={handleOpenRuns}
           data-focused={focused(6)}
+          className="altair-btn altair-btn--ghost py-3"
+        >
+          <History size={16} />
+          {t("your-runs", { ns: "altair-runs", defaultValue: "Your runs" })}
+        </button>
+
+        <button
+          onClick={handleOpenPatchnotes}
+          data-focused={focused(7)}
           className="altair-btn altair-btn--ghost py-3"
         >
           <ScrollText size={16} />
@@ -161,7 +182,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
 
         <button
           onClick={quit}
-          data-focused={focused(7)}
+          data-focused={focused(8)}
           className="altair-btn altair-btn--ghost py-3"
         >
           <LogOut size={16} />

@@ -13,6 +13,7 @@ import { MAP_ORDER, MAPS, type MapId } from '@features/vega/engine/data';
 import { useGameStore } from '@features/vega/engine/GameState';
 import type { RunSave } from '@features/vega/engine/Simulation';
 import { useVegaNames } from './names';
+import { AssistMenuLines } from './AssistBits';
 
 export interface BoardRow {
   username: string;
@@ -120,6 +121,7 @@ export function Menu({
             </button>
           )}
         </div>
+        <AssistMenuLines signedIn={signedIn} />
         {!signedIn && (
           <p style={{ fontSize: 13, color: 'var(--vg-faint)', marginTop: 10 }}>
             {t('signin-note', {

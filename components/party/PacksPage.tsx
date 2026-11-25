@@ -1,5 +1,5 @@
 import { useRefusalText } from '@/components/errors/useRefusalText';
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Flag, Sparkles, Star, Trash2, EyeOff } from 'lucide-react';
@@ -11,7 +11,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Spinner } from '@/components/ui/spinner';
-import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useSession } from '@/components/Providers';
 import { PACK_MAX_PROMPTS, PACK_MIN_PROMPTS, type PackView } from '@/lib/party/packs';
 import { api } from '@/lib/contract/client';
@@ -19,8 +18,13 @@ import { createPackApi, listPacksApi, type PackLists } from '@/lib/party/packs.c
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
+// The dialog carries the report schema (zod), so it loads only when a member opens it.
+const ReportDialog = lazy(() =>
+  import('@/components/moderation/ReportDialog').then((m) => ({ default: m.ReportDialog })),
+);
+
 export function PacksPage() {
-  const { t } = useTranslation('f-party');
+  const { t } = useTranslation(['f-party', 'pack-reports']);
   const refusalText = useRefusalText();
   const session = useSession();
   const signedIn = !!session.data?.user;
@@ -31,11 +35,11 @@ export function PacksPage() {
         }
       | undefined
   )?.isAdmin;
-  const confirm = useConfirm();
   const [lists, setLists] = useState<PackLists | null>(null);
   const [name, setName] = useState('');
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
+  const [reporting, setReporting] = useState<string | null>(null);
   const arrival = useArrival(lists !== null);
 
   const load = useCallback(async () => {
@@ -90,62 +94,31 @@ export function PacksPage() {
     }
   }
 
-  async function act(pack: PackView, action: 'report' | 'delete' | 'feature' | 'hide') {
-    if (action === 'report') {
-      const ok = await confirm({
-        title: t('report-title', {
-          defaultValue: 'Report this pack?',
-        }),
-        description: t('report-desc', {
-          defaultValue: 'Packs with several reports are hidden until a moderator reviews them.',
-        }),
-        confirmLabel: t('report', {
-          defaultValue: 'Report',
-        }),
-        danger: true,
-      });
-      if (!ok) return;
-    }
+  async function act(pack: PackView, action: 'delete' | 'feature' | 'hide') {
     const url = `/api/rmhbox/packs/${pack.id}`;
     const res = await fetch(
-      action === 'report' ? `${url}/report` : url,
-      action === 'report'
+      url,
+      action === 'delete'
         ? {
-            method: 'POST',
+            method: 'DELETE',
+          }
+        : {
+            method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-              reason: 'Inappropriate or unsafe prompts',
-            }),
-          }
-        : action === 'delete'
-          ? {
-              method: 'DELETE',
-            }
-          : {
-              method: 'PATCH',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(
-                action === 'feature'
-                  ? {
-                      featured: !pack.featured,
-                    }
-                  : {
-                      hidden: !pack.hidden,
-                    },
-              ),
-            },
+            body: JSON.stringify(
+              action === 'feature'
+                ? {
+                    featured: !pack.featured,
+                  }
+                : {
+                    hidden: !pack.hidden,
+                  },
+            ),
+          },
     ).catch(() => null);
     if (res?.ok) {
-      if (action === 'report')
-        toast.success(
-          t('reported', {
-            defaultValue: 'Thanks, reported.',
-          }),
-        );
       void load();
     } else
       toast.error(
@@ -159,7 +132,9 @@ export function PacksPage() {
     <li key={p.id} className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="truncate font-semibold text-site-text">{p.name}</h3>
+          <h3 dir="auto" className="truncate font-semibold text-site-text">
+            {p.name}
+          </h3>
           <p className="text-xs text-site-text-muted">
             {t('pack-meta', {
               defaultValue_one: '{{count}} prompt by {{author}}',
@@ -186,6 +161,14 @@ export function PacksPage() {
           ) : null}
         </div>
       </div>
+      {p.moderated ? (
+        <p className="t-meta">
+          {t('removed-line', {
+            ns: 'pack-reports',
+            defaultValue: 'Removed by a moderator',
+          })}
+        </p>
+      ) : null}
       <div className="flex flex-wrap items-center gap-2">
         <code className="surface-field rounded-site px-3 py-2 font-mono text-sm text-site-text">{p.code}</code>
         <CopyButton
@@ -197,7 +180,7 @@ export function PacksPage() {
           })}
         />
         {signedIn && !p.mine ? (
-          <Button size="xs" variant="ghost" onClick={() => void act(p, 'report')}>
+          <Button size="xs" variant="ghost" onClick={() => setReporting(p.id)}>
             <Flag aria-hidden />
             {t('report', {
               defaultValue: 'Report',
@@ -212,7 +195,7 @@ export function PacksPage() {
             })}
           </Button>
         ) : null}
-        {isAdmin ? (
+        {isAdmin && !p.moderated ? (
           <>
             <Button size="xs" variant="default" onClick={() => void act(p, 'feature')}>
               <Star aria-hidden />
@@ -271,6 +254,7 @@ export function PacksPage() {
               })}
             </h2>
             <Input
+              dir="auto"
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={60}
@@ -282,6 +266,7 @@ export function PacksPage() {
               })}
             />
             <Textarea
+              dir="auto"
               value={text}
               onChange={(e) => setText(e.target.value)}
               rows={8}
@@ -325,6 +310,13 @@ export function PacksPage() {
             })}
           </p>
         )}
+        {signedIn ? (
+          <p className="t-meta">
+            {t('report-desc', {
+              defaultValue: 'Packs with several reports are hidden until a moderator reviews them.',
+            })}
+          </p>
+        ) : null}
         {!lists ? (
           <div className="flex justify-center py-10">
             <Spinner />
@@ -363,6 +355,18 @@ export function PacksPage() {
           </>
         )}
       </div>
+      {reporting ? (
+        <Suspense fallback={null}>
+          <ReportDialog
+            open
+            onOpenChange={(open) => {
+              if (!open) setReporting(null);
+            }}
+            entityType="rmhbox-pack"
+            entityId={reporting}
+          />
+        </Suspense>
+      ) : null}
     </PageLayout>
   );
 }

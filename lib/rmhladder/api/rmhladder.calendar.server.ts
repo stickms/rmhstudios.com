@@ -1,6 +1,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { ownerOrCatalogJobWhere } from '@/lib/rmhladder/own-jobs';
 
 function icsDate(value: Date): string {
   return value
@@ -17,10 +18,11 @@ function icsText(value: string): string {
     .replace(/;/g, '\\;');
 }
 
+// The description is fixed text or the job's own posting link: never `application.notes` (private to the member).
 export const route = apiRoute('/api/rmhladder/calendar', {
   GET: defineHandler({}, async ({ session }) => {
     const applications = await prisma.ladderApplication.findMany({
-      where: { userId: session.user.id },
+      where: { userId: session.user.id, job: ownerOrCatalogJobWhere(session.user.id) },
       include: { job: { include: { company: true } } },
     });
     const events: string[] = [];
@@ -44,7 +46,7 @@ export const route = apiRoute('/api/rmhladder/calendar', {
           `followup-${application.id}`,
           application.followUpDate,
           `Follow up: ${label}`,
-          application.notes ?? 'RMHLadder follow-up reminder',
+          'RMHLadder follow-up reminder',
         );
       for (const [index, interview] of application.interviewDates.entries()) {
         add(

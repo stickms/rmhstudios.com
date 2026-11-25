@@ -21,6 +21,8 @@ See the [API inventory](../api.md) for how to read the tables.
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/news/discussion` | `GET` `POST` | `lib/news-wire/api/news.discussion.server.ts` |
+| `/api/news/stories` | `GET` | `lib/reading/api/news.stories.server.ts` |
+| `/api/news/stories/:slug/follow` | `DELETE` `GET` `PUT` | `lib/reading/api/news.stories.$slug.follow.server.ts` |
 | `/api/news/summary` | `POST` | `lib/news-wire/api/news.summary.server.ts` |
 
 ## `/api/nightrail`

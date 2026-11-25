@@ -34,6 +34,9 @@ export function reportKindLabel(t: TFunction, kind: unknown): string {
     'study-deck': t('kind-study-deck', { ns: 'my-reports', defaultValue: 'Flashcard deck' }),
     persona: t('kind-persona', { ns: 'my-reports', defaultValue: 'AI persona' }),
     'home-listing': t('kind-home-listing', { ns: 'my-reports', defaultValue: 'Home listing' }),
+    'tube-chat': t('kind-tube-chat', { ns: 'my-reports', defaultValue: 'Room message' }),
+    ride: t('kind-ride', { ns: 'my-reports', defaultValue: 'Trip' }),
+    'rmhbox-pack': t('kind-rmhbox-pack', { ns: 'my-reports', defaultValue: 'Prompt pack' }),
   };
   return Object.prototype.hasOwnProperty.call(labels, k) ? (labels[k] ?? k) : k;
 }

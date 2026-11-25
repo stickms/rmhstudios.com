@@ -59,4 +59,12 @@ describe('settings hub labels', () => {
     expect(d!.requiresAuth).toBeFalsy();
     expect(settingsNavText(echoDefault)['device']).toEqual({ label: d!.label, hint: d!.hint });
   });
+
+  // Sprint 13
+  // s13-11 lists-on
+  it('lists Lists you are on under account, signed-in only', () => {
+    const d = SETTINGS_DESTINATIONS.find((x) => x.id === 'lists');
+    expect(d).toMatchObject({ to: '/settings/lists', group: 'account', requiresAuth: true, label: 'Lists you are on' });
+    expect(settingsNavText(echoDefault)['lists']).toEqual({ label: d!.label, hint: d!.hint });
+  });
 });

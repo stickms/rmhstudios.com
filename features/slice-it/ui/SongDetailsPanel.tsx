@@ -103,6 +103,18 @@ const ModifierToggle = ({
   );
 };
 
+/** The song's generated chart as a picker entry: the one with no id, and the only one with a board. */
+const GENERATED_CHART: ChartOption = {
+  id: null,
+  difficulty: 'expert',
+  name: 'Generated',
+  rating: null,
+  status: 'public',
+  rankStatus: 'unranked',
+  isGenerated: true,
+  author: null,
+};
+
 export function SongDetailsPanel({
   song,
   onPlay,
@@ -189,10 +201,12 @@ export function SongDetailsPanel({
       .then((data) => {
         if (cancelled) return;
         const list = data.charts ?? [];
-        setCharts(list);
-        // Default to the first, which `chartsForSong` has already sorted to
-        // ranked-then-public-then-hardest.
-        if (list.length > 0) setSelectedChartId(list[0].id);
+        // The list names the song's Chart rows, or just the generated chart when it has none. With rows present the
+        // generated chart is still playable (it is what the song's board is for), so it is offered beside them.
+        setCharts(list.length === 0 || list.some((chart) => chart.id === null) ? list : [GENERATED_CHART, ...list]);
+        // The pick is what is played (`useStartRun`). It starts on the generated chart: an author's own drafts
+        // sort into this list too, and a draft is a playtest that is never submitted, so choosing a chart is
+        // always a deliberate act.
       })
       .catch(() => {
         // A failed chart list is not a failed song: the generated fallback is

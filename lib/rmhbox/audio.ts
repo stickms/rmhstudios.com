@@ -14,6 +14,7 @@
 import { Howl } from 'howler';
 import { useRMHboxStore } from './store';
 import { asset } from '@/lib/storage/asset';
+import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
 
 // ─── Sound Definitions ──────────────────────────────────────────
 
@@ -83,5 +84,46 @@ export function preloadSounds(): void {
     } catch {
       // Silently ignore load errors
     }
+  }
+}
+
+// ─── Tones ──────────────────────────────────────────────────────
+
+/**
+ * Play a short sine tone at the current volume settings (a pad in Sequence
+ * Sam). Muted the same way as `playSound`: a master or SFX volume of zero is
+ * silence. A device without Web Audio, or one that refuses to start it, stays
+ * silent without an error.
+ */
+export function playTone(frequencyHz: number, durationMs: number): void {
+  try {
+    const { settings } = useRMHboxStore.getState();
+    const volume = settings.masterVolume * settings.sfxVolume;
+    if (volume <= 0) return;
+    // R5: never create the context before the player has acted on the page
+    // (browsers would keep it suspended and warn); a later tone creates it.
+    if (typeof navigator !== 'undefined' && navigator.userActivation?.hasBeenActive === false) return;
+
+    // The page's one shared context (lib/shared/platform): null where Web Audio is unavailable.
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    resumeAudioContext();
+
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.type = 'sine';
+    oscillator.frequency.value = frequencyHz;
+    const now = ctx.currentTime;
+    const end = now + durationMs / 1000;
+    // A short fade at both ends keeps the tone from clicking
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(volume * 0.4, now + 0.01);
+    gain.gain.linearRampToValueAtTime(0, end);
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+    oscillator.start(now);
+    oscillator.stop(end + 0.02);
+  } catch {
+    // Silently ignore — sounds are optional
   }
 }

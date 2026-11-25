@@ -21,6 +21,8 @@ export type ActivityEvent = {
 };
 
 export type FriendActivity = {
+  /** How many of the viewer's own follows are shown (0 means the Friends section does not appear at all). */
+  followed: number;
   inGame: {
     user: PersonRef;
     game: NowPlaying;

@@ -25,6 +25,7 @@ import { groupKey, isOpenQueueStatus, searchToQuery, type TriageSearch } from '@
 import { MAX_DECIDE_GROUPS, type TriageStatus } from '@/lib/moderation/triage-schema';
 import { decideReportGroupsApi, listReportGroupsApi, type ReportGroupRow } from '@/lib/moderation/triage.contract';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { DmReportMessage } from '@/components/moderation/DmReportMessage';
 
 type Decision = 'resolve' | 'dismiss';
 
@@ -311,7 +312,11 @@ export function ReportGroups({
                       </Badge>
                     ))}
                   </div>
-                  {g.preview && <p className="t-body break-words text-site-text">{g.preview}</p>}
+                  {g.dm ? (
+                    <DmReportMessage view={g.dm} />
+                  ) : (
+                    g.preview && <p className="t-body break-words text-site-text">{g.preview}</p>
+                  )}
                   <p className="t-meta">
                     {t('group-times', {
                       first: fmt.relative(new Date(g.firstAt)),

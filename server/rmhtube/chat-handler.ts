@@ -16,7 +16,8 @@ import { logger } from './logger';
 import { getPrismaClient } from './prisma-client';
 import { statsRecorder } from './stats-recorder';
 import { validated } from './schemas';
-import { C2S, S2C } from '../../lib/rmhtube/events';
+import { C2S, S2C, CHAT_REMOVED_CHANNEL } from '../../lib/rmhtube/events';
+import { redisSubscribe } from '../../lib/redis.server';
 import { ChatSchema, ChatReactSchema, ChatPinSchema } from '../../lib/rmhtube/schemas';
 import { sanitizeString } from '../../lib/rmhtube/utils';
 import type { RoomManager } from './room-manager';
@@ -30,6 +31,8 @@ const SLOW = slowModeEvents('tube');
 const SlowSetSchema = z.object({
   seconds: z.number().int().min(0).max(300),
 });
+
+const ChatRemovedSchema = z.object({ roomId: z.string().min(1).max(64), messageId: z.string().min(1).max(64) });
 
 interface ChatRow {
   id: string;
@@ -101,7 +104,38 @@ export class ChatHandler {
   constructor(
     private io: Server,
     private roomManager: RoomManager,
-  ) {}
+  ) {
+    // s13-06: the web tier publishes here when a moderator removes a message. Without Redis this is a no-op, and the
+    // live room keeps the message until its next restart (the row is gone, so the restore no longer has it).
+    redisSubscribe(CHAT_REMOVED_CHANNEL, (data) => {
+      const parsed = ChatRemovedSchema.safeParse(data);
+      if (parsed.success) this.removeMessage(parsed.data.roomId, parsed.data.messageId);
+    });
+  }
+
+  /**
+   * Drop a removed message from a running room: its buffer, reactions, pin and the quoted text of replies to it,
+   * then tell every client. An unknown room is a no-op (it restores from the table, which no longer has the row).
+   */
+  removeMessage(roomId: string, messageId: string): boolean {
+    const room = this.roomManager.rooms.get(roomId);
+    if (!room) return false;
+    const at = room.chat.findIndex((m) => m.id === messageId);
+    if (at !== -1) room.chat.splice(at, 1);
+    room.chatReactions.delete(messageId);
+    for (const m of room.chat) {
+      if (m.replyToId !== messageId) continue;
+      m.replyToContent = null;
+      m.replyToUserName = null;
+      m.replyToRemoved = true;
+    }
+    if (room.pinnedMessage?.id === messageId) {
+      room.pinnedMessage = null;
+      this.roomManager.broadcastAction(room, 'MESSAGE_UNPINNED', {});
+    }
+    this.io.to(room.id).emit(S2C.CHAT_REMOVED, { messageId });
+    return true;
+  }
 
   handleConnection(socket: Socket): void {
     socket.on(
