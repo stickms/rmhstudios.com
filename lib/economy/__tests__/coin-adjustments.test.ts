@@ -16,7 +16,10 @@ const h = vi.hoisted(() => ({
   audit: vi.fn(async () => {}),
 }));
 
-vi.mock('@/lib/prisma.server', () => ({ prisma: h.client }));
+// Every query is checked against the schema before the in-memory tables see it.
+vi.mock('@/lib/prisma.server', async () => ({
+  prisma: (await import('./fake-db')).checkedDb(h.client),
+}));
 vi.mock('@/lib/db/advisory-lock.server', () => ({ lockKey: vi.fn(async () => {}) }));
 vi.mock('@/lib/notifications.server', () => ({ createNotification: h.notify }));
 vi.mock('@/lib/admin-audit.server', () => ({ recordAdminActionIn: h.audit }));

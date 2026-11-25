@@ -2,7 +2,7 @@ import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { runChatCommandApi } from '@/lib/chat-plus/chat.contract';
-import { requireChat } from '@/lib/chat-plus/route-helpers.server';
+import { requireChatText } from '@/lib/chat-plus/route-helpers.server';
 import { commandSchema, runChatCommand } from '@/lib/chat-plus/commands.server';
 
 /**
@@ -16,7 +16,7 @@ export const route = apiRoute('/api/chats/$kind/$id/command', {
     runChatCommandApi,
     { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'chat-command' }, body: commandSchema },
     async ({ params, userId, session, body }) => {
-      const access = await requireChat(params, userId, { write: true });
+      const access = await requireChatText(params, userId);
       if (access instanceof Response) return access;
       const res = await runChatCommand(access, body.text, session.user.name ?? 'Someone');
       if (!res.ok) return Response.json({ error: res.error, ...refusalCodeOf(res) }, { status: res.status });

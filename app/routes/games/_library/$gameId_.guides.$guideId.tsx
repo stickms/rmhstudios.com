@@ -52,7 +52,8 @@ export const Route = createFileRoute('/games/_library/$gameId_/guides/$guideId')
     const game = games.find((g) => g.id === params.gameId);
     const path = `/games/${params.gameId}/guides/${params.guideId}`;
 
-    if (!guide || !guide.published) {
+    // A guide a moderator removed is shown to its author only, and never indexed (s14-08).
+    if (!guide || !guide.published || guide.removed) {
       return {
         meta: [
           { title: guide ? `${guide.title} (draft) | RMH Studios` : 'New guide | RMH Studios' },

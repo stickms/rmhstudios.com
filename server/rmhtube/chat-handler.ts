@@ -14,6 +14,7 @@ import { nanoid } from 'nanoid';
 import { config } from './config';
 import { logger } from './logger';
 import { getPrismaClient } from './prisma-client';
+import { isMemberRestricted, restrictedChatError } from '../shared/member-restrictions';
 import { statsRecorder } from './stats-recorder';
 import { validated } from './schemas';
 import { C2S, S2C, CHAT_REMOVED_CHANNEL } from '../../lib/rmhtube/events';
@@ -41,6 +42,10 @@ interface ChatRow {
   userName: string;
   content: string;
   createdAt: Date;
+}
+
+function logRestrictionFailure(userId: string, err: unknown): void {
+  logger.error({ event: 'restriction_check_failed', userId, error: String(err) });
 }
 
 export class ChatHandler {
@@ -182,6 +187,12 @@ export class ChatHandler {
 
     const content = sanitizeString(payload.content, config.CHAT_MAX_LENGTH);
     if (!content) return;
+
+    // s14-17: a member a moderator timed out of messages and chats is refused before the line is counted, kept or sent.
+    if (await isMemberRestricted(getPrismaClient(), userId, 'message', (err) => logRestrictionFailure(userId, err))) {
+      socket.emit(S2C.ERROR, restrictedChatError());
+      return;
+    }
 
     const verdict = await this.slowMode.check(room.id, userId, room.hostUserId === userId);
     if (!verdict.ok) {

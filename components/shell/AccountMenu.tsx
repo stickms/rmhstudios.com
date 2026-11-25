@@ -5,6 +5,7 @@ import { LayoutGrid, LogOut, Settings, User, Wallet } from 'lucide-react';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { useDeviceSignOut } from '@/components/settings/useDeviceSignOut';
 import { MenuItem, MenuSeparator } from '@/components/ui/menu';
+import { useRiskSurfacesHidden } from '@/hooks/useRiskSurfacesHidden';
 
 interface AccountMenuProps {
   open: boolean;
@@ -24,6 +25,8 @@ export function AccountMenu({ open, onClose, anchorRef, profileHref }: AccountMe
   const signingOut = useRef(false);
   const deviceSignOut = useDeviceSignOut();
   const runDeviceSignOut = deviceSignOut.run;
+  // The wallet entry opens the coin hub; a self-excluded member's goes to the wallet page instead (W8).
+  const walletHref = useRiskSurfacesHidden() ? '/wallet' : '/predictions';
 
   const signOut = useCallback(async () => {
     if (signingOut.current) return;
@@ -70,7 +73,7 @@ export function AccountMenu({ open, onClose, anchorRef, profileHref }: AccountMe
             defaultValue: 'Profile',
           })}
         </MenuItem>
-        <MenuItem icon={Wallet} href="/predictions" onClick={onClose}>
+        <MenuItem icon={Wallet} href={walletHref} onClick={onClose}>
           {t('nav-wallet', {
             defaultValue: 'Wallet',
           })}

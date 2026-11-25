@@ -7,6 +7,8 @@ import { useSession } from '@/components/Providers';
 import { globeKeyAction } from './globe-nav-state';
 import { SIDEBAR_NAV, isNavGroup, isNavLeafActive, type NavLeaf } from '@/lib/sidebar-nav';
 import { usePathname } from './shell-router-state';
+import { useRiskSurfacesHidden } from '@/hooks/useRiskSurfacesHidden';
+import { isRiskSurfacePath } from '@/lib/economy/risk-surfaces';
 import { useSectionLabels } from './use-section-labels';
 import { useInboxCount } from './use-inbox-count';
 import { useGlobeView } from './use-globe-view';
@@ -48,6 +50,8 @@ export function GlobeNav() {
   const labels = useSectionLabels();
   const isAdmin = Boolean((session?.user as { isAdmin?: boolean } | undefined)?.isAdmin);
   const signedIn = Boolean(session);
+  // A self-excluded member does not get the coin games as a pin (W8).
+  const riskHidden = useRiskSurfacesHidden();
 
   // Every destination, flattened, as the liquid globe had them. Placement on the sphere is deterministic from the
   // list, so the same account always finds the same page in the same place.
@@ -57,8 +61,13 @@ export function GlobeNav() {
       if (isNavGroup(item)) out.push(...item.children);
       else out.push(item);
     }
-    return out.filter((leaf) => (!leaf.requiresAuth || signedIn) && (!leaf.requiresAdmin || isAdmin));
-  }, [signedIn, isAdmin]);
+    return out.filter(
+      (leaf) =>
+        (!leaf.requiresAuth || signedIn) &&
+        (!leaf.requiresAdmin || isAdmin) &&
+        !(riskHidden && isRiskSurfacePath(leaf.href)),
+    );
+  }, [signedIn, isAdmin, riskHidden]);
   const active = nodes.findIndex((n) => isNavLeafActive(pathname, n));
   // Nothing is current on, say, /terms: the first destination faces the viewer without claiming `aria-current`.
   const centreIndex = Math.max(0, active);

@@ -22,7 +22,7 @@
  */
 
 import { z } from 'zod';
-import { HANDLE_REGEX } from '@/lib/handle';
+import { HANDLE_MAX_LENGTH, HANDLE_REGEX } from '@/lib/handle';
 
 /** The `entityType` value that marks a report as an impersonation claim. */
 export const IMPERSONATION_ENTITY_TYPE = 'impersonation';
@@ -33,13 +33,28 @@ const HEADER_PREFIX = '[impersonating]';
 /** `ContentReport.details` is `VarChar(1000)`. */
 export const MAX_IMPERSONATION_NOTE = 700;
 
-export const impersonationReportSchema = z.object({
-  /** The account doing the impersonating (the one being reported). */
-  accusedUserId: z.string().min(1).max(64),
-  /** The account being impersonated. May be the reporter themselves. */
-  impersonatedUserId: z.string().min(1).max(64),
-  note: z.string().trim().max(MAX_IMPERSONATION_NOTE).optional(),
-});
+/** A handle typed or picked in the form: an `@` in front is allowed, the case is not significant. */
+const impersonatedHandleField = z
+  .string()
+  .trim()
+  .min(1)
+  .max(HANDLE_MAX_LENGTH + 1)
+  .transform((value) => value.replace(/^@/, '').toLowerCase());
+
+export const impersonationReportSchema = z
+  .object({
+    /** The account doing the impersonating (the one being reported). */
+    accusedUserId: z.string().min(1).max(64),
+    /** The account being impersonated, by id. May be the reporter themselves ("Me"). */
+    impersonatedUserId: z.string().min(1).max(64).optional(),
+    /** The account being impersonated, by handle; the server resolves it. Exactly one of the two is sent. */
+    impersonatedHandle: impersonatedHandleField.optional(),
+    note: z.string().trim().max(MAX_IMPERSONATION_NOTE).optional(),
+  })
+  .refine((body) => (body.impersonatedUserId === undefined) !== (body.impersonatedHandle === undefined), {
+    message: 'Send either impersonatedUserId or impersonatedHandle',
+    path: ['impersonatedHandle'],
+  });
 
 export type ImpersonationReportInput = z.infer<typeof impersonationReportSchema>;
 
@@ -120,6 +135,35 @@ export interface ImpersonationComparisonSide {
     host: string;
     verified: boolean;
   }[];
+}
+
+export interface ImpersonationComparison {
+  reportId: string;
+  note: string;
+  accused: ImpersonationComparisonSide | null;
+  impersonated: ImpersonationComparisonSide | null;
+  /** 0–1 similarity of the two display names. */
+  nameSimilarity: number;
+  /** Hosts BOTH accounts claim — the query the `ProfileLink.host` index exists for. */
+  contestedHosts: { host: string; accusedVerified: boolean; impersonatedVerified: boolean }[];
+}
+
+/**
+ * What the queue shows for an impersonation group: who the accused is said to be pretending to be. The note stays in
+ * the report's own details, so the preview never repeats it. `details` are the open reports' stored headers.
+ */
+export function impersonationPreviewLine(details: readonly (string | null | undefined)[]): string {
+  const handles: string[] = [];
+  let withoutHandle = false;
+  for (const entry of details) {
+    const parsed = parseImpersonationDetails(entry);
+    if (!parsed) continue;
+    if (!parsed.impersonatedHandle) withoutHandle = true;
+    else if (!handles.includes(parsed.impersonatedHandle)) handles.push(parsed.impersonatedHandle);
+  }
+  const names = handles.map((handle) => `@${handle}`);
+  if (withoutHandle) names.push('an account with no handle');
+  return names.length ? `Pretending to be ${names.join(', ')}` : 'Pretending to be someone';
 }
 
 /**

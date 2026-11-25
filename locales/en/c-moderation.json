@@ -53,6 +53,7 @@
   "restriction-feature-comment": "Replying",
   "restriction-feature-community": "Creating communities",
   "restriction-feature-message": "Direct messages",
+  "restriction-feature-message-chats": "Messages and chats",
   "restriction-feature-persona": "Creating personas",
   "restriction-feature-post": "Posting",
   "restriction-feature-space": "Hosting spaces",

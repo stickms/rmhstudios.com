@@ -235,6 +235,42 @@ export const USER_TEXT_RENDERERS: readonly UserTextRenderer[] = [
 
   // s13-17 dm-reports
   { file: 'components/moderation/DmReportMessage.tsx', kind: 'block' },
+
+  // Sprint 14 (docs/autonomous/sprint-14/plan.md §Anchors)
+  // s14-01 identity-crisis
+
+  // s14-03 synapse-matches
+  { file: 'features/synapse-storm/ui/YourMatches.tsx', kind: 'inline' },
+
+  // s14-04 altair-coop
+  { file: 'features/altair/ui/screens/MenuScreen.tsx', kind: 'block' },
+
+  // s14-05 doctrine-ledger
+
+  // s14-06 puzzle-reports
+
+  // s14-07 slice-reports
+  { file: 'features/slice-it/ui/SongComments.tsx', kind: 'block' },
+
+  // s14-08 game-reports
+  { file: 'components/arcade/AchievementTipsDialog.tsx', kind: 'block' },
+
+  // s14-09 profile-reports
+  { file: 'components/profile/ImpersonationReportDialog.tsx', kind: 'input' },
+
+  // s14-10 tube-room-reports
+
+  // s14-11 thread-replies
+
+  // s14-12 pinned-conversations
+
+  // s14-13 supporter-marks
+
+  // s14-14 jam-editing
+  { file: 'components/competitive/JamEditDialog.tsx', kind: 'input' },
+  { file: 'components/competitive/JamShortlistDialog.tsx', kind: 'input' },
+
+  // s14-16 exclusion-hides
 ];
 
 /**
@@ -285,7 +321,8 @@ export const USER_TEXT_EXEMPT: Readonly<Record<string, string>> = {
   'components/developer/': 'developer documentation and the staff-written API reference',
   'components/devplatform/': 'release notes are written by the site',
   'components/delight/': 'museum copy is written by the site',
-  'components/arcade/': 'patch notes and tips are written by the site',
+  'components/arcade/AdminPatchNoteList.tsx': 'patch notes are written by staff',
+  'components/arcade/PatchNotesDialog.tsx': 'patch notes are written by the site',
   'components/roadmap/': 'roadmap copy is written by the site',
   'components/site-history/': 'site history is written by the site',
   'components/site/': 'site chrome',

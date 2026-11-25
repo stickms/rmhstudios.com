@@ -157,4 +157,23 @@ describe('POST /api/daily-puzzles/score', () => {
     expect(res.status).toBe(400);
     expect(h.invalidateCached).not.toHaveBeenCalled();
   });
+
+  it('refuses a day that has not started in New York, and writes nothing', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      // 23:30 on 2026-12-10 in New York (04:30Z on the 11th): the 11th has not started there.
+      vi.setSystemTime(new Date('2026-12-11T04:30:00Z'));
+      h.findUnique.mockResolvedValue(null);
+      h.create.mockResolvedValue({});
+      const ahead = await postScore({ gameMode: 'alibi', dateKey: '2026-12-11', score: 400 });
+      expect(ahead.status).toBe(400);
+      expect(h.findUnique).not.toHaveBeenCalled();
+      expect(h.create).not.toHaveBeenCalled();
+      const today = await postScore({ gameMode: 'alibi', dateKey: '2026-12-10', score: 400 });
+      expect(today.status).toBe(200);
+      expect(h.create).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

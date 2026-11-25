@@ -1,4 +1,5 @@
 import { refusalBody } from '@/lib/errors/codes';
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { createBuildIssueApi, listBuildIssuesApi } from '@/lib/builds/issues.contract';
@@ -32,6 +33,8 @@ export const route = apiRoute('/api/builds/$id/issues', {
     createBuildIssueApi,
     { rateLimit: { limit: 30, windowMs: 3_600_000, prefix: 'build-issue-create' }, body: createIssueBody },
     async ({ params, userId, body }) => {
+      const restricted = await restrictionResponse(userId, 'comment');
+      if (restricted) return restricted;
       const build = await readIssueBuild(params.id, userId);
       if (!build) return Response.json({ ...refusalBody('BUILD_NOT_FOUND') }, { status: 404 });
       const result = await createIssue(build, userId, body);

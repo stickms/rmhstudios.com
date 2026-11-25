@@ -1,7 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import { Coins, Music2, Palette } from 'lucide-react';
+import { Coins, Music2, Palette, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { SpotifySongSearch } from '../SpotifySongSearch';
 import { FieldHeader } from './FieldHeader';
 import type { ProfileEditForm } from './useProfileEditForm';
@@ -18,6 +20,8 @@ export function CreatorSection({
     | 'setMembershipPrice'
     | 'tipGoalLabel'
     | 'setTipGoalLabel'
+    | 'showSupporterMarks'
+    | 'setShowSupporterMarks'
     | 'selectedSong'
     | 'setSelectedSong'
   >;
@@ -90,6 +94,37 @@ export function CreatorSection({
             placeholder={t('tip-goal-label-placeholder', {
               defaultValue: 'New microphone fund',
             })}
+          />
+        </div>
+      </section>
+
+      <section className="py-5">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-bg-subtle text-site-accent">
+              <Users className="size-4" aria-hidden />
+            </span>
+            <div>
+              <Label htmlFor="profile-supporter-marks">
+                {t('show-supporter-marks', {
+                  ns: 'supporter-marks',
+                  defaultValue: 'Show supporter marks on replies',
+                })}
+              </Label>
+              <p id="profile-supporter-marks-hint" className="mt-1 text-sm text-site-text-muted">
+                {t('show-supporter-marks-hint', {
+                  ns: 'supporter-marks',
+                  defaultValue:
+                    'Only you see a Supporter mark, beside replies to your posts from your active supporters.',
+                })}
+              </p>
+            </div>
+          </div>
+          <Switch
+            id="profile-supporter-marks"
+            checked={form.showSupporterMarks}
+            onCheckedChange={form.setShowSupporterMarks}
+            aria-describedby="profile-supporter-marks-hint"
           />
         </div>
       </section>

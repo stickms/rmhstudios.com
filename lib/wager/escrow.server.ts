@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import type { EscrowLedger } from '@/lib/economy/escrow-core';
+import { assertPlayAllowedOn } from '@/lib/economy/play-limits-core';
 
 // Shared coin-escrow primitives for wager matches and tournaments. Both features
 // move coins the same way, so the atomicity contract lives here once.
@@ -52,6 +53,19 @@ export async function debitCoins(tx: Tx, userId: string, amount: number): Promis
   if (debit.count === 0) {
     throw new EscrowError('Insufficient coins', 'INSUFFICIENT_COINS');
   }
+}
+
+/**
+ * Take a STAKE: a wager hold or a tournament entry fee. These escrow through the raw
+ * {@link debitCoins} above rather than the ledger's `debitCoinsOn`, so the ledger's
+ * responsible-play check (W8) never saw them; this runs it here, inside the same
+ * transaction, before the balance moves. A self-excluded member, one in a cool-off or one
+ * past their daily cap is refused with the shared `AppError` codes (`SELF_EXCLUDED`,
+ * `COOL_OFF_ACTIVE`, `STAKE_LIMIT_REACHED`), exactly as at a casino table.
+ */
+export async function debitStake(tx: Tx, userId: string, amount: number): Promise<void> {
+  await assertPlayAllowedOn(tx, userId, amount);
+  await debitCoins(tx, userId, amount);
 }
 
 /** Atomically add `amount` coins to a user (credit-only; no guard needed). */
@@ -129,7 +143,7 @@ export interface WagerMovement {
  */
 export const wagerEscrow: EscrowLedger<Tx, WagerMovement> = {
   debit: async (tx, userId, amount, movement) => {
-    await debitCoins(tx, userId, amount);
+    await debitStake(tx, userId, amount);
     await recordWagerTxn(tx, {
       senderId: userId,
       recipientId: null,

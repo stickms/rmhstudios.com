@@ -13,6 +13,8 @@ import { nanoid } from 'nanoid';
 import { LobbyManager } from './lobby-manager';
 import { config } from './config';
 import { logger } from './logger';
+import { getPrismaClient } from './prisma-client';
+import { isMemberRestricted, restrictedChatError } from '../shared/member-restrictions';
 import { sanitizeString } from '../../lib/rmhbox/utils';
 import { S2C } from '../../lib/rmhbox/events';
 import { ChatSchema, validated } from './schemas';
@@ -34,13 +36,13 @@ export class ChatHandler {
     );
   }
 
-  private onChat(
+  private async onChat(
     socket: Socket,
     payload: {
       lobbyId: string;
       content: string;
     },
-  ): void {
+  ): Promise<void> {
     const userId = socket.data.userId as string;
     const userName = socket.data.userName as string;
 
@@ -65,6 +67,15 @@ export class ChatHandler {
     // Sanitize content
     const content = sanitizeString(payload.content, config.CHAT_MAX_LENGTH);
     if (content.length === 0) return;
+
+    // s14-17: a member a moderator timed out of messages and chats is refused before the line is kept or sent.
+    const restricted = await isMemberRestricted(getPrismaClient(), userId, 'message', (err) =>
+      logger.error({ event: 'restriction_check_failed', userId, error: String(err) }),
+    );
+    if (restricted) {
+      socket.emit(S2C.ERROR, restrictedChatError());
+      return;
+    }
 
     const chatMsg: ChatMessage = {
       id: nanoid(),

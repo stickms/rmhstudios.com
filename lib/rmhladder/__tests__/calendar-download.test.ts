@@ -11,8 +11,9 @@ vi.mock('@/lib/rate-limit.server', async (orig) => ({
   ...(await orig<typeof import('@/lib/rate-limit.server')>()),
   checkRateLimit: vi.fn(async () => ({ allowed: true })),
 }));
-vi.mock('@/lib/prisma.server', () => ({
-  prisma: {
+// Checked against the schema: sprint 13 selected `job.updatedAt`, a column `LadderJob` does not have.
+vi.mock('@/lib/prisma.server', async () => ({
+  prisma: (await import('@/lib/db/query-shape')).shapeChecked({
     ladderApplication: {
       findMany: vi.fn(async () => [
         {
@@ -33,7 +34,7 @@ vi.mock('@/lib/prisma.server', () => ({
         },
       ]),
     },
-  },
+  }),
 }));
 vi.mock('@tanstack/react-router', () => ({ createFileRoute: () => (config: unknown) => ({ options: config }) }));
 

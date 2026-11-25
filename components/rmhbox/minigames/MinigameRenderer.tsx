@@ -175,11 +175,6 @@ const MINIGAME_COMPONENTS: Record<string, React.LazyExoticComponent<ComponentTyp
       default: createStub('Human Tetris'),
     }),
   ),
-  'identity-crisis': lazy(() =>
-    Promise.resolve({
-      default: createStub('Identity Crisis'),
-    }),
-  ),
   'pixel-pushers': lazy(() =>
     Promise.resolve({
       default: createStub('Pixel Pushers'),

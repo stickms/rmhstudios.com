@@ -32,6 +32,7 @@ import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { tournamentsQuery } from '@/lib/tournaments/tournaments.queries';
 import { wagersQuery } from '@/lib/wager/wager.queries';
 import { definePage } from '@/lib/route/define-page';
+import { fetchExclusionNotice } from '@/lib/economy/exclusion-page.functions';
 
 const COMPETE_TABS = ['ranked', 'tournaments', 'speedruns', 'wagers', 'leaderboard'] as const;
 type CompeteTab = (typeof COMPETE_TABS)[number];
@@ -44,6 +45,8 @@ const fetchRanked = createServerFn({ method: 'GET' }).handler(async () => {
 });
 
 interface CompeteLoaderData {
+  /** Self-excluded: the Wagers tab is not offered and `?tab=wagers` reads as the default tab (W8). */
+  excluded?: boolean;
   ranked?: Awaited<ReturnType<typeof fetchRanked>>;
 }
 
@@ -58,19 +61,21 @@ export const Route = createFileRoute('/_site/compete')({
     COMPETE_TABS.includes(search.tab as CompeteTab) ? { tab: search.tab as CompeteTab } : {},
   loaderDeps: ({ search }) => ({ tab: search.tab ?? 'ranked' }),
   loader: async ({ context, deps }): Promise<CompeteLoaderData> => {
-    switch (deps.tab) {
+    // Decided here, so an excluded member's open wagers are never fetched or rendered (also with scripting off).
+    const { excluded } = await fetchExclusionNotice();
+    switch (excluded && deps.tab === 'wagers' ? 'ranked' : deps.tab) {
       case 'ranked':
-        return { ranked: await fetchRanked() };
+        return { excluded, ranked: await fetchRanked() };
       case 'tournaments':
         // The first status tab (open brackets); the others load on demand.
         await prefetchRouteQuery(context.queryClient, tournamentsQuery('REGISTRATION'));
-        return {};
+        return { excluded };
       case 'wagers':
         // The open challenges are public; "mine" loads on demand.
         await prefetchRouteQuery(context.queryClient, wagersQuery('open'));
-        return {};
+        return { excluded };
       default:
-        return {};
+        return { excluded };
     }
   },
   component: CompetePage,
@@ -79,7 +84,9 @@ export const Route = createFileRoute('/_site/compete')({
 function CompetePage() {
   const { t } = useTranslation('site');
   const data: CompeteLoaderData = Route.useLoaderData() ?? {};
-  const { tab = 'ranked' } = Route.useSearch();
+  const { tab: requested = 'ranked' } = Route.useSearch();
+  const excluded = data.excluded === true;
+  const tab = excluded && requested === 'wagers' ? 'ranked' : requested;
   const navigate = useNavigate();
 
   const setTab = useCallback(
@@ -93,7 +100,7 @@ function CompetePage() {
     { id: 'ranked', label: t('compete-tab-ranked', { defaultValue: 'Ranked' }) },
     { id: 'tournaments', label: t('compete-tab-tournaments', { defaultValue: 'Tournaments' }) },
     { id: 'speedruns', label: t('compete-tab-speedruns', { defaultValue: 'Speedruns' }) },
-    { id: 'wagers', label: t('compete-tab-wagers', { defaultValue: 'Wagers' }) },
+    ...(excluded ? [] : [{ id: 'wagers', label: t('compete-tab-wagers', { defaultValue: 'Wagers' }) }]),
     { id: 'leaderboard', label: t('compete-tab-leaderboard', { defaultValue: 'Leaderboard' }) },
   ];
 

@@ -201,6 +201,49 @@ export async function takedownReportedContent(entityType: string, entityId: stri
     // message is deleted outright. Idempotent, so a repeated decision is harmless.
     await (await import('@/lib/messages/dm-reports.server')).takeDownDmMessage(entityId, now);
   }
+
+  // Sprint 14 (docs/autonomous/sprint-14/plan.md §Anchors)
+  // s14-07 slice-reports
+  if (entityType === 'song') {
+    // s14-07: the song leaves every shelf and its audio is deleted; its charts and scores stay. Final, and
+    // idempotent (a song that is already down is left alone), so a repeated decision is harmless.
+    const { SONG_REPORT_TAKEDOWN_REASON } = await import('@features/slice-it/engine/song-reports.server');
+    const { takeDownSong } = await import('@features/slice-it/engine/library.server');
+    await takeDownSong(entityId, SONG_REPORT_TAKEDOWN_REASON);
+  } else if (entityType === 'song-comment') {
+    // s14-07: the comment row is deleted (the same delete its author can do).
+    await (await import('@features/slice-it/engine/song-reports.server')).takeDownSongComment(entityId);
+  }
+
+  // s14-08 game-reports
+  if (
+    entityType === 'game-review' ||
+    entityType === 'game-guide' ||
+    entityType === 'game-thread' ||
+    entityType === 'game-thread-post' ||
+    entityType === 'achievement-tip'
+  ) {
+    // s14-08: a review, guide or tip is stamped `moderatedAt` (every reader hides it, its author cannot edit or delete
+    // it); a thread or reply is deleted through the hub's own admin delete, which counts the thread's replies down. Idempotent,
+    // so a repeated decision is harmless.
+    await (await import('@/lib/games/moderation.server')).takeDownGameContent(entityType, entityId, now);
+  }
+
+  // s14-09 profile-reports
+  // An impersonation report is not removable: there is nothing to take down. The decision acts on the account through
+  // the account tools (the moderator's existing ban and rename actions).
+
+  // s14-10 tube-room-reports
+  if (entityType === 'tube-room') {
+    // s14-10: the room is stamped `moderatedAt` and closed (an earlier close time is kept), the members going are told,
+    // and the hub ends the running room. Idempotent: a room already removed sends nothing, so a repeated decision is
+    // harmless. Without Redis the running room is not reached until its hub restarts, and that is logged.
+    const { takeDownRoom } = await import('@/lib/rmhtube/room-reports.server');
+    const { taken, published } = await takeDownRoom(entityId, now);
+    if (taken && !published) {
+      console.warn(`[tube-room] removed ${entityId}; the live room was not reached (no Redis)`);
+    }
+  }
 }
 
 export interface Decision {
@@ -333,8 +376,10 @@ export async function decideReports(ids: readonly string[], decision: Decision):
     byTarget.set(key, [...(byTarget.get(key) ?? []), r]);
   }
 
-  // s13-16 pack-reports: dismissing the last open report of a pack the reports hid brings the pack back.
-  if (decision.action === 'dismiss') {
+  // s13-16 pack-reports: dismissing the last open report of a pack the reports hid brings the pack back, and so does
+  // resolving it without a takedown (s14-20: the moderator decided the pack was fine to keep). A resolve with a
+  // takedown has already stamped `moderatedAt`, which `restoreReportedPack` never undoes.
+  if (decision.action === 'dismiss' || (decision.action === 'resolve' && !decision.deleteContent)) {
     for (const reports of byTarget.values()) {
       const first = reports[0];
       if (first?.entityType !== 'rmhbox-pack') continue;
@@ -621,6 +666,52 @@ async function previewsFor(targets: readonly DecideTarget[]): Promise<Map<string
       ? (await import('@/lib/messages/dm-reports.server')).dmReportViews(idsOf('dm')).then(async (views) => {
           const { dmPreviewLine } = await import('@/lib/messages/dm-report');
           for (const [id, view] of views) out.set(groupKey('dm', id), snippet(dmPreviewLine(view), 3000));
+        })
+      : Promise.resolve(),
+
+    // Sprint 14 (docs/autonomous/sprint-14/plan.md §Anchors)
+    // s14-07 slice-reports
+    idsOf('song').length
+      ? (await import('@features/slice-it/engine/song-reports.server'))
+          .songReportPreviews(idsOf('song'))
+          .then((texts) => {
+            for (const [id, text] of texts) out.set(groupKey('song', id), snippet(text, 300));
+          })
+      : Promise.resolve(),
+    idsOf('song-comment').length
+      ? (await import('@features/slice-it/engine/song-reports.server'))
+          .songCommentPreviews(idsOf('song-comment'))
+          .then((texts) => {
+            for (const [id, text] of texts) out.set(groupKey('song-comment', id), snippet(text, 320));
+          })
+      : Promise.resolve(),
+
+    // s14-08 game-reports
+    ...(['game-review', 'game-guide', 'game-thread', 'game-thread-post', 'achievement-tip'] as const).map((type) =>
+      idsOf(type).length
+        ? import('@/lib/games/moderation.server')
+            .then((m) => m.gameContentPreviews(type, idsOf(type)))
+            .then((texts) => {
+              for (const [id, text] of texts) out.set(groupKey(type, id), snippet(text, 340));
+            })
+        : Promise.resolve(),
+    ),
+
+    // s14-09 profile-reports
+    // An admin reading an impersonation group sees who the account is said to be pretending to be (from the report's
+    // structured header; the note is already shown with the report itself).
+    idsOf('impersonation').length
+      ? (await import('@/lib/handles/impersonation.server'))
+          .impersonationPreviews(idsOf('impersonation'))
+          .then((lines) => {
+            for (const [id, line] of lines) out.set(groupKey('impersonation', id), snippet(line, 200));
+          })
+      : Promise.resolve(),
+
+    // s14-10 tube-room-reports
+    idsOf('tube-room').length
+      ? (await import('@/lib/rmhtube/room-reports.server')).roomPreviews(idsOf('tube-room')).then((texts) => {
+          for (const [id, text] of texts) out.set(groupKey('tube-room', id), snippet(text, 420));
         })
       : Promise.resolve(),
   ]);

@@ -4,6 +4,7 @@ import { implement } from '@/lib/api/implement.server';
 import { editMessageApi } from '@/lib/messages/message-actions.contract';
 import { editMessageBody } from '@/lib/messages/message-actions-schema';
 import { editDirectMessage } from '@/lib/messages/mutations.server';
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 
 /**
  * POST /api/messages/$conversationId/edit — edit one of your own messages.
@@ -26,6 +27,9 @@ export const route = apiRoute('/api/messages/$conversationId/edit', {
       body: editMessageBody,
     },
     async ({ params, userId, body }) => {
+      // s14-17: an edit replaces what the other side reads, so a timeout on messages holds for it as for a new one.
+      const restricted = await restrictionResponse(userId, 'message');
+      if (restricted) return restricted;
       const result = await editDirectMessage({
         conversationId: params.conversationId,
         messageId: body.messageId,

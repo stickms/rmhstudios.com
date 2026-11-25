@@ -22,8 +22,8 @@ function sourceFilesTouchingMutes(): string[] {
 }
 
 describe('MUTE_READ_PATHS', () => {
-  it('lists the seven readers', () => {
-    expect(MUTE_READ_PATHS).toHaveLength(7);
+  it('lists the nine readers', () => {
+    expect(MUTE_READ_PATHS).toHaveLength(9);
   });
 
   it.each([...MUTE_READ_PATHS])('%s exists, reads userMute and applies activeMuteWhere', (file) => {

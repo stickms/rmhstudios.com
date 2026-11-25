@@ -12,6 +12,7 @@
 import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { getBlockedAuthorIds } from '@/lib/moderation.server';
+import { partyPath } from '@/lib/rmhtube/parties';
 import { createNotification } from '@/lib/notifications.server';
 import { viewerVisiblePostWhere } from '@/lib/feed/audience.server';
 import type { ReportEntityType, ReportReason } from '@/lib/moderation/report-schema';
@@ -245,6 +246,91 @@ async function targetsFor(viewerId: string, rows: Row[]): Promise<Map<string, Re
     }
   }
 
+  // Sprint 14 (docs/autonomous/sprint-14/plan.md §Anchors)
+  // s14-07 slice-reports
+  // A reported song shows its title, and a reported comment its start, while the song is still public and up; a
+  // takedown or a song made private reads as "no longer available". Blocked uploaders and authors are left out.
+  const songIds = ids(rows, 'song');
+  const songCommentIds = ids(rows, 'song-comment');
+  if (songIds.length || songCommentIds.length) {
+    const blocked = [...new Set(await getBlockedAuthorIds(viewerId))];
+    const live = { isPublic: true, takenDownAt: null, uploadedBy: { notIn: blocked } } as const;
+    if (songIds.length) {
+      const songs = await prisma.song.findMany({
+        where: { id: { in: songIds }, ...live },
+        select: { id: true, title: true },
+      });
+      for (const s of songs) set('song', s.id, { kind: 'song', available: true, name: snippet(s.title), href: null });
+    }
+    if (songCommentIds.length) {
+      const comments = await prisma.songComment.findMany({
+        where: { id: { in: songCommentIds }, userId: { notIn: blocked }, song: live },
+        select: { id: true, content: true },
+      });
+      for (const c of comments) {
+        set('song-comment', c.id, { kind: 'song-comment', available: true, name: snippet(c.content), href: null });
+      }
+    }
+  }
+
+  // s14-08 game-reports
+  // A reported review, guide, discussion, reply or tip shows what it is while it is still up; a removal (a stamp for
+  // a review, guide or tip, a delete for a discussion or reply) reads as "no longer available". Blocked authors are
+  // left out. A guide draft and a removed item are not looked up at all.
+  const gameTypes = ['game-review', 'game-guide', 'game-thread', 'game-thread-post', 'achievement-tip'] as const;
+  if (gameTypes.some((type) => ids(rows, type).length)) {
+    const blocked = new Set(await getBlockedAuthorIds(viewerId));
+    const { gameContentTargets } = await import('@/lib/games/moderation.server');
+    for (const type of gameTypes) {
+      for (const item of await gameContentTargets(type, ids(rows, type))) {
+        if (blocked.has(item.authorId)) continue;
+        set(type, item.id, { kind: type, available: true, name: snippet(item.name), href: null });
+      }
+    }
+  }
+
+  // s14-09 profile-reports
+  // A reported impersonator shows as its profile while the reporter may still open it (never the comparison, never who
+  // it is said to be pretending to be); a deleted account, one with no handle and a blocked one read as unavailable.
+  const impersonationIds = ids(rows, 'impersonation');
+  if (impersonationIds.length) {
+    const blockedAccounts = new Set(await getBlockedAuthorIds(viewerId));
+    const accused = await prisma.user.findMany({
+      where: { id: { in: impersonationIds.filter((id) => !blockedAccounts.has(id)) }, handle: { not: null } },
+      select: { id: true, handle: true },
+    });
+    for (const u of accused) {
+      if (u.handle) {
+        set('impersonation', u.id, {
+          kind: 'impersonation',
+          available: true,
+          name: `@${u.handle}`,
+          href: `/u/${u.handle}`,
+        });
+      }
+    }
+  }
+
+  // s14-10 tube-room-reports
+  // A reported room shows its name (and links to its party page, for a scheduled one) until a moderator removes it, then
+  // it is "no longer available". A host the reporter blocked is left out.
+  const tubeRoomIds = ids(rows, 'tube-room');
+  if (tubeRoomIds.length) {
+    const blockedHosts = [...new Set(await getBlockedAuthorIds(viewerId))];
+    const rooms = await prisma.rmhTubeRoom.findMany({
+      where: { id: { in: tubeRoomIds }, moderatedAt: null, hostId: { notIn: blockedHosts } },
+      select: { id: true, name: true, scheduledFor: true },
+    });
+    for (const room of rooms) {
+      set('tube-room', room.id, {
+        kind: 'tube-room',
+        available: true,
+        name: snippet(room.name ?? '') || null,
+        href: room.scheduledFor ? partyPath(room.id) : null,
+      });
+    }
+  }
+
   return out;
 }
 
@@ -272,6 +358,24 @@ const LOOKED_UP: ReadonlySet<string> = new Set([
 
   // s13-17 dm-reports
   'dm',
+
+  // Sprint 14 (docs/autonomous/sprint-14/plan.md §Anchors)
+  // s14-07 slice-reports
+  'song',
+  'song-comment',
+
+  // s14-08 game-reports
+  'game-review',
+  'game-guide',
+  'game-thread',
+  'game-thread-post',
+  'achievement-tip',
+
+  // s14-09 profile-reports
+  'impersonation',
+
+  // s14-10 tube-room-reports
+  'tube-room',
 ]);
 
 export async function listMyReports(

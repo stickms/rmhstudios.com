@@ -12,7 +12,7 @@ export default defineFeature({
   basePath: '/hearthworks',
   delivery: 'island',
   routes: ['app/routes/hearthworks.tsx'],
-  namespaces: ['c-hearthworks'],
+  namespaces: ['c-hearthworks', 'hearthworks-saves'],
   catalog: 'features/hearthworks/catalog.ts',
   listed: true,
 });

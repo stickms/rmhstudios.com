@@ -91,6 +91,8 @@ export const S2C = {
   ROOM_BROWSE_RESULT: 'rmhtube:room:browse_result',
   ROOM_KICKED: 'rmhtube:room:kicked',
   ROOM_DISBANDED: 'rmhtube:room:disbanded',
+  /** s14-10: a moderator closed the room (`{ reason: 'moderator' }`); every socket in it leaves (server to client only). */
+  ROOM_CLOSED: 'rmhtube:room:closed',
   NOT_IN_ROOM: 'rmhtube:room:not_in_room',
 
   /**
@@ -139,3 +141,13 @@ export const S2C = {
  * The hub subscribes once and re-emits it to the room as `S2C.CHAT_REMOVED`.
  */
 export const CHAT_REMOVED_CHANNEL = 'rmhtube:chat:removed';
+
+/**
+ * s14-10: the Redis channel the web tier publishes `{ roomId }` on when a moderator removes a reported room. The hub
+ * subscribes once and ends the running room, telling everyone in it with `S2C.ROOM_CLOSED`.
+ */
+export const ROOM_CLOSED_CHANNEL = 'rmhtube:room:closed';
+
+/** Why a room was closed from outside the room. Only a moderator today. */
+export const ROOM_CLOSED_REASONS = ['moderator'] as const;
+export type RoomClosedReason = (typeof ROOM_CLOSED_REASONS)[number];

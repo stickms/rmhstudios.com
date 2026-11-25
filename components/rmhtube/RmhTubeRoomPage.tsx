@@ -42,6 +42,7 @@ import OnboardingTour from '@/components/rmhtube/OnboardingTour';
 import PartyLauncher, { PartyOverlaySlot } from '@/components/rmhtube/party/PartyLauncher';
 import { useRouter, useParams } from '@tanstack/react-router';
 import { useArrival } from '@/components/ui/arrive';
+import { useRoomClosedNotice } from '@/components/rmhtube/useRoomClosedNotice';
 import { cn } from '@/lib/utils';
 
 type MobileTab = 'queue' | 'chat' | 'members';
@@ -58,6 +59,7 @@ export default function RmhTubeRoomPage() {
     from: '/rmhtube/$roomId',
   });
   const router = useRouter();
+  useRoomClosedNotice();
   const room = useRmhTubeStore((s) => s.room);
   const connectionStatus = useRmhTubeStore((s) => s.connectionStatus);
   const theaterMode = useRmhTubeStore((s) => s.settings.theaterMode);
@@ -445,6 +447,8 @@ export default function RmhTubeRoomPage() {
             onBack={handleLeave}
             roomCode={roomId}
             onCopyCode={handleCopyCode}
+            reportRoomId={roomId}
+            reportIsHost={isHost}
           />
         </div>
         <div className="pr-3 flex items-center gap-2">

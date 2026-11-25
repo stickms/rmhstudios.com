@@ -56,6 +56,16 @@ export const MUTE_READ_PATHS: readonly string[] = [
   'lib/messages/away.server.ts',
   // Poll-ending notices skip voters who muted the author.
   'lib/feed/poll-lifecycle.server.ts',
+
+  // Sprint 14
+  // s14-09 profile-reports
+  // The profile header: whether the viewer has muted this account, so the profile menu offers Unmute.
+  'lib/profile.server.ts',
+
+  // s14-11 thread-replies
+  // A game thread's reply notices skip members who muted the poster.
+  'lib/games/thread-notices.server.ts',
+
 ];
 
 /** Files that touch `userMute` without being a reader that filters, each with the reason. */

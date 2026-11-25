@@ -78,6 +78,9 @@ vi.mock('@/lib/prisma.server', () => ({
     rMHarkComment: { findMany: vi.fn(async () => []) },
     user: { findMany: vi.fn(async () => []) },
     userBuild: { findMany: vi.fn(async () => []) },
+    // s14-07: a reported song and song comment are looked up for their title and text.
+    song: { findMany: vi.fn(async () => []) },
+    songComment: { findMany: vi.fn(async () => []) },
   },
 }));
 vi.mock('@/lib/feed/audience.server', () => ({ viewerVisiblePostWhere: vi.fn(async () => ({ deletedAt: null })) }));

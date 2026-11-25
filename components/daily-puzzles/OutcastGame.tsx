@@ -526,6 +526,7 @@ function OutcastGameContent({
 
               <PuzzleShareRow
                 gameMode="outcast"
+                dateKey={dateKey}
                 shareText={shareText}
                 shareLabel={t('share-results', {
                   defaultValue: 'Share Results',

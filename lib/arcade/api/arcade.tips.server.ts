@@ -1,4 +1,5 @@
 import { apiRoute } from '@/lib/api/route.server';
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { z } from 'zod';
 import { notFound } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
@@ -31,8 +32,12 @@ export const route = apiRoute('/api/arcade/tips', {
     { auth: 'optional', rateLimit: 'read', query: listQuery },
     async ({ userId, query }) => {
       if (!known(query.achievementId)) return notFound('Unknown achievement');
+      // Other players see only tips no moderator removed; the author also sees their own, marked removed (s14-08).
       const rows = await prisma.achievementTip.findMany({
-        where: { achievementId: query.achievementId },
+        where: {
+          achievementId: query.achievementId,
+          OR: [{ moderatedAt: null }, ...(userId ? [{ userId }] : [])],
+        },
         orderBy: [{ votes: 'desc' }, { createdAt: 'desc' }],
         take: 20,
         select: {
@@ -40,6 +45,7 @@ export const route = apiRoute('/api/arcade/tips', {
           body: true,
           votes: true,
           userId: true,
+          moderatedAt: true,
           user: { select: userDisplaySelect },
           vote: userId ? { where: { userId }, select: { userId: true } } : false,
         },
@@ -52,6 +58,7 @@ export const route = apiRoute('/api/arcade/tips', {
           author: resolveUser(r.user),
           isMine: r.userId === userId,
           voted: Array.isArray(r.vote) && r.vote.length > 0,
+          removed: Boolean(r.moderatedAt),
         })),
       });
     },
@@ -60,6 +67,8 @@ export const route = apiRoute('/api/arcade/tips', {
     postAchievementTipApi,
     { rateLimit: 'write', body: postBody },
     async ({ userId, body }) => {
+      const restricted = await restrictionResponse(userId, 'comment');
+      if (restricted) return restricted;
       if (!known(body.achievementId)) return notFound('Unknown achievement');
       const mine = await prisma.achievementTip.count({
         where: { userId, achievementId: body.achievementId },
@@ -83,9 +92,10 @@ export const route = apiRoute('/api/arcade/tips', {
     async ({ userId, body }) => {
       const tip = await prisma.achievementTip.findUnique({
         where: { id: body.tipId },
-        select: { userId: true },
+        select: { userId: true, moderatedAt: true },
       });
-      if (!tip) return notFound('Unknown tip');
+      // A tip a moderator removed is gone to everyone else, so there is nothing to vote on.
+      if (!tip || tip.moderatedAt) return notFound('Unknown tip');
       if (tip.userId === userId) {
         return Response.json({ error: "You can't vote on your own tip." }, { status: 409 });
       }

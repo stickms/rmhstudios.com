@@ -101,6 +101,27 @@ model DailyPuzzle {
   @@map("daily_puzzle")
 }
 
+/// s14-06: a member's report that a model-written daily puzzle is wrong (two answers fit, the clue contradicts
+/// itself). One per member per puzzle; sending again replaces the kind and the note. Not a ContentReport: a puzzle
+/// has no member author and nothing to take down for others.
+model DailyPuzzleReport {
+  id        String   @id @default(cuid())
+  userId    String
+  gameMode  String // alibi | spectrum | outcast | chainlink | impostor
+  dateKey   String // YYYY-MM-DD (America/New_York)
+  kind      String // two-answers | wrong-answer | unclear | other
+  note      String? // up to 300 characters
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameMode, dateKey])
+  @@index([gameMode, dateKey])
+  @@index([userId])
+  @@map("daily_puzzle_report")
+}
+
 // Slice It Player Model
 model Player {
   id       String @id @default(cuid())
@@ -517,6 +538,9 @@ model GameReview {
   body      String?  @db.VarChar(2000)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  /// s14-08: a moderator removed this review after a report. Readers show it to nobody but its author, who can
+  /// neither edit nor delete it (deleting and writing again would bring it back).
+  moderatedAt DateTime?
 
   user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   votes GameReviewVote[]
@@ -547,6 +571,8 @@ model GameGuide {
   published Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  /// s14-08: a moderator removed this guide after a report (the rule of `GameReview.moderatedAt`).
+  moderatedAt DateTime?
 
   author    User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
   revisions GameGuideRevision[]

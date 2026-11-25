@@ -1079,3 +1079,11 @@
   position: absolute;
   inset: 0;
 }
+
+/* Where the town is saved: one quiet line under the buttons. */
+.hwm-save {
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--hw-ink-soft);
+}

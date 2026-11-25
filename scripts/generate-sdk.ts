@@ -110,7 +110,6 @@ const NULLABLE: Record<string, string> = {
   score: 'number | null',
   durationMs: 'number | null',
   endedAt: 'string | null',
-  completedAt: 'string | null',
   weeklyGoalMinutes: 'number | null',
 
   // s09-10 api-sync-deletions
@@ -150,10 +149,33 @@ const NULLABLE: Record<string, string> = {
   deadline: 'string | null',
   fromStatus: 'string | null',
   toStatus: 'string | null',
+
+  // Sprint 14
+  // s14-15 homes-api
+  title: 'string | null',
+  listingType: 'string | null',
+  propertyType: 'string | null',
+  priceCents: 'number | null',
+  beds: 'number | null',
+  baths: 'number | null',
+  sqft: 'number | null',
+  city: 'string | null',
+  state: 'string | null',
+  status: 'string | null',
+  locationLabel: 'string | null',
+  radiusKm: 'number | null',
+  minPriceCents: 'number | null',
+  maxPriceCents: 'number | null',
+  minBeds: 'number | null',
+  minBaths: 'number | null',
+
 };
 
 // Arrays whose example may be empty (an own job opens with no interview dates), so the element type is stated.
-const EMPTY_ARRAYS: Record<string, string> = { interviewDates: 'string[]' };
+const EMPTY_ARRAYS: Record<string, string> = {
+  interviewDates: 'string[]',
+  priceChanges: '{ oldCents: number; newCents: number; changedAt: string }[]',
+};
 
 const SCHEDULED_ROW_FIELDS: Record<string, string> = {
   scheduledAt: 'string | null',

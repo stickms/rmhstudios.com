@@ -2,6 +2,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit.server';
 import { universalSearch } from '@/lib/search/universal.server';
+import { isSelfExcluded } from '@/lib/economy/play-limits.server';
 import { isSearchTab, type SearchTab } from '@/lib/search/types';
 
 /**
@@ -78,6 +79,8 @@ export const route = apiRoute('/api/search', {
         tab,
         viewerId: userId,
         signedIn: Boolean(userId),
+        // A self-excluded member does not find the pages that stake coins (W8).
+        hideRiskSurfaces: userId ? await isSelfExcluded(userId) : false,
         assist: Boolean(userId) && params.get('assist') === '1',
       });
       return Response.json(results);

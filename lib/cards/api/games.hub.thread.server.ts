@@ -1,4 +1,5 @@
 import { apiRoute } from '@/lib/api/route.server';
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { implement } from '@/lib/api/implement.server';
 import { createHubThreadApi } from '@/lib/cards/steam.contract';
 import { createHubThreadBody } from '@/lib/cards/steam-schema';
@@ -13,6 +14,10 @@ export const route = apiRoute('/api/games/hub/thread', {
       rateLimit: 'write',
       body: createHubThreadBody,
     },
-    ({ userId, body }) => hubResponse(() => createThread({ userId, ...body })),
+    async ({ userId, body }) => {
+      const restricted = await restrictionResponse(userId, 'comment');
+      if (restricted) return restricted;
+      return hubResponse(() => createThread({ userId, ...body }));
+    },
   ),
 });

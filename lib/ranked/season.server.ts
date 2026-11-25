@@ -8,7 +8,7 @@ import { prisma, prismaRead } from '@/lib/prisma.server';
 import { userNotHiddenWhere } from '@/lib/game/leaderboard-privacy';
 import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 import { BASE_RATING, RANKED_GAMES, nextRatingWithK } from '@/lib/ranked/elo';
-import { tierForRating, type RankTier } from '@/lib/ranked/tiers';
+import { tierForRating, tierIdForRating, type RankTier, type TierId } from '@/lib/ranked/tiers';
 import { PLACE_SCAN_CAP, placeFromCandidates, type RankedStandingGame } from '@/lib/ranked/standing';
 import {
   PLACEMENT_MATCHES,
@@ -29,6 +29,8 @@ export interface LadderEntry {
   losses: number;
   draws: number;
   tier: RankTier;
+  /** The tier's id beside the object, so a client can translate it without reading the object. */
+  tierId: TierId;
 }
 
 /**
@@ -157,6 +159,7 @@ export async function getLadder(
         losses: r.losses,
         draws: r.draws,
         tier: tierForRating(rating),
+        tierId: tierIdForRating(rating),
       };
     })
     .sort((x, y) => y.rating - x.rating)
@@ -240,6 +243,7 @@ export async function getStandings(
           played: false,
           rating: null,
           tier: null,
+          tierId: null,
           provisional: true,
           placementsLeft: PLACEMENT_MATCHES,
           wins: 0,
@@ -269,6 +273,7 @@ export async function getStandings(
         played: true,
         rating: shown.rating,
         tier: shown.rating === null ? null : tierForRating(shown.rating).label,
+        tierId: shown.rating === null ? null : tierIdForRating(shown.rating),
         provisional: shown.provisional,
         placementsLeft: row.placementsLeft,
         wins: row.wins,

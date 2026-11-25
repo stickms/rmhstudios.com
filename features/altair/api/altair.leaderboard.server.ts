@@ -5,6 +5,8 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { notHiddenWhere } from '@/lib/game/leaderboard-privacy';
 import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
+import { isCoopBoardKind } from '@features/altair/engine/coop-record';
+import { coopBoard } from '@features/altair/engine/coop-record.server';
 
 export const route = apiRoute('/api/altair/leaderboard', {
   GET: implement(
@@ -23,6 +25,9 @@ export const route = apiRoute('/api/altair/leaderboard', {
       try {
         const { searchParams } = new URL(request.url);
         const type = searchParams.get('type') || 'time';
+
+        // The co-op boards read `AltairCoopProfile`; every other value (unknown ones included) is a solo board.
+        if (isCoopBoardKind(type)) return Response.json(await coopBoard(type));
 
         let orderBy = {};
         switch (type) {

@@ -9,6 +9,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createElement, type ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
 import { placePoints } from '@/lib/globe/points';
 
@@ -55,8 +56,14 @@ const read = (p: string) => readFileSync(join(ROOT, p), 'utf8');
 function html(pathname = '/', unread = 0): string {
   state.pathname = pathname;
   state.unread = unread;
+  // The app renders the shell inside Providers' QueryClientProvider; the sidebar's risk-surface query (s14-16) needs
+  // one, and with no session it never fetches.
   return renderToString(
-    createElement(SiteShell, null, createElement('p', { id: 'page-content' }, 'The page')),
+    createElement(
+      QueryClientProvider,
+      { client: new QueryClient() },
+      createElement(SiteShell, null, createElement('p', { id: 'page-content' }, 'The page')),
+    ),
   );
 }
 

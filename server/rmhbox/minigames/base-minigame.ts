@@ -26,6 +26,11 @@ export interface MinigameContext {
   lobbyId: string;
   players: Map<string, RMHboxPlayer>;
   settings: LobbySettings;
+  /**
+   * How many games of this same minigame the lobby has already finished in
+   * this session (from the lobby's match history). Absent means unknown (0).
+   */
+  priorGamesOfThisMinigame?: number;
   /** Host-configured game settings for this minigame instance (§12A). */
   gameSettings: GameSettingValues;
   /** Live lookup of the current host userId (reflects host transfer). */

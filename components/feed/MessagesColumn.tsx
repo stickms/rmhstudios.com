@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useTranslation } from 'react-i18next';
-import { CheckCheck, Moon, Search, SquarePen } from 'lucide-react';
+import { CheckCheck, Moon, Pin, Search, SquarePen } from 'lucide-react';
 import { IconButton } from '@/components/ui/icon-button';
 import { Spinner } from '@/components/ui/spinner';
 import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
@@ -36,6 +36,7 @@ import {
   sendMessageApi,
 } from '@/lib/messages/messages.contract';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { CONVERSATION_PINS_CHANGED_EVENT } from '@/lib/messages/pins';
 
 export interface ConversationItem {
   id: string;
@@ -58,6 +59,10 @@ export interface ConversationItem {
   unreadCount: number;
   lastMessageAt: string;
   matchSnippet?: string | null;
+  /** s14-12: pinned to the top by the member. Absent on search results. */
+  pinned?: boolean;
+  /** s14-12: a mute is in force, or only mentions notify. Absent on search results. */
+  muted?: boolean;
 }
 
 export function MessagesColumn({
@@ -241,9 +246,14 @@ export function MessagesColumn({
           if (msg.senderId !== session.user.id) {
             conv.unreadCount += 1;
           }
-          // Remove from current position and move to top
+          // A pinned row stays where it is; any other moves to the top of the unpinned rows (s14-12).
+          if (conv.pinned) {
+            updated[idx] = conv;
+            return updated;
+          }
           updated.splice(idx, 1);
-          updated.unshift(conv);
+          const firstUnpinned = updated.findIndex((c) => !c.pinned);
+          updated.splice(firstUnpinned === -1 ? updated.length : firstUnpinned, 0, conv);
           return updated;
         });
       } else if (type === 'unread') {
@@ -260,6 +270,14 @@ export function MessagesColumn({
       }
     });
   }, [session, fetchConversations]);
+
+  // A pin changed in the open conversation's header: fetch page one again so the order is the server's.
+  useEffect(() => {
+    if (!session) return;
+    const onPinsChanged = () => void fetchRef.current(true);
+    window.addEventListener(CONVERSATION_PINS_CHANGED_EVENT, onPinsChanged);
+    return () => window.removeEventListener(CONVERSATION_PINS_CHANGED_EVENT, onPinsChanged);
+  }, [session]);
 
   // Infinite scroll
   const observerCallback = useCallback(
@@ -524,6 +542,16 @@ function ConversationRow({
               {conv.otherUser.isBot && <AutomatedBadge />}
             </div>
             <div className="flex shrink-0 items-baseline gap-2">
+              {conv.pinned && (
+                <Pin
+                  className="size-3 self-center text-site-text-muted"
+                  role="img"
+                  aria-label={t('pinned', { ns: 'pinned-conversations', defaultValue: 'Pinned' })}
+                />
+              )}
+              {conv.muted && (
+                <span className="t-meta">{t('muted', { ns: 'pinned-conversations', defaultValue: 'Muted' })}</span>
+              )}
               {hasScheduled && <ScheduledClock />}
               {autoReplied && <AutoRepliedMark />}
               {conv.lastMessage && (

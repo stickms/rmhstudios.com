@@ -2,6 +2,8 @@
  * The runs list rendered to markup (no DOM): the empty line, a verified run with the replay's numbers, a refused run
  * with its reason in words, and a co-op row with teammates by name.
  */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import i18next from 'i18next';
 import type { ReactElement } from 'react';
 import { I18nextProvider } from 'react-i18next';
@@ -94,5 +96,15 @@ describe('RunsList', () => {
     expect(html).toContain('A player');
     expect(html).toContain('Deleted user');
     expect(html).toContain('Victory');
+  });
+});
+
+describe('RunsScreen focus (s14-20)', () => {
+  const source = readFileSync(join(__dirname, '..', 'screens', 'RunsScreen.tsx'), 'utf8');
+
+  it('moves focus to its heading on open, with a focusable heading and no animation frame', () => {
+    expect(source).toMatch(/<h2\s+ref=\{focusHeading\}\s+tabIndex=\{-1\}/);
+    expect(source).toContain('useCallback((el: HTMLHeadingElement | null) => el?.focus(), [])');
+    expect(source).not.toContain('requestAnimationFrame');
   });
 });

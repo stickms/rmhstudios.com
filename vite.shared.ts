@@ -35,6 +35,9 @@ export function stubServerFiles(): Plugin {
     for (const m of source.matchAll(/export\s*\{([^}]+)\}/g)) {
       // skip re-exports that reference other .server files (already stubbed)
       for (const token of m[1].split(',')) {
+        // An inline type specifier (`export { a, type B } from …`) is erased by the compiler and has no value to
+        // stub; written out as `export const type B = undefined` it is a parse error that fails the client build.
+        if (/^type\s/.test(token.trim())) continue;
         const alias = token
           .trim()
           .split(/\s+as\s+/)

@@ -125,6 +125,11 @@ export const BOARD_PRIVACY_READ_PATHS = [
   // Sprint 13
   // s13-05 games-friends
   'lib/games/activity.server.ts',
+
+  // Sprint 14
+  // s14-04 altair-coop
+  'features/altair/engine/coop-record.server.ts',
+
 ] as const;
 
 /**

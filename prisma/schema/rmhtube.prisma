@@ -24,6 +24,9 @@ model RmhTubeRoom {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   closedAt         DateTime?
+  /// s14-10: a moderator took this room down. It sticks: the hub never loads it again, no list or page shows it, and the
+  /// host cannot edit it back. `closedAt` is stamped with it. Null for every room nobody removed.
+  moderatedAt      DateTime?
 
   host     User                 @relation("RmhTubeHostedRooms", fields: [hostId], references: [id])
   members  RmhTubeRoomMember[]

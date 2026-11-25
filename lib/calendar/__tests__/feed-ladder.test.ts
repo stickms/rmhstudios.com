@@ -19,8 +19,9 @@ vi.mock('@/lib/cached.server', () => ({
     db.invalidated.push(key);
   }),
 }));
-vi.mock('@/lib/prisma.server', () => ({
-  prisma: {
+// Checked against the schema: sprint 13 selected `job.updatedAt`, a column `LadderJob` does not have.
+vi.mock('@/lib/prisma.server', async () => ({
+  prisma: (await import('@/lib/db/query-shape')).shapeChecked({
     calendarFeed: {
       findUnique: vi.fn(async () => ({ userId: 'u1', token: 'tok-1', enabled: true })),
     },
@@ -34,7 +35,7 @@ vi.mock('@/lib/prisma.server', () => ({
         return db.applications;
       }),
     },
-  },
+  }),
 }));
 vi.mock('@/lib/calendar/my-events.server', () => ({
   myEventInputs: vi.fn(async () => []),

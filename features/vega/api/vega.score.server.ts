@@ -23,6 +23,8 @@ import { consumeAssistRun } from '@/lib/game/assist-run.server';
  * bound for the waves cleared on that map, and the consistency of the achievement facts. A run that fails the
  * first two is refused; implausible facts only withhold the achievements.
  *
+ * The run claim is consumed first, so a refused run spends it too (s14-20).
+ *
  * An assisted run (P7) never reaches the board. The server decides, from the claim made at run start
  * (`consumeAssistRun`), never from the body: the player row IS this game's board, so it is left alone, no
  * achievement is granted, and the play still counts toward quests. The response says `ranked: false`.
@@ -38,14 +40,18 @@ export const route = apiRoute('/api/vega/score', {
     async ({ session, body }) => {
       const { score, cleared, map, durationMs, facts } = body;
 
+      const userId = session.user.id;
+
+      // s14-20: the run-start claim is spent before the run is judged. A refused run spends it too (an honest client
+      // never sends one), so a re-POST after turning assists off cannot rank on the strength of a claim that survived.
+      const assisted = await consumeAssistRun(userId, 'vega');
+
       const verdict = validateScore('vega', { score, durationMs, progress: cleared });
       if (!verdict.ok || score > maxScoreThrough(cleared, map)) {
         return Response.json({ error: 'Invalid data' }, { status: 400 });
       }
 
-      const userId = session.user.id;
-
-      if (await consumeAssistRun(userId, 'vega')) {
+      if (assisted) {
         await recordGamePlay(userId);
         const best = await prisma.vegaPlayer.findUnique({ where: { userId } });
         return Response.json({

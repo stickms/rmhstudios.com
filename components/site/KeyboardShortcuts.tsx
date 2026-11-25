@@ -20,7 +20,7 @@
  * is nothing to dispatch, and no key listener is attached.
  */
 
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useTranslation } from 'react-i18next';
@@ -33,6 +33,8 @@ import { useEffectiveShortcuts } from '@/hooks/useEffectiveShortcuts';
 import { SEQUENCE_TIMEOUT_MS, isTypingTarget, type Shortcut } from '@/lib/shortcuts/registry';
 import { eventMatchesKeystroke, isModifierKey, keyLabel, type KeyPlatform } from '@/lib/shortcuts/bindings';
 import { useKeyboardPrefsStore } from '@/stores/keyboardPrefsStore';
+import { useRiskSurfacesHidden } from '@/hooks/useRiskSurfacesHidden';
+import { isRiskSurfacePath } from '@/lib/economy/risk-surfaces';
 
 const ComposeModal = lazy(() =>
   import('@/components/feed/ComposeModal').then((m) => ({
@@ -128,6 +130,13 @@ export function KeyboardShortcuts() {
   const navigate = useNavigate();
   const { data: session } = useSession();
   const signedIn = !!session?.user;
+  // The go-to shortcut for the wallet opens the coin hub: while the member is self-excluded it does nothing and is not
+  // listed (W8).
+  const riskHidden = useRiskSurfacesHidden();
+  const goesToRiskSurface = useCallback(
+    (id: string) => riskHidden && isRiskSurfacePath(GO_TARGETS[id]?.href ?? ''),
+    [riskHidden],
+  );
 
   const [helpOpen, setHelpOpen] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
@@ -179,9 +188,12 @@ export function KeyboardShortcuts() {
   const dispatchable = useMemo(
     () =>
       effective.filter(
-        (s) => !s.scope.startsWith('game:') && (s.run !== undefined || SITE_ACTION_IDS.has(s.id) || isFeedNavId(s.id)),
+        (s) =>
+          !s.scope.startsWith('game:') &&
+          !goesToRiskSurface(s.id) &&
+          (s.run !== undefined || SITE_ACTION_IDS.has(s.id) || isFeedNavId(s.id)),
       ),
-    [effective],
+    [effective, goesToRiskSurface],
   );
 
   useEffect(() => {
@@ -247,7 +259,10 @@ export function KeyboardShortcuts() {
   }, []);
 
   const listed = effective.filter(
-    (s) => !s.scope.startsWith('game:') && (s.id === 'site.compose' ? signedIn : s.when ? s.when() : true),
+    (s) =>
+      !s.scope.startsWith('game:') &&
+      !goesToRiskSurface(s.id) &&
+      (s.id === 'site.compose' ? signedIn : s.when ? s.when() : true),
   );
   const general = listed.filter((s) => !s.id.startsWith('site.go.') && !isFeedNavId(s.id));
   const posts = listed.filter((s) => isFeedNavId(s.id));

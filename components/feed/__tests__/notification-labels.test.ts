@@ -184,6 +184,11 @@ describe('system notification labels', () => {
       // s13-20 message-push
       dm: 'Message',
 
+      // Sprint 14 system labels (docs/autonomous/sprint-14/plan.md §Anchors)
+      // s14-11 thread-replies
+      game_thread: 'Game discussion',
+      song: 'Slice It',
+
       default: 'RMH Studios',
     });
   });

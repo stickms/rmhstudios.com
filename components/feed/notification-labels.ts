@@ -200,6 +200,11 @@ export function systemLabels(t: TFunction): Record<string, string> {
     // s13-20 message-push
     dm: t('system-label-dm', { ns: 'feed', defaultValue: 'Message' }),
 
+    // Sprint 14 system labels (docs/autonomous/sprint-14/plan.md §Anchors)
+    // s14-11 thread-replies
+    game_thread: t('system-label-game_thread', { ns: 'feed', defaultValue: 'Game discussion' }),
+    song: t('system-label-song', { ns: 'feed', defaultValue: 'Slice It' }),
+
     default: t('system-label-default', { ns: 'feed', defaultValue: 'RMH Studios' }),
   };
 }

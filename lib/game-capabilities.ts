@@ -137,7 +137,7 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     sessionMinutes: [20, 90],
     engine: 'webgl',
     demanding: true,
-    save: 'local-only',
+    save: 'shared-table',
     accessibility: [],
   },
   rmhbox: {

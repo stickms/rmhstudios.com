@@ -32,6 +32,8 @@ vi.mock('@/lib/prisma.server', () => {
   };
   return {
     prisma: {
+      // s14-10: the host has no removed room names.
+      rmhTubeRoom: { findMany: async () => [] },
       user: { findUnique: async () => ({ id: 'host', name: 'Ada', image: null, username: null, profile: null }) },
       $transaction: async (fn: (t: typeof tx) => Promise<unknown>) => {
         const out = await fn(tx);

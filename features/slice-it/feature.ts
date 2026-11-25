@@ -56,7 +56,7 @@ export default defineFeature({
     'app/routes/slice-it/index.tsx',
     'app/routes/slice-it/player.$handle.tsx',
   ],
-  namespaces: ['r-slice-it', 'chart-history', 'chart-misses'],
+  namespaces: ['r-slice-it', 'chart-history', 'chart-misses', 'slice-reports'],
   catalog: 'features/slice-it/catalog.ts',
   listed: true,
 });

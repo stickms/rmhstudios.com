@@ -31,6 +31,7 @@ Non-2xx responses use a stable envelope:
 | `confirm_on_site` | `conflict_error` | `409` |
 | `conflict` | `conflict_error` | `409` |
 | `feature_not_available` | `authorization_error` | `403` |
+| `feature_restricted` | `authorization_error` | `403` |
 | `forbidden` | `authorization_error` | `403` |
 | `idempotency_conflict` | `conflict_error` | `409` |
 | `insufficient_scope` | `authorization_error` | `403` |

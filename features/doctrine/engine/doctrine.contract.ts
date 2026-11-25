@@ -8,6 +8,7 @@
  * `pageSize()` / `searchParams` themselves.
  */
 import { endpoint } from '@/lib/contract/endpoint';
+import type { ActivityDays, LedgerPage } from '@features/doctrine/engine/ledger';
 import type { getRecentIncidents } from '@features/doctrine/engine/incidents';
 import type { getReputation, getReputationLeaderboard } from '@features/doctrine/engine/reputation';
 import type { ReactionCount, SahurModeConfig, SahurStatus } from '@features/doctrine/engine/types';
@@ -71,6 +72,28 @@ export const getDoctrineReputationLeaderboardApi = endpoint<{
 }>()({
   method: 'GET',
   path: '/api/doctrine/reputation/leaderboard',
+});
+
+/** The caller's own XP ledger, newest first, 30 a page (`cursor` pages it; the first page carries the 30-day summary). */
+export const getDoctrineLedgerApi = endpoint<{
+  query: {
+    cursor?: string | undefined;
+  };
+  res: LedgerPage;
+}>()({
+  method: 'GET',
+  path: '/api/doctrine/reputation/ledger',
+});
+
+/** The days the caller earned XP in the last 16 weeks, bucketed in the zone `tz` names (UTC when it is not one). */
+export const getDoctrineActivityApi = endpoint<{
+  query: {
+    tz?: string | undefined;
+  };
+  res: ActivityDays;
+}>()({
+  method: 'GET',
+  path: '/api/doctrine/reputation/activity',
 });
 
 export const getDoctrineSahurStatusApi = endpoint<{

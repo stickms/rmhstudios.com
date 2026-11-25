@@ -95,3 +95,32 @@ export const rateJamEntryApi = endpoint<{
   method: 'POST',
   path: '/api/jams/$slug/rate',
 });
+
+/**
+ * Admin only: edit a jam within what its phase allows (before the start everything but the slug; after it, the
+ * description and later deadlines). Every field is optional; the dates are ISO strings on the wire. The response
+ * is the public jam view, so the secret theme is never echoed. Refusals carry `JAM_EDIT_LOCKED`,
+ * `JAM_DATES_ORDER`, `JAM_DEADLINE_SHORTER` or `JAM_VOTE_OPENS_LATE`.
+ */
+export const updateJamApi = endpoint<{
+  params: {
+    slug: string;
+  };
+  body: {
+    title?: string;
+    description?: string;
+    /** A non-voting jam before its start only; never returned. */
+    theme?: string;
+    startsAt?: Date;
+    submitEndsAt?: Date;
+    ratingEndsAt?: Date;
+    /** A voting jam whose vote has not opened yet. */
+    themeVoteOpensAt?: Date;
+  };
+  res: {
+    jam: JamView;
+  };
+}>()({
+  method: 'PATCH',
+  path: '/api/jams/$slug',
+});

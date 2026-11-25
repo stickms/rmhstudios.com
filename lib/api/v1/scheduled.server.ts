@@ -12,6 +12,7 @@
 import type { ScheduledPost } from '@prisma/client';
 import type { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
+import { restrictionMessage } from '@/lib/moderation/restrictions.server';
 import { isMediaId } from '@/lib/media/id';
 import { attachError, MAX_MEDIA_PER_POST } from '@/lib/media/policy';
 import { prepareCommunityPost } from '@/lib/communities/post-gate.server';
@@ -448,6 +449,8 @@ export async function publishScheduledForKey(
   if (row.publishedId) return apiFail(409, 'conflict', 'Already published');
   if (row.isCapsule)
     return apiFail(409, 'conflict', 'A time capsule opens on its date; it cannot be published through the API.');
+  const restricted = await restrictionMessage(userId, 'post');
+  if (restricted) return apiFail(403, 'feature_restricted', restricted);
   const gated = await communityPrecheck(userId, {
     content: row.content,
     communityId: row.communityId,

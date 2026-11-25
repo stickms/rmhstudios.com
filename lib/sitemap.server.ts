@@ -182,7 +182,7 @@ export const SITEMAP_SECTIONS: Record<SitemapSectionName, Section> = {
         prisma.newsArticle.count({ where: { status: 'PUBLISHED', origin: 'EDITORIAL' } }),
         prisma.libraryDocument.count({ where: { hidden: false, reported: false } }),
         prisma.album.count(),
-        prisma.gameGuide.count({ where: { published: true } }),
+        prisma.gameGuide.count({ where: { published: true, moderatedAt: null } }),
         prisma.communityPage.count({ where: { community: discoverableCommunityWhere({ isPrivate: false }) } }),
       ]);
       return blog + news + docs + albums + guides + wiki;
@@ -217,7 +217,7 @@ export const SITEMAP_SECTIONS: Record<SitemapSectionName, Section> = {
           take: CAPS.content,
         }),
         prisma.gameGuide.findMany({
-          where: { published: true },
+          where: { published: true, moderatedAt: null },
           select: { id: true, gameId: true, updatedAt: true },
           orderBy: { updatedAt: 'desc' },
           take: CAPS.content,

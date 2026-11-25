@@ -8,6 +8,7 @@
 import { Howl } from 'howler';
 import { useAltairSettingsStore } from '../stores/settings-store';
 import { asset } from '@/lib/storage/asset';
+import { whenGesture } from './gesture';
 
 const TRACKS = [
   asset('/music/altair/1.mp3'),
@@ -20,6 +21,7 @@ let currentHowl: Howl | null = null;
 let shuffleQueue: number[] = [];
 let lastPlayed = -1;
 let started = false;
+let cancelWait: (() => void) | null = null;
 
 /** Fisher-Yates shuffle, avoiding immediate repeat of last played track. */
 function buildShuffleQueue(): void {
@@ -71,12 +73,18 @@ export const altairMusic = {
   start(): void {
     if (started) return;
     started = true;
-    playNext();
+    // The track's Howl creates the AudioContext, so nothing is built until the first pointer or key event.
+    cancelWait = whenGesture(() => {
+      cancelWait = null;
+      if (started && !currentHowl) playNext();
+    });
   },
 
   /** Stop playback and clean up. */
   stop(): void {
     started = false;
+    cancelWait?.();
+    cancelWait = null;
     if (currentHowl) {
       currentHowl.stop();
       currentHowl.unload();

@@ -28,6 +28,7 @@ import { catalogNames, searchCatalog, SITE_DESTINATIONS } from './catalog';
 import { expandQuery, isExpansionAvailable } from './expand.server';
 import { CONFIDENCE, confidenceOf, scoreField, scoreRecord } from './score';
 import { normalizeQuery } from './normalize';
+import { isRiskSurfacePath } from '@/lib/economy/risk-surfaces';
 import {
   SEARCH_TAB_KINDS,
   type LegacyDoc,
@@ -62,6 +63,8 @@ export interface UniversalSearchInput {
   viewerId: string | null;
   /** Signed-out visitors don't see auth-gated destinations. */
   signedIn?: boolean;
+  /** A self-excluded member does not find the pages that stake coins (W8). */
+  hideRiskSurfaces?: boolean;
   /**
    * Permit the model-assisted retry when the lexical pass is weak. Callers on a
    * latency budget (typeahead, quick panel) should leave this off.
@@ -113,6 +116,7 @@ async function runPass(
     after?: string;
     hasMedia?: boolean;
     signedIn: boolean;
+    hideRiskSurfaces?: boolean;
   },
 ): Promise<PassResult> {
   const degraded: SearchKind[] = [];
@@ -170,7 +174,11 @@ async function runPass(
   // The static catalog is a synchronous in-memory scan — no await, no latency.
   const catalog: Partial<Record<SearchKind, SearchHit[]>> = {};
   if (terms.q) {
-    const scanned = searchCatalog(terms.q, { signedIn: ctx.signedIn, limit: perKind });
+    const scanned = searchCatalog(terms.q, {
+      signedIn: ctx.signedIn,
+      hideRiskSurfaces: ctx.hideRiskSurfaces === true,
+      limit: perKind,
+    });
     for (const kind of ['game', 'app', 'page'] as const) {
       if (kinds.has(kind) && scanned[kind].length) catalog[kind] = scanned[kind];
     }
@@ -248,13 +256,25 @@ function buildTop(groups: Partial<Record<SearchKind, SearchHit[]>>): SearchHit[]
  * suggested "Spaces" and "hello" suggested "Dream Rift" (2026-10-09). A
  * suggestion is a claim that you misspelled a name; only a name can back it.
  */
-function catalogSuggestion(normalized: string, signedIn: boolean): string | undefined {
+/** Is `title` the name of a page that stakes coins (W8)? Case-insensitive: a model's correction may differ in case. */
+function namesRiskSurface(title: string): boolean {
+  const lower = title.trim().toLowerCase();
+  return SITE_DESTINATIONS.some((d) => d.title.toLowerCase() === lower && isRiskSurfacePath(d.href));
+}
+
+function catalogSuggestion(
+  normalized: string,
+  signedIn: boolean,
+  hideRiskSurfaces = false,
+): string | undefined {
   if (normalized.length < 3) return undefined;
-  const titles = signedIn
-    ? catalogNames()
-    : catalogNames().filter(
-        (title) => !SITE_DESTINATIONS.some((d) => d.requiresAuth && d.title === title),
-      );
+  const titles = catalogNames().filter(
+    (title) =>
+      !SITE_DESTINATIONS.some(
+        (d) =>
+          d.title === title && ((!signedIn && d.requiresAuth) || (hideRiskSurfaces && isRiskSurfacePath(d.href))),
+      ),
+  );
   let best: { title: string; score: number } | undefined;
   for (const title of titles) {
     const { score } = scoreField(normalized, title);
@@ -324,6 +344,7 @@ export async function universalSearch(input: UniversalSearchInput): Promise<Sear
     after: parsed.after,
     hasMedia: parsed.hasMedia,
     signedIn,
+    hideRiskSurfaces: input.hideRiskSurfaces === true,
   };
 
   const direct = await runPass(terms, kinds, perKind, ctx);
@@ -338,7 +359,7 @@ export async function universalSearch(input: UniversalSearchInput): Promise<Sear
 
   // The assist pass: only when the query found nothing convincing.
   let expandedWith: string[] | undefined;
-  let suggestion = catalogSuggestion(terms.q, signedIn);
+  let suggestion = catalogSuggestion(terms.q, signedIn, input.hideRiskSurfaces === true);
 
   // Never for a signed-out search: the assist pass is a paid model call.
   if (
@@ -356,8 +377,12 @@ export async function universalSearch(input: UniversalSearchInput): Promise<Sear
       ...new Set([expansion.terms[0], expansion.correction, ...expansion.terms.slice(1)]),
     ]
       .filter((term): term is string => Boolean(term))
+      // A self-excluded member is not steered to a coin game by the model either (W8).
+      .filter((term) => !(input.hideRiskSurfaces === true && namesRiskSurface(term)))
       .slice(0, 2);
-    if (expansion.correction) suggestion = expansion.correction;
+    if (expansion.correction && !(input.hideRiskSurfaces === true && namesRiskSurface(expansion.correction))) {
+      suggestion = expansion.correction;
+    }
 
     if (retryTerms.length) {
       const passes = await Promise.all(

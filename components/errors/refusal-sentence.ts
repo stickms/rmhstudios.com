@@ -923,6 +923,108 @@ function sentence(t: Translate, code: ErrorCode, p: Record<string, string | numb
       });
     case 'RIDE_SCHEDULE_LIMIT':
       return t('rideScheduleLimit', { ns: 'errors', defaultValue: 'You can have up to {{max}} scheduled rides', ...p });
+
+    // Sprint 14
+    // s14-06 puzzle-reports
+    case 'PUZZLE_REPORT_NOT_PLAYED':
+      return t('puzzleReportNotPlayed', {
+        ns: 'errors',
+        defaultValue: 'Finish this puzzle before reporting it',
+        ...p,
+      });
+    case 'PUZZLE_ALREADY_STARTED':
+      return t('puzzleAlreadyStarted', {
+        ns: 'errors',
+        defaultValue: 'Players have already played this puzzle, so it cannot be replaced',
+        ...p,
+      });
+    case 'PUZZLE_CHANGED':
+      return t('puzzleChanged', {
+        ns: 'errors',
+        defaultValue: 'This puzzle changed since you opened it. Reload to see it',
+        ...p,
+      });
+
+    // s14-08 game-reports
+    case 'GAME_CONTENT_REMOVED_BY_MODERATOR':
+      return t('gameContentRemovedByModerator', {
+        ns: 'errors',
+        defaultValue: 'A moderator removed this, so it cannot be changed or deleted',
+        ...p,
+      });
+
+    // s14-09 profile-reports
+    case 'IMPERSONATION_UNKNOWN':
+      return t('impersonationUnknown', { ns: 'errors', defaultValue: 'We could not find that account', ...p });
+    case 'IMPERSONATION_SELF':
+      return t('impersonationSelf', {
+        ns: 'errors',
+        defaultValue:
+          'Choose a different account: an account cannot be reported for being itself, and you cannot report your own',
+        ...p,
+      });
+
+    // s14-10 tube-room-reports
+    case 'TUBE_ROOM_NAME_REMOVED':
+      return t('tubeRoomNameRemoved', {
+        ns: 'errors',
+        defaultValue: 'A moderator removed a room with this name. Choose another',
+        ...p,
+      });
+
+    // s14-12 pinned-conversations
+    case 'CONVERSATION_PIN_LIMIT':
+      return t('conversationPinLimit', {
+        ns: 'errors',
+        defaultValue: 'You can pin up to {{max}} conversations. Unpin one first',
+        ...p,
+      });
+
+    // s14-14 jam-editing
+    case 'JAM_EDIT_LOCKED':
+      return t('jamEditLocked', {
+        ns: 'errors',
+        defaultValue: 'This can no longer change: the jam has started',
+        ...p,
+      });
+    case 'JAM_DATES_ORDER':
+      return t('jamDatesOrder', {
+        ns: 'errors',
+        defaultValue: 'Dates must run: start, submissions close, rating close',
+        ...p,
+      });
+    case 'JAM_DEADLINE_SHORTER':
+      return t('jamDeadlineShorter', {
+        ns: 'errors',
+        defaultValue: 'Deadlines can only move later once the jam has started',
+        ...p,
+      });
+    case 'JAM_SHORTLIST_LOCKED':
+      return t('jamShortlistLocked', {
+        ns: 'errors',
+        defaultValue: 'The shortlist can no longer change: a member has already voted',
+        ...p,
+      });
+    case 'JAM_VOTE_OPENS_LATE':
+      return t('jamVoteOpensLate', {
+        ns: 'errors',
+        defaultValue: 'Voting must open before the jam starts',
+        ...p,
+      });
+
+    // s14-17 timeouts-everywhere
+    case 'FEATURE_RESTRICTED':
+      return t('featureRestricted', {
+        ns: 'errors',
+        defaultValue: 'This is restricted on your account. See Settings, Account status',
+        ...p,
+      });
+    case 'FEATURE_RESTRICTED_UNTIL':
+      return t('featureRestrictedUntil', {
+        ns: 'errors',
+        defaultValue: 'This is restricted on your account until {{endsAt}}. See Settings, Account status',
+        ...p,
+      });
   }
 }
 

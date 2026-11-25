@@ -9,6 +9,7 @@ import { Howl, Howler } from 'howler';
 import { useAltairSettingsStore } from '../stores/settings-store';
 import { asset } from '@/lib/storage/asset';
 import { clamp01 } from '@/lib/core/math';
+import { hasGesture, markGesture, whenGesture } from './gesture';
 
 export type AltairSfxEvent =
   | 'ui_click'
@@ -234,6 +235,8 @@ function getEventVolume(event: AltairSfxEvent, gainMul = 1): number {
 
 function ensureLoaded(event: AltairSfxEvent): Howl[] {
   if (loaded[event]) return loaded[event]!;
+  // A Howl creates the AudioContext: build none before the first gesture (Chrome logs an autoplay warning).
+  if (!hasGesture()) return [];
 
   const howls = EVENTS[event].sources.map(
     (src) =>
@@ -292,6 +295,8 @@ export const altairSfx = {
 
   enable(): void {
     sfxEnabled = true;
+    // Listen for the first gesture so `play` can build its Howls from then on.
+    whenGesture(() => {});
   },
 
   disable(): void {
@@ -310,6 +315,8 @@ export const altairSfx = {
   },
 
   prime(): void {
+    // Only ever called from the shell's first-gesture handler, so it is the gesture that unlocks the Howls.
+    markGesture();
     if (!sfxEnabled) return;
     tryResumeAudioContext();
     // Warm up the most common menu sounds so first interaction is responsive.
@@ -322,7 +329,7 @@ export const altairSfx = {
   },
 
   play(event: AltairSfxEvent, gainMul = 1): void {
-    if (!sfxEnabled) return;
+    if (!sfxEnabled || !hasGesture()) return;
     tryResumeAudioContext();
     const volume = getEventVolume(event, gainMul);
     if (volume <= 0) return;

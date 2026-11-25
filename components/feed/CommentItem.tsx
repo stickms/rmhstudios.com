@@ -52,6 +52,7 @@ import { ReactionMenu } from '@/components/shared/ReactionMenu';
 import { ReactionChips } from '@/components/shared/ReactionChips';
 import { useReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
 import { HideReplyMenuItem, HiddenRepliesGroup } from './HiddenReplies';
+import { SupporterMark } from './SupporterMark';
 
 const ModerateContentDialog = lazy(() =>
   import('@/components/moderation/moderation-ui').then((m) => ({ default: m.ModerateContentDialog })),
@@ -97,6 +98,8 @@ export interface Comment {
   hidden?: boolean;
   /** Grouped-by-emoji reaction summary (server-side via `groupReactions`). */
   reactions?: ReactionSummary[];
+  /** Present (and `true`) only when the post's author is viewing and this replier is their active supporter. */
+  supporter?: true;
   /** Client-only: optimistic comment awaiting its server round-trip. */
   pending?: boolean;
 }
@@ -402,6 +405,7 @@ export function CommentItem({
             {freshCommentUser.handle ? <bdi>{`@${freshCommentUser.handle}`}</bdi> : null}
             {freshCommentUser.handle ? ' · ' : ''}
             <RelativeTime date={comment.createdAt} format={relativeTimeShort} />
+            {comment.supporter ? <SupporterMark /> : null}
           </span>
         </div>
       </div>

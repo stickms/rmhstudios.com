@@ -51,6 +51,7 @@ vi.mock('@/lib/feed/map-feed-item.server', () => ({
 // No feature timeouts in these tests (lib/moderation/restrictions.server.ts).
 vi.mock('@/lib/moderation/restrictions.server', () => ({
   restrictionResponse: async () => null,
+  isRestricted: async () => false,
 }));
 vi.mock('@/lib/auth', () => ({
   auth: {

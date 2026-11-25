@@ -67,6 +67,29 @@ export const REPORT_ENTITY_TYPES = [
 
   // s13-17 dm-reports
   // `dm` (above) is a message in a direct or group conversation; it is now filed from the message menu.
+
+  // Sprint 14 (docs/autonomous/sprint-14/plan.md §Anchors)
+  // s14-07 slice-reports
+  // A comment on a Slice It song (the `SongComment` id); `song` (above) is the song itself, filed from its details.
+  'song-comment',
+
+  // s14-08 game-reports
+  // A member's game review (`GameReview` id), guide (a published `GameGuide`), discussion (`GameThread`), reply
+  // (`GameThreadPost`) and achievement tip (`AchievementTip`): lib/games/moderation.ts.
+  'game-review',
+  'game-guide',
+  'game-thread',
+  'game-thread-post',
+  'achievement-tip',
+
+  // s14-09 profile-reports
+  // An account that is pretending to be another (the accused account's id). Filed only from the profile's impersonation
+  // form (`POST /api/handles/impersonation`), never through the generic report route. Not removable.
+  'impersonation',
+
+  // s14-10 tube-room-reports
+  // A room or watch party (the room code). Filed from the room's header and the party page; the report is about the host.
+  'tube-room',
 ] as const;
 export type ReportEntityType = (typeof REPORT_ENTITY_TYPES)[number];
 
@@ -80,6 +103,26 @@ export const MEMBER_ITEM_REPORT_TYPES: ReadonlySet<string> = new Set([
   'study-deck',
   'persona',
   'home-listing',
+
+  // Sprint 14 (docs/autonomous/sprint-14/plan.md §Anchors)
+  // s14-07 slice-reports
+  // A Slice It song (`song`, above) and a comment on one: public, not taken down, and never the reporter's own.
+  'song',
+  'song-comment',
+
+  // s14-08 game-reports
+  // Public, by someone else and not already removed: the report flow refuses anything else (`gameContentOwner`).
+  'game-review',
+  'game-guide',
+  'game-thread',
+  'game-thread-post',
+  'achievement-tip',
+
+  // s14-09 profile-reports
+
+  // s14-10 tube-room-reports
+  // A public room, or one the reporter is in, that is not already removed and not the reporter's own (`roomReportable`).
+  'tube-room',
 ]);
 
 /**
@@ -121,6 +164,26 @@ export const REMOVABLE_REPORT_ENTITY_TYPES: readonly ReportEntityType[] = [
 
   // s13-17 dm-reports
   'dm',
+
+  // Sprint 14 (docs/autonomous/sprint-14/plan.md §Anchors)
+  // s14-07 slice-reports
+  // A taken-down song (`takeDownSong`: final, the audio is deleted, the scores stay) and a deleted comment.
+  'song',
+  'song-comment',
+
+  // s14-08 game-reports
+  // A review, guide and tip are stamped `moderatedAt` (final, the author cannot undo it); a thread and a reply are deleted.
+  'game-review',
+  'game-guide',
+  'game-thread',
+  'game-thread-post',
+  'achievement-tip',
+
+  // s14-09 profile-reports
+
+  // s14-10 tube-room-reports
+  // A removal stamps `moderatedAt` and `closedAt` and ends the running room (`takeDownRoom`).
+  'tube-room',
 ];
 
 /**

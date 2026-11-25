@@ -14,12 +14,17 @@ const h = vi.hoisted(() => ({
   songLeaderboardFindMany: vi.fn(),
 }));
 
-vi.mock('@/lib/prisma.server', () => ({
-  prisma: {
-    sliceRun: { findMany: h.findMany },
-    songLeaderboard: { findMany: h.songLeaderboardFindMany },
-  },
-}));
+// Checked against the schema: Prisma rejects `not: null` and `nulls` ordering on the required `SliceRun.accuracy`
+// (sprint 13), and a plain mock let both through.
+vi.mock('@/lib/prisma.server', async () => {
+  const { shapeChecked } = await import('@/lib/db/query-shape');
+  return {
+    prisma: shapeChecked({
+      sliceRun: { findMany: h.findMany },
+      songLeaderboard: { findMany: h.songLeaderboardFindMany },
+    }),
+  };
+});
 
 import { collectContributions } from '@features/slice-it/engine/rating.server';
 import { SKILL_CONTRIBUTION_CAP, contributionOf } from '@features/slice-it/engine/rating';

@@ -88,8 +88,9 @@ describe('feature restrictions', () => {
       feature: string;
       until: string | null;
     };
+    // The taxonomy code (s14-17); `feature` and `until` stay for older clients.
     expect(body).toMatchObject({
-      code: 'feature_restricted',
+      code: 'FEATURE_RESTRICTED_UNTIL',
       feature: 'post',
     });
     expect(body.until).not.toBeNull();

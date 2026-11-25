@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma.server';
 import { recordGamePlay } from '@/lib/quests/engine.server';
 import { invalidateCached } from '@/lib/cached.server';
 import { dailyStatsKey } from '@/lib/daily-puzzles/stats.server';
+import { puzzleDayOf } from '@/lib/daily-puzzles/reports';
 
 const VALID_MODES = [
   'lights-out',
@@ -44,6 +45,12 @@ async function saveScore(
 
     if (typeof dateKey !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
       return Response.json({ error: 'Invalid date' }, { status: 400 });
+    }
+
+    // Never a day that has not started in New York: its puzzle is not released (the puzzle read refuses it), and an
+    // admin may still replace it (s14-06), which must never happen to a day somebody has a score for.
+    if (dateKey > puzzleDayOf(Date.now())) {
+      return Response.json({ error: 'Date out of range' }, { status: 400 });
     }
 
     const isLightsOut = gameMode === 'lights-out';

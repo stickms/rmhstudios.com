@@ -30,6 +30,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/canvas` | Canvas \| Admin | admin | `app/routes/_site/admin/canvas.tsx` |
 | `/admin/census` | Census | admin | `app/routes/_site/admin/census.tsx` |
 | `/admin/communities` | Communities \| Admin | admin | `app/routes/_site/admin/communities.tsx` |
+| `/admin/daily-puzzles` | Daily puzzles \| Admin | admin | `app/routes/_site/admin/daily-puzzles.tsx` |
 | `/admin/deepseek` | DeepSeek Balance | admin | `app/routes/_site/admin/deepseek.tsx` |
 | `/admin/deletions` | Account deletions \| Admin | admin | `app/routes/_site/admin/deletions.tsx` |
 | `/admin/delight` | Delight tools \| Admin | admin | `app/routes/_site/admin/delight.tsx` |

@@ -1,4 +1,5 @@
 import { apiRoute } from '@/lib/api/route.server';
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { implement } from '@/lib/api/implement.server';
 import { createGuideApi } from '@/lib/games/guides.contract';
 import { guideCreateSchema } from '@/lib/games/reviews';
@@ -13,6 +14,8 @@ export const route = apiRoute('/api/guides', {
       body: guideCreateSchema,
     },
     async ({ session, body }) => {
+      const restricted = await restrictionResponse(session.user.id, 'comment');
+      if (restricted) return restricted;
       try {
         const id = await createGuide(session.user.id, body);
         return Response.json({ id });

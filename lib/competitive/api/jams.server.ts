@@ -4,6 +4,7 @@ import { implement } from '@/lib/api/implement.server';
 import { createJamApi, listJamsApi } from '@/lib/competitive/jams.contract';
 import { jamThemeVotingFields } from '@/lib/competitive/jam-themes-schema';
 import { createJam, listJams } from '@/lib/competitive/jams.server';
+import { refusalBody } from '@/lib/errors/codes';
 
 const createSchema = z.object({
   title: z.string().trim().min(3).max(100),
@@ -28,7 +29,7 @@ export const route = apiRoute('/api/jams', {
     { auth: 'admin', rateLimit: 'write', body: createSchema },
     async ({ userId, body }) => {
       const res = await createJam(userId, body);
-      if (!res.ok) return Response.json({ error: res.error }, { status: 400 });
+      if (!res.ok) return Response.json(res.code ? refusalBody(res.code) : { error: res.error }, { status: 400 });
       return Response.json({ slug: res.slug }, { status: 201 });
     },
   ),

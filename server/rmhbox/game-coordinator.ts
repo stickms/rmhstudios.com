@@ -60,6 +60,7 @@ import { FactOrFrictionGame } from './minigames/fact-or-friction';
 import { UndercoverEditorGame } from './minigames/undercover-editor';
 import { RankingFileGame } from './minigames/ranking-file';
 import { SequenceSamGame } from './minigames/sequence-sam';
+import { IdentityCrisisGame } from './minigames/identity-crisis';
 
 // ─── Minigame Server Registry ────────────────────────────────────
 
@@ -79,6 +80,7 @@ export const MINIGAME_SERVER_REGISTRY = new Map<string, new (context: MinigameCo
   ['undercover-editor', UndercoverEditorGame],
   ['ranking-file', RankingFileGame],
   ['sequence-sam', SequenceSamGame],
+  ['identity-crisis', IdentityCrisisGame],
 ]);
 
 // ─── Per-lobby lifecycle tracking ────────────────────────────────
@@ -1740,6 +1742,7 @@ export class GameCoordinator {
       settings: {
         ...lobby.settings,
       },
+      priorGamesOfThisMinigame: lobby.matchHistory.filter((m) => m.minigameId === minigameId).length,
       gameSettings: lobby.resolvedGameSettings ?? {},
       getHostId: () => lobby.hostUserId,
       broadcastToLobby: (event: string, data: unknown) => {

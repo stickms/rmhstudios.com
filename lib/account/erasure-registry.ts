@@ -428,6 +428,11 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason:
       'Subscriptions to things (a feed, a series, a community, build or market watch), not the social graph the `Follow` owner decision covers; `CustomFeed.subscriberCount` is decremented (floored) in the same transaction.',
   },
+  DailyPuzzleReport: {
+    decision: 'erase',
+    reason:
+      "A member's report that a daily puzzle is wrong, with an optional note: deleted with the account (the report is not shared with another member; moderators read only the counts and the notes of live reports).",
+  },
   DailyPuzzleScore: {
     decision: 'erase',
     reason:
@@ -1705,5 +1710,271 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
   WishlistEntry: {
     decision: 'erase',
     reason: 'The private wishlist, price-alert state included; no child rows.',
+  },
+};
+
+// ── Models that hold a member's id in a plain column ────────────────────────────────────────────────────────────────
+//
+// `ERASURE_REGISTRY` classifies every model with a relation to `User`. A model that stores a member's id in a plain
+// `String` column has no relation, so the relation scan cannot see it (sprint 13 06 had to add its own operation for
+// `RmhTubeChatMessage`). This second registry closes that: `lib/account/__tests__/erasure-plain-columns.test.ts`
+// parses `prisma/schema/**` and fails, naming the model, for a model with a column matching
+// {@link MEMBER_COLUMN_PATTERN} and no `User` relation that is not listed here, for an `erase` or `deidentify` entry
+// that `anonymizeAccount` does not carry out, and for a column the entry names that the model does not have.
+
+/**
+ * The decisions a plain-column model can carry: the relation registry's, without `todo` (this registry has none) or
+ * `owner`, and `not-member`: the column holds something other than a site member's id.
+ */
+export type PlainErasureDecision = Exclude<ErasureDecision, 'todo' | 'owner'> | 'not-member';
+
+export interface PlainMemberEntry extends Omit<ErasureEntry, 'decision'> {
+  decision: PlainErasureDecision;
+  /** The plain member columns the decision covers, as the schema spells them. */
+  columns: string[];
+  /** `erase` only: the same operation also de-identifies rows where the member sits in another column. */
+  also?: 'deidentify';
+  /**
+   * An operation that is raw SQL (a jsonb rewrite or a computed tombstone has no Prisma operation): the file that
+   * holds it and the real `@@map` table it writes. Prisma operations are recorded from `anonymizeAccount` instead.
+   */
+  raw?: { file: string; table: string };
+}
+
+/**
+ * The column names that mean "a site member's id". One list, so a future name joins in one place: the coverage test
+ * reads this and nothing else. `*ById` covers `createdById`, `updatedById`, `addedById`, `resolvedById`,
+ * `invitedById`, …; `referenceId` is the Stripe plugin's name for the owning member (`Subscription`).
+ */
+export const MEMBER_COLUMN_PATTERN =
+  /^(?:userId|\w*UserId|\w+ById|authorId|ownerId|hostId|actorId|senderId|recipientId|followerId|followingId|firstReporterId|reporterId|creatorId|referenceId)$/;
+
+const PUBLISHED_UNDER_TOMBSTONE =
+  'Rules 2 and 3: published content stays under "Deleted user" (as posts do); the column points at the anonymised account, which names nobody.';
+const STAFF_CONTENT_TOMBSTONE =
+  'Content made by a moderator or staff member that keeps serving its community or the site: the id is replaced by the shared deleted-user id (`DELETED_USER_ID`); nothing reads the column to show a person.';
+const STAFF_CONTENT_NULL =
+  'Content made by a moderator or staff member that keeps serving its community or the site: the column is optional and is set to null.';
+
+/** Plain-column models by decision, keyed by model. The same decisions as {@link ERASURE_REGISTRY}, plus `not-member`. */
+export const PLAIN_MEMBER_COLUMNS: Record<string, PlainMemberEntry> = {
+  AccountErasureAttempt: {
+    decision: 'keep',
+    columns: ['userId'],
+    reason:
+      'The log of the erasure itself: the account id, trigger, start and finish times and the error class name, never a message. It is the proof that the erasure ran and `finalizeDueDeletions` deletes it after 90 days.',
+  },
+  BlogPost: {
+    decision: 'deidentify',
+    columns: ['updatedById'],
+    reason:
+      "The Log stays (it is the site's); the editor who last saved it is nulled (`updatedById` is optional), in the same step as `BlogPostRevision`.",
+  },
+  BlogPostRevision: {
+    decision: 'deidentify',
+    columns: ['authorId'],
+    reason: 'Log history stays; the editor reference is nulled (`authorId` is optional).',
+  },
+  BotWorkerSettings: {
+    decision: 'deidentify',
+    columns: ['updatedById'],
+    reason:
+      'The single settings row of the bot worker stays; the admin who last saved it is nulled (`updatedById` is optional; nothing reads it).',
+  },
+  CanvasEvent: { decision: 'deidentify', columns: ['createdById'], reason: STAFF_CONTENT_TOMBSTONE },
+  ChatRemoval: {
+    decision: 'erase',
+    columns: ['userId'],
+    reason:
+      'The member\'s own "removed from this chat" marks. They exist only to stop an invite link bringing the member back; an erased account cannot be brought back.',
+  },
+  CommunityCensus: { decision: 'deidentify', columns: ['createdById'], reason: STAFF_CONTENT_TOMBSTONE },
+  CommunityChallenge: { decision: 'deidentify', columns: ['createdById'], reason: STAFF_CONTENT_TOMBSTONE },
+  CommunityGoal: { decision: 'deidentify', columns: ['createdById'], reason: STAFF_CONTENT_TOMBSTONE },
+  CommunityMemberEvent: {
+    decision: 'deidentify',
+    columns: ['userId'],
+    reason:
+      'The membership history keeps its counts and loses the person: `userId` is optional and is nulled (sprint 03 15).',
+  },
+  CommunityMemberNote: {
+    decision: 'erase',
+    columns: ['subjectId', 'authorId', 'deletedById'],
+    also: 'deidentify',
+    scope:
+      'notes about the member (`subjectId`); where the member wrote or deleted a note about someone else, the reference is nulled and the note stays',
+    reason:
+      "A moderator's note about a member is the moderators' record, so a note the erased member wrote stays without its author; a note about the erased member is theirs to have gone (sprint 06 02). This changes the default of `keep`: the code already did both. The open owner decision about moderator notes in the export is not touched.",
+  },
+  CommunityModAction: {
+    decision: 'deidentify',
+    columns: ['actorId', 'targetUserId'],
+    reason:
+      'The mod log keeps the action as "a deleted member" with the moderator\'s own reason text: both columns are optional and are nulled (sprint 03 14).',
+  },
+  DiscordAlexCaretaker: {
+    decision: 'not-member',
+    columns: ['userId'],
+    reason:
+      "A Discord user id (the caretaking tally of the Discord bot), not a site account; the Discord bot's own data policy covers it.",
+  },
+  DiscordChatSession: {
+    decision: 'not-member',
+    columns: ['discordUserId'],
+    reason:
+      "A Discord user id (the bot's chat session), not a site account; the Discord bot's own data policy covers it.",
+  },
+  DoctrineIncident: {
+    decision: 'deidentify',
+    columns: ['firstReporterId'],
+    reason:
+      "The incident stays as the game's record; who reported it first is nulled (`firstReporterId` is optional and no reader shows it).",
+  },
+  DoctrineSafehouseContent: { decision: 'keep', columns: ['authorId'], reason: PUBLISHED_UNDER_TOMBSTONE },
+  EventOccurrenceOverride: {
+    decision: 'deidentify',
+    columns: ['createdById'],
+    reason:
+      'The override is event data and stays; the member who made it is nulled (`createdById` is optional). The events of a deleted host are handled as they are.',
+  },
+  EventUpdate: {
+    decision: 'deidentify',
+    columns: ['authorId'],
+    reason:
+      'An event update is event content and stays; where the erased member wrote it the author is nulled (`authorId` is optional). This changes the default of `keep`: the code already nulled it.',
+  },
+  FollowEvent: {
+    decision: 'erase',
+    columns: ['followerId', 'followingId'],
+    also: 'deidentify',
+    scope:
+      'events where the member was followed (`followingId`); events where they were the follower keep their count and take the deleted-user id',
+    reason:
+      "The audience log: the member's own audience history goes, and a gain or loss another member caused loses the person who caused it (`deleteFollowEventsFor`, `lib/social/follow-events.server.ts`).",
+  },
+  LadderReviewTask: {
+    decision: 'deidentify',
+    columns: ['resolvedById'],
+    reason:
+      "The review task is the ladder pipeline's record; the admin who resolved it is nulled (`resolvedById` is optional).",
+  },
+  LadderWorkerLease: {
+    decision: 'not-member',
+    columns: ['ownerId'],
+    reason: 'A worker process id (the lease holder), not a site account.',
+  },
+  LinkDomainRule: {
+    decision: 'deidentify',
+    columns: ['addedById'],
+    reason: STAFF_CONTENT_TOMBSTONE,
+  },
+  ModMacro: { decision: 'deidentify', columns: ['createdById'], reason: STAFF_CONTENT_TOMBSTONE },
+  PostLifecycle: {
+    decision: 'keep',
+    columns: ['userId'],
+    reason:
+      'The row stays with its post, which stays under "Deleted user" (`RMHark`: deidentify); its expiry still applies to the post.',
+  },
+  ReadingHighlightPassage: {
+    decision: 'cascade',
+    columns: ['userId'],
+    parent: 'ReadingHighlight',
+    reason:
+      'Goes with a private highlight when `ReadingHighlight` is erased (`onDelete: Cascade`); the rows of a public highlight stay with it, as published content.',
+  },
+  ReleaseNote: { decision: 'keep', columns: ['authorId'], reason: PUBLISHED_UNDER_TOMBSTONE },
+  RMHboxMatch: {
+    decision: 'deidentify',
+    columns: ['winnerUserId'],
+    reason:
+      'The match stays for its other players; the winner id is nulled (`winnerUserId` is optional; the player rows already say "Deleted user" and the snapshots are renamed by `scrubMatchSnapshots`).',
+  },
+  RMHboxMatchPlayer: {
+    decision: 'deidentify',
+    columns: ['userId'],
+    reason:
+      'A row in a shared match: the copied name becomes "Deleted user" and the row stays (`userId` is required and part of a unique key with the match).',
+  },
+  RmhStudySession: {
+    decision: 'cascade',
+    columns: ['userId'],
+    parent: 'RmhStudyProfile',
+    reason:
+      'Goes with the profile (`onDelete: Cascade`); the RMHStudy boards read the profile, so the member leaves them.',
+  },
+  RmhTubeChatMessage: {
+    decision: 'deidentify',
+    columns: ['userId'],
+    reason: "Messages in every room lose their name (the text stays as the room's history) (sprint 13 06).",
+  },
+  RmhTypeMatch: {
+    decision: 'deidentify',
+    columns: ['winnerUserId'],
+    reason:
+      'The match stays for its other players; the winner id is nulled (`winnerUserId` is optional; the player rows already say "Deleted user").',
+  },
+  RmhTypeMatchPlayer: {
+    decision: 'deidentify',
+    columns: ['userId'],
+    reason:
+      'A row in a shared match: the copied name becomes "Deleted user" and the row stays (`userId` is required and part of a unique key with the match).',
+  },
+  SecurityReport: {
+    decision: 'deidentify',
+    columns: ['userId'],
+    reason:
+      "The report stays for the security record with its text and status; the member's id, the name and e-mail they gave and the address hash are nulled (all four are optional).",
+  },
+  SSLobby: {
+    decision: 'deidentify',
+    columns: ['hostUserId'],
+    raw: { file: 'features/synapse-storm/engine/matches.server.ts', table: 'ss_lobby' },
+    reason:
+      'The lobby keeps its numbers; the host id becomes `deleted:<row id>` (a tombstone that cannot collide; sprint 14 03; raw SQL, so the row id can be part of the value).',
+  },
+  SSLobbyMember: {
+    decision: 'deidentify',
+    columns: ['userId'],
+    raw: { file: 'features/synapse-storm/engine/matches.server.ts', table: 'ss_lobby_member' },
+    reason:
+      'The seat keeps its numbers; the id becomes `deleted:<row id>` (unique with the lobby, so the tombstone carries the row id) and the name "Deleted user" (sprint 14 03).',
+  },
+  SSPlayerMatch: {
+    decision: 'deidentify',
+    columns: ['userId'],
+    raw: { file: 'features/synapse-storm/engine/matches.server.ts', table: 'ss_player_match' },
+    reason:
+      'The match keeps its numbers; the id becomes `deleted:<row id>` (unique with the match, so the tombstone carries the row id) and the name "Deleted user" (sprint 14 03).',
+  },
+  StudioChallenge: { decision: 'deidentify', columns: ['createdById'], reason: STAFF_CONTENT_TOMBSTONE },
+  StudioProjectRevision: {
+    decision: 'erase',
+    columns: ['userId'],
+    reason:
+      "Every earlier version of the member's Studio projects, deleted by `studioHistoryErasureOps` (sprint 07 14) without waiting for the project's cascade, which never fires. This changes the default of `cascade`: the code already erased it directly.",
+  },
+  StudioProjectShareOpen: {
+    decision: 'erase',
+    columns: ['userId'],
+    reason: "The opened marks the member left on other members' shares (sprint 11 07); the member's own shares go too.",
+  },
+  Subscription: {
+    decision: 'keep',
+    columns: ['referenceId'],
+    reason:
+      "Rule 4: the Stripe plugin's billing record (plan, status, period, Stripe ids), kept for accounting like the coin ledger. `cancelRemainingBilling` reads it to stop billing before the transaction; `referenceId` points at the anonymised account, which names nobody.",
+  },
+  TargetedNotice: { decision: 'deidentify', columns: ['createdById'], reason: STAFF_CONTENT_NULL },
+  TournamentMatch: {
+    decision: 'deidentify',
+    columns: ['proposedById', 'claimedById', 'disputedById'],
+    reason:
+      'The match stays for the bracket; the member as proposer, claimant or disputer is nulled with the proposal and the dispute note (sprint 06 `matchScheduleErasureOps`, sprint 08 `matchResultErasureOps`).',
+  },
+  TournamentPayout: {
+    decision: 'keep',
+    columns: ['userId'],
+    reason:
+      "Rule 4: a ledger row of coins paid for a placement; the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. (`userId` is a plain historical reference, unique with the tournament.)",
   },
 };

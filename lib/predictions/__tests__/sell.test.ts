@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { assertJsonSafe, shapeChecked } from '@/lib/db/query-shape';
 import { cost, priceYes, proceedsForShares } from '../lmsr';
 import { makeFakeDb, makeMarket, makePosition } from './fake-market';
 
 let fake = makeFakeDb();
 
-vi.mock('@/lib/prisma.server', () => ({ prisma: { $transaction: (cb: never) => fake.db.$transaction(cb) } }));
+// The transaction's client is checked against the schema (sprint 13 shipped a query Postgres rejects).
+vi.mock('@/lib/prisma.server', () => ({
+  prisma: shapeChecked({ $transaction: (cb: never) => fake.db.$transaction(cb) }),
+}));
 vi.mock('@/lib/economy/ledger.server', () => ({
   creditCoins: (...a: Parameters<typeof fake.ledger.creditCoins>) => fake.ledger.creditCoins(...a),
   debitCoins: (...a: Parameters<typeof fake.ledger.debitCoins>) => fake.ledger.debitCoins(...a),
@@ -82,6 +86,7 @@ describe('sellShares', () => {
   it('pays the rounded-down proceeds, lowers q by the shares sold, and updates received and lastP', async () => {
     const expected = proceedsForShares(60, 20, 120, 'YES', 10);
     const out = await sellShares(base);
+    assertJsonSafe(out);
     expect(out).toMatchObject({ sharesSold: 10, proceeds: expected, replayed: false, newBalance: 100 + expected });
     expect(fake.state.market.qYes).toBe(50);
     expect(fake.state.market.qNo).toBe(20);
@@ -133,6 +138,8 @@ describe('sellShares', () => {
     const position = structuredClone(fake.state.positions);
     const again = await sellShares(base);
     expect(again.replayed).toBe(true);
+    // The replay reads the ledger's BigInt `amount`; the body must carry a number, as `Response.json` needs.
+    assertJsonSafe(again);
     expect(again.proceeds).toBe(first.proceeds);
     expect(fake.state.writes).toHaveLength(writesAfterFirst);
     expect(fake.state.market).toEqual(market);

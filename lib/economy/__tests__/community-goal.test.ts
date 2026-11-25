@@ -10,7 +10,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
  */
 
 const w = await vi.hoisted(async () => {
-  const { Table, FakeLedger, makeTransaction } = await import('./fake-db');
+  const { Table, FakeLedger, makeTransaction, checkedDb } = await import('./fake-db');
   const goals = new Table({
     defaults: () => ({
       status: 'OPEN',
@@ -51,7 +51,8 @@ const w = await vi.hoisted(async () => {
     goals,
     pledges,
     ledger,
-    prisma,
+    // Every query is checked against the schema before the in-memory tables see it.
+    prisma: checkedDb(prisma),
     notified,
   };
 });

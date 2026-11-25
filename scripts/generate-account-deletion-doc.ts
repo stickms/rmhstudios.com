@@ -13,7 +13,12 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { ERASURE_REGISTRY, TODO_CEILING, type ErasureDecision } from '../lib/account/erasure-registry';
+import {
+  ERASURE_REGISTRY,
+  PLAIN_MEMBER_COLUMNS,
+  TODO_CEILING,
+  type ErasureDecision,
+} from '../lib/account/erasure-registry';
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'docs', 'account-deletion.md');
 
@@ -46,6 +51,30 @@ const GROUPS: Array<[string, ErasureDecision[], string]> = [
 ];
 
 const esc = (s: string) => s.replace(/\|/g, '\\|');
+
+/**
+ * The models that hold a member's id in a plain column and have no relation to `User` (`PLAIN_MEMBER_COLUMNS`). The
+ * rows lead with the columns, not the decision, so the relation tables above stay the only rows of the form
+ * `| \`Model\` | decision |` that `erasure-coverage.test.ts` reads back.
+ */
+function renderPlainSection(): string {
+  const rows = Object.entries(PLAIN_MEMBER_COLUMNS).sort(([a], [b]) => a.localeCompare(b));
+  let o = `## Plain member columns
+
+A model with a column that holds a member's id and no relation to \`User\` is invisible to the registry above, and no foreign key cascades or nulls it. \`PLAIN_MEMBER_COLUMNS\` classifies each one with the same decisions plus \`not-member\` (the column holds something other than a site member's id, such as a Discord id or a worker id); \`MEMBER_COLUMN_PATTERN\` is the one list of column names that puts a model in this table. \`lib/account/__tests__/erasure-plain-columns.test.ts\` fails for a model with such a column that is not listed, for an \`erase\` or \`deidentify\` entry that \`anonymizeAccount\` does not carry out, and for a column the entry names that the model does not have. There is no \`todo\` here. ${rows.length} models.
+
+| Model | Columns | Decision | Reason |
+| --- | --- | --- | --- |
+`;
+  for (const [n, e] of rows) {
+    let r = e.reason;
+    if (e.scope) r += ` Scope: ${e.scope}.`;
+    if (e.parent) r += ` Parent: \`${e.parent}\`.`;
+    const decision = e.also ? `${e.decision} and ${e.also}` : e.decision;
+    o += `| \`${n}\` | ${e.columns.map((c) => `\`${c}\``).join(', ')} | ${decision} | ${esc(r)} |\n`;
+  }
+  return o + '\n';
+}
 
 export function renderAccountDeletionDoc(): string {
   const entries = Object.entries(ERASURE_REGISTRY);
@@ -86,6 +115,7 @@ ${entries.length} models are classified.
     }
     o += '\n';
   }
+  o += renderPlainSection();
   return o.trimEnd() + '\n';
 }
 

@@ -12,6 +12,7 @@ import { ChatPinnedBar } from '@/components/chat-plus/ChatPinnedBar';
 import { SavedMessagesHeader } from '@/components/chat-plus/SavedMessagesRow';
 import { AutomatedBadge } from '@/components/feed/AutomatedBadge';
 import { MuteConversationControl, MutedUntilHeaderLine } from '@/components/messages/MuteConversationControl';
+import { PinConversationItem } from '@/components/messages/PinConversationItem';
 import type { OtherUser } from './conversation-state';
 
 // P4 — "It's 2:14 AM for Ana": a tiny lazy chunk, fetched after the header is idle.
@@ -39,7 +40,7 @@ export function ConversationHeader({
   const { t } = useTranslation('feed');
   return (
     <>
-      <div className="conversation__head">
+      <div className="conversation__head flex-wrap">
         <Button
           asChild
           variant="ghost"
@@ -54,7 +55,7 @@ export function ConversationHeader({
         {otherUser && !isSavedChat && (
           <Link
             to={`/u/${(otherUser as { handle?: string | null }).handle || otherUser.id}` as string}
-            className="flex min-w-0 items-center gap-2.5"
+            className="flex min-w-0 flex-1 items-center gap-2.5"
           >
             <UserAvatar
               src={otherUser.image ?? undefined}
@@ -63,11 +64,11 @@ export function ConversationHeader({
               fallbackName={otherUser.name ?? undefined}
             />
             <div className="min-w-0">
-              <h1 className="t-body flex items-center gap-2 font-semibold text-site-text">
-                {otherUser.name || 'Unknown'}
+              <h1 className="t-body flex min-w-0 items-center gap-2 font-semibold text-site-text">
+                <span className="truncate">{otherUser.name || 'Unknown'}</span>
                 {otherUser.isBot && <AutomatedBadge />}
               </h1>
-              {otherUser.username && <p className="t-meta">@{otherUser.username}</p>}
+              {otherUser.username && <p className="t-meta truncate">@{otherUser.username}</p>}
               <ArrivalSuspense>
                 <DmLocalTime userId={otherUser.id} name={otherUser.name || 'Unknown'} />
                 <AwayLine userId={otherUser.id} context="header" />
@@ -77,9 +78,11 @@ export function ConversationHeader({
           </Link>
         )}
         {/* Voice call. Renders nothing when a call can't be placed (signed out, no WebRTC); the server is still the
-            authority on whether this person accepts calls from you. */}
+            authority on whether this person accepts calls from you. On a phone these controls take their own row under
+            the name: with 44px touch targets, five controls and the back button leave the name no room on one line. */}
         {otherUser && !isSavedChat && (
-          <div className="ms-auto flex gap-2">
+          <div className="order-last flex basis-full justify-end gap-2 sm:order-none sm:ms-auto sm:basis-auto">
+            <PinConversationItem conversationId={conversationId} />
             <MuteConversationControl conversationId={conversationId} />
             <CallButton
               user={{

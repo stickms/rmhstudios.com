@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
 import { toast } from '@/lib/toast';
@@ -15,6 +15,8 @@ import { MAX_COOL_OFF_DAYS, MAX_DAILY_CAP } from '@/lib/economy/play-limits';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { useArrival } from '@/components/ui/arrive';
 import { SpendBudgetSection } from '@/components/settings/SpendBudgetSection';
+import { setRiskSurfacesHidden } from '@/hooks/useRiskSurfacesHidden';
+import { HiddenNote } from '@/components/settings/ExcludedNotice';
 
 /**
  * Responsible play (W8) — the member's own guard rails, in Settings → Privacy.
@@ -47,6 +49,7 @@ function useWhen() {
 export function PlayLimitsPanel() {
   const { t } = useTranslation('site');
   const confirm = useConfirm();
+  const queryClient = useQueryClient();
   const when = useWhen();
 
   // A failed read renders the empty state; it is not worth a toast.
@@ -68,6 +71,8 @@ export function PlayLimitsPanel() {
         });
         setSaved(next);
         setCapDraft(null);
+        // The menus and search follow the saved answer at once, without a refetch (W8).
+        setRiskSurfacesHidden(queryClient, next.surfacesHidden);
         if (next.pendingCapAt) {
           toast.success(
             t('play-limits-deferred', {
@@ -92,7 +97,7 @@ export function PlayLimitsPanel() {
         setSaving(false);
       }
     },
-    [t, when],
+    [t, when, queryClient],
   );
 
   if (!view) return null;
@@ -144,12 +149,15 @@ export function PlayLimitsPanel() {
       })}
     >
       {excludedUntil && (
-        <p className="surface-field rounded-site p-4 text-sm text-site-text">
-          {t('play-limits-excluded-until', {
-            defaultValue: "You're excluded from staking until {{when}}.",
-            when: excludedUntil,
-          })}
-        </p>
+        <>
+          <p className="surface-field rounded-site p-4 text-sm text-site-text">
+            {t('play-limits-excluded-until', {
+              defaultValue: "You're excluded from staking until {{when}}.",
+              when: excludedUntil,
+            })}
+          </p>
+          {view.surfacesHidden ? <HiddenNote when={excludedUntil} /> : null}
+        </>
       )}
       {!excludedUntil && coolingUntil && (
         <p className="surface-field rounded-site p-4 text-sm text-site-text">

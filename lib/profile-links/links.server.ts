@@ -225,7 +225,8 @@ export async function accountsClaimingHost(
   if (!normalized) return [];
   const rows = await prisma.profileLink.findMany({
     where: { host: normalized },
-    orderBy: [{ verifiedAt: 'desc' }, { createdAt: 'asc' }],
+    // Postgres sorts NULLs first in a descending order, so unverified claims would lead without `nulls: 'last'`.
+    orderBy: [{ verifiedAt: { sort: 'desc', nulls: 'last' } }, { createdAt: 'asc' }],
     take: limit,
     select: {
       userId: true,

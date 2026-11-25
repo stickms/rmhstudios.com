@@ -770,6 +770,10 @@ model User {
   // s13-12 news-stories
   newsStoryFollows NewsStoryFollow[] @relation("NewsStoryFollows")
 
+  // Sprint 14 back-relations (one block per feature, docs/autonomous/sprint-14/plan.md)
+  // s14-06 puzzle-reports
+  dailyPuzzleReports DailyPuzzleReport[]
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the nightly finalize-deletion sweep; partial in effect since the

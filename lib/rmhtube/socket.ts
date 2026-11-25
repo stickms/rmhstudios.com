@@ -13,7 +13,7 @@ import type { PeerWaitState } from '@/lib/shared/realtime/types';
 import { useRmhTubeStore } from './store';
 import { usePartyStore } from './party-store';
 import type { PartyState } from './party';
-import { C2S, S2C } from './events';
+import { C2S, S2C, type RoomClosedReason } from './events';
 import { toast } from '@/lib/shared/app-toast';
 import { bindSlowModeEvents } from '@/lib/safety/slow-mode-store';
 import { recordPong, beginClockSyncBurst, resetClock } from './clock';
@@ -27,6 +27,17 @@ let clockSyncTimer: ReturnType<typeof setInterval> | null = null;
 const typingTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 const store = () => useRmhTubeStore.getState();
+
+type RoomClosedListener = (reason: RoomClosedReason) => void;
+const roomClosedListeners = new Set<RoomClosedListener>();
+
+/** s14-10: call `listener` when the room you are in is closed from outside it (a moderator). Returns the unsubscribe. */
+export function onRoomClosed(listener: RoomClosedListener): () => void {
+  roomClosedListeners.add(listener);
+  return () => {
+    roomClosedListeners.delete(listener);
+  };
+}
 
 /** How long a typing indicator survives without another signal. */
 const TYPING_TTL_MS = 3000;
@@ -222,6 +233,12 @@ function registerHandlers(socket: Socket) {
   socket.on(S2C.ROOM_DISBANDED, () => {
     toast.info('The room was closed.');
     store().leaveRoom();
+  });
+
+  // s14-10: a moderator closed the room. The sentence is the page's (it is translated there), so this only leaves.
+  socket.on(S2C.ROOM_CLOSED, (data: { reason?: RoomClosedReason } | undefined) => {
+    store().leaveRoom();
+    for (const listener of roomClosedListeners) listener(data?.reason ?? 'moderator');
   });
 }
 

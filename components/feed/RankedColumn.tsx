@@ -1,6 +1,7 @@
 import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState, useCallback, useRef } from'react';
 import { useTranslation } from'react-i18next';
+import { tierName } from '@/components/feed/tier-names';
 import { useQueryClient } from '@tanstack/react-query';
 import { RankedStanding, RANKED_STANDING_QUERY_KEY } from './RankedStanding';
 import { Swords, Trophy, Check, X, Flag } from'lucide-react';
@@ -54,6 +55,7 @@ interface LbRow {
 
 /** Small colored pill for a ranked tier (Bronze → Master). */
 function TierBadge({ tier }: { tier?: RankTier }) {
+ const { t } = useTranslation('ranked-standing');
  if (!tier) return null;
  return (
  <span
@@ -64,7 +66,7 @@ function TierBadge({ tier }: { tier?: RankTier }) {
  border: `1px solid ${tier.color}40`,
  }}
  >
- {tier.label}
+ {tierName(t, tier.key, tier.label)}
  </span>
  );
 }

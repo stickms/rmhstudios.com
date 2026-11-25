@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { dmChatSelect, dmKeyOf, dmsOf, inboxVisibleTo, toDmRow } from '@/lib/chat/chat.server';
 import { resolveUserDisplay } from '@/lib/user-display';
@@ -6,6 +7,9 @@ import { liveMessages } from '@/lib/chat-plus/expiry.server';
 import { folderChatIds } from '@/lib/chat-plus/folders.server';
 import { receiptsHiddenFor } from '@/lib/chat-plus/receipts.server';
 import { requestOut } from '@/lib/messages/requests';
+import { listConversationPrefs } from '@/lib/notify/conversation-prefs.server';
+import { dmScopeKey, marksOf, mergePinnedFirst } from '@/lib/messages/pins';
+import { pinnedChatIds } from '@/lib/messages/pins.server';
 
 export interface ConversationListItem {
   id: string;
@@ -24,6 +28,10 @@ export interface ConversationListItem {
   } | null;
   unreadCount: number;
   lastMessageAt: string;
+  /** s14-12: the member pinned this conversation. */
+  pinned: boolean;
+  /** s14-12: a mute is in force, or only mentions notify. */
+  muted: boolean;
 }
 
 /**
@@ -44,19 +52,55 @@ export async function listConversations(
 ): Promise<{ conversations: ConversationListItem[]; nextCursor: string | null; hasMore: boolean }> {
   const limit = opts.limit ?? 20;
   const inFolder = opts.folderId ? await folderChatIds(userId, opts.folderId, 'dm') : undefined;
+  // s14-12: only the default view (no folder, not "Unread") lifts pinned conversations to the top. Their ids leave
+  // the paged query on EVERY page so the cursor walks one fixed set; the rows themselves join page one.
+  const defaultView = !opts.folderId && !opts.unreadOnly;
+  const pinnedIds = defaultView ? await pinnedChatIds(userId) : [];
   const userSelect = {
     id: true, name: true, image: true, username: true, isBot: true,
     profile: { select: { displayName: true, customImage: true } },
   } as const;
-  const rows = await prisma.chat.findMany({
+  const select = {
+    ...dmChatSelect,
+    members: { select: { userId: true, slot: true, user: { select: userSelect } }, orderBy: { slot: 'asc' } },
+    messages: {
+      // M3: an expired disappearing message is never the "last message".
+      where: { AND: [liveMessages()] },
+      orderBy: { createdAt: 'desc' },
+      take: 1,
+      select: { id: true, content: true, senderId: true, read: true, createdAt: true, gifUrl: true, imageUrls: true, deletedAt: true, audioUrl: true },
+    },
+  } as const satisfies Prisma.ChatSelect;
+  const baseWhere = {
+    ...dmsOf(userId),
+    // A message request waiting for this viewer (or declined by them) lives in the Requests folder.
+    AND: [inboxVisibleTo(userId)],
+    // M2: Saved Messages (a conversation with yourself) is pinned separately
+    // at the top of the inbox, so it is not part of this paged list.
+    NOT: { dmKey: dmKeyOf(userId, userId) },
+  } satisfies Prisma.ChatWhereInput;
+  // Explicit keyset (lastMessageAt, id) rather than Prisma's `cursor`: the cursor row may have been pinned (so the
+  // `notIn` now excludes it) or hidden since the previous page, and the page must still resume exactly after it.
+  const cursorRow = opts.cursor
+    ? await prisma.chat.findUnique({ where: { id: opts.cursor }, select: { lastMessageAt: true } })
+    : null;
+  if (opts.cursor && !cursorRow) return { conversations: [], nextCursor: null, hasMore: false };
+  const afterCursor: Prisma.ChatWhereInput[] = cursorRow
+    ? [
+        {
+          OR: [
+            { lastMessageAt: { lt: cursorRow.lastMessageAt } },
+            { lastMessageAt: cursorRow.lastMessageAt, id: { lt: opts.cursor as string } },
+          ],
+        },
+      ]
+    : [];
+  const pageRows = await prisma.chat.findMany({
     where: {
-      ...dmsOf(userId),
-      // A message request waiting for this viewer (or declined by them) lives in the Requests folder.
-      AND: [inboxVisibleTo(userId)],
-      // M2: Saved Messages (a conversation with yourself) is pinned separately
-      // at the top of the inbox, so it is not part of this paged list.
-      NOT: { dmKey: dmKeyOf(userId, userId) },
+      ...baseWhere,
+      AND: [inboxVisibleTo(userId), ...afterCursor],
       ...(inFolder ? { id: { in: inFolder } } : {}),
+      ...(pinnedIds.length > 0 ? { id: { notIn: pinnedIds } } : {}),
       ...(opts.unreadOnly
         ? {
             messages: {
@@ -65,24 +109,19 @@ export async function listConversations(
           }
         : {}),
     },
-    orderBy: { lastMessageAt: 'desc' },
+    orderBy: [{ lastMessageAt: 'desc' }, { id: 'desc' }],
     take: limit + 1,
-    ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
-    select: {
-      ...dmChatSelect,
-      members: { select: { userId: true, slot: true, user: { select: userSelect } }, orderBy: { slot: 'asc' } },
-      messages: {
-        // M3: an expired disappearing message is never the "last message".
-        where: { AND: [liveMessages()] },
-        orderBy: { createdAt: 'desc' },
-        take: 1,
-        select: { id: true, content: true, senderId: true, read: true, createdAt: true, gifUrl: true, imageUrls: true, deletedAt: true, audioUrl: true },
-      },
-    },
+    select,
   });
-  const hasMore = rows.length > limit;
-  const pageRows = hasMore ? rows.slice(0, limit) : rows;
-  const items = pageRows.flatMap((chat) => {
+  // The pinned conversations the member is still in and can see (a left or hidden one is simply absent).
+  const pinnedRows =
+    pinnedIds.length > 0 && !opts.cursor
+      ? await prisma.chat.findMany({ where: { ...baseWhere, id: { in: pinnedIds } }, select })
+      : [];
+  const hasMore = pageRows.length > limit;
+  const shownPage = hasMore ? pageRows.slice(0, limit) : pageRows;
+  const shownRows = [...pinnedRows, ...shownPage];
+  const items = shownRows.flatMap((chat) => {
     const dm = toDmRow(chat);
     if (!dm) return [];
     const userOf = (id: string) => chat.members.find((m) => m.userId === id)?.user;
@@ -109,6 +148,8 @@ export async function listConversations(
   const receiptsHidden = needsMask ? await receiptsHiddenFor(items) : new Set<string>();
   const unreadMap = new Map(unreadCounts.map((u) => [u.chatId, u._count.id]));
 
+  // s14-12: one batched preference read per page gives every row its two marks.
+  const prefs = await listConversationPrefs(userId, items.map((c) => dmScopeKey(c.id)));
   const result: ConversationListItem[] = items.map((conv) => {
     const otherUser = conv.participantOneId === userId ? conv.participantTwo : conv.participantOne;
     const resolved = resolveUserDisplay(otherUser);
@@ -143,12 +184,20 @@ export async function listConversations(
         : null,
       unreadCount: unreadMap.get(conv.id) ?? 0,
       lastMessageAt: conv.lastMessageAt.toISOString(),
+      ...marksOf(prefs.get(dmScopeKey(conv.id))),
     };
   });
+  const pinnedSet = new Set(pinnedRows.map((c) => c.id));
+  const ordered = pinnedSet.size
+    ? mergePinnedFirst(
+        result.filter((c) => pinnedSet.has(c.id)),
+        result.filter((c) => !pinnedSet.has(c.id)),
+      )
+    : result;
 
   return {
-    conversations: result,
-    nextCursor: hasMore ? pageRows[pageRows.length - 1].id : null,
+    conversations: ordered,
+    nextCursor: hasMore ? shownPage[shownPage.length - 1].id : null,
     hasMore,
   };
 }

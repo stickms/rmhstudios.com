@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
-import type { ProfileData } from '@/components/profile/profile-types';
+import type { ProfileData, ProfileViewerPatch } from '@/components/profile/profile-types';
 import type { ProfileEditInitial, SavedProfileData } from '../profile-edit/profile-edit-state';
 import { guestbookTabVisible, likesTabVisible } from '@/lib/profile/audience';
 import { currentDocumentLocale, formatDate } from '@/lib/core/format';
@@ -119,6 +119,20 @@ export function rollbackFollow(prev: ProfileData | null, wasFollowing: boolean):
     : prev;
 }
 
+/**
+ * The profile menu muted, unmuted, blocked or unblocked the account. A block removes the viewer's follow of it, so the
+ * Follow button and the follower count follow that here instead of waiting for a reload.
+ */
+export function applyViewerChange(prev: ProfileData | null, patch: ProfileViewerPatch): ProfileData | null {
+  if (!prev) return prev;
+  const unfollowed = patch.viewerHasBlocked === true && prev.isFollowing;
+  return {
+    ...prev,
+    ...patch,
+    ...(unfollowed ? { isFollowing: false, followerCount: Math.max(0, prev.followerCount - 1) } : {}),
+  };
+}
+
 export function applyMembershipJoined(prev: ProfileData | null): ProfileData | null {
   return prev
     ? {
@@ -195,6 +209,11 @@ export function applySavedProfile(prev: ProfileData | null, data: SavedProfileDa
           showLikes: data.showLikes,
         }
       : {}),
+    ...(data.showSupporterMarks !== undefined
+      ? {
+          showSupporterMarks: data.showSupporterMarks,
+        }
+      : {}),
     ...(data.dmPrivacy !== undefined
       ? {
           dmPrivacy: data.dmPrivacy,
@@ -268,6 +287,7 @@ export function buildEditInitial(
     links: profile.links,
     bannerUrl: profile.bannerUrl,
     showLikes: profile.showLikes,
+    showSupporterMarks: profile.showSupporterMarks,
     dmPrivacy: profile.dmPrivacy,
     followListVisibility: profile.followListVisibility,
     dmRequests: profile.dmRequests,

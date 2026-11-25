@@ -16,3 +16,9 @@ export const restoreBody = z
   .refine((b) => (b.snapshotId !== undefined) !== (b.backup !== undefined), {
     message: 'Send either snapshotId or backup',
   });
+
+/**
+ * The optional compare-and-set on a save write: the `updatedAt` the writer last read or wrote (an ISO time), or `null`
+ * for "there must be no row yet". Absent, the write is last-writer-wins, as it always was.
+ */
+export const expectedUpdatedAt = z.string().datetime().nullable().optional();

@@ -102,7 +102,8 @@ export async function getFriendActivity(viewerId: string): Promise<FriendActivit
       select: { userId: true, gameId: true, foil: true, level: true, craftedAt: true },
     }),
     prisma.gameReview.findMany({
-      where: { userId: { in: ids }, createdAt: { gte: since } },
+      // A review a moderator removed is not news (s14-08).
+      where: { userId: { in: ids }, createdAt: { gte: since }, moderatedAt: null },
       orderBy: { createdAt: 'desc' },
       take: 40,
       select: { userId: true, gameId: true, stars: true, createdAt: true },

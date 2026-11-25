@@ -37,6 +37,23 @@ export function reportKindLabel(t: TFunction, kind: unknown): string {
     'tube-chat': t('kind-tube-chat', { ns: 'my-reports', defaultValue: 'Room message' }),
     ride: t('kind-ride', { ns: 'my-reports', defaultValue: 'Trip' }),
     'rmhbox-pack': t('kind-rmhbox-pack', { ns: 'my-reports', defaultValue: 'Prompt pack' }),
+
+    // Sprint 14 (docs/autonomous/sprint-14/plan.md §Anchors)
+    // s14-07 slice-reports
+    'song-comment': t('kind-song-comment', { ns: 'my-reports', defaultValue: 'Song comment' }),
+
+    // s14-08 game-reports
+    'game-review': t('kind-game-review', { ns: 'my-reports', defaultValue: 'Game review' }),
+    'game-guide': t('kind-game-guide', { ns: 'my-reports', defaultValue: 'Game guide' }),
+    'game-thread': t('kind-game-thread', { ns: 'my-reports', defaultValue: 'Game discussion' }),
+    'game-thread-post': t('kind-game-thread-post', { ns: 'my-reports', defaultValue: 'Discussion reply' }),
+    'achievement-tip': t('kind-achievement-tip', { ns: 'my-reports', defaultValue: 'Achievement tip' }),
+
+    // s14-09 profile-reports
+    impersonation: t('kind-impersonation', { ns: 'my-reports', defaultValue: 'Impersonation' }),
+
+    // s14-10 tube-room-reports
+    'tube-room': t('kind-tube-room', { ns: 'my-reports', defaultValue: 'Room' }),
   };
   return Object.prototype.hasOwnProperty.call(labels, k) ? (labels[k] ?? k) : k;
 }

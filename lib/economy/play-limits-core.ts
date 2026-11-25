@@ -9,15 +9,17 @@
  *
  * ## Where this is called from
  *
- * Exactly one place: `debitCoinsOn`, when the debit is classified `WAGER`.
+ * Two places: `debitCoinsOn`, when the debit is classified `WAGER`, and
+ * `debitStake` (`lib/wager/escrow.server.ts`), the wager holds and tournament
+ * entry fees, which move coins through escrow's own conditional update rather
+ * than the ledger and so were unguarded until the check was added there.
  *
- * That is not a shortcut, it is the reason the feature is small. Every
- * coin-risking path on the site — plinko (`lib/api/routes/coins.bet.server.ts`),
- * predictions (`lib/predictions/predictions.server.ts`), wager escrow
- * (`lib/wager/escrow.server.ts`), and blackjack, baccarat, roulette and hold'em
- * in the socket tier — already books its stake through the ledger as
- * `type: 'WAGER'`. Guarding the ledger guards all of them by construction,
- * including the next one, which is worth more than seven correct call sites.
+ * Plinko (`lib/api/routes/coins.bet.server.ts`), predictions
+ * (`lib/predictions/predictions.server.ts`) and blackjack, baccarat, roulette
+ * and hold'em in the socket tier book their stake through the ledger as
+ * `type: 'WAGER'`, so guarding the ledger guards them by construction. A new
+ * stake path that bypasses the ledger must call this itself, as escrow does
+ * (`lib/wager/__tests__/stake-exclusion.test.ts` holds wagers and tournaments).
  *
  * Two deliberate non-targets:
  *

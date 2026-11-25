@@ -109,6 +109,8 @@ vi.mock('@/components/messages/MuteConversationControl', () => ({
   MuteConversationControl: () => null,
   MutedUntilHeaderLine: () => null,
 }));
+// s14-12: the pin button needs a query client, like the mute control above; it has its own test.
+vi.mock('@/components/messages/PinConversationItem', () => ({ PinConversationItem: () => null }));
 vi.mock('@/components/call/CallButton', () => ({ CallButton: marker('CallButton') }));
 vi.mock('@/components/groupcall/GroupCallButton', () => ({
   GroupCallButton: marker('GroupCallButton'),

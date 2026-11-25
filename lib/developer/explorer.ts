@@ -29,6 +29,7 @@ const DOCUMENTED_GROUPS: ReadonlySet<string> = new Set([
   'posts',
   'practice',
   'reading',
+  'rmh-homes',
   'rmhcharacters',
   'rmhladder',
   'rmhtube',
@@ -42,7 +43,11 @@ const DOCUMENTED_GROUPS: ReadonlySet<string> = new Set([
 
 /** Docs page path for an endpoint's group (pass to `docsUrl`), or null when the docs have no page for it. */
 export function docsPathForGroup(group: string): string | null {
-  const slug = group.toLowerCase();
+  // The same slug the docs generator writes the page under (`RMH Homes` is `rmh-homes.md`).
+  const slug = group
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
   return DOCUMENTED_GROUPS.has(slug) ? `developer-api/endpoints/${slug}` : null;
 }
 

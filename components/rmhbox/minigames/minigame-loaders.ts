@@ -28,6 +28,7 @@ export const MINIGAME_LOADERS: Record<string, () => Promise<MinigameModule>> = {
   'emoji-cinema': () => import('./emoji-cinema/EmojiCinemaGame'),
   'ranking-file': () => import('./ranking-file/RankingFileGame'),
   'sequence-sam': () => import('./sequence-sam/SequenceSamGame'),
+  'identity-crisis': () => import('./identity-crisis/IdentityCrisisGame'),
 };
 
 /** Load a minigame's code. Resolves (never rejects) once it is loaded or has failed. */

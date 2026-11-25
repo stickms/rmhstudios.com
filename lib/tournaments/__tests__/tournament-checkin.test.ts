@@ -107,6 +107,8 @@ function makeDb() {
       },
       findMany: async ({ where }: any) => state.matches.filter((m) => matches(m, where)),
     },
+    // No responsible-play limits set: the entry fee's W8 check passes (lib/wager/escrow.server.ts).
+    userPlayLimits: { findUnique: async () => null },
     userProfile: {
       upsert: async ({ where, create, update }: any) => {
         const cur = state.coins.get(where.userId);

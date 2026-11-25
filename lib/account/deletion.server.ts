@@ -858,6 +858,22 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     // `User` relation, so this operation and its test are the record.
     ...(await import('@/lib/messages/edit-history.server')).messageEditErasureOps(userId),
 
+    // Sprint 14 erasures (docs/autonomous/sprint-14/plan.md §Anchors): each feature adds its operations under its own line.
+    // s14-03 synapse-matches
+    // The member's Synapse Storm match, lobby-seat and lobby-host rows keep their numbers but lose the name and the id
+    // (`deleted:<row id>`); the three models have no `User` relation, so this operation and its test are the record.
+    ...(await import('@features/synapse-storm/engine/matches.server')).synapseMatchErasureOps(userId),
+
+    // s14-06 puzzle-reports
+    // The member's reports that a daily puzzle is wrong (and any note they wrote); the cascade never fires on an anonymised row.
+    ...(await import('@/lib/daily-puzzles/reports.server')).puzzleReportErasureOps(userId),
+
+    // s14-18 erasure-plain-columns
+    // Models that hold a member's id in a plain column, with no `User` relation to cascade or null it: a security
+    // report loses the member's id, name, e-mail and address hash; chat removals go; Doctrine incident reporters,
+    // RMHBox and RMHType match winners and the authors of staff content are nulled or take the deleted-user id.
+    ...(await import('@/lib/account/erasure-plain.server')).plainColumnErasureOps(userId),
+
     // med-schools-phase-4 tracker, lists, preferences (the shared anonymous events go in a pre-step, plan Task 6)
     ...medschoolsErasureOps(userId),
 

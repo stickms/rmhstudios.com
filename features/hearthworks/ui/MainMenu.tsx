@@ -2,10 +2,11 @@ import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } f
 import { useTranslation } from 'react-i18next';
 import { ChevronRight, Hammer, House, LogOut, UsersRound } from 'lucide-react';
 import { useQuitGame } from '@/hooks/useQuitGame';
+import { SaveChoice, SaveStatusLine, SaveToAccountItem, type MenuAccount, type MenuConflict } from './SaveStatus';
 import { CloudStrip, Cog, FarIsland, FieldIsland, HeroIsland, Leaf, MarketIsland, MenuDefs, SkyCloud } from './MenuArt';
 import './hearthworks-menu.css';
 
-type Hot = 'start' | 'together' | 'quit' | null;
+type Hot = 'start' | 'together' | 'save' | 'quit' | null;
 
 const LEAVES: Array<{
   x: string;
@@ -129,11 +130,16 @@ const SKY_CLOUDS: Array<{
  */
 export function MainMenu({
   hasSave,
+  account,
+  conflict,
   onStart,
   onTogether,
 }: {
   /** A saved town exists (or this visit already started one): the first entry reads Continue. */
   hasSave: boolean;
+  account: MenuAccount;
+  /** Set while this device and the account hold different towns; the game stays shut behind the choice. */
+  conflict: MenuConflict | null;
   onStart: () => void;
   onTogether: () => void;
 }) {
@@ -145,11 +151,12 @@ export function MainMenu({
 
   useEffect(() => {
     // Keyboard and mouse players land on the primary action; a touch screen would only get a stray focus ring.
-    if (window.matchMedia('(pointer: fine)').matches)
+    // (The action waits for the saves to be read, so this runs again once it is enabled.)
+    if (account.loaded && window.matchMedia('(pointer: fine)').matches)
       startRef.current?.focus({
         preventScroll: true,
       });
-  }, []);
+  }, [account.loaded]);
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     // The world behind keeps window-level key handlers (camera pan, view toggle on Tab); the menu owns the keyboard.
@@ -275,6 +282,7 @@ export function MainMenu({
                   type="button"
                   className="hwm-item hwm-item--primary"
                   onClick={onStart}
+                  disabled={!account.loaded}
                   {...item('start')}
                 >
                   <span className="hwm-item__badge" aria-hidden="true">
@@ -304,7 +312,13 @@ export function MainMenu({
                 </button>
               </li>
               <li>
-                <button type="button" className="hwm-item" onClick={onTogether} {...item('together')}>
+                <button
+                  type="button"
+                  className="hwm-item"
+                  onClick={onTogether}
+                  disabled={!account.loaded}
+                  {...item('together')}
+                >
                   <span className="hwm-item__badge" aria-hidden="true">
                     <UsersRound size={20} />
                   </span>
@@ -323,6 +337,11 @@ export function MainMenu({
                   <ChevronRight className="hwm-item__go" size={18} aria-hidden="true" />
                 </button>
               </li>
+              {account.status === 'device' && hasSave && (
+                <li>
+                  <SaveToAccountItem saving={account.saving} onSave={account.onSave} handlers={item('save')} />
+                </li>
+              )}
               <li>
                 <button type="button" className="hwm-item" onClick={quit} {...item('quit')}>
                   <span className="hwm-item__badge" aria-hidden="true">
@@ -344,6 +363,7 @@ export function MainMenu({
                 </button>
               </li>
             </ul>
+            <SaveStatusLine status={account.status} />
           </nav>
 
           <p className="hwm-fig">
@@ -398,6 +418,8 @@ export function MainMenu({
           <CloudStrip row="front" />
         </div>
       </div>
+
+      {conflict && <SaveChoice conflict={conflict} />}
     </div>
   );
 }

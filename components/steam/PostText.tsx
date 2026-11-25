@@ -17,7 +17,7 @@ export function PostText({
 }) {
   const segments = useMemo(() => splitEmotes(text, new Set(ownedTitles)), [text, ownedTitles]);
   return (
-    <p className={className}>
+    <p className={className} dir="auto">
       {segments.map((s, i) =>
         s.type === 'text' ? <span key={i}>{s.text}</span> : <Emote key={i} gameId={s.gameId} motif={s.motif} />,
       )}

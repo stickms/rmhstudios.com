@@ -28,7 +28,7 @@ import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
 import { useRmhTubeStore, getChatEntries } from '@/lib/rmhtube/store';
 import { CHAT_MAX_LENGTH, CHAT_REACTION_EMOJIS, TYPING_DEBOUNCE_MS } from '@/lib/rmhtube/constants';
-import { formatDuration, formatRelativeTime } from '@/lib/rmhtube/utils';
+import { formatDuration, formatRelativeTime, liveReplyTarget } from '@/lib/rmhtube/utils';
 import { extrapolate } from '@/lib/rmhtube/sync-math';
 import { getServerNow } from '@/lib/rmhtube/clock';
 import type { ChatMessage, ChatEntry, SystemMessage } from '@/lib/rmhtube/types';
@@ -310,7 +310,9 @@ export default function ChatPanel() {
 
   const [message, setMessage] = useState('');
   const [showGifPicker, setShowGifPicker] = useState(false);
-  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
+  const [pickedReply, setReplyTo] = useState<ChatMessage | null>(null);
+  // s14-20: a moderator's removal drops the message from `chat`, so the reply target goes with it.
+  const replyTo = liveReplyTarget(pickedReply, chat);
   const [attachTimestamp, setAttachTimestamp] = useState(false);
   const [showMentionDropdown, setShowMentionDropdown] = useState(false);
   const [mentionFilter, setMentionFilter] = useState('');

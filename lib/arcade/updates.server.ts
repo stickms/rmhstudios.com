@@ -334,9 +334,11 @@ async function describeJob(job: FanoutJob): Promise<{
       exceptUserId: null,
     };
   }
+  // A guide a moderator removed tells nobody (s14-08).
   const guide = await prisma.gameGuide.findUnique({
     where: {
       id: job.guideId,
+      moderatedAt: null,
     },
     select: {
       gameId: true,

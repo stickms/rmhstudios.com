@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { GuideHistoryLink } from '@/components/games/GuideHistory';
 import { DocBody, DocEditor, type DocDraft } from '@/components/communities/DocEditor';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { useSession } from '@/components/Providers';
+import { RemovedByModerator, ReportItemButton } from '@/components/steam/ReportItem';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { api } from '@/lib/contract/client';
 import { createGuideApi, deleteGuideApi, publishGuideApi, updateGuideApi } from '@/lib/games/guides.contract';
@@ -19,6 +21,8 @@ export interface GuideData {
   body: string;
   published: boolean;
   isAuthor: boolean;
+  /** A moderator removed this guide; only its author is sent it (s14-08). */
+  removed?: boolean;
   author: {
     name: string | null;
     handle: string | null;
@@ -34,6 +38,7 @@ export interface GuideData {
 export function GuideView({ gameId, guide }: { gameId: string; guide: GuideData | null }) {
   const { t } = useTranslation('games-hub');
   const navigate = useNavigate();
+  const session = useSession();
   const confirm = useConfirm();
   const isNew = guide === null;
   const [editing, setEditing] = useState(isNew);
@@ -225,7 +230,7 @@ export function GuideView({ gameId, guide }: { gameId: string; guide: GuideData 
             />
             <span className="text-sm text-site-text-muted">{guide!.author.name ?? guide!.author.handle}</span>
           </span>
-          {guide!.isAuthor ? (
+          {guide!.removed ? null : guide!.isAuthor ? (
             <span className="flex items-center gap-2">
               <GuideHistoryLink gameId={gameId} guideId={guide!.id} />
               <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
@@ -235,8 +240,17 @@ export function GuideView({ gameId, guide }: { gameId: string; guide: GuideData 
                 })}
               </Button>
             </span>
-          ) : null}
+          ) : (
+            <ReportItemButton
+              entityType="game-guide"
+              entityId={guide!.id}
+              signedIn={!!session.data?.user}
+              isOwn={guide!.isAuthor || !guide!.published}
+              className="text-sm text-site-text-muted underline"
+            />
+          )}
         </div>
+        {guide!.removed ? <RemovedByModerator className="text-sm text-site-text-muted" /> : null}
       </header>
       <DocBody body={shown.body} />
     </article>

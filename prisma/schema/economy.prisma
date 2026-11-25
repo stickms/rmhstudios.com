@@ -1070,6 +1070,8 @@ model AchievementTip {
   body          String   @db.VarChar(500)
   votes         Int      @default(0)
   createdAt     DateTime @default(now())
+  /// s14-08: a moderator removed this tip after a report (the rule of `GameReview.moderatedAt`).
+  moderatedAt   DateTime?
 
   user User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   vote AchievementTipVote[]

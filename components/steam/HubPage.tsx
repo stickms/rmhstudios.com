@@ -16,6 +16,7 @@ import { EmotePicker } from './EmotePicker';
 import { PersonAvatar } from './SteamPeople';
 import { TitleArt } from './TitleArt';
 import { hubErrorText } from './hub-errors';
+import { RemovedByModerator, ReportItemButton } from './ReportItem';
 
 /** A review's star rating, read-only (the hub's review rows). */
 function Stars({ value }: { value: number }) {
@@ -150,11 +151,13 @@ export function HubPage({ data }: { data: HubData }) {
                         <span className="stm-thread-title">
                           {th.pinned ? <Pin aria-label={t('steam-hub-pinned', { defaultValue: 'Pinned' })} size={14} /> : null}
                           {th.locked ? <Lock aria-label={t('steam-hub-locked', { defaultValue: 'Locked' })} size={14} /> : null}
-                          {th.title}
+                          <span dir="auto">{th.title}</span>
                         </span>
-                        <span className="stm-person-sub">{th.snippet}</span>
+                        <span className="stm-person-sub" dir="auto">
+                          {th.snippet}
+                        </span>
                         <span className="stm-person-sub">
-                          {th.author.name} · <RelativeTime date={th.lastPostAt} format={relativeTimeShort} />
+                          <bdi>{th.author.name}</bdi> · <RelativeTime date={th.lastPostAt} format={relativeTimeShort} />
                         </span>
                       </span>
                       <span className="stm-thread-count" title={t('steam-hub-replies', { defaultValue: 'Replies' })}>
@@ -230,9 +233,21 @@ export function HubPage({ data }: { data: HubData }) {
                   <li key={g.id}>
                     <Link to="/games/$gameId/guides/$guideId" params={{ gameId: data.gameId, guideId: g.id }} className="stm-person">
                       <span className="stm-person-body">
-                        <span className="stm-person-name">{g.title}</span>
+                        <span className="stm-person-name" dir="auto">
+                          {g.title}
+                        </span>
                       </span>
                     </Link>
+                    {g.removed ? (
+                      <RemovedByModerator />
+                    ) : (
+                      <ReportItemButton
+                        entityType="game-guide"
+                        entityId={g.id}
+                        signedIn={data.signedIn}
+                        isOwn={!!g.isMine || !g.published}
+                      />
+                    )}
                   </li>
                 ))}
               </ul>
@@ -253,7 +268,19 @@ export function HubPage({ data }: { data: HubData }) {
                       <span className="stm-person-name">
                         <Stars value={r.stars} />
                       </span>
-                      {r.body ? <span className="stm-person-sub">{r.body.slice(0, 90)}</span> : null}
+                      {r.removed ? (
+                        <RemovedByModerator />
+                      ) : r.body ? (
+                        <span className="stm-person-sub" dir="auto">
+                          {r.body.slice(0, 90)}
+                        </span>
+                      ) : null}
+                      <ReportItemButton
+                        entityType="game-review"
+                        entityId={r.id}
+                        signedIn={data.signedIn}
+                        isOwn={!!r.isMine}
+                      />
                     </span>
                   </li>
                 ))}

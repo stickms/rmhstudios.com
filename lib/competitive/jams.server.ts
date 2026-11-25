@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
+import { recordAdminActionIn } from '@/lib/admin-audit.server';
+import { ERROR_CODES, type ErrorCode } from '@/lib/errors/codes';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import {
   canRate,
@@ -20,7 +22,8 @@ import {
 } from './jam-teams';
 import { memberLockName, placementsOf } from './jam-teams.server';
 import { FEEDBACK_MAX, FEEDBACK_MIN, feedbackIntent } from './jam-feedback';
-import { effectiveThemes } from './jam-themes.server';
+import { datesInOrder, validateJamEdit, type JamEditField, type JamPatch } from './jam-edit';
+import { candidatesLockKey, effectiveThemes } from './jam-themes.server';
 import { resolveVoteOpensAt, themeVotingPhase, validateCandidates, CANDIDATE_PROBLEM_MESSAGE } from './jam-themes';
 import { feedbackCounts, myFeedbackFor, notifyTeamOfFeedback, saveFeedback, type FeedbackSaveOutcome } from './jam-feedback.server';
 
@@ -51,8 +54,8 @@ export async function createJam(
   },
 ) {
   const { themeVoting, themeCandidates, themeVoteOpensAt, ...core } = input;
-  if (!(core.startsAt < core.submitEndsAt && core.submitEndsAt < core.ratingEndsAt)) {
-    return { ok: false as const, error: 'Dates must run start < submissions close < rating close' };
+  if (!datesInOrder(core.startsAt, core.submitEndsAt, core.ratingEndsAt)) {
+    return { ok: false as const, error: 'Dates must run: start, submissions close, rating close', code: 'JAM_DATES_ORDER' as const };
   }
   if (!themeVoting) {
     const jam = await prisma.gameJam.create({
@@ -62,9 +65,11 @@ export async function createJam(
     return { ok: true as const, slug: jam.slug };
   }
   const valid = validateCandidates(themeCandidates ?? []);
-  if (!valid.ok) return { ok: false as const, error: CANDIDATE_PROBLEM_MESSAGE[valid.problem] };
+  if (!valid.ok) return { ok: false as const, error: CANDIDATE_PROBLEM_MESSAGE[valid.problem], code: undefined };
   const opensAt = resolveVoteOpensAt(themeVoteOpensAt, core.startsAt);
-  if (!opensAt) return { ok: false as const, error: 'Voting must open before the jam starts' };
+  if (!opensAt) {
+    return { ok: false as const, error: 'Voting must open before the jam starts', code: 'JAM_VOTE_OPENS_LATE' as const };
+  }
   const jam = await prisma.gameJam.create({
     data: {
       ...core,
@@ -79,6 +84,54 @@ export async function createJam(
     select: { slug: true },
   });
   return { ok: true as const, slug: jam.slug };
+}
+
+export const jamLockKey = (jamId: string) => `game-jam:${jamId}`;
+
+export type JamUpdateOutcome =
+  | { ok: true; changed: JamEditField[] }
+  | { ok: false; code: ErrorCode; status: number };
+
+/**
+ * Admin: edit a jam within what its phase allows (`./jam-edit`). The slug never changes. One transaction takes the
+ * jam's lock first (two admins' saves serialise, so the second is validated against the first's result), re-reads
+ * the jam and the time inside it (a phase that moved since the dialog opened is caught here), then writes the
+ * change and one audit row. The audit row names the changed fields, never the secret theme's text.
+ * `GameJam` has no `updatedAt`: the phase is computed from the dates read inside the transaction.
+ */
+export async function updateJam(adminId: string, slug: string, patch: JamPatch): Promise<JamUpdateOutcome> {
+  const found = await prisma.gameJam.findUnique({ where: { slug }, select: { id: true } });
+  if (!found) return { ok: false, code: 'NOT_FOUND', status: 404 };
+  return prisma.$transaction(async (tx): Promise<JamUpdateOutcome> => {
+    await lockKey(tx, jamLockKey(found.id));
+    // The vote-opening time races with members' marks, which hold the shortlist lock.
+    await lockKey(tx, candidatesLockKey(found.id));
+    const jam = await tx.gameJam.findUnique({
+      where: { id: found.id },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        theme: true,
+        startsAt: true,
+        submitEndsAt: true,
+        ratingEndsAt: true,
+        themeVoting: true,
+        themeVoteOpensAt: true,
+      },
+    });
+    if (!jam) return { ok: false, code: 'NOT_FOUND', status: 404 };
+    const checked = validateJamEdit(jam, patch, new Date());
+    if (!checked.ok) return { ok: false, code: checked.code, status: ERROR_CODES[checked.code].http };
+    if (checked.changed.length === 0) return { ok: true, changed: [] };
+    await tx.gameJam.update({ where: { id: jam.id }, data: checked.data });
+    await recordAdminActionIn(tx, adminId, 'game-jam-edit', {
+      targetType: 'game_jam',
+      targetId: jam.id,
+      detail: checked.changed.join(','),
+    });
+    return { ok: true, changed: checked.changed };
+  });
 }
 
 function summary(j: {

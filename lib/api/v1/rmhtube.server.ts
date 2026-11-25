@@ -5,7 +5,8 @@
  *
  * A party is visible to the key owner when it is public, or they host it, or they are going (the site's
  * `listUpcoming` rule: a link-only party is never listed to anyone else); anything else is `null`, the same answer
- * as a room that does not exist. A party whose host is in a block with the key owner, in either direction, is
+ * as a room that does not exist (s14-10: so is a room a moderator removed, which `listUpcoming` and `getParty` leave
+ * out; `TUBE_ROOM_READ_PATHS` holds that). A party whose host is in a block with the key owner, in either direction, is
  * hidden the same way. A party's attendee list is never returned: only `going` (the owner's own answer) and the
  * count the site shows.
  */
@@ -129,6 +130,8 @@ export type GoingFailure = {
 const REFUSALS: Record<PartyRefusal, GoingFailure> = {
   NOT_FOUND: { code: 'not_found', message: 'Party not found.', status: 404 },
   CLOSED: { code: 'party_closed', message: 'This party is closed.', status: 409 },
+  MODERATED: { code: 'party_closed', message: 'This party is closed.', status: 409 },
+  NAME_REMOVED: { code: 'invalid_request', message: 'Request not allowed.', status: 400 },
   FORBIDDEN: { code: 'forbidden', message: 'Not allowed.', status: 403 },
   TOO_SOON: { code: 'invalid_request', message: 'Request not allowed.', status: 400 },
   TOO_FAR: { code: 'invalid_request', message: 'Request not allowed.', status: 400 },

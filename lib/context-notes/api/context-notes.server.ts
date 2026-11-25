@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { noteBodySchema } from '@/lib/context-notes/bridging';
 import { getPostNotes, proposeNote } from '@/lib/context-notes/notes.server';
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 
 const query = z.object({ postId: z.string().min(1).max(40) });
 
@@ -23,6 +24,9 @@ export const route = apiRoute('/api/context-notes', {
       body: noteBodySchema,
     },
     async ({ userId, body }) => {
+      // s14-17: a context note is public text others read under a post, so a timeout on replying holds for it.
+      const restricted = await restrictionResponse(userId, 'comment');
+      if (restricted) return restricted;
       const r = await proposeNote(userId, body.postId, body.body);
       if (!r.ok) return Response.json({ error: r.error }, { status: r.status });
       return Response.json({ id: r.id }, { status: 201 });

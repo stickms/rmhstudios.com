@@ -164,6 +164,11 @@ vi.mock('@/lib/prisma.server', () => ({
         const row = db.rooms.find((r) => r.id === where.id);
         return row ? decorate(row) : null;
       },
+      // s14-10: the party page and the calendar read with `moderatedAt: null`.
+      findFirst: async ({ where }: { where: Where }) => {
+        const row = db.rooms.find((r) => matchRoom(r, where));
+        return row ? decorate(row) : null;
+      },
       findMany: async ({ where, orderBy, take }: { where: Where; orderBy?: unknown; take?: number }) => {
         const rows = db.rooms.filter((r) => matchRoom(r, where));
         if (orderBy) rows.sort((a, b) => (a.scheduledFor?.getTime() ?? 0) - (b.scheduledFor?.getTime() ?? 0));

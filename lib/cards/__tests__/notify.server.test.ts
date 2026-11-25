@@ -8,7 +8,7 @@ vi.mock('@/lib/notifications.server', () => ({
   createNotification: create.fn,
 }));
 
-import { notifyCardSold, notifyHubReply, notifyTradeOffered, notifyTradeResolved } from '@/lib/cards/notify.server';
+import { notifyCardSold, notifyTradeOffered, notifyTradeResolved } from '@/lib/cards/notify.server';
 
 beforeEach(() => create.fn.mockClear());
 
@@ -68,25 +68,5 @@ describe('notification shapes', () => {
     expect(arg.userId).toBe('s');
     expect(noticeFallbackText(arg.preview)).toMatch(/for 90 coins$/);
     expect(arg.link).toBe('/games/market');
-  });
-
-  it('a hub reply links to the thread and collapses repeats', async () => {
-    await notifyHubReply({
-      threadAuthorId: 'a',
-      replierId: 'b',
-      gameId: 'altair',
-      threadId: 'th',
-      threadTitle: 'x'.repeat(200),
-    });
-    const arg = create.fn.mock.calls[0][0] as unknown as {
-      preview: never;
-      link: string;
-      dedupeUnread: boolean;
-      type: string;
-    };
-    expect(arg.link).toBe('/games/hub/altair/t/th');
-    expect(arg.dedupeUnread).toBe(true);
-    expect(arg.type).toBe('REPLY');
-    expect(noticeFallbackText(arg.preview)!.length).toBeLessThan(100);
   });
 });

@@ -7,11 +7,17 @@
  */
 
 import { notice } from '@/lib/notifications/notice-keys';
-import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
 import { createNotification } from '@/lib/notifications.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
+import {
+  activeRestrictionWhere,
+  clearRestrictionCache,
+  pickActiveRestriction,
+  type ActiveRestrictionRow,
+} from '@/lib/moderation/restrictions-core';
+import { refusalBody } from '@/lib/errors/codes';
 import {
   FEATURE_LABELS,
   isRestrictableFeature,
@@ -22,28 +28,7 @@ import {
 /** The link every moderation notice opens: the user's own record. */
 export const ACCOUNT_STATUS_LINK = '/settings/account-status';
 
-export function activeRestrictionWhere(userId: string, now = new Date()): Prisma.FeatureRestrictionWhereInput {
-  return {
-    userId,
-    liftedAt: null,
-    OR: [
-      {
-        expiresAt: null,
-      },
-      {
-        expiresAt: {
-          gt: now,
-        },
-      },
-    ],
-  };
-}
-
-interface ActiveRow {
-  feature: string;
-  /** Epoch ms; null = permanent. */
-  expiresAt: number | null;
-}
+export { activeRestrictionWhere };
 
 const RESTRICTIONS_TTL_MS = 30_000;
 const restrictionsKey = (userId: string) => `feature-restrictions:${userId}`;
@@ -53,8 +38,8 @@ const restrictionsKey = (userId: string) => `feature-restrictions:${userId}`;
  * every post or reply) and dropped by every writer below, so a new timeout
  * applies on the user's next request on every instance.
  */
-async function activeRows(userId: string): Promise<ActiveRow[]> {
-  const rows = await cached<ActiveRow[]>(restrictionsKey(userId), RESTRICTIONS_TTL_MS, async () => {
+async function activeRows(userId: string): Promise<ActiveRestrictionRow[]> {
+  const rows = await cached<ActiveRestrictionRow[]>(restrictionsKey(userId), RESTRICTIONS_TTL_MS, async () => {
     const found = await prisma.featureRestriction.findMany({
       where: activeRestrictionWhere(userId),
       select: {
@@ -73,6 +58,7 @@ async function activeRows(userId: string): Promise<ActiveRow[]> {
 }
 
 function invalidate(userId: string): void {
+  clearRestrictionCache(userId);
   void invalidateCached(restrictionsKey(userId));
 }
 
@@ -83,15 +69,7 @@ export async function getActiveRestriction(
 ): Promise<{
   expiresAt: Date | null;
 } | null> {
-  const rows = (await activeRows(userId)).filter((r) => r.feature === feature);
-  if (rows.length === 0) return null;
-  if (rows.some((r) => r.expiresAt === null))
-    return {
-      expiresAt: null,
-    };
-  return {
-    expiresAt: new Date(Math.max(...rows.map((r) => r.expiresAt ?? 0))),
-  };
+  return pickActiveRestriction(await activeRows(userId), feature);
 }
 
 /**
@@ -103,21 +81,33 @@ export async function getActiveRestriction(
 export async function restrictionResponse(userId: string, feature: RestrictableFeature): Promise<Response | null> {
   const active = await getActiveRestriction(userId, feature);
   if (!active) return null;
-  const label = FEATURE_LABELS[feature];
-  const error = active.expiresAt
-    ? `${label} is restricted on your account until ${active.expiresAt.toISOString()}. See Settings → Account status.`
-    : `${label} is restricted on your account. See Settings → Account status.`;
+  const until = active.expiresAt?.toISOString() ?? null;
+  // `error` and `code` are the taxonomy refusal (the client renders it in the reader's language); `feature` and
+  // `until` stay for clients written before it.
+  const refusal =
+    until === null ? refusalBody('FEATURE_RESTRICTED') : refusalBody('FEATURE_RESTRICTED_UNTIL', { endsAt: until });
   return Response.json(
     {
-      error,
-      code: 'feature_restricted',
+      ...refusal,
       feature,
-      until: active.expiresAt?.toISOString() ?? null,
+      until,
     },
     {
       status: 403,
     },
   );
+}
+
+/**
+ * The same refusal for the developer API, which answers in its own envelope: the English sentence for
+ * `error.message`, or null when the member is not timed out. The caller answers 403 `feature_restricted`.
+ */
+export async function restrictionMessage(userId: string, feature: RestrictableFeature): Promise<string | null> {
+  const active = await getActiveRestriction(userId, feature);
+  if (!active) return null;
+  return active.expiresAt
+    ? refusalBody('FEATURE_RESTRICTED_UNTIL', { endsAt: active.expiresAt.toISOString() }).error
+    : refusalBody('FEATURE_RESTRICTED').error;
 }
 
 /** Same check for code that is not an HTTP handler (socket hubs, workers). */

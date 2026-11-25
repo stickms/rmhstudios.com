@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { noindexHead } from '@/lib/seo';
 import { useDoctrineReputation } from '@features/doctrine/ui/hooks/useDoctrineReputation';
+import { browserTimeZone, useDoctrineActivity } from '@features/doctrine/ui/hooks/useDoctrineLedger';
 import { XpBar } from '@features/doctrine/ui/reputation/xp-bar';
 import { RankBadge } from '@features/doctrine/ui/reputation/rank-badge';
 import { StreakDisplay } from '@features/doctrine/ui/puzzles/streak-display';
@@ -21,6 +22,8 @@ function ProfilePage() { const fmt = useLocaleFormat();
   const { t } = useTranslation("r-strategies");
   const { data: rep, isLoading } = useDoctrineReputation();
   const arrival = useArrival(!isLoading);
+  const tz = browserTimeZone();
+  const { data: activity } = useDoctrineActivity(tz);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-6">
@@ -63,12 +66,12 @@ function ProfilePage() { const fmt = useLocaleFormat();
           {/* Activity Heatmap */}
           <div className="rounded-lg p-4 space-y-3 overflow-x-auto" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
             <h3 className="text-sm md:text-xs font-mono uppercase tracking-wider text-white/60">{t("activity", { defaultValue: "Activity" })}</h3>
-            <ActivityHeatmap data={{}} weeks={16} />
+            <ActivityHeatmap data={activity?.days ?? {}} weeks={16} tz={tz} />
           </div>
 
           {/* Links */}
           <div className="flex gap-3">
-            <Link to="/strategies/profile/reputation" className="text-sm md:text-xs text-white/50 hover:text-white/80 transition-colors min-h-11 md:min-h-0 flex items-center">
+            <Link to="/strategies/profile/xp" className="text-sm md:text-xs text-white/50 hover:text-white/80 transition-colors min-h-11 md:min-h-0 flex items-center">
               {t("full-xp-breakdown", { defaultValue: "Full XP Breakdown →" })}
             </Link>
           </div>

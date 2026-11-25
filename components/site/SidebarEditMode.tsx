@@ -9,6 +9,8 @@ import { SIDEBAR_HIDEABLE_IDS } from '@/lib/home-widgets';
 import { SECTION_NAV_IDS, SIDEBAR_NAV, orderNavItems, type NavItem } from '@/lib/sidebar-nav';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
+import { useRiskSurfacesHidden } from '@/hooks/useRiskSurfacesHidden';
+import { isRiskSurfacePath } from '@/lib/economy/risk-surfaces';
 
 /**
  * SidebarEditMode (§15) — arrange the desktop sidebar's list of places (G2
@@ -34,6 +36,8 @@ export function SidebarEditMode() {
   const resetSidebar = useLayoutStore((s) => s.resetSidebar);
   // Steel M9: the saved order is read on the client, so the list replaces a skeleton.
   const arrival = useArrival(hydrated);
+  // A self-excluded member is not offered the coin games to arrange (W8); their saved place is kept.
+  const riskHidden = useRiskSurfacesHidden();
 
   useEffect(() => {
     useLayoutStore.getState().hydrate();
@@ -44,7 +48,8 @@ export function SidebarEditMode() {
       defaultValue: item.label,
     });
   // SortableList needs a stable string `id`; carry the nav item alongside it.
-  const rows = orderNavItems(ORDERABLE, order).map((item) => ({
+  const kept = riskHidden ? ORDERABLE.filter((item) => !isRiskSurfacePath(item.id)) : ORDERABLE;
+  const rows = orderNavItems(kept, order).map((item) => ({
     id: item.id,
     item,
   }));
@@ -72,7 +77,9 @@ export function SidebarEditMode() {
         <SortableList
           className={arrival}
           items={rows}
-          onReorder={(next) => setSidebarOrder(next.map((r) => r.id))}
+          onReorder={(next) =>
+            setSidebarOrder([...next.map((r) => r.id), ...order.filter((id) => riskHidden && isRiskSurfacePath(id))])
+          }
           itemLabel={(r) => nameFor(r.item)}
           renderItem={(r) => {
             const { item } = r;

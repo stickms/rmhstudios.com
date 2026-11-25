@@ -15,7 +15,9 @@ import { logger } from './logger';
 import { getPrismaClient } from './prisma-client';
 import { statsRecorder } from './stats-recorder';
 import { validated } from './schemas';
-import { C2S, S2C } from '../../lib/rmhtube/events';
+import { C2S, S2C, ROOM_CLOSED_CHANNEL } from '../../lib/rmhtube/events';
+import { redisSubscribe } from '../../lib/redis.server';
+import { isRemovedRoomName, removedNameSince } from '../../lib/rmhtube/room-reports';
 import {
   CreateRoomSchema,
   JoinRoomSchema,
@@ -105,6 +107,9 @@ function parseCustomReactions(stored: string[]): string[] | null {
 /** `room:leave` carries nothing, but still needs a schema to be rate-limited. */
 const EmptyPayloadSchema = z.object({}).optional();
 
+/** s14-10: what the web tier publishes on `ROOM_CLOSED_CHANNEL` when a moderator removes a room. */
+const RoomClosedSchema = z.object({ roomId: z.string().min(1).max(32) });
+
 export class RoomManager {
   /** All active rooms in memory */
   readonly rooms = new Map<string, RmhTubeRoom>();
@@ -121,7 +126,83 @@ export class RoomManager {
 
   private gcInterval: ReturnType<typeof setInterval> | null = null;
 
-  constructor(private io: Server) {}
+  /** Unsubscribes the moderator-closure channel (s14-10); called by `stopGarbageCollector` at shutdown. */
+  private unsubscribeRoomClosed: (() => void) | null = null;
+
+  constructor(private io: Server) {
+    // s14-10: the web tier publishes here when a moderator removes a reported room. Without Redis this is a no-op, and
+    // the running room carries on until it empties or the hub restarts; neither loader will bring it back, because
+    // both read `moderatedAt: null`.
+    this.unsubscribeRoomClosed = redisSubscribe(ROOM_CLOSED_CHANNEL, (data) => {
+      const parsed = RoomClosedSchema.safeParse(data);
+      if (parsed.success) this.closeRoomByModerator(parsed.data.roomId);
+    });
+  }
+
+  /**
+   * s14-10: end a running room a moderator removed. Everyone in it is told (`room:closed`, reason `moderator`) and
+   * leaves the socket room; the row was stamped by the web tier, so nothing is written here. A room that is not
+   * running (never loaded, or already ended) is a no-op, so a second message does nothing.
+   */
+  closeRoomByModerator(roomId: string): boolean {
+    const room = this.rooms.get(roomId);
+    if (!room) return false;
+    clearTimeout(this.leaderFailoverTimers.get(roomId));
+    this.leaderFailoverTimers.delete(roomId);
+    clearTimeout(this.emptyRoomTimers.get(roomId));
+    this.emptyRoomTimers.delete(roomId);
+
+    this.io.to(roomId).emit(S2C.ROOM_CLOSED, { reason: 'moderator' });
+    this.io.in(roomId).socketsLeave(roomId);
+
+    for (const member of room.members.values()) {
+      this.userRoomIndex.delete(member.userId);
+      const timer = this.graceTimers.get(member.userId);
+      if (timer) {
+        clearTimeout(timer);
+        this.graceTimers.delete(member.userId);
+      }
+    }
+    this.rooms.delete(roomId);
+    statsRecorder.roomClosed(roomId);
+
+    logger.info({
+      event: 'room_closed_by_moderator',
+      roomId,
+    });
+    return true;
+  }
+
+  /**
+   * s14-10: whether this host had a room with this name removed by a moderator in the last 30 days (trimmed, any case).
+   * Read through the hub's own Prisma client. A failed read throws and `handleCreateRoom` refuses the create
+   * (fail closed): the rule is a moderation control, and a create that cannot be checked is retried by the member.
+   */
+  private async hasRemovedName(hostId: string, name: string): Promise<boolean> {
+    try {
+      const rows = await getPrismaClient().rmhTubeRoom.findMany({
+        where: {
+          hostId,
+          moderatedAt: {
+            gte: removedNameSince(new Date()),
+          },
+        },
+        select: {
+          name: true,
+        },
+      });
+      return isRemovedRoomName(
+        name,
+        rows.map((r) => r.name),
+      );
+    } catch (err) {
+      logger.warn({
+        event: 'removed_name_check_failed',
+        err,
+      });
+      throw err;
+    }
+  }
 
   // ─── Connection Handler ──────────────────────────────────────
 
@@ -306,6 +387,28 @@ export class RoomManager {
     const userName = socket.data.userName as string;
     const avatarUrl = socket.data.avatarUrl as string | null;
 
+    // s14-10: a name a moderator removed from this host's rooms in the last 30 days cannot be used again.
+    const roomName = payload.name ? sanitizeString(payload.name, 64) : null;
+    if (roomName) {
+      let removed: boolean;
+      try {
+        removed = await this.hasRemovedName(userId, roomName);
+      } catch {
+        socket.emit(S2C.ERROR, {
+          code: 'ROOM_CREATE_FAILED',
+          message: 'Could not create the room. Try again.',
+        });
+        return;
+      }
+      if (removed) {
+        socket.emit(S2C.ERROR, {
+          code: 'ROOM_NAME_REMOVED',
+          message: 'A moderator removed a room with this name. Choose another.',
+        });
+        return;
+      }
+    }
+
     // If user is already in a room, leave it first
     const existingRoomId = this.userRoomIndex.get(userId);
     if (existingRoomId) {
@@ -349,7 +452,7 @@ export class RoomManager {
 
     const room: RmhTubeRoom = {
       id: roomId,
-      name: payload.name ? sanitizeString(payload.name, 64) : null,
+      name: roomName,
       hostUserId: userId,
       leaderUserId: userId,
       designatedLeaderUserId: userId,
@@ -1415,6 +1518,8 @@ export class RoomManager {
   }
 
   stopGarbageCollector(): void {
+    this.unsubscribeRoomClosed?.();
+    this.unsubscribeRoomClosed = null;
     if (this.gcInterval) {
       clearInterval(this.gcInterval);
       this.gcInterval = null;
@@ -1604,6 +1709,8 @@ export class RoomManager {
     const dbRooms = await prisma.rmhTubeRoom.findMany({
       where: {
         closedAt: null,
+        // s14-10: a room a moderator removed never comes back.
+        moderatedAt: null,
       },
       include: RoomManager.DB_INCLUDE,
     });
@@ -1639,6 +1746,8 @@ export class RoomManager {
       where: {
         id: roomId,
         closedAt: null,
+        // s14-10: a room a moderator removed never comes back.
+        moderatedAt: null,
       },
       include: RoomManager.DB_INCLUDE,
     });

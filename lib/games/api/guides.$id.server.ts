@@ -1,9 +1,12 @@
 import { apiRoute } from '@/lib/api/route.server';
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
 import { deleteGuideApi, updateGuideApi } from '@/lib/games/guides.contract';
 import { guideUpdateSchema } from '@/lib/games/reviews';
 import { getGuide, updateGuide, deleteGuide, GameMetaError } from '@/lib/games/meta.server';
+import { GAME_CONTENT_REMOVED } from '@/lib/games/moderation';
+import { refusalBody } from '@/lib/errors/codes';
 
 /**
  * GET    /api/guides/:id — a guide (published, or the author's draft).
@@ -20,9 +23,14 @@ export const route = apiRoute('/api/guides/$id', {
     updateGuideApi,
     { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'guides' }, body: guideUpdateSchema },
     async ({ params, session, body }) => {
+      const restricted = await restrictionResponse(session.user.id, 'comment');
+      if (restricted) return restricted;
       try {
         await updateGuide(session.user.id, params.id, body);
       } catch (e) {
+        if (e instanceof GameMetaError && e.message === GAME_CONTENT_REMOVED) {
+          return Response.json(refusalBody('GAME_CONTENT_REMOVED_BY_MODERATOR'), { status: 409 });
+        }
         if (e instanceof GameMetaError) {
           return Response.json(
             { error: e.message },
@@ -41,6 +49,9 @@ export const route = apiRoute('/api/guides/$id', {
       try {
         await deleteGuide(session.user.id, params.id);
       } catch (e) {
+        if (e instanceof GameMetaError && e.message === GAME_CONTENT_REMOVED) {
+          return Response.json(refusalBody('GAME_CONTENT_REMOVED_BY_MODERATOR'), { status: 409 });
+        }
         if (e instanceof GameMetaError) return Response.json({ error: e.message }, { status: 404 });
         throw e;
       }

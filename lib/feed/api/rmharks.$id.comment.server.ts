@@ -20,6 +20,7 @@ import { derivePostKind } from '@/lib/communities/automod';
 import { looksHostile } from '@/lib/safety/reconsider.server';
 import { noteReply } from '@/lib/safety/pile-on.server';
 import { recordLinkDomains } from '@/lib/safety/link-risk.server';
+import { supporterMarksFor } from '@/lib/creator/supporter-marks.server';
 
 import { implement } from '@/lib/api/implement.server';
 import { createCommentApi } from '@/lib/feed/rmhark-actions.contract';
@@ -126,7 +127,35 @@ export const route = apiRoute('/api/rmharks/$id/comment', {
       };
     };
 
-    type ResolvedComment = ReturnType<typeof resolveComment> & { replies: ResolvedComment[] };
+    type ResolvedComment = ReturnType<typeof resolveComment> & {
+      replies: ResolvedComment[];
+      /** Only ever `true`, and only on the post author's own response (sprint 14 #13). */
+      supporter?: true;
+    };
+
+    // Supporter marks (sprint 14 #13): the post's author alone learns which repliers support them. Everyone else gets
+    // no `supporter` key at all (not `false`), so two responses cannot be compared. One batched read per page, and
+    // only when the viewer is the author with the switch on; this route declares no `cache:` and must stay uncached.
+    const markSupporters = async (nodes: ResolvedComment[]) => {
+      if (!userId || nodes.length === 0) return;
+      const post = await prisma.rMHark.findUnique({ where: { id }, select: { userId: true } });
+      if (!post || post.userId !== userId) return;
+      const all: ResolvedComment[] = [];
+      const walk = (list: ResolvedComment[]) => {
+        for (const n of list) {
+          all.push(n);
+          walk(n.replies);
+        }
+      };
+      walk(nodes);
+      const marks = await supporterMarksFor(
+        userId,
+        post,
+        all.map((n) => n.userId),
+      );
+      if (!marks) return;
+      for (const n of all) if (marks.has(n.userId)) n.supporter = true;
+    };
 
     // ── Lazy per-parent reply feed (`?parentId=&cursor=`) ────────────────────
     // A flat, keyset-paginated (oldest-first) page of one parent's direct
@@ -142,6 +171,7 @@ export const route = apiRoute('/api/rmharks/$id/comment', {
         ...resolveComment(c),
         replies: [],
       }));
+      await markSupporters(nodes);
       const last = replies[replies.length - 1];
       const nextCursor =
         replies.length === REPLY_PAGE && last ? encodeCursor(last.createdAt, last.id) : null;
@@ -214,6 +244,8 @@ export const route = apiRoute('/api/rmharks/$id/comment', {
       frontier = next;
       depth++;
     }
+
+    await markSupporters(rootNodes);
 
     const lastRoot = roots[roots.length - 1];
     const nextCursor =

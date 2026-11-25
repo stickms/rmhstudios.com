@@ -561,6 +561,7 @@ describe('setCandidates', () => {
     expect(await setCandidates('admin', 'jam-1', ['One', 'Two', 'Three'])).toMatchObject({
       ok: false,
       status: 409,
+      code: 'JAM_SHORTLIST_LOCKED',
     });
     expect(h.cands).toHaveLength(4);
     expect(h.audits).toHaveLength(0);

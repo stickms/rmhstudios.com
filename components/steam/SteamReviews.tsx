@@ -16,6 +16,7 @@ import {
   voteReviewApi,
 } from '@/lib/games/reviews.contract';
 import { PersonAvatar } from './SteamPeople';
+import { RemovedByModerator, ReportItemButton } from './ReportItem';
 
 function Stars({
   value,
@@ -155,7 +156,13 @@ export function SteamReviews({
         ) : null}
       </h2>
 
-      {signedIn ? (
+      {signedIn && mine?.removed ? (
+        // A moderator removed the viewer's review: it cannot be edited, and deleting and writing again is refused.
+        <div className="stm-write">
+          <h3 className="stm-subhead">{t('your-review', { defaultValue: 'Your review' })}</h3>
+          <RemovedByModerator />
+        </div>
+      ) : signedIn ? (
         <div className="stm-write">
           <h3 className="stm-subhead">
             {mine
@@ -224,7 +231,7 @@ export function SteamReviews({
                 <PersonAvatar src={r.author.image} name={name} />
                 <div className="stm-review-body">
                   <div className="stm-review-head">
-                    <span className="stm-person-name">{name}</span>
+                    <bdi className="stm-person-name">{name}</bdi>
                     <Stars value={r.stars} label={ratingLabel} />
                     <span className="stm-recommend" data-kind={recommendation(r.stars)}>
                       {recommendation(r.stars) === 'not-recommended' ? (
@@ -244,8 +251,8 @@ export function SteamReviews({
                       </span>
                     ) : null}
                   </div>
-                  {r.body ? <p>{r.body}</p> : null}
-                  {r.awards && r.awards.length > 0 ? (
+                  {r.removed ? <RemovedByModerator /> : r.body ? <p dir="auto">{r.body}</p> : null}
+                  {r.removed ? null : r.awards && r.awards.length > 0 ? (
                     <ul className="stm-awards" aria-label={t('steam-rev-awards', { defaultValue: 'Awards' })}>
                       {r.awards.map((a) => {
                         const def = AWARD_CATALOG.find((d) => d.id === a.awardId);
@@ -257,16 +264,19 @@ export function SteamReviews({
                       })}
                     </ul>
                   ) : null}
-                  <button
-                    type="button"
-                    className="stm-helpful"
-                    aria-pressed={!!r.myVote}
-                    disabled={r.isMine}
-                    onClick={() => vote(r)}
-                  >
-                    <ThumbsUp aria-hidden />
-                    {r.helpfulCount} {t('helpful', { defaultValue: 'helpful' })}
-                  </button>
+                  {r.removed ? null : (
+                    <button
+                      type="button"
+                      className="stm-helpful"
+                      aria-pressed={!!r.myVote}
+                      disabled={r.isMine}
+                      onClick={() => vote(r)}
+                    >
+                      <ThumbsUp aria-hidden />
+                      {r.helpfulCount} {t('helpful', { defaultValue: 'helpful' })}
+                    </button>
+                  )}
+                  <ReportItemButton entityType="game-review" entityId={r.id} signedIn={signedIn} isOwn={!!r.isMine} />
                   {signedIn && !r.isMine ? (
                     <details className="stm-collmenu stm-award-menu">
                       <summary className="stm-helpful">

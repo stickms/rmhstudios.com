@@ -11,12 +11,24 @@ import { useSession } from '@/components/Providers';
 import { WagerCard } from '@/components/wager/WagerCard';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { wagerQuery } from '@/lib/wager/wager.queries';
+import { ExcludedWagerPage } from '@/components/settings/ExcludedNotice';
+import { fetchExclusionNotice } from '@/lib/economy/exclusion-page.functions';
 
 export const Route = createFileRoute('/_site/wager/$id')({
   head: () => ({ meta: [{ title: 'Wager Match | RMH Studios' }] }),
-  loader: ({ context, params }) => prefetchRouteQuery(context.queryClient, wagerQuery(params.id)),
-  component: WagerDetailPage,
+  // A self-excluded member gets the notice, decided on the server; the match is not even fetched for them.
+  loader: async ({ context, params }) => {
+    const notice = await fetchExclusionNotice();
+    if (!notice.excluded) await prefetchRouteQuery(context.queryClient, wagerQuery(params.id));
+    return notice;
+  },
+  component: WagerRoute,
 });
+
+function WagerRoute() {
+  const notice = Route.useLoaderData();
+  return notice.excluded ? <ExcludedWagerPage until={notice.until} /> : <WagerDetailPage />;
+}
 
 function WagerDetailPage() {
   const { t } = useTranslation('c-wager');

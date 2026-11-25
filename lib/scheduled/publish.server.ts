@@ -19,6 +19,7 @@ import { progressQuests } from '@/lib/quests/engine.server';
 import { grantAchievement, progressAchievement } from '@/lib/achievements/engine.server';
 import { createNotification } from '@/lib/notifications.server';
 import { HELD_BY, recordModItem } from '@/lib/communities/automod.server';
+import { isRestricted } from '@/lib/moderation/restrictions.server';
 import { evaluateScheduledGate, type ScheduledGateOutcome } from '@/lib/scheduled/gate.server';
 import { enqueuePostAlert } from '@/lib/communities/post-alerts.server';
 import { normalizeGifAlt } from '@/lib/feed/gif-alt';
@@ -137,6 +138,10 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
   // sign-in that cancels the deletion leaves it a draft for the member to look at).
   const author = await prisma.user.findUnique({ where: { id: sp.userId }, select: { deletionScheduledAt: true } });
   if (author?.deletionScheduledAt) return null;
+
+  // s14-17: a moderator's timeout on posting holds for what the member queued before it. The draft stays a draft and
+  // the first pass after the timeout ends publishes it, as a community timeout does below.
+  if (await isRestricted(sp.userId, 'post')) return null;
 
   const poll = (sp.poll as PollPayload | null) ?? null;
 

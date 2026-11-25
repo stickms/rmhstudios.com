@@ -25,6 +25,7 @@ const game = (over: Partial<RankedStandingGame>): RankedStandingGame => ({
   played: true,
   rating: 1300,
   tier: 'Platinum',
+  tierId: 'platinum',
   provisional: false,
   placementsLeft: 0,
   wins: 4,
@@ -62,7 +63,7 @@ describe('RankedStandingView', () => {
 
   it('says how many placement matches are left, with no place', () => {
     const html = ready([
-      game({ rating: null, tier: null, provisional: true, placementsLeft: 2, place: null, of: null }),
+      game({ rating: null, tier: null, tierId: null, provisional: true, placementsLeft: 2, place: null, of: null }),
     ]);
     expect(html).toContain('Placement: 2 matches left');
     expect(html).toContain('Not on the ladder');
@@ -71,7 +72,7 @@ describe('RankedStandingView', () => {
 
   it('uses the singular for one match left', () => {
     const html = ready([
-      game({ rating: null, tier: null, provisional: true, placementsLeft: 1, place: null, of: null }),
+      game({ rating: null, tier: null, tierId: null, provisional: true, placementsLeft: 1, place: null, of: null }),
     ]);
     expect(html).toContain('Placement: 1 match left');
   });

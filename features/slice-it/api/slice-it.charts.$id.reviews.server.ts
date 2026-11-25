@@ -1,4 +1,5 @@
 import { apiRoute } from '@/lib/api/route.server';
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { z } from 'zod';
 
 import { defineHandler } from '@/lib/api/handler.server';
@@ -28,6 +29,8 @@ export const route = apiRoute('/api/slice-it/charts/$id/reviews', {
   }),
 
   PUT: defineHandler({ rateLimit: 'write', body: BodyZ }, async ({ params, userId, body }) => {
+    const restricted = await restrictionResponse(userId, 'comment');
+    if (restricted) return restricted;
     const chart = await prisma.chart.findUnique({
       where: { id: params.id },
       select: { id: true, status: true, rankStatus: true, authorId: true },

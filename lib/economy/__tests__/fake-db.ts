@@ -14,8 +14,12 @@
  *  - the fake ledger rejects a repeated idempotency key the way
  *    `coinTransaction.idempotencyKey`'s unique index does, and refuses to
  *    overdraw the way the conditional UPDATE in `debitCoinsOn` does.
+ *  - every query goes through `shapeChecked` (`lib/db/query-shape.ts`): a field the model does not have, a `null`
+ *    comparison or `nulls` ordering on a required column, or an unknown `data` field throws, as Prisma would. The
+ *    transaction hands its callback a checked client; a test wraps the client it mocks with `checkedDb`.
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { shapeChecked } from '@/lib/db/query-shape';
 
 type Row = Record<string, any>;
 
@@ -264,13 +268,16 @@ export class FakeInsufficientFundsError extends Error {
   }
 }
 
+/** A fake client whose queries are checked against the schema before they run. */
+export const checkedDb = shapeChecked;
+
 /** Wrap tables + ledger into a `$transaction` with real rollback semantics. */
 export function makeTransaction(tables: Table[], ledger: FakeLedger, client: () => unknown) {
   return async (fn: (tx: unknown) => Promise<unknown>) => {
     const snaps = tables.map((t) => t.snapshot());
     const ledgerSnap = ledger.snapshot();
     try {
-      return await fn(client());
+      return await fn(shapeChecked(client() as object));
     } catch (err) {
       tables.forEach((t, i) => t.restore(snaps[i]!));
       ledger.restore(ledgerSnap);

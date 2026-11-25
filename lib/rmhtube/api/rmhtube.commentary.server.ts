@@ -1,4 +1,5 @@
 import { apiRoute } from '@/lib/api/route.server';
+import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { z } from 'zod';
 import { defineHandler, apiError, notFound } from '@/lib/api/handler.server';
 import { commentaryLinesSchema, mediaUrlSchema } from '@/lib/rmhtube/party';
@@ -33,6 +34,8 @@ export const route = apiRoute('/api/rmhtube/commentary', {
       }),
     },
     async ({ userId, body }) => {
+      const restricted = await restrictionResponse(userId, 'comment');
+      if (restricted) return restricted;
       const track = await addTrack(userId, body.url, body.title, body.lines);
       if (!track) return apiError('Track limit reached for this video.', 429);
       return Response.json({ track }, { status: 201 });

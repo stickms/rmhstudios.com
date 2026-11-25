@@ -22,11 +22,11 @@ The `User` row is anonymised in place, never removed, so `onDelete: Cascade` fro
 
 The clearly private leaf tables (birthday, reminders, drafts, saves, history, settings, notifications, and private reading highlights) are erased by `coverageErasureOps` in `lib/account/erasure-coverage.server.ts`.
 
-413 models are classified.
+414 models are classified.
 
 ## Erased
 
-Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row stays with its member reference replaced or nulled; a `cascade` row goes with its parent in the database. 257 models.
+Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row stays with its member reference replaced or nulled; a `cascade` row goes with its parent in the database. 258 models.
 
 | Model | Decision | Reason |
 | --- | --- | --- |
@@ -78,6 +78,7 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `ConversationPref` | erase | Per-conversation notification choices (muted posts and chats). |
 | `CustomFeed` | erase | Only feeds where isPublic is false and visibility is not PUBLIC (private and by-link): the member's tools, with members and subscribers going by the cascade. Public feeds (either flag) have subscribers and stay under the tombstone as published content. |
 | `CustomFeedSubscription` | erase | Subscriptions to things (a feed, a series, a community, build or market watch), not the social graph the `Follow` owner decision covers; `CustomFeed.subscriberCount` is decremented (floored) in the same transaction. |
+| `DailyPuzzleReport` | erase | A member's report that a daily puzzle is wrong, with an optional note: deleted with the account (the report is not shared with another member; moderators read only the counts and the notes of live reports). |
 | `DailyPuzzleScore` | erase | The daily leaderboard and results endpoints read at request time; the member's cached stats (`dailyStatsKey`) are dropped after the transaction. |
 | `DeckEditor` | erase | Who may edit a deck is the owner's choice, but a member's own membership of someone else's deck is their own record: erased, so a deleted member leaves every deck they edited. Rows on the member's own decks stay because the decks do (FlashcardDeck is the open public-decks decision); nobody can invite to such a deck any more. Scope: rows where the member is the editor or the invitee (userId); rows on decks the member owns stay with those decks (invitedById points at the anonymised member). |
 | `DeckFolder` | erase | Private deck folders (sprint 07 deck-folders); decks stay, folderless. |
@@ -464,3 +465,53 @@ Not handled yet, each with the reason it was deferred. Each is a later, reviewab
 | `Streak` | todo | Rule 1: the member's own progress and owned items (inventory may hold coin purchases); erase candidate after a product call on purchased cosmetics. |
 | `UserInventory` | todo | Rule 1: the member's own progress and owned items (inventory may hold coin purchases); erase candidate after a product call on purchased cosmetics. |
 | `UserSeasonProgress` | todo | Rule 1: the member's own progress and owned items (inventory may hold coin purchases); erase candidate after a product call on purchased cosmetics. |
+
+## Plain member columns
+
+A model with a column that holds a member's id and no relation to `User` is invisible to the registry above, and no foreign key cascades or nulls it. `PLAIN_MEMBER_COLUMNS` classifies each one with the same decisions plus `not-member` (the column holds something other than a site member's id, such as a Discord id or a worker id); `MEMBER_COLUMN_PATTERN` is the one list of column names that puts a model in this table. `lib/account/__tests__/erasure-plain-columns.test.ts` fails for a model with such a column that is not listed, for an `erase` or `deidentify` entry that `anonymizeAccount` does not carry out, and for a column the entry names that the model does not have. There is no `todo` here. 43 models.
+
+| Model | Columns | Decision | Reason |
+| --- | --- | --- | --- |
+| `AccountErasureAttempt` | `userId` | keep | The log of the erasure itself: the account id, trigger, start and finish times and the error class name, never a message. It is the proof that the erasure ran and `finalizeDueDeletions` deletes it after 90 days. |
+| `BlogPost` | `updatedById` | deidentify | The Log stays (it is the site's); the editor who last saved it is nulled (`updatedById` is optional), in the same step as `BlogPostRevision`. |
+| `BlogPostRevision` | `authorId` | deidentify | Log history stays; the editor reference is nulled (`authorId` is optional). |
+| `BotWorkerSettings` | `updatedById` | deidentify | The single settings row of the bot worker stays; the admin who last saved it is nulled (`updatedById` is optional; nothing reads it). |
+| `CanvasEvent` | `createdById` | deidentify | Content made by a moderator or staff member that keeps serving its community or the site: the id is replaced by the shared deleted-user id (`DELETED_USER_ID`); nothing reads the column to show a person. |
+| `ChatRemoval` | `userId` | erase | The member's own "removed from this chat" marks. They exist only to stop an invite link bringing the member back; an erased account cannot be brought back. |
+| `CommunityCensus` | `createdById` | deidentify | Content made by a moderator or staff member that keeps serving its community or the site: the id is replaced by the shared deleted-user id (`DELETED_USER_ID`); nothing reads the column to show a person. |
+| `CommunityChallenge` | `createdById` | deidentify | Content made by a moderator or staff member that keeps serving its community or the site: the id is replaced by the shared deleted-user id (`DELETED_USER_ID`); nothing reads the column to show a person. |
+| `CommunityGoal` | `createdById` | deidentify | Content made by a moderator or staff member that keeps serving its community or the site: the id is replaced by the shared deleted-user id (`DELETED_USER_ID`); nothing reads the column to show a person. |
+| `CommunityMemberEvent` | `userId` | deidentify | The membership history keeps its counts and loses the person: `userId` is optional and is nulled (sprint 03 15). |
+| `CommunityMemberNote` | `subjectId`, `authorId`, `deletedById` | erase and deidentify | A moderator's note about a member is the moderators' record, so a note the erased member wrote stays without its author; a note about the erased member is theirs to have gone (sprint 06 02). This changes the default of `keep`: the code already did both. The open owner decision about moderator notes in the export is not touched. Scope: notes about the member (`subjectId`); where the member wrote or deleted a note about someone else, the reference is nulled and the note stays. |
+| `CommunityModAction` | `actorId`, `targetUserId` | deidentify | The mod log keeps the action as "a deleted member" with the moderator's own reason text: both columns are optional and are nulled (sprint 03 14). |
+| `DiscordAlexCaretaker` | `userId` | not-member | A Discord user id (the caretaking tally of the Discord bot), not a site account; the Discord bot's own data policy covers it. |
+| `DiscordChatSession` | `discordUserId` | not-member | A Discord user id (the bot's chat session), not a site account; the Discord bot's own data policy covers it. |
+| `DoctrineIncident` | `firstReporterId` | deidentify | The incident stays as the game's record; who reported it first is nulled (`firstReporterId` is optional and no reader shows it). |
+| `DoctrineSafehouseContent` | `authorId` | keep | Rules 2 and 3: published content stays under "Deleted user" (as posts do); the column points at the anonymised account, which names nobody. |
+| `EventOccurrenceOverride` | `createdById` | deidentify | The override is event data and stays; the member who made it is nulled (`createdById` is optional). The events of a deleted host are handled as they are. |
+| `EventUpdate` | `authorId` | deidentify | An event update is event content and stays; where the erased member wrote it the author is nulled (`authorId` is optional). This changes the default of `keep`: the code already nulled it. |
+| `FollowEvent` | `followerId`, `followingId` | erase and deidentify | The audience log: the member's own audience history goes, and a gain or loss another member caused loses the person who caused it (`deleteFollowEventsFor`, `lib/social/follow-events.server.ts`). Scope: events where the member was followed (`followingId`); events where they were the follower keep their count and take the deleted-user id. |
+| `LadderReviewTask` | `resolvedById` | deidentify | The review task is the ladder pipeline's record; the admin who resolved it is nulled (`resolvedById` is optional). |
+| `LadderWorkerLease` | `ownerId` | not-member | A worker process id (the lease holder), not a site account. |
+| `LinkDomainRule` | `addedById` | deidentify | Content made by a moderator or staff member that keeps serving its community or the site: the id is replaced by the shared deleted-user id (`DELETED_USER_ID`); nothing reads the column to show a person. |
+| `ModMacro` | `createdById` | deidentify | Content made by a moderator or staff member that keeps serving its community or the site: the id is replaced by the shared deleted-user id (`DELETED_USER_ID`); nothing reads the column to show a person. |
+| `PostLifecycle` | `userId` | keep | The row stays with its post, which stays under "Deleted user" (`RMHark`: deidentify); its expiry still applies to the post. |
+| `ReadingHighlightPassage` | `userId` | cascade | Goes with a private highlight when `ReadingHighlight` is erased (`onDelete: Cascade`); the rows of a public highlight stay with it, as published content. Parent: `ReadingHighlight`. |
+| `ReleaseNote` | `authorId` | keep | Rules 2 and 3: published content stays under "Deleted user" (as posts do); the column points at the anonymised account, which names nobody. |
+| `RMHboxMatch` | `winnerUserId` | deidentify | The match stays for its other players; the winner id is nulled (`winnerUserId` is optional; the player rows already say "Deleted user" and the snapshots are renamed by `scrubMatchSnapshots`). |
+| `RMHboxMatchPlayer` | `userId` | deidentify | A row in a shared match: the copied name becomes "Deleted user" and the row stays (`userId` is required and part of a unique key with the match). |
+| `RmhStudySession` | `userId` | cascade | Goes with the profile (`onDelete: Cascade`); the RMHStudy boards read the profile, so the member leaves them. Parent: `RmhStudyProfile`. |
+| `RmhTubeChatMessage` | `userId` | deidentify | Messages in every room lose their name (the text stays as the room's history) (sprint 13 06). |
+| `RmhTypeMatch` | `winnerUserId` | deidentify | The match stays for its other players; the winner id is nulled (`winnerUserId` is optional; the player rows already say "Deleted user"). |
+| `RmhTypeMatchPlayer` | `userId` | deidentify | A row in a shared match: the copied name becomes "Deleted user" and the row stays (`userId` is required and part of a unique key with the match). |
+| `SecurityReport` | `userId` | deidentify | The report stays for the security record with its text and status; the member's id, the name and e-mail they gave and the address hash are nulled (all four are optional). |
+| `SSLobby` | `hostUserId` | deidentify | The lobby keeps its numbers; the host id becomes `deleted:<row id>` (a tombstone that cannot collide; sprint 14 03; raw SQL, so the row id can be part of the value). |
+| `SSLobbyMember` | `userId` | deidentify | The seat keeps its numbers; the id becomes `deleted:<row id>` (unique with the lobby, so the tombstone carries the row id) and the name "Deleted user" (sprint 14 03). |
+| `SSPlayerMatch` | `userId` | deidentify | The match keeps its numbers; the id becomes `deleted:<row id>` (unique with the match, so the tombstone carries the row id) and the name "Deleted user" (sprint 14 03). |
+| `StudioChallenge` | `createdById` | deidentify | Content made by a moderator or staff member that keeps serving its community or the site: the id is replaced by the shared deleted-user id (`DELETED_USER_ID`); nothing reads the column to show a person. |
+| `StudioProjectRevision` | `userId` | erase | Every earlier version of the member's Studio projects, deleted by `studioHistoryErasureOps` (sprint 07 14) without waiting for the project's cascade, which never fires. This changes the default of `cascade`: the code already erased it directly. |
+| `StudioProjectShareOpen` | `userId` | erase | The opened marks the member left on other members' shares (sprint 11 07); the member's own shares go too. |
+| `Subscription` | `referenceId` | keep | Rule 4: the Stripe plugin's billing record (plan, status, period, Stripe ids), kept for accounting like the coin ledger. `cancelRemainingBilling` reads it to stop billing before the transaction; `referenceId` points at the anonymised account, which names nobody. |
+| `TargetedNotice` | `createdById` | deidentify | Content made by a moderator or staff member that keeps serving its community or the site: the column is optional and is set to null. |
+| `TournamentMatch` | `proposedById`, `claimedById`, `disputedById` | deidentify | The match stays for the bracket; the member as proposer, claimant or disputer is nulled with the proposal and the dispute note (sprint 06 `matchScheduleErasureOps`, sprint 08 `matchResultErasureOps`). |
+| `TournamentPayout` | `userId` | keep | Rule 4: a ledger row of coins paid for a placement; the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. (`userId` is a plain historical reference, unique with the tournament.) |

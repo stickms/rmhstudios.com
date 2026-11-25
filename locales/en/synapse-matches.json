@@ -1,0 +1,20 @@
+{
+  "a-player": "A player",
+  "against": "Against",
+  "back": "Back",
+  "combo": "Best combo {{combo}}",
+  "deleted-user": "Deleted user",
+  "empty": "No finished matches yet",
+  "honesty": "Scores in versus matches are reported by each player's game",
+  "left-early": "Left early",
+  "load-more": "Show more",
+  "loading": "Loading your matches",
+  "missed": "Missed {{missed}}",
+  "open": "YOUR MATCHES",
+  "place-of": "Place {{place}} of {{players}}",
+  "retry": "Try again",
+  "score": "Score {{score}}",
+  "signed-out": "Sign in to see your matches",
+  "solved": "Solved {{solved}}",
+  "title": "Your matches"
+}

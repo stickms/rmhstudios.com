@@ -23,7 +23,7 @@ export function isRestrictableFeature(v: string): v is RestrictableFeature {
 export const FEATURE_LABELS: Record<RestrictableFeature, string> = {
   post: 'Posting',
   comment: 'Replying',
-  message: 'Direct messages',
+  message: 'Messages and chats',
   community: 'Creating communities',
   space: 'Hosting spaces',
   vibe: 'Building vibes',

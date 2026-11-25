@@ -7,6 +7,14 @@
 import { noticeFallbackText } from '@/lib/notifications/notice-keys';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// s14-17: publishing asks the author's `post` timeout; these tests are not about it (restriction-paths and
+// scheduled-restricted.test.ts are), so nobody is timed out here.
+vi.mock('@/lib/moderation/restrictions.server', () => ({
+  isRestricted: async () => false,
+  restrictionMessage: async () => null,
+  restrictionResponse: async () => null,
+}));
+
 type GateOutcome =
   | { kind: 'allow'; flagRule: string | null }
   | { kind: 'hold'; holdRule: string }

@@ -1317,3 +1317,64 @@
         transition-duration: 0.01s;
     }
 }
+
+/* ---------------------------------------------------------------------------
+   Your matches (s14-03)
+   ------------------------------------------------------------------------- */
+.ssm-matches {
+    text-align: left;
+}
+
+.ssm-matches__note {
+    margin: 0;
+    padding: 1.25rem 0;
+    color: var(--ssm-ink-muted);
+    text-align: center;
+}
+
+.ssm-matches__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ssm-matches__row {
+    padding: 0.8rem 0;
+    border-bottom: 1px solid var(--ssm-border);
+}
+
+.ssm-matches__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.ssm-matches__place {
+    color: var(--ssm-ink);
+    font-weight: 700;
+}
+
+.ssm-matches__when {
+    color: var(--ssm-ink-muted);
+    font-size: 0.85rem;
+}
+
+.ssm-matches__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.9rem;
+    margin: 0.35rem 0 0;
+    color: var(--ssm-ink);
+    font-variant-numeric: tabular-nums;
+}
+
+.ssm-matches__others {
+    margin: 0.35rem 0 0;
+    color: var(--ssm-ink-muted);
+    font-size: 0.9rem;
+}
+
+.ssm-matches__more {
+    margin-top: 0.9rem;
+}

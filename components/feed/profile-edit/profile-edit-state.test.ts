@@ -63,6 +63,7 @@ const draft = (over: Partial<ProfileDraft> = {}): ProfileDraft => ({
     },
   ],
   showLikes: true,
+  showSupporterMarks: true,
   dmPrivacy: 'EVERYONE',
   followListVisibility: 'everyone',
   dmRequests: false,

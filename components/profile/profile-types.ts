@@ -3,6 +3,12 @@ import type { AchievementStripData } from '@/lib/achievements/strip';
 import type { ProfileModule } from '@/lib/profile/modules';
 import type { UserStatus } from '@/lib/profile/status';
 
+/** What the profile menu changed about the viewer's relation to the account (mute and block). */
+export interface ProfileViewerPatch {
+  viewerHasMuted?: boolean;
+  viewerHasBlocked?: boolean;
+}
+
 export interface ProfileData {
   id: string;
   /**
@@ -29,6 +35,8 @@ export interface ProfileData {
   }[];
   bannerUrl?: string | null;
   showLikes: boolean;
+  /** Owner only: show supporter marks on replies under own posts (older payloads omit it; default on). */
+  showSupporterMarks?: boolean;
   /** Plan U15 — 'off' | 'following' | 'everyone'. Older payloads omit it. */
   guestbookMode?: string;
   /** G1 — true only on the owner's opted-in birthday. */
@@ -55,6 +63,10 @@ export interface ProfileData {
   followingCount: number;
   rmharkCount: number;
   isFollowing: boolean;
+  /** The viewer has an active mute on this account (the profile menu reads "Unmute"). Older payloads omit it. */
+  viewerHasMuted?: boolean;
+  /** The viewer has blocked this account (the profile menu reads "Unblock"). Older payloads omit it. */
+  viewerHasBlocked?: boolean;
   isOwnProfile: boolean;
   handleCooldownMs?: number;
   hasCustomAvatar?: boolean;
