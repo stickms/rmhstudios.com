@@ -51,6 +51,20 @@ describe('guardVerdict', () => {
     expect(v.rollback).toBe(false);
   });
 
+  it('ignores a cold-start spike in the warm-up minutes of an otherwise healthy release', () => {
+    const since = NOW - 10 * MIN;
+    const cold = rows(since, 3, 9000);
+    const warm = rows(since + 3 * MIN, 7, 300);
+    expect(guardVerdict([], [...cold, ...warm], since, NOW).rollback).toBe(false);
+  });
+
+  it('does not judge a sustained rule on less than five post-warm-up minutes', () => {
+    const since = NOW - 7 * MIN; // 4 minutes past warm-up
+    expect(guardVerdict([], rows(since, 7, 9000), since, NOW).rollback).toBe(false);
+    const later = NOW - 8 * MIN; // 5 minutes past warm-up
+    expect(guardVerdict([], rows(later, 8, 9000), later, NOW).rollback).toBe(true);
+  });
+
   it('respects a mute from /admin/alarms', () => {
     const since = NOW - 10 * MIN;
     const muted = [

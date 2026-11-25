@@ -388,9 +388,15 @@ rollback() {
 
 progress_stage bake
 progress_note "smoke gate"
-# One-shot gate. A few retries absorb cold caches on the first requests.
+# One-shot gate. Retries absorb cold caches and a loaded host on the first
+# requests (the non-web health wave and the old container's drain run at the same
+# time). Unlike the bake, which needs BAKE_FAIL_THRESHOLD failures in a row, one
+# bad gate used to be final after ~15s; GATE_TRIES x (5s + probe time) is now a
+# budget a slow-but-healthy release fits in. A release that is actually broken
+# fails every try and still rolls back, a minute or so later.
+GATE_TRIES="${GATE_TRIES:-6}"
 gate_ok=false
-for _ in 1 2 3; do
+for _ in $(seq 1 "$GATE_TRIES"); do
     if smoke; then gate_ok=true; break; fi
     sleep 5
 done
@@ -399,7 +405,10 @@ log "Smoke gate passed."
 
 if [ "$BAKE_SECONDS" -gt 0 ] && "$DOCKER_BIN" inspect "$old_container" >/dev/null 2>&1; then
     log "Baking ${target_color} for ${BAKE_SECONDS}s (probe every ${BAKE_INTERVAL}s, rollback after ${BAKE_FAIL_THRESHOLD} consecutive failures)..."
-    restarts0=$("$DOCKER_BIN" inspect -f '{{.RestartCount}}' "$new_container" 2>/dev/null || echo 0)
+    restarts0=$("$DOCKER_BIN" inspect -f '{{.RestartCount}}' "$new_container" 2>/dev/null) || restarts0=""
+    # A baseline we could not read is adopted from the first probe that can, so
+    # it can never fabricate a "restart".
+    [[ "$restarts0" =~ ^[0-9]+$ ]] || restarts0=""
     bake_end=$(( $(date +%s) + BAKE_SECONDS ))
     consecutive=0
     bake_start=$(date +%s)
@@ -407,18 +416,34 @@ if [ "$BAKE_SECONDS" -gt 0 ] && "$DOCKER_BIN" inspect "$old_container" >/dev/nul
     probes_ok=0
     while [ "$(date +%s)" -lt "$bake_end" ]; do
         sleep "$BAKE_INTERVAL"
-        running=$("$DOCKER_BIN" inspect -f '{{.State.Running}}' "$new_container" 2>/dev/null || echo false)
-        restarts=$("$DOCKER_BIN" inspect -f '{{.RestartCount}}' "$new_container" 2>/dev/null || echo 0)
-        if [ "$running" != "true" ] || [ "$restarts" != "$restarts0" ]; then
-            rollback "${new_container} died or restarted during the bake (running=${running}, restarts ${restarts0}→${restarts})"
+        # Only a CONFIRMED answer from the Docker daemon counts. A daemon that is
+        # slow or busy (lag) used to read as `running=false` / `restarts=0` and
+        # rolled back a healthy release on the spot. Now an unanswered inspect is
+        # "unknown": it is retried, and if it still fails it counts as one failed
+        # round toward BAKE_FAIL_THRESHOLD instead of an immediate rollback.
+        state=""
+        for _i in 1 2 3; do
+            state=$("$DOCKER_BIN" inspect -f '{{.State.Running}} {{.RestartCount}}' "$new_container" 2>/dev/null) && break
+            state=""
+            sleep 2
+        done
+        state_unknown=false
+        if [ -z "$state" ]; then
+            state_unknown=true
+        else
+            running="${state%% *}"; restarts="${state##* }"
+            [ -n "$restarts0" ] || restarts0="$restarts"
+            if [ "$running" != "true" ] || [ "$restarts" != "$restarts0" ]; then
+                rollback "${new_container} died or restarted during the bake (running=${running}, restarts ${restarts0}→${restarts})"
+            fi
         fi
         probes=$((probes + 1))
-        if QUIET=1 smoke; then
+        if [ "$state_unknown" = false ] && QUIET=1 smoke; then
             consecutive=0
             probes_ok=$((probes_ok + 1))
         else
             consecutive=$((consecutive + 1))
-            log "  bake probe failed (${consecutive}/${BAKE_FAIL_THRESHOLD})"
+            log "  bake probe failed (${consecutive}/${BAKE_FAIL_THRESHOLD})$([ "$state_unknown" = true ] && echo ' — docker inspect did not answer')"
             [ "$consecutive" -ge "$BAKE_FAIL_THRESHOLD" ] && rollback "${consecutive} consecutive smoke failures during the bake"
         fi
         progress_note "$(fmt_dur $(( $(date +%s) - bake_start )))/$(fmt_dur "$BAKE_SECONDS") · ${probes_ok}/${probes} probes ok"
