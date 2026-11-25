@@ -716,6 +716,54 @@ export const MEDSCHOOLS_INTERVIEW_FOLLOWUPS: PromptSpec = {
   forbid: ['As an AI', 'Here is'],
 };
 
+export const MEDSCHOOLS_LIST_ROUTE_ID = 'medschools-list-route';
+export const MEDSCHOOLS_LIST_ANSWER_ID = 'medschools-list-answer';
+
+/**
+ * RMH Med Schools list builder, call 1 (phase D): read a member's request for a school list into filters. The user turn
+ * is `{ request }` as data. `parseBuilderRoute` (`features/medschools/engine/builder/route.ts`) re-checks every field
+ * against fixed lists, so this wording is guidance. Metered under the `medschools-qa` task (the Q&A's share).
+ */
+export const MEDSCHOOLS_LIST_ROUTE: PromptSpec = {
+  id: MEDSCHOOLS_LIST_ROUTE_ID,
+  version: 1,
+  task: 'medschools-qa',
+  instructions: [
+    'The input is JSON: { "request": string }, a member asking for a list of US MD or DO medical schools to apply to.',
+    'Return ONLY a JSON object, no prose and no markdown:',
+    '{"intent":"list|other","states":["TX"],"regions":["northeast|midwest|south|west"],"degree":"MD|DO|null","mdphd":false,"size":"small|medium|large|null","missions":["research|primary-care|rural|underserved|urban|global-health|public-health|academic-medicine"],"count":15|null,"homeState":"TX"|null}',
+    '"states" are two-letter codes of states the request asks for schools in; "regions" are US census regions it names. "homeState" is the state the member says they live in or are a resident of, never a state they ask for schools in.',
+    '"mdphd" is true only if the request asks for MD-PhD, DO-PhD or MSTP programs. "count" is how many schools the request asks for, else null.',
+    'other: anything that is not a request for a list of medical schools.',
+  ].join('\n'),
+  maxChars: 1_000,
+};
+
+/**
+ * RMH Med Schools list builder, call 2: choose among candidate schools the server already selected and labelled, and
+ * write one short reason per school from the facts given. The user turn is
+ * `{ request, count, candidates: [{ id, name, state, label, facts: [{ ref, label, text }] }], member: [{ ref, label, text }] }`
+ * as data. Picks of an unknown id are dropped and each reason is checked by `features/medschools/engine/qa/ground.ts`
+ * (every number must be in a cited fact), so this wording is guidance and not the only guard.
+ */
+export const MEDSCHOOLS_LIST_ANSWER: PromptSpec = {
+  id: MEDSCHOOLS_LIST_ANSWER_ID,
+  version: 1,
+  task: 'medschools-qa',
+  instructions: [
+    'The input is JSON: { "request", "count", "candidates": [{ "id", "name", "state", "label", "facts": [{ "ref", "label", "text" }] }], "member": [{ "ref", "label", "text" }] }.',
+    'Return ONLY a JSON object, no prose and no markdown:',
+    '{"picks":[{"id":"c1","reason":{"text":"...","cites":["c1f1","m1"]}}]}',
+    'Choose at most "count" schools, only from "candidates", by "id", the ones that best fit the request. Never name a school that is not a candidate.',
+    'The "label" (reach, target, likely, not-enough-data, not-compared) was set by the server. Never change it, never assign one, and never state or imply a chance of admission or a percentage.',
+    'Each reason is one short sentence about that school, citing only that school\'s fact refs and the member\'s refs. "member" facts are the member\'s own figures: call them "your".',
+    'Copy numbers exactly as written in a cited fact. Do not calculate: never convert, round, sum, average, subtract or compare numbers by a difference.',
+    'Reply in the language of the request. No markdown, no links.',
+  ].join('\n'),
+  maxChars: 2_400,
+  forbid: ['As an AI', 'Here is'],
+};
+
 export const MEDSCHOOLS_IMPORT_ID = 'medschools-import';
 
 /**
@@ -818,5 +866,7 @@ export const ALL_PROMPTS: readonly PromptSpec[] = [
   MEDSCHOOLS_INTERVIEW_FOLLOWUPS,
   MEDSCHOOLS_IMPORT,
   MEDSCHOOLS_LIST_IMPORT,
+  MEDSCHOOLS_LIST_ROUTE,
+  MEDSCHOOLS_LIST_ANSWER,
   NEWS_SUMMARY,
 ] as const;

@@ -798,3 +798,83 @@ model MedSchoolFact {
   @@index([schoolId])
   @@map("med_school_fact")
 }
+
+/// A member's own applicant stats (phase D, owner 2026-11-24). Private: read only by the member's own `me/stats` and,
+/// when the member builds a list with "Use my stats" ticked, by the list builder, which sends the few figures it needs to
+/// the model for that one call. Never aggregated, never public, never cached. Erased with the account
+/// (`medschoolsErasureOps`); the children go by the database cascade. Home state is not here: it is
+/// `MedUserPrefs.homeState`. `onboardedAt` is set by "Skip for now" or the first save (no row: onboarding pending).
+model MedApplicantProfile {
+  userId        String    @id
+  gpaCumulative Float?
+  gpaScience    Float?
+  gpaPostbacc   Float?
+  /// FORMAL | INFORMAL (validated in `engine/applicant.ts`).
+  postbaccType  String?   @db.VarChar(16)
+  gpaGraduate   Float?
+  /// SMP | MASTERS | OTHER.
+  graduateType  String?   @db.VarChar(16)
+  missions      String[]  @default([])
+  publications  Int?
+  presentations Int?
+  onboardedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user       User                   @relation("UserMedApplicantProfile", fields: [userId], references: [id], onDelete: Cascade)
+  attempts   MedMcatAttempt[]
+  hours      MedApplicantHours[]
+  activities MedApplicantActivity[]
+
+  @@map("med_applicant_profile")
+}
+
+/// One MCAT attempt of a member's profile: a month (a day when known), the total and the four section scores.
+model MedMcatAttempt {
+  id        String @id @default(cuid())
+  profileId String
+  year      Int
+  month     Int
+  day       Int?
+  total     Int?
+  cpbs      Int?
+  cars      Int?
+  bbls      Int?
+  psbb      Int?
+  position  Int
+
+  profile MedApplicantProfile @relation(fields: [profileId], references: [userId], onDelete: Cascade)
+
+  @@index([profileId, position])
+  @@map("med_mcat_attempt")
+}
+
+/// The member's hours in one category (one row per category) and an optional short note.
+model MedApplicantHours {
+  id        String  @id @default(cuid())
+  profileId String
+  category  String  @db.VarChar(24)
+  hours     Int?
+  note      String? @db.VarChar(300)
+
+  profile MedApplicantProfile @relation(fields: [profileId], references: [userId], onDelete: Cascade)
+
+  @@unique([profileId, category])
+  @@map("med_applicant_hours")
+}
+
+/// An optional sub-entry under a category ("ER scribe"), with its own hours and note.
+model MedApplicantActivity {
+  id        String  @id @default(cuid())
+  profileId String
+  category  String  @db.VarChar(24)
+  title     String  @db.VarChar(80)
+  hours     Int?
+  note      String? @db.VarChar(300)
+  position  Int
+
+  profile MedApplicantProfile @relation(fields: [profileId], references: [userId], onDelete: Cascade)
+
+  @@index([profileId, position])
+  @@map("med_applicant_activity")
+}

@@ -12,7 +12,8 @@ export const ADD_TO_TRACKER_LIMIT = {
   scope: 'user',
 } as const;
 export const QA_LIMIT_WRITE_LIMIT = { policy: 'write', scope: 'user', prefix: 'mutation:medschools/qa-limit' } as const;
-export const SHARE_LIMIT = { limit: 10, windowMs: 60_000, prefix: 'medschools-share', scope: 'user' } as const;
+export const STATS_WRITE_LIMIT = { policy: 'write', scope: 'user', prefix: 'mutation:medschools/stats' } as const;
+export const SHARE_LIMIT ={ limit: 10, windowMs: 60_000, prefix: 'medschools-share', scope: 'user' } as const;
 
 export const badInput = (): Response => Response.json({ error: 'Invalid input' }, { status: 400 });
 

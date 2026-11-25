@@ -261,3 +261,8 @@ export function parseAskSearch(raw: Record<string, unknown>): { q?: string } {
   const q = clean.trim().slice(0, 400);
   return q ? { q } : {};
 }
+
+/** `/med/stats?welcome=1`: the onboarding (one section at a time, "Skip for now"). Anything else is the full form. */
+export function parseStatsSearch(raw: Record<string, unknown>): { welcome?: '1' } {
+  return raw.welcome === '1' || raw.welcome === 1 || raw.welcome === true ? { welcome: '1' } : {};
+}

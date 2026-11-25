@@ -11,6 +11,7 @@ import {
   getMedQaLimitRequestApi,
   getMedChancesApi,
   getMedPrefsApi,
+  getMedStatsApi,
   getMedSchoolActivityApi,
   getMedSchoolApi,
   getMedSchoolArrivalsApi,
@@ -175,6 +176,10 @@ export const ME_KEY = ['medschools', 'me'] as const;
 
 export const listsQuery = () =>
   contractQuery([...ME_KEY, 'lists'] as const, getMedListsApi, undefined, { staleTime: 30_000 });
+
+/** The member's own stats (phase D): private, under `ME_KEY`, never cached by the server. */
+export const statsQuery = () =>
+  contractQuery([...ME_KEY, 'stats'] as const, getMedStatsApi, undefined, { staleTime: 60_000 });
 
 export const prefsQuery = () =>
   contractQuery([...ME_KEY, 'prefs'] as const, getMedPrefsApi, undefined, { staleTime: 5 * 60_000 });

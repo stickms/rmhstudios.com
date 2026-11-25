@@ -1,9 +1,11 @@
 /**
  * The member's own med schools data for the account export (`GET /api/account/export`): the private tracker, the
- * saved lists and the preferences, with schools named by slug. No row id, no user id, and nothing that identifies a
+ * saved lists, the preferences and (phase D) the applicant stats, with schools named by slug. No row id, no user id, and nothing that identifies a
  * shared anonymous event (the event hash is never stored anywhere a member's row could reach, and is not exported).
  */
 import { prisma } from '@/lib/prisma.server';
+import type { ApplicantStats } from '../engine/applicant';
+import { getStats } from './stats.server';
 
 const day = (d: Date): string => d.toISOString().slice(0, 10);
 
@@ -27,6 +29,8 @@ export interface MedschoolsExport {
     homeState: string | null;
     chartCategories: string[];
   };
+  /** The member's own applicant stats, notes included (it is their export); null when none was entered. */
+  stats: ApplicantStats | null;
 }
 
 export async function exportMedschools(userId: string): Promise<MedschoolsExport> {
@@ -65,6 +69,7 @@ export async function exportMedschools(userId: string): Promise<MedschoolsExport
     where: { userId },
     select: { programFilter: true, degree: true, homeState: true, chartCategories: true, programs: true },
   });
+  const { stats } = await getStats(userId);
 
   return {
     tracker: [...cycles]
@@ -103,5 +108,6 @@ export async function exportMedschools(userId: string): Promise<MedschoolsExport
           chartCategories: [...prefs.chartCategories],
         }
       : { programs: [], programFilter: 'ALL', degree: null, homeState: null, chartCategories: [] },
+    stats,
   };
 }

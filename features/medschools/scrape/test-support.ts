@@ -23,6 +23,8 @@ const UNIQUE_KEYS: Record<string, string[]> = {
   medTrackerMilestone: ['applicationId', 'type'],
   medSchoolListItem: ['listId', 'schoolId', 'program'],
   medUserPrefs: ['userId'],
+  medApplicantProfile: ['userId'],
+  medApplicantHours: ['profileId', 'category'],
   medForecast: ['schoolId', 'program', 'cycleYear', 'eventType'],
   medWaitCurve: ['schoolId', 'program'],
   medSecondaryPrompt: ['schoolId', 'program', 'key'],
@@ -34,12 +36,13 @@ const UNIQUE_KEYS: Record<string, string[]> = {
 };
 
 /** `onDelete: Cascade` edges: deleting a row of the key removes the child rows whose `fk` equals its id. */
-const CASCADES: Record<string, { child: string; fk: string }[]> = {
+const CASCADES: Record<string, { child: string; fk: string; pk?: string }[]> = {
   user: [
     { child: 'medTrackerCycle', fk: 'userId' },
     { child: 'medSchoolList', fk: 'userId' },
     { child: 'medUserPrefs', fk: 'userId' },
     { child: 'medQaLimitRequest', fk: 'userId' },
+    { child: 'medApplicantProfile', fk: 'userId' },
   ],
   medSchool: [
     { child: 'medSchoolAlias', fk: 'schoolId' },
@@ -64,6 +67,12 @@ const CASCADES: Record<string, { child: string; fk: string }[]> = {
   medTrackerCycle: [{ child: 'medTrackerApplication', fk: 'cycleId' }],
   medTrackerApplication: [{ child: 'medTrackerMilestone', fk: 'applicationId' }],
   medSchoolList: [{ child: 'medSchoolListItem', fk: 'listId' }],
+  medApplicantProfile: [
+    // The profile's key is `userId`, not `id`.
+    { child: 'medMcatAttempt', fk: 'profileId', pk: 'userId' },
+    { child: 'medApplicantHours', fk: 'profileId', pk: 'userId' },
+    { child: 'medApplicantActivity', fk: 'profileId', pk: 'userId' },
+  ],
 };
 
 const eq = (a: unknown, b: unknown): boolean =>
@@ -178,8 +187,8 @@ export function createFakePrisma(options: FakePrismaOptions = {}): {
   function removeWhere(name: string, pred: (r: Row) => boolean): Row[] {
     const gone = table(name).filter(pred);
     tables[name] = table(name).filter((r) => !pred(r));
-    for (const { child, fk } of CASCADES[name] ?? []) {
-      const ids = new Set(gone.map((r) => r.id));
+    for (const { child, fk, pk } of CASCADES[name] ?? []) {
+      const ids = new Set(gone.map((r) => r[pk ?? 'id']));
       removeWhere(child, (r) => ids.has(r[fk]));
     }
     return gone;
@@ -349,6 +358,10 @@ export function createFakePrisma(options: FakePrismaOptions = {}): {
     'medSchoolListItem',
     'medUserPrefs',
     'medQaLimitRequest',
+    'medApplicantProfile',
+    'medMcatAttempt',
+    'medApplicantHours',
+    'medApplicantActivity',
     'medSecondaryPrompt',
     'medSecondaryObservation',
     'medSecondaryCheck',

@@ -38,6 +38,7 @@ const USER_OWNED = new Set([
   'MedUserPrefs',
   'MedSchoolFollow',
   'MedQaLimitRequest',
+  'MedApplicantProfile',
 ]);
 
 /** `Model.field` for every column that could hold a person identifier. */
@@ -266,7 +267,7 @@ model MedTrackerApplication {
               .map((x) => x.trim()) ?? [],
         );
 
-    it('only the three owner models (and the phase 7 follow and the phase 6 limit request) carry userId', () => {
+    it('only the three owner models (and the phase 7 follow, the phase 6 limit request and the phase D stats) carry userId', () => {
       for (const m of parseModels(schema())) {
         const has = m.fields.includes('userId');
         expect(has, m.model).toBe(USER_OWNED.has(m.model) && m.model !== 'MedSchoolFollow');
@@ -575,7 +576,8 @@ model MedTrackerApplication {
           !d.endsWith('_medschools_matriculated') &&
           !d.endsWith('_medschools_school_facts') &&
           !d.endsWith('_medschools_admit_curriculum') &&
-          !d.endsWith('_medschools_mdphd_sources'),
+          !d.endsWith('_medschools_mdphd_sources') &&
+          !d.endsWith('_medschools_applicant_stats'),
       );
       for (const o of others) expect(mine > o, o).toBe(true);
     });
@@ -661,6 +663,74 @@ model MedTrackerApplication {
       ]);
       for (const k of CURRICULUM_KIND_IDS) expect(FACT_KIND_IDS as string[]).not.toContain(k);
       expect(CURRICULUM_KIND_IDS.join(' ')).not.toMatch(/RANK/);
+    });
+  });
+  describe('phase D: private applicant stats', () => {
+    const model = (name: string) => parseModels(schema()).find((x) => x.model === name);
+
+    it('pins every column of the four stats models (nothing can be added silently)', () => {
+      expect(model('MedApplicantProfile')?.fields).toEqual([
+        'userId',
+        'gpaCumulative',
+        'gpaScience',
+        'gpaPostbacc',
+        'postbaccType',
+        'gpaGraduate',
+        'graduateType',
+        // (`missions String[]` is skipped by `parseModels`, which treats every `[]` line as a relation.)
+        'publications',
+        'presentations',
+        'onboardedAt',
+        'createdAt',
+        'updatedAt',
+      ]);
+      expect(model('MedApplicantProfile')?.body).toMatch(/missions\s+String\[\]\s+@default\(\[\]\)/);
+      expect(model('MedMcatAttempt')?.fields).toEqual([
+        'id',
+        'profileId',
+        'year',
+        'month',
+        'day',
+        'total',
+        'cpbs',
+        'cars',
+        'bbls',
+        'psbb',
+        'position',
+      ]);
+      expect(model('MedApplicantHours')?.fields).toEqual(['id', 'profileId', 'category', 'hours', 'note']);
+      expect(model('MedApplicantActivity')?.fields).toEqual([
+        'id',
+        'profileId',
+        'category',
+        'title',
+        'hours',
+        'note',
+        'position',
+      ]);
+    });
+
+    it('only the profile carries userId; the children reach it through the profile and cascade', () => {
+      for (const name of ['MedMcatAttempt', 'MedApplicantHours', 'MedApplicantActivity']) {
+        expect(model(name)?.fields, name).not.toContain('userId');
+        expect(USER_OWNED.has(name)).toBe(false);
+        expect(model(name)?.body, name).toMatch(/references: \[userId\], onDelete: Cascade/);
+      }
+      expect(model('MedApplicantProfile')?.body).toMatch(/onDelete: Cascade/);
+    });
+
+    it('home state stays on the preferences, not on the stats', () => {
+      expect(model('MedApplicantProfile')?.fields.some((f) => /state|residen/i.test(f))).toBe(false);
+    });
+
+    it('the migration creates the four tables and drops nothing', () => {
+      const dir = readdirSync('prisma/migrations').find((d) => d.endsWith('_medschools_applicant_stats'));
+      expect(dir).toBeDefined();
+      const sql = readFileSync(`prisma/migrations/${dir}/migration.sql`, 'utf8');
+      for (const t of ['med_applicant_profile', 'med_mcat_attempt', 'med_applicant_hours', 'med_applicant_activity']) {
+        expect(sql).toContain(`CREATE TABLE "${t}"`);
+      }
+      expect(sql).not.toMatch(/\bDROP\b|\bALTER TABLE "med_(?!applicant|mcat)/i);
     });
   });
 });
