@@ -91,10 +91,11 @@ export function GroupCallButton({
       <Button
         type="button"
         variant={variant === 'icon' ? 'ghost' : 'default'}
+        size={variant === 'icon' ? 'icon' : 'default'}
         disabled={busy}
         onClick={() => setOpen(true)}
         aria-label={variant === 'icon' ? label : undefined}
-        className={cn(variant === 'icon' && 'h-9 w-9 rounded-full p-0', className)}
+        className={cn(variant === 'icon' && 'rounded-full', className)}
       >
         <UsersRound className="h-4 w-4" aria-hidden />
         {variant === 'full' && <span>{label}</span>}

@@ -3,6 +3,7 @@ import { Save, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -145,17 +146,14 @@ export function MacroField({
           ))}
         </Select>
         {picked && (
-          <Button
+          <IconButton
             type="button"
-            size="sm"
-            variant="ghost"
+            icon={Trash2}
             onClick={remove}
-            aria-label={t('macro-delete', {
+            label={t('macro-delete', {
               defaultValue: 'Delete this saved response',
             })}
-          >
-            <Trash2 className="h-4 w-4" aria-hidden />
-          </Button>
+          />
         )}
       </div>
       <Textarea

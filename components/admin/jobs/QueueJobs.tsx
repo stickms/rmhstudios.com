@@ -3,6 +3,7 @@ import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { Tabs } from '@/components/ui/tabs';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -236,12 +237,15 @@ export function QueueJobs({ queue }: { queue: string }) {
             })}
           </span>
         ) : null}
-        <Button variant="ghost" className="ml-auto" onClick={() => void list.refetch()} disabled={list.isFetching}>
-          <RefreshCw aria-hidden />
-          {t('refresh', {
+        <IconButton
+          icon={RefreshCw}
+          className="ms-auto"
+          label={t('refresh', {
             defaultValue: 'Refresh',
           })}
-        </Button>
+          onClick={() => void list.refetch()}
+          disabled={list.isFetching}
+        />
       </div>
 
       {list.isPending ? (

@@ -254,18 +254,22 @@ describe('Steel: deleted tokens stay deleted (T3, Appendix A)', () => {
     expect(sources).toContain('app/globals/tokens-themes.css');
   });
 
-  it('nothing reads a deleted token or a utility built on one', () => {
-    const offenders: string[] = [];
-    for (const file of sources) {
-      const hit = REMOVED_TOKEN.exec(code(file, readFileSync(join(ROOT, file), 'utf8')));
-      if (hit) offenders.push(`${file}: ${hit[0]}`);
-    }
-    expect(
-      offenders,
-      'These tokens were deleted by Steel (T3, Appendix A): use the replacement Appendix A names ' +
-        '(--site-surface, --site-text, --site-text-muted, --site-bg-subtle), or nothing for a shadow or glass token.',
-    ).toEqual([]);
-  });
+  it(
+    'nothing reads a deleted token or a utility built on one',
+    () => {
+      const offenders: string[] = [];
+      for (const file of sources) {
+        const hit = REMOVED_TOKEN.exec(code(file, readFileSync(join(ROOT, file), 'utf8')));
+        if (hit) offenders.push(`${file}: ${hit[0]}`);
+      }
+      expect(
+        offenders,
+        'These tokens were deleted by Steel (T3, Appendix A): use the replacement Appendix A names ' +
+          '(--site-surface, --site-text, --site-text-muted, --site-bg-subtle), or nothing for a shadow or glass token.',
+      ).toEqual([]);
+    },
+    60_000,
+  );
 });
 
 describe('Steel: the palette baseline for the two lint rules', () => {

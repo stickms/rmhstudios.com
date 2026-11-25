@@ -98,7 +98,8 @@ export function RsvpButton({
         {full || waitlisted ? (
           <Button
             size="sm"
-            variant={waitlisted ? 'default' : 'ghost'}
+            variant="default"
+            className={waitlisted ? 'border-site-text font-semibold' : 'text-site-text-muted'}
             aria-pressed={waitlisted}
             onClick={() => submit('waitlist')}
             disabled={disabled || busy}
@@ -111,7 +112,8 @@ export function RsvpButton({
         ) : (
           <Button
             size="sm"
-            variant={status === 'going' ? 'default' : 'ghost'}
+            variant="default"
+            className={status === 'going' ? 'border-site-text font-semibold' : 'text-site-text-muted'}
             aria-pressed={status === 'going'}
             onClick={() => submit('going')}
             disabled={disabled || busy}
@@ -122,7 +124,8 @@ export function RsvpButton({
         )}
         <Button
           size="sm"
-          variant={status === 'maybe' ? 'default' : 'ghost'}
+          variant="default"
+          className={status === 'maybe' ? 'border-site-text font-semibold' : 'text-site-text-muted'}
           aria-pressed={status === 'maybe'}
           onClick={() => submit('maybe')}
           disabled={disabled || busy}

@@ -196,7 +196,6 @@ export function TodayWidget({ onSettled }: { onSettled?: () => void } = {}) {
             size="xs"
             onClick={buyFreeze}
             disabled={buying || data.streak.freezeTokens >= 3}
-            className="-ml-3.5"
           >
             {data.streak.freezeTokens >= 3
               ? t('freeze-max', { defaultValue: 'Max' })

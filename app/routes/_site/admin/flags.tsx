@@ -12,6 +12,7 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { FlagTargeting } from '@/components/admin/FlagTargeting';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
@@ -241,15 +242,12 @@ function FlagRow({
         onCheckedChange={(enabled) => onChange({ ...flag, enabled })}
         aria-label={t('flags-enabled', { defaultValue: 'Enabled' })}
       />
-      <Button
-        variant="ghost"
-        size="sm"
+      <IconButton
+        icon={Trash2}
         onClick={onDelete}
         disabled={busy}
-        aria-label={t('flags-delete', { defaultValue: 'Delete' })}
-      >
-        <Trash2 className="h-4 w-4" aria-hidden />
-      </Button>
+        label={t('flags-delete', { defaultValue: 'Delete' })}
+      />
       <FlagTargeting flagKey={flag.key} />
     </li>
   );

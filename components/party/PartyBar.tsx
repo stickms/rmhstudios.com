@@ -15,6 +15,7 @@ import { useSession } from '@/components/Providers';
 import { VoiceRoomBanner } from '@/components/groupcall/VoiceRoomBanner';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { MenuItem } from '@/components/ui/menu';
 import { useParty } from '@/hooks/useParty';
 import type { PartyMemberView } from '@/lib/party/types';
@@ -357,25 +358,13 @@ export function PartyBar({
           </AnchoredMenu>
         </div>
 
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={
-            leave
-          }
-          aria-label={t(
-            'party-leave',
-            {
-              defaultValue:
-                'Leave party',
-            },
-          )}
-        >
-          <LogOut
-            className="h-4 w-4"
-            aria-hidden
-          />
-        </Button>
+        <IconButton
+          icon={LogOut}
+          onClick={leave}
+          label={t('party-leave', {
+            defaultValue: 'Leave party',
+          })}
+        />
       </>
     );
 

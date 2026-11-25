@@ -161,7 +161,12 @@ function SheetHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
 }
 
 function SheetFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('flex flex-col-reverse gap-2 pt-3 sm:flex-row sm:justify-end', className)} {...props} />;
+  return (
+    <div
+      className={cn('flex flex-col-reverse gap-3 pt-3 sm:flex-row sm:items-center sm:justify-end sm:gap-4', className)}
+      {...props}
+    />
+  );
 }
 
 const SheetTitle = ({

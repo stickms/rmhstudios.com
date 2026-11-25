@@ -47,11 +47,11 @@ export function ModelToggle({
             role="radio"
             aria-checked={active}
             size="sm"
-            variant={active ? 'default' : 'ghost'}
+            variant="default"
             disabled={disabled}
             title={meta.hint}
             onClick={() => onChange(model)}
-            className="font-semibold"
+            className={active ? 'border-site-text font-semibold' : 'text-site-text-muted'}
           >
             <Icon size={14} aria-hidden="true" />
             <span>

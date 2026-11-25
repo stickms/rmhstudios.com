@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Mic, Square, Trash2, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { PRONUNCIATION_MAX_MS } from '@/lib/profile/plus';
 import type { RecordedClip, VoiceRecorder } from '@/lib/voice/recorder';
 
@@ -190,18 +191,21 @@ export function PronunciationRecorder({
       )}
       {url && !recording ? (
         <>
-          <Button variant="ghost" size="sm" onClick={play}>
-            <Volume2 aria-hidden />
-            {t('pron-play', {
+          <IconButton
+            icon={Volume2}
+            label={t('pron-play', {
               defaultValue: 'Play',
             })}
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => void remove()} disabled={busy}>
-            <Trash2 aria-hidden />
-            {t('pron-remove', {
+            onClick={play}
+          />
+          <IconButton
+            icon={Trash2}
+            label={t('pron-remove', {
               defaultValue: 'Remove',
             })}
-          </Button>
+            onClick={() => void remove()}
+            disabled={busy}
+          />
         </>
       ) : null}
     </div>

@@ -3,8 +3,9 @@ import { useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from '@tanstack/react-router';
-import { ArrowLeft, ImagePlus, Upload } from 'lucide-react';
+import { ArrowLeft, ImagePlus, RefreshCw, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -685,11 +686,14 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: Initi
                   defaultValue: 'Live Preview',
                 })}
               </h2>
-              <Button type="button" variant="ghost" size="sm" onClick={generatePreview}>
-                {t('refresh', {
+              <IconButton
+                type="button"
+                icon={RefreshCw}
+                label={t('refresh', {
                   defaultValue: 'Refresh',
                 })}
-              </Button>
+                onClick={generatePreview}
+              />
             </div>
 
             <div className="mx-auto max-w-3xl p-4 lg:p-6">

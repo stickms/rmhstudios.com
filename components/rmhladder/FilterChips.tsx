@@ -201,19 +201,22 @@ export function FilterChips({ search, onUpdate, showPersonalPresets = false }: F
           })}
         </p>
         <div className="flex flex-wrap gap-2">
-          {PROGRAM_TYPES.map(({ value, label }) => (
-            <Button
-              key={value}
-              type="button"
-              size="xs"
-              variant={(search.programTypes ?? []).includes(value) ? 'default' : 'ghost'}
-              className="min-h-11"
-              aria-pressed={(search.programTypes ?? []).includes(value)}
-              onClick={() => toggleProgramType(value)}
-            >
-              {label}
-            </Button>
-          ))}
+          {PROGRAM_TYPES.map(({ value, label }) => {
+            const active = (search.programTypes ?? []).includes(value);
+            return (
+              <Button
+                key={value}
+                type="button"
+                size="xs"
+                variant="default"
+                className={active ? 'min-h-11 border-site-text font-semibold' : 'min-h-11 text-site-text-muted'}
+                aria-pressed={active}
+                onClick={() => toggleProgramType(value)}
+              >
+                {label}
+              </Button>
+            );
+          })}
         </div>
       </div>
 

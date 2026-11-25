@@ -18,7 +18,8 @@ export function TrackToggle({
     <Button
       type="button"
       size="sm"
-      variant={tracked ? 'ghost' : 'default'}
+      variant="default"
+      className={tracked ? 'border-site-text font-semibold' : 'text-site-text-muted'}
       disabled={busy}
       onClick={onToggle}
       aria-pressed={tracked}

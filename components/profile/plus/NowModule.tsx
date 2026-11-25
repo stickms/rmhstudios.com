@@ -4,6 +4,7 @@ import { Link } from '@tanstack/react-router';
 import { Pencil, Sparkles } from 'lucide-react';
 import { WidgetFrame } from '@/components/ui/widget-frame';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { cn } from '@/lib/utils';
 import { NOW_STALE_DAYS, nowIsStale, splitNowText } from '@/lib/profile/plus';
 import { useProfilePlus } from './useProfilePlus';
@@ -47,14 +48,17 @@ export default function NowModule({ title, userId, isOwner }: { title: string; u
       }
       action={
         isOwner && text ? (
-          <Button asChild variant="ghost" size="xs">
+          <IconButton
+            asChild
+            size="icon-xs"
+            label={t('now-edit', {
+              defaultValue: 'Update',
+            })}
+          >
             <Link to="/settings/profile" hash="plus-now">
               <Pencil aria-hidden />
-              {t('now-edit', {
-                defaultValue: 'Update',
-              })}
             </Link>
-          </Button>
+          </IconButton>
         ) : null
       }
     >

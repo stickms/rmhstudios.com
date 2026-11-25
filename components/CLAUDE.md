@@ -48,8 +48,12 @@ feature lives in that feature's directory; genuinely shared primitives live in
   APIs (see `ui/button.tsx`, `ui/badge.tsx`). Set a `data-slot="..."`
   attribute on new primitives — themes restyle components through
   `[data-slot]` selectors in `globals.css`.
-- **Icons:** `lucide-react` only. Decorative icons get `aria-hidden`;
-  icon-only buttons get `aria-label`/`sr-only` text.
+- **Icons and ghost buttons:** `lucide-react` only. Decorative icons get `aria-hidden`;
+  icon-only buttons use `<IconButton>` (`aria-label` + hover/focus tooltip, K8), and toolbar/header/row utility actions
+  with a clear glyph (Refresh, Edit, Delete, Settings, Analytics, Copy, Export, Preview) prefer `<IconButton>` over text
+  ghost buttons. Ghost text buttons (K3) carry zero layout padding on the site tier so text sits flush horizontally and
+  vertically, with their hover fill and K10 focus ring overhanging on `::before` — never add `-ms-*`/`-ml-*` bleed hacks
+  or clip their parent's `overflow`.
 - **Strings:** every user-visible string through `t("key", { defaultValue })`.
   Component namespaces are `c-<area>` (e.g. `c-ui`, `c-rmhbox`); pages mostly
   use `site`. Run `pnpm i18n:extract` after adding strings.

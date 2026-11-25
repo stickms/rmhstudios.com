@@ -147,7 +147,8 @@ export function ImpersonationReportDialog({
             </div>
             <Button
               type="button"
-              variant={me ? 'default' : 'ghost'}
+              variant="default"
+              className={me ? 'border-site-text font-semibold' : 'text-site-text-muted'}
               aria-pressed={me}
               disabled={!myId}
               onClick={() => setMe((on) => !on)}

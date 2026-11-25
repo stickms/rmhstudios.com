@@ -10,7 +10,9 @@ import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { api, apiQuery } from '@/lib/contract/client';
 import { cn } from '@/lib/utils';
+import { Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -238,22 +240,24 @@ export function MemberNotesDialog({
                     <p dir="auto" className="t-body whitespace-pre-wrap break-words text-site-text">
                       {n.body}
                     </p>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1">
                       {n.canEdit && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                        <IconButton
+                          icon={Pencil}
+                          size="icon-xs"
+                          label={t('edit', { defaultValue: 'Edit' })}
                           onClick={() => {
                             setEditing(n.id);
                             setEditText(n.body);
                           }}
-                        >
-                          {t('edit', { defaultValue: 'Edit' })}
-                        </Button>
+                        />
                       )}
-                      <Button variant="ghost" size="sm" onClick={() => void remove(n)}>
-                        {t('delete', { defaultValue: 'Delete' })}
-                      </Button>
+                      <IconButton
+                        icon={Trash2}
+                        size="icon-xs"
+                        label={t('delete', { defaultValue: 'Delete' })}
+                        onClick={() => void remove(n)}
+                      />
                     </div>
                   </>
                 )}

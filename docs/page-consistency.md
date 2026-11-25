@@ -123,8 +123,14 @@ Work through this for every new or edited page.
       does); fields are `surface-field` or the `Input`, `Textarea`, `Select` primitives.
 - [ ] **Ink tracks its surface.** On a filled surface use its paired foreground (`bg-site-accent` takes
       `text-site-accent-fg`); never `text-white` or `text-black` on a themed surface.
-- [ ] One ink primary per view: `<Button variant="primary">`; every other button is `default` or `ghost`. Pills via
-      `<Badge>`; icons from `lucide-react`.
+- [ ] One ink primary per view: `<Button variant="primary">`; every other button is `default` or `ghost`. Toolbar,
+      header and row utility actions with a clear glyph (Refresh, Edit, Delete, Settings, Analytics, Copy, Export,
+      Preview, History, Report) use `<IconButton>` (K8). Ghost text buttons (`variant="ghost"`) sit flush horizontally
+      and vertically with zero box padding at rest and an overhanging `::before` hover/focus box (K3): never add
+      `-ms-*`/`-ml-*` bleed hacks, do not clip their container with `overflow-hidden`, and leave `gap-3` or `gap-4`
+      between sibling buttons in a row so overhanging boxes never collide. Toggle chip groups stay `variant="default"`
+      (with `aria-pressed` weight/border, A2) so toggling never shifts width. Pills via `<Badge>`; icons from
+      `lucide-react`.
 - [ ] Type is the seven `t-*` classes; weights 400, 500, 600; sentence case; no `uppercase` or letterspacing.
 - [ ] Tab strips via `<Tabs>` (`components/ui/tabs.tsx`), placed below the page title: words on a rule, the active one
       ink with a 2px underline. A role-less switcher with a pill or segment is still a tab strip. If the "tabs" are

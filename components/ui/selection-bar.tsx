@@ -105,7 +105,7 @@ export function SelectionBar({
             ease: EASE.standard,
           }}
           className={cn(
-            'sticky bottom-3 border border-site-border bg-site-surface mt-3 flex flex-wrap items-center gap-2 rounded-site px-3 py-2',
+            'sticky bottom-3 border border-site-border bg-site-surface mt-3 flex flex-wrap items-center gap-4 rounded-site px-3 py-2',
             className,
           )}
         >
@@ -124,7 +124,7 @@ export function SelectionBar({
             </Button>
           )}
 
-          <div className="ms-auto flex flex-wrap items-center gap-2">
+          <div className="ms-auto flex flex-wrap items-center gap-4">
             {actions.map((action) => (
               <Button
                 key={action.id}

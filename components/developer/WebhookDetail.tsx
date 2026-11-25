@@ -3,6 +3,7 @@ import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-q
 import { ArrowLeft, Pencil, RefreshCw, RotateCw, Send, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Select } from '@/components/ui/select';
@@ -151,7 +152,7 @@ export function WebhookDetail({ id, onBack }: { id: string; onBack: () => void }
   }
 
   const back = (
-    <Button variant="ghost" size="sm" onClick={onBack} className="-ms-3">
+    <Button variant="ghost" size="sm" onClick={onBack}>
       <ArrowLeft className="rtl:-scale-x-100" aria-hidden /> {t('detail-back', { defaultValue: 'All endpoints' })}
     </Button>
   );
@@ -318,13 +319,12 @@ export function WebhookDetail({ id, onBack }: { id: string; onBack: () => void }
           <h3 id="deliveries-heading" className="t-heading">
             {t('deliveries-heading', { defaultValue: 'Deliveries' })}
           </h3>
-          <Button
-            variant="ghost"
+          <IconButton
+            icon={RefreshCw}
+            label={t('console-refresh', { defaultValue: 'Refresh' })}
             loading={deliveries.isFetching && !deliveries.isFetchingNextPage}
             onClick={() => void refresh()}
-          >
-            <RefreshCw aria-hidden /> {t('console-refresh', { defaultValue: 'Refresh' })}
-          </Button>
+          />
         </div>
 
         <Tabs

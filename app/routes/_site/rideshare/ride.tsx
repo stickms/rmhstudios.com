@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   CalendarClock,
   Clock,
+  RefreshCw,
   XCircle,
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
@@ -22,6 +23,7 @@ import { format } from 'date-fns';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
@@ -525,9 +527,13 @@ function RequestRidePage() {
             <h2 className="site-section-label">
               {t('ride-history-heading', { defaultValue: 'Ride history' })}
             </h2>
-            <Button type="button" variant="ghost" size="sm" className="min-h-11" onClick={loadRides}>
-              {t('refresh-button', { defaultValue: 'Refresh' })}
-            </Button>
+            <IconButton
+              type="button"
+              icon={RefreshCw}
+              size="icon-xs"
+              label={t('refresh-button', { defaultValue: 'Refresh' })}
+              onClick={loadRides}
+            />
           </div>
 
           {loadingRides ? (

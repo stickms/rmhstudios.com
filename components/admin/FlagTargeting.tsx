@@ -12,6 +12,7 @@ import type { FlagCheckDTO, FlagHistoryItem, FlagTargetingDTO, TargetList, Targe
 import type { FlagReason } from '@/lib/flags/evaluate';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -211,22 +212,20 @@ function MemberList({
                 <p className="t-body truncate font-medium text-site-text">{memberName(m)}</p>
                 {m.handle ? <p className="t-meta truncate">@{m.handle}</p> : null}
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
+              <IconButton
+                icon={X}
+                size="icon-xs"
                 disabled={busy}
                 onClick={() =>
                   void onEdit(list, {
                     remove: [m.id],
                   })
                 }
-                aria-label={t('remove', {
+                label={t('remove', {
                   defaultValue: 'Remove {{name}}',
                   name: m.handle ? `@${m.handle}` : memberName(m),
                 })}
-              >
-                <X className="h-4 w-4" aria-hidden />
-              </Button>
+              />
             </li>
           ))}
         </ul>

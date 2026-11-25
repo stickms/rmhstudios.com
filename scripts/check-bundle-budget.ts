@@ -413,15 +413,16 @@ export const ISLAND_BUDGETS: Readonly<Record<string, { jsBrotli: number; cssBrot
   // Third-pass audit RT1 (2026-11-12): an island's toaster now loads on its first toast too, so sonner left every
   // island's first load. JS re-measured + 3%: nightrail 257,072, signal-forge 151,112, vega 117,079,
   // void-breaker 304,606 B brotli. CSS unchanged.
-  nightrail: { jsBrotli: 264_800, cssBrotli: 20_000 },
+  // 2026-11-25 (Steel K3): the flush ghost-button rules in steel-surfaces.css reach every island. CSS re-measured + 2.5%.
+  nightrail: { jsBrotli: 264_800, cssBrotli: 20_700 },
   // 2026-11-23: the Vault games joined the library (listed, own namespaces, the `/secret` frame gone,
   // a session hook mounted in each). Re-measured + 3%: cursed-logic (a new island) JS 125,440 / CSS
   // 19,471 B brotli; signal-forge CSS 19,958 and vega CSS 18,389 B brotli (JS unchanged). To be
   // re-measured when the per-game rework lands (docs/superpowers/plans/2026-11-23-vault-games-migration.md).
   'cursed-logic': { jsBrotli: 136_300, cssBrotli: 21_100 }, // after the rework: JS 132,303 / CSS 20,463 B brotli (+3%)
-  'signal-forge': { jsBrotli: 155_650, cssBrotli: 20_500 },
+  'signal-forge': { jsBrotli: 155_650, cssBrotli: 21_100 },
   vega: { jsBrotli: 124_800, cssBrotli: 18_900 }, // after the rework: JS 121,139 / CSS 17,6xx B brotli (+3%)
-  'void-breaker': { jsBrotli: 313_750, cssBrotli: 21_000 },
+  'void-breaker': { jsBrotli: 313_750, cssBrotli: 21_700 },
 };
 
 const ISLANDS_DIR = path.join(ROOT, 'dist-islands');

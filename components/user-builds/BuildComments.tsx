@@ -167,7 +167,7 @@ function CommentItem({
                     variant="ghost"
                     size="xs"
                     aria-expanded
-                    className="-ml-2.5 mt-1"
+                    className="mt-1"
                     onClick={() => setRevealed(false)}
                   >
                     {t('collapse', { defaultValue: 'Collapse' })}
@@ -181,7 +181,7 @@ function CommentItem({
                 variant="ghost"
                 size="xs"
                 onClick={() => actions.onReply(comment.id)}
-                className="-ml-2.5 mt-1 text-site-text-muted"
+                className="mt-1 text-site-text-muted"
               >
                 {t('reply', { defaultValue: 'Reply' })}
               </Button>
@@ -198,7 +198,7 @@ function CommentItem({
                 size="xs"
                 onClick={() => setShowReplies(!showReplies)}
                 aria-expanded={showReplies}
-                className="-ml-2.5 mb-2 text-site-accent"
+                className="mb-2 text-site-accent"
               >
                 <ChevronDown
                   className={`transition-transform ${showReplies ? 'rotate-180' : ''}`}

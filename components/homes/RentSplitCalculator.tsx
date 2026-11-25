@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
@@ -184,18 +185,14 @@ export function RentSplitCalculator({
                   />
                 </label>
                 {rooms.length > 2 && (
-                  <Button
+                  <IconButton
                     type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="min-h-11"
-                    aria-label={t('rs-remove', {
+                    icon={Trash2}
+                    label={t('rs-remove', {
                       defaultValue: 'Remove room',
                     })}
                     onClick={() => setRooms((cur) => cur.filter((_, j) => j !== i))}
-                  >
-                    <Trash2 aria-hidden />
-                  </Button>
+                  />
                 )}
               </div>
               <div

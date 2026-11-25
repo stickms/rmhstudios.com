@@ -430,7 +430,8 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
               <Button
                 type="button"
                 variant="ghost"
-                className="h-9 w-9 rounded-full p-0"
+                size="icon"
+                className="rounded-full"
                 onClick={() => toggleGroupMute()}
                 aria-pressed={muted}
                 aria-label={
@@ -449,8 +450,9 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
               {phase === 'active' && (
                 <Button
                   type="button"
-                  variant="ghost"
-                  className="h-9 gap-1 rounded-full px-2"
+                  variant="default"
+                  size="sm"
+                  className="gap-1 rounded-full px-2.5"
                   onClick={() => setRosterOpen((open) => !open)}
                   aria-expanded={rosterOpen}
                   aria-controls={rosterPanelId}

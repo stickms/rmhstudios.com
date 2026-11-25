@@ -6,6 +6,7 @@ import { toast } from '@/lib/toast';
 import { Flag, Plus, Stamp as StampIcon, Minus } from 'lucide-react';
 import { WidgetFrame } from '@/components/ui/widget-frame';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import {
   Dialog,
   DialogContent,
@@ -193,12 +194,13 @@ export default function StampWallModule({
                           })}
                     </Button>
                     {open.creator.id !== session?.user?.id ? (
-                      <Button variant="ghost" onClick={() => setReporting(true)}>
-                        <Flag aria-hidden />
-                        {t('stamp-report', {
+                      <IconButton
+                        icon={Flag}
+                        label={t('stamp-report', {
                           defaultValue: 'Report',
                         })}
-                      </Button>
+                        onClick={() => setReporting(true)}
+                      />
                     ) : null}
                   </>
                 ) : (

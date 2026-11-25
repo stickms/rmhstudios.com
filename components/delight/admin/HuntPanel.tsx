@@ -245,7 +245,9 @@ export default function HuntPanel() {
             </div>
             <Button
               size="sm"
-              variant={h.active ? 'default' : 'ghost'}
+              variant="default"
+              aria-pressed={h.active}
+              className={h.active ? 'border-site-text font-semibold' : undefined}
               disabled={busy}
               onClick={() =>
                 void run(() =>

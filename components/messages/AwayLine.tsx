@@ -1,7 +1,8 @@
+import { Pencil, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { useAwayQuery, useAwayStatus, useTurnOffAway } from '@/components/messages/useAway';
-import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { toast } from '@/lib/toast';
 import { awayDayDate, awayLastDay } from '@/lib/messages/away';
@@ -19,7 +20,7 @@ export function AwayStatusLine({ userId, context }: { userId: string; context: '
   return <p className="t-meta">{t('away-until', { date, defaultValue: 'Away until {{date}}' })}</p>;
 }
 
-/** The inbox line while the member's own message is set: "Away message on until 3 Dec · Edit · Turn off". */
+/** The inbox line while the member's own message is set: "Away message on until 3 Dec" + Edit / Turn off icons. */
 export function AwayInboxLine({ onEdit }: { onEdit: () => void }) {
   const { t } = useTranslation('away-message');
   const { data: session } = useSession();
@@ -32,18 +33,20 @@ export function AwayInboxLine({ onEdit }: { onEdit: () => void }) {
   if (!away) return null;
   const date = format.date(awayDayDate(away.endDay), DAY_FORMAT);
   return (
-    <div className="t-meta flex flex-wrap items-center gap-x-2 border-b border-site-border pb-2 mb-2">
-      <span>
+    <div className="t-meta mb-2 flex flex-wrap items-center gap-x-1 border-b border-site-border pb-2">
+      <span className="me-auto">
         {away.active
           ? t('inbox-on-until', { date, defaultValue: 'Away message on until {{date}}' })
           : t('inbox-starts', { date, defaultValue: 'Away message set, ends {{date}}' })}
       </span>
-      <Button variant="ghost" size="xs" onClick={onEdit}>
-        {t('edit', { defaultValue: 'Edit' })}
-      </Button>
-      <Button variant="ghost" size="xs" onClick={() => off.mutate()} disabled={off.isPending}>
-        {t('turn-off', { defaultValue: 'Turn off' })}
-      </Button>
+      <IconButton icon={Pencil} size="icon-xs" label={t('edit', { defaultValue: 'Edit' })} onClick={onEdit} />
+      <IconButton
+        icon={X}
+        size="icon-xs"
+        label={t('turn-off', { defaultValue: 'Turn off' })}
+        onClick={() => off.mutate()}
+        disabled={off.isPending}
+      />
     </div>
   );
 }
