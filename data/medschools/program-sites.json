@@ -236,6 +236,7 @@
     "yale": "https://medicine.yale.edu/"
   },
   "mdphd": {
-    "suny-upstate": "https://www.upstate.edu/mdphd/"
+    "suny-upstate": "https://www.upstate.edu/mdphd/",
+    "university-of-california-san-francisco": "https://mstp.ucsf.edu/"
   }
 }
