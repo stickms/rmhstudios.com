@@ -349,7 +349,13 @@ const BUDGETS = {
   // the school queries' cache lifetimes in medschools.queries.ts. CI measured 916.4 KB against 916.2 KB (+0.0%), about
   // 200 B over; no state-name table, library, page component or chart entered the entry (those stay in page chunks).
   criticalPathRaw: 940_000,
-  criticalPathBrotli: 247_900, // 2026-11-25: +0.4 KB brotli for /med's URL parsers of the My schools filter (`mine=`, `list=` on index and live; the filter itself loads on demand); OPT-01, named in the PR body. 2026-11-23: +~0.7 KB brotli (achievement catalog, icon and device registries) from the Vault games' move into the library; OPT-01, named in the PR body
+  // Inbox icon toolbars (2026-11-25): critical path brotli RAISED 247,500 -> 248,000 B (OPT-01, named in the PR body). The
+  // raw lines were raised for the same bytes in the previous change (the inbox icon buttons and the ghost-button bleed
+  // class) but this one was left, and the deploy build measured 241.7 KB against 241.7 KB (+0.0%), about 100 B over,
+  // where the PR build had measured 241.4 KB. No library or page component entered the entry.
+  // /med My schools filter (2026-11-25): RAISED 248,000 -> 248,400 B (+0.4 KB, OPT-01, named in the PR body) for the
+  // index and live URL parsers of `mine=` and `list=`; the filter itself and the saved-filter code load on demand.
+  criticalPathBrotli: 248_400, // 2026-11-23: +~0.7 KB brotli (achievement catalog, icon and device registries) from the Vault games' move into the library; OPT-01, named in the PR body
 };
 
 /**
