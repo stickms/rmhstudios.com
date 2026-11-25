@@ -26,7 +26,6 @@ import {
   type MedDegreeId,
   type MedProgramFilter,
 } from './medschools.contract';
-import { mineSlugs, type MineChoice } from './engine/mine';
 import { programPair, programsQueryValue, type ProgramKey } from './engine/programs';
 import { applyPrefs, type Prefs } from './engine/prefs';
 import type { ProgramFilter } from './engine/search';
@@ -231,29 +230,6 @@ export const askStatusQuery = () =>
 /** Where the caller stands on a higher Q&A limit (plan R19). Under `ME_KEY`; refreshed after a request. */
 export const qaLimitRequestQuery = () =>
   contractQuery([...ME_KEY, 'qa-limit-request'] as const, getMedQaLimitRequestApi, {}, { staleTime: 0 });
-
-/**
- * A loader's "My schools" step (owner 2026-11-24): when the URL names one (`mine=cycle`, `list=`) and the viewer is
- * signed in (`prefs` landed), await the private answer it needs so the server HTML is already filtered, then return
- * the slugs (`null`: no filter). Signed out it asks for nothing. A same-page change reads the cache and never waits.
- */
-export async function loadMine(
-  queryClient: QueryClient,
-  choice: MineChoice | undefined,
-  signedIn: boolean,
-  cause?: 'enter' | 'stay' | 'preload',
-): Promise<Set<string> | null> {
-  if (!choice || !signedIn) return null;
-  if (cause !== 'stay') {
-    if (choice.kind === 'cycle') await prefetchRouteQuery(queryClient, trackerQuery());
-    else await prefetchRouteQuery(queryClient, listsQuery());
-  }
-  return mineSlugs(
-    choice,
-    queryClient.getQueryData(trackerQuery().queryKey),
-    queryClient.getQueryData(listsQuery().queryKey),
-  );
-}
 
 /** The schools-list request for a parsed index search and its effective view. */
 export function indexQuery(

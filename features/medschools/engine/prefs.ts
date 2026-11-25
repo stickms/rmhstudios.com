@@ -8,7 +8,6 @@ import {
   schoolProgramOf,
   type ProgramKey,
 } from './programs';
-import { pickFilter } from './saved-filters';
 import { showParam, type ProgramFilter } from './search';
 import type { MedEventType } from './types';
 
@@ -204,4 +203,23 @@ export function patchSearch(
     delete out.program;
   }
   return out;
+}
+
+export type FilterSource = 'url' | 'device' | 'prefs' | 'default';
+
+/**
+ * The one precedence rule (owner 2026-11-24): an explicit URL value wins; else this device's saved value; else the
+ * signed-in member's saved preference (D13/D14, programs only); else the default. `undefined` is "silent" at every
+ * level, so a URL that names nothing never blanks a saved filter.
+ */
+export function pickFilter<T>(
+  url: T | undefined,
+  device: T | undefined,
+  prefs: T | undefined,
+  fallback: T,
+): { value: T; from: FilterSource } {
+  if (url !== undefined) return { value: url, from: 'url' };
+  if (device !== undefined) return { value: device, from: 'device' };
+  if (prefs !== undefined) return { value: prefs, from: 'prefs' };
+  return { value: fallback, from: 'default' };
 }

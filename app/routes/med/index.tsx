@@ -3,8 +3,7 @@ import { definePage } from '@/lib/route/define-page';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { resolveView } from '@features/medschools/engine/prefs';
 import { parseIndexSearch, validateIndexSearch } from '@features/medschools/engine/search';
-import { mineOfSearch } from '@features/medschools/engine/mine';
-import { indexQuery, loadMine, loadPrefs, schoolsQuery, waitUnlessStay } from '@features/medschools/medschools.queries';
+import { indexQuery, loadPrefs, schoolsQuery, waitUnlessStay } from '@features/medschools/medschools.queries';
 import { IndexPage } from '@features/medschools/ui/IndexPage';
 
 export const Route = createFileRoute('/med/')({
@@ -27,7 +26,11 @@ export const Route = createFileRoute('/med/')({
     await waitUnlessStay(cause, prefetchRouteQuery(context.queryClient, schoolsQuery(indexQuery(search, view))));
     // "My schools" (`mine=cycle`, `list=`) needs the viewer's tracker or lists; the page shows every school without them.
     // (A filter saved on this device is applied by the page after hydration: the server cannot read it.)
-    await loadMine(context.queryClient, mineOfSearch(search), prefs !== null, cause);
+    // Loaded only when the URL names one, so the mine filter stays out of every page's shared entry.
+    if (prefs !== null && (search.mine || search.list)) {
+      const m = await import('@features/medschools/load-mine');
+      await m.loadMine(context.queryClient, m.mineOfSearch(search), true, cause);
+    }
     return undefined;
   },
   component: IndexPage,

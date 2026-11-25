@@ -63,10 +63,10 @@ vi.mock('@/components/ui/select', () => ({
 
 import { IndexPage } from './IndexPage';
 import { LivePage } from './LivePage';
+import { loadMine } from '../load-mine';
 import {
   liveQuery,
   listsQuery,
-  loadMine,
   loadPrefs,
   prefsQuery,
   resolveLiveFilters,

@@ -3,10 +3,8 @@ import { definePage } from '@/lib/route/define-page';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { resolveView } from '@features/medschools/engine/prefs';
 import { parseLiveSearch, validateLiveSearch } from '@features/medschools/engine/search';
-import { mineOfSearch, schoolsParam } from '@features/medschools/engine/mine';
 import {
   liveSearchOf,
-  loadMine,
   loadPrefs,
   prefetchLivePage,
   schoolsQuery,
@@ -29,8 +27,15 @@ export const Route = createFileRoute('/med/live')({
     const search = parseLiveSearch(deps);
     // "My schools" in the URL: the private answer first, then the feed asks for those slugs (`schools=`, public and
     // user-independent). An empty set asks for nothing: the page shows its empty state.
-    const slugs = await loadMine(context.queryClient, mineOfSearch(search), prefs !== null, cause);
-    const live = liveSearchOf(search, resolveView('live', search, prefs), slugs ? schoolsParam(slugs) : undefined);
+    // Loaded only when the URL names one, so the mine filter stays out of every page's shared entry.
+    let slugs: Set<string> | null = null;
+    let schools: string | undefined;
+    if (prefs !== null && (search.mine || search.list)) {
+      const m = await import('@features/medschools/load-mine');
+      slugs = await m.loadMine(context.queryClient, m.mineOfSearch(search), true, cause);
+      schools = slugs ? m.schoolsParam(slugs) : undefined;
+    }
+    const live = liveSearchOf(search, resolveView('live', search, prefs), schools);
     // A filter change (`cause: 'stay'`) does not wait: the feed stays on screen, dimmed, until the new one lands.
     await waitUnlessStay(
       cause,
