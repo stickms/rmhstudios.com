@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractFirstUrl, postLinkPreviewUrl } from './first-link';
+import { extractFirstUrl, postLinkPreviewUrl, textWithoutPreviewedLink } from './first-link';
 
 describe('first link of a post', () => {
   it('drops sentence punctuation but keeps a bracket the URL opened', () => {
@@ -12,5 +12,18 @@ describe('first link of a post', () => {
     expect(postLinkPreviewUrl({ content: 'https://a.test', imageUrls: ['x'] })).toBeNull();
     expect(postLinkPreviewUrl({ content: 'https://a.test', gifUrl: 'g' })).toBeNull();
     expect(postLinkPreviewUrl({ content: 'hi https://a.test' })).toBe('https://a.test');
+  });
+});
+
+describe('textWithoutPreviewedLink', () => {
+  const url = 'https://example.com/a';
+  it('drops a lone trailing link', () => {
+    expect(textWithoutPreviewedLink(`big news\n${url}`, url)).toBe('big news');
+    expect(textWithoutPreviewedLink(url, url)).toBe('');
+  });
+  it('keeps a link in the middle, several links, or no preview', () => {
+    expect(textWithoutPreviewedLink(`see ${url} now`, url)).toBe(`see ${url} now`);
+    expect(textWithoutPreviewedLink(`https://b.com ${url}`, url)).toBe(`https://b.com ${url}`);
+    expect(textWithoutPreviewedLink(`hi ${url}`, null)).toBe(`hi ${url}`);
   });
 });

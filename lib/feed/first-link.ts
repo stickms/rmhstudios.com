@@ -32,6 +32,21 @@ export function extractFirstUrl(text: string): string | null {
   return url.length > 'https://'.length ? url : null;
 }
 
+/**
+ * The text to show when the post's link is drawn as a card beneath it (the way X drops the
+ * link). Only a lone link that ends the text (or is the whole text) is removed; a link in the
+ * middle of a sentence, or one of several, stays where the author put it. Display only: the
+ * stored content is untouched, so the card is still found from it.
+ */
+export function textWithoutPreviewedLink(text: string, previewUrl: string | null): string {
+  if (!previewUrl) return text;
+  const trimmed = text.trimEnd();
+  if (!trimmed.endsWith(previewUrl)) return text;
+  const head = trimmed.slice(0, trimmed.length - previewUrl.length);
+  if (URL_RE.test(head)) return text;
+  return head.trimEnd();
+}
+
 interface LinkablePost {
   content?: string | null;
   poll?: unknown;

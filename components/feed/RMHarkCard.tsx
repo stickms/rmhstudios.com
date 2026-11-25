@@ -19,7 +19,7 @@ import { VibeEmbedCardLazy } from '@/components/rmhvibe/VibeEmbedCardLazy';
 import { PostPlusBadges } from '@/components/posts-plus/PostPlusBadgesLazy';
 import { GifEmbed } from './GifEmbedLazy';
 import { LinkPreview } from './LinkPreview';
-import { postLinkPreviewUrl } from '@/lib/feed/first-link';
+import { postLinkPreviewUrl, textWithoutPreviewedLink } from '@/lib/feed/first-link';
 import { PostImageGrid } from './PostImageGrid';
 import { SensitiveMedia } from './SensitiveMedia';
 import { postMediaVTName } from '@/lib/view-transition';
@@ -148,6 +148,10 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
   // One regex over the post body: cheap enough to run per render.
   const linkPreviewUrl = postLinkPreviewUrl(item);
+  // The card carries a lone trailing link, so the text drops it (X does the same); a card that
+  // cannot load puts the link back.
+  const [previewFailed, setPreviewFailed] = useState(false);
+  const bodyText = previewFailed ? (item.content ?? '') : textWithoutPreviewedLink(item.content ?? '', linkPreviewUrl);
 
   // Track view when the card actually scrolls into (near) the viewport. Skip
   // optimistic (pending) posts — their temp id isn't a real post yet.
@@ -404,9 +408,9 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                 postId={item.id}
                 post={{ isSensitive: item.isSensitive, contentWarning: item.contentWarning, userId: item.user?.id }}
               >
-              {item.content && (
+              {bodyText && (
                 <RMHarkContent
-                  text={item.content}
+                  text={bodyText}
                   className="t-post mt-1 break-words whitespace-pre-wrap text-site-text"
                 />
               )}
@@ -490,7 +494,9 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
               )}
 
               {/* Link preview: only when no poll, gif, or image */}
-              {linkPreviewUrl && <LinkPreview url={linkPreviewUrl} className="mt-3" />}
+              {linkPreviewUrl && (
+                <LinkPreview url={linkPreviewUrl} className="mt-3" onUnavailable={() => setPreviewFailed(true)} />
+              )}
               </ContentWarningCover>
             </>
           )}

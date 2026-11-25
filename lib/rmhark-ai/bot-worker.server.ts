@@ -870,6 +870,11 @@ export interface BotDeps {
    * reactions can leave it out: absent means none.
    */
   headlines?: () => Promise<Headline[]>;
+  /**
+   * Turns a headline's feed link into the article it points at (Google News links are redirects
+   * that do not unfurl). Must return the input when it cannot resolve. Absent means no change.
+   */
+  resolveLink?: (url: string) => Promise<string>;
   /** The live sitewide announcement, or null (also on any error). Absent means none. */
   announcement?: () => Promise<LiveAnnouncement | null>;
   /** Where pictures come from. Absent means bots keep the avatar they were minted with. */
@@ -894,7 +899,17 @@ export async function freshHeadlines(log?: BotLog): Promise<Headline[]> {
   }
 }
 
-/** Default for `BotDeps.announcement`: `getCurrentAnnouncement()` adapted; null on any error. */
+/** Default for `BotDeps.resolveLink`: `resolveArticleUrl()`, the input on any error. */
+export async function resolveHeadlineLink(url: string): Promise<string> {
+  try {
+    const { resolveArticleUrl } = await import('./headlines.server');
+    return await resolveArticleUrl(url);
+  } catch {
+    return url;
+  }
+}
+
+/** Default for `BotDeps.announcement`:`getCurrentAnnouncement()` adapted; null on any error. */
 export async function liveAnnouncement(): Promise<LiveAnnouncement | null> {
   try {
     const { getCurrentAnnouncement } = await import('@/lib/sitewide-announcement.server');
@@ -930,6 +945,7 @@ export function defaultDeps(overrides: Partial<BotDeps> = {}): BotDeps {
     now: Date.now,
     random,
     headlines: () => freshHeadlines(log),
+    resolveLink: resolveHeadlineLink,
     announcement: liveAnnouncement,
     look: stockLook(random),
     queue: prismaBotQueueRepo,
@@ -1487,6 +1503,10 @@ async function postReaction(
       source: item.source,
     });
     if (text.trim() === '') return true;
+    // Post the article itself, not the feed's redirect, so the post unfurls as the article.
+    if (kind === 'news' && d.resolveLink) {
+      item.link = await d.resolveLink(item.link).catch(() => item.link);
+    }
     // A headline reaction always carries its link (and the link is outside the text limit); an
     // announcement's link is a coin flip and must fit within the limit. `||` skips the draw for news.
     const content = withReactionLink(

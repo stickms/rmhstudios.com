@@ -197,6 +197,96 @@ const guardedFetch: typeof fetch = (input, init) => {
   return safeFetch(url, { ...init, timeoutMs: FETCH_TIMEOUT_MS });
 };
 
+// ─── Google News link resolution ─────────────────────────────────────
+
+/**
+ * Old-style Google News ids are a protobuf wrapper around the article URL; decode it offline.
+ * Returns null for new-style ids (they start `AU_yqL` once unwrapped and need Google's API).
+ */
+function decodeLegacyGoogleId(id: string): string | null {
+  try {
+    const bytes = Buffer.from(id.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+    let start = 0;
+    let end = bytes.length;
+    if (bytes[0] === 0x08 && bytes[1] === 0x13 && bytes[2] === 0x22) start = 3;
+    if (end - 3 > start && bytes[end - 3] === 0xd2 && bytes[end - 2] === 0x01 && bytes[end - 1] === 0x00) end -= 3;
+    const body = bytes.subarray(start, end);
+    const len = body[0];
+    if (len === undefined) return null;
+    const text = (len >= 0x80 ? body.subarray(2, len + 1) : body.subarray(1, len + 1)).toString('latin1');
+    return /^https?:\/\//i.test(text) ? text : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The article a Google News link points at. A Google News RSS link is a redirect page that does
+ * not unfurl (a post with one shows Google's card, not the story), so a link that goes into a
+ * post is resolved first. Non-Google links come back unchanged, and so does any link that cannot
+ * be resolved: this never throws and never returns a Google link it could have resolved.
+ */
+export async function resolveArticleUrl(
+  link: string,
+  fetchImpl: typeof fetch = guardedFetch,
+): Promise<string> {
+  let u: URL;
+  try {
+    u = new URL(link);
+  } catch {
+    return link;
+  }
+  if (u.hostname.toLowerCase() !== 'news.google.com') return link;
+  const id = u.pathname.match(/^\/(?:rss\/)?(?:articles|read)\/([^/?]+)/)?.[1];
+  if (!id) return link;
+
+  const accept = (candidate: string | null | undefined): string | null => {
+    if (!candidate) return null;
+    const n = normaliseLink(candidate);
+    return n && feedHost(n) !== 'news.google.com' ? n : null;
+  };
+
+  const legacy = accept(decodeLegacyGoogleId(id));
+  if (legacy) return legacy;
+
+  try {
+    const headers = { 'user-agent': 'Mozilla/5.0 (compatible; RMHStudios/1.0)' };
+    const page = await fetchImpl(`https://news.google.com/rss/articles/${encodeURIComponent(id)}`, {
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      headers,
+    });
+    if (!page.ok) return link;
+    const html = await readCapped(page);
+    const sg = html.match(/data-n-a-sg="([^"]+)"/)?.[1];
+    const ts = html.match(/data-n-a-ts="([^"]+)"/)?.[1];
+    if (!sg || !ts) return link;
+
+    const inner = JSON.stringify([
+      'garturlreq',
+      [['X', 'X', ['X', 'X'], null, null, 1, 1, 'US:en', null, 1, null, null, null, null, null, 0, 1], 'X', 'X', 1, [1, 1, 1], 1, 1, null, 0, 0, null, 0],
+      id,
+      Number(ts),
+      sg,
+    ]);
+    const body = 'f.req=' + encodeURIComponent(JSON.stringify([[['Fbv4je', inner]]]));
+    const res = await fetchImpl('https://news.google.com/_/DotsSplashUi/data/batchexecute', {
+      method: 'POST',
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      headers: { ...headers, 'content-type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      body,
+    });
+    if (!res.ok) return link;
+    const text = await readCapped(res);
+    const payload = JSON.parse(text.split('\n\n')[1] ?? '[]') as unknown;
+    const cell = Array.isArray(payload) && Array.isArray(payload[0]) ? (payload[0] as unknown[])[2] : null;
+    if (typeof cell !== 'string') return link;
+    const decoded = JSON.parse(cell) as unknown;
+    return accept(Array.isArray(decoded) && typeof decoded[1] === 'string' ? decoded[1] : null) ?? link;
+  } catch {
+    return link;
+  }
+}
+
 /** Read a response body as text, failing if it exceeds the size cap. */
 async function readCapped(res: Response): Promise<string> {
   const declared = Number(res.headers.get('content-length'));

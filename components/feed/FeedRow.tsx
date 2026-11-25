@@ -20,7 +20,7 @@ import { CoveredLine } from '@/components/feed/CoveredLine';
 import { useAppliedContentWarning } from '@/components/feed/use-show-content-warnings';
 import { feedKickerLabel } from '@/components/feed/kicker-labels';
 import { usePostAction } from '@/components/feed/feed-nav';
-import { postLinkPreviewUrl } from '@/lib/feed/first-link';
+import { postLinkPreviewUrl, textWithoutPreviewedLink } from '@/lib/feed/first-link';
 
 /** The post menu's rows and dialogs: fetched the first time a row's three dots are used, never with the feed. */
 const loadFeedRowMenu = () => import('@/components/feed/FeedRowMenu');
@@ -71,6 +71,11 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
   const covered = isRmhark && warning.coverText;
   // The first link of a post with no media of its own unfurls under it (lib/feed/first-link.ts).
   const linkPreviewUrl = isRmhark && !covered && !item.locked ? postLinkPreviewUrl(item) : null;
+  // The card carries a lone trailing link, so the row's text drops it; a card that cannot load puts it back.
+  const [previewFailed, setPreviewFailed] = useState(false);
+  const bodyText = previewFailed
+    ? (item.content ?? '')
+    : textWithoutPreviewedLink(item.content ?? '', linkPreviewUrl && !item.pending ? linkPreviewUrl : null);
   const rawKicker = item.category || item.type;
   const kicker = feedKickerLabel(t, rawKicker) ?? humanizeKicker(rawKicker);
   const href = hrefFor(item);
@@ -160,9 +165,9 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
         // A content warning reason stands in for the text and media (sprint 06 #16). The row is one link, so there is
         // no button here: the post page has the reveal.
         <CoveredLine reason={warning.reason} className="t-post mt-2 break-words" />
-      ) : item.content ? (
+      ) : bodyText ? (
         <p ref={contentRef} className="t-post mt-2 line-clamp-5 break-words whitespace-pre-wrap">
-          {item.content}
+          {bodyText}
         </p>
       ) : null}
       {clamped && !covered ? (
@@ -241,7 +246,7 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
       {/* The link card is the row link's sibling: an anchor cannot sit inside another. */}
       {linkPreviewUrl && !pending ? (
         <ArrivalSuspense fallback={<div aria-hidden className="mt-3 h-20" />}>
-          <LinkPreview url={linkPreviewUrl} className="mt-3" />
+          <LinkPreview url={linkPreviewUrl} className="mt-3" onUnavailable={() => setPreviewFailed(true)} />
         </ArrivalSuspense>
       ) : null}
       {hasMenu ? (

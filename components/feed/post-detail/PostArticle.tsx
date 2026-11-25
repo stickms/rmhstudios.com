@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { textWithoutPreviewedLink } from '@/lib/feed/first-link';
 import type { CSSProperties, Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
@@ -61,6 +62,11 @@ export function PostArticle({
   const { t } = useTranslation('feed');
   const { locale } = useLocaleFormat();
   const linkPreviewUrl = useMemo(() => postLinkPreviewUrl(post), [post]);
+  // A lone trailing link is drawn as the card instead; a card that cannot load puts it back.
+  const [previewFailed, setPreviewFailed] = useState(false);
+  const bodyText = previewFailed
+    ? (post.content ?? '')
+    : textWithoutPreviewedLink(post.content ?? '', linkPreviewUrl);
   const { translatedText, showTranslated, translating, handleTranslate } = translation;
 
   // The author's bought cosmetics, as the feed row draws them: a name colour (solid or a gradient) and post flair as the
@@ -124,9 +130,9 @@ export function PostArticle({
         post={{ isSensitive: post.isSensitive, contentWarning: post.contentWarning, userId: post.user?.id }}
       >
       {/* The text, at 19px */}
-      {post.content && (
+      {bodyText && (
         <RMHarkContent
-          text={post.content}
+          text={bodyText}
           className="post-page__text mt-3 break-words whitespace-pre-wrap text-site-text"
         />
       )}
@@ -202,7 +208,9 @@ export function PostArticle({
       )}
 
       {/* Link preview: only when no poll, gif, or image */}
-      {linkPreviewUrl && <LinkPreview url={linkPreviewUrl} className="mt-3" />}
+      {linkPreviewUrl && (
+        <LinkPreview url={linkPreviewUrl} className="mt-3" onUnavailable={() => setPreviewFailed(true)} />
+      )}
       </ContentWarningCover>
 
       {/* Quoted original: set off by a rule, not a box */}

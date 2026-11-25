@@ -26,6 +26,8 @@ const ogCache = new Map<string, OgData | null>();
 interface LinkPreviewProps {
   url: string;
   className?: string;
+  /** Called once the card turns out to have nothing to show, so the post can keep its link in the text. */
+  onUnavailable?: () => void;
 }
 
 /**
@@ -34,7 +36,7 @@ interface LinkPreviewProps {
  * site's icon in a square, beside host, title and description. Both are pictures in the Steel sense, so they carry the
  * 1px border and 8px radius (S4); hover is a fill (M1).
  */
-export function LinkPreview({ url, className = '' }: LinkPreviewProps) {
+export function LinkPreview({ url, className = '', onUnavailable }: LinkPreviewProps) {
   // Don't fetch the OG data until the card nears the viewport — a first feed
   // page with many links would otherwise fan out N `/api/oembed` requests during
   // hydration (each one a server-side external fetch). Already-cached URLs skip
@@ -78,6 +80,11 @@ export function LinkPreview({ url, className = '' }: LinkPreviewProps) {
     };
   }, [visible, url]);
 
+  const empty = !data || (!data.title && !data.description);
+  useEffect(() => {
+    if (!loading && empty) onUnavailable?.();
+  }, [loading, empty, onUnavailable]);
+
   if (loading) {
     // The ref lives on the placeholder so the observer has a target to watch while the preview is still deferred; it
     // is the compact card's height, so most cards land without moving the row.
@@ -90,7 +97,7 @@ export function LinkPreview({ url, className = '' }: LinkPreviewProps) {
     );
   }
 
-  if (!data || (!data.title && !data.description)) return null;
+  if (!data || empty) return null;
 
   const host = hostOf(url) || data.siteName;
   const large = !!data.image && !imgError;
