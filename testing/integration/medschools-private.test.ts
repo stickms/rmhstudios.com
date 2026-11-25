@@ -166,6 +166,8 @@ const ME_ENDPOINTS: Array<[string, string, unknown?]> = [
   ['PUT', '/api/medschools/me/prefs', { chartCategories: [] }],
   ['POST', '/api/medschools/me/tracker/import/parse', { text: 'Duke submitted 2026-06-12' }],
   ['POST', '/api/medschools/me/tracker/import/save', { cycleYear: CYCLE, rows: [] }],
+  ['POST', '/api/medschools/me/lists/import/parse', { text: 'Duke University' }],
+  ['POST', '/api/medschools/me/lists/import/save', { target: { newList: 'x' }, items: [] }],
   ['GET', '/api/medschools/me/ask'],
   ['POST', '/api/medschools/me/ask', { question: 'What is the median?' }],
   ['POST', '/api/medschools/me/interview/followups', { question: 'Why medicine?' }],

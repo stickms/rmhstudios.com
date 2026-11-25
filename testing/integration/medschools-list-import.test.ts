@@ -10,7 +10,8 @@
  * refused; an import is one of the day's questions (the cap stops it before any model call); and nothing of the file
  * (its text, its name, the essay in it) is in any row of any table.
  *
- * Fresh members only (`lib/fresh-member.ts`): a imports, b owns the list a must not reach, c is the cap's.
+ * Fresh members only (`lib/fresh-member.ts`): a imports, b owns the list a must not reach and is the cap's. Two, not
+ * three: every sign-in spends the suite's shared per-IP budget (10 a minute), which the auth tests also need.
  */
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { Client, closeDb, db } from './lib/client';
@@ -81,7 +82,6 @@ const modelReply: FakeScript = (call: FakeCall) => ({
 
 let a: FreshMember;
 let b: FreshMember;
-let c: FreshMember;
 const anon = new Client();
 
 const clearLedger = (ids: string[]) =>
@@ -106,30 +106,30 @@ const parseFile = (m: FreshMember, name = FILENAME, type = 'text/plain', text = 
 };
 const wipeLists = (ids: string[]) => db().query('delete from med_school_list where "userId" = any($1)', [ids]);
 const listCount = async (userId: string) =>
-  (await db().query('select count(*)::int as n from med_school_list where "userId" = $1', [userId])).rows[0].n as number;
+  (await db().query('select count(*)::int as n from med_school_list where "userId" = $1', [userId])).rows[0]
+    .n as number;
 const rowFor = (p: Preview, slug: string) => p.rows.find((r) => r.school?.slug === slug);
 
 beforeAll(async () => {
   a = await createFreshMember('list-import-a');
   b = await createFreshMember('list-import-b');
-  c = await createFreshMember('list-import-c');
-  await seedTrackerFixture([a.id, b.id, c.id]);
+  await seedTrackerFixture([a.id, b.id]);
   await seedMedSchoolsFixture();
 });
 afterAll(async () => {
-  const ids = [a?.id, b?.id, c?.id].filter((x): x is string => !!x);
+  const ids = [a?.id, b?.id].filter((x): x is string => !!x);
   if (ids.length) {
     await clearLedger(ids);
     await removeTrackerFixture(ids);
   }
   await removeMedSchoolsFixture();
-  await removeFreshMembers([a, b, c]);
+  await removeFreshMembers([a, b]);
   await closeDb();
 });
 
 describe('list import: no model needed', () => {
   afterEach(async () => {
-    await wipeLists([a.id, b.id, c.id]);
+    await wipeLists([a.id, b.id]);
   });
 
   it('signed out: parse (paste and file) and save are 401, with no public cache header and no data', async () => {
@@ -169,7 +169,9 @@ describe('list import: no model needed', () => {
       items: [{ slug: PRIVATE_MD_SLUG, program: 'ANY' }],
     });
     expect(res.status).toBe(404);
-    const n = await db().query('select count(*)::int as n from med_school_list_item where "listId" = $1', [theirs.body.id]);
+    const n = await db().query('select count(*)::int as n from med_school_list_item where "listId" = $1', [
+      theirs.body.id,
+    ]);
     expect(n.rows[0].n).toBe(0);
   });
 
@@ -228,7 +230,7 @@ describe('list import: no model needed', () => {
 
 describe.skipIf(!PORT)('list import: with the fake provider', () => {
   let fake: FakeDeepseek;
-  const ids = () => [a.id, b.id, c.id];
+  const ids = () => [a.id, b.id];
   const modelCalls = () => fake.calls().filter((x) => userJson(x.user)?.text !== undefined);
 
   beforeAll(async () => {
@@ -260,7 +262,12 @@ describe.skipIf(!PORT)('list import: with the fake provider', () => {
     expect(paste.body.dropped).toBe(1);
     expect(JSON.stringify(paste.body)).not.toContain(ESSAY);
     // The file's order is the preview's order.
-    expect(paste.body.rows.map((r) => r.schoolName)).toEqual([NAME_FIXTURE, NAME_MD, NAME_DO, 'Unknown Academy of Healing']);
+    expect(paste.body.rows.map((r) => r.schoolName)).toEqual([
+      NAME_FIXTURE,
+      NAME_MD,
+      NAME_DO,
+      'Unknown Academy of Healing',
+    ]);
 
     const file = await parseFile(a);
     expect(file.status, JSON.stringify(file.body)).toBe(200);
@@ -277,9 +284,9 @@ describe.skipIf(!PORT)('list import: with the fake provider', () => {
     expect(res.body.remainingToday).toBe(before.remainingToday - 1);
 
     await clearLedger(ids());
-    await insertAskRows(c.id, before.dailyCap);
+    await insertAskRows(b.id, before.dailyCap);
     fake.reset();
-    const capped = await parseText(c);
+    const capped = await parseText(b);
     expect(capped.status).toBe(429);
     expect(capped.body.code).toBe('MEDSCHOOLS_QA_DAILY_CAP');
     expect(modelCalls()).toHaveLength(0);
@@ -305,7 +312,9 @@ describe.skipIf(!PORT)('list import: with the fake provider', () => {
     );
     for (const table of tables) {
       for (const needle of [ESSAY, 'quillzebra', 'grandmother', 'Unknown Academy of Healing']) {
-        const hit = await db().query(`select count(*)::int as n from "${table}" t where t::text ilike $1`, [`%${needle}%`]);
+        const hit = await db().query(`select count(*)::int as n from "${table}" t where t::text ilike $1`, [
+          `%${needle}%`,
+        ]);
         expect(hit.rows[0].n, `${table} holds "${needle}"`).toBe(0);
       }
     }
