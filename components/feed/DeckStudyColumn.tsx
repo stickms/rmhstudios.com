@@ -26,6 +26,9 @@ import { ExportMenu } from '@/components/study/ExportMenu';
 import { DeckPageFolderMenu } from '@/components/study/MoveToFolderMenu';
 import { DeckStatsSummary } from '@/components/study/DeckStatsSummary';
 import { DeckPace } from '@/components/study/DeckPace';
+import { ListenControls } from '@/components/study/ListenControls';
+import { useCardListen } from '@/components/study/useCardListen';
+import { useReviewKeys } from '@/components/study/useReviewKeys';
 import { PracticeTestLink } from '@/components/study/PracticeTestLink';
 import { TestHistory } from '@/components/study/TestHistory';
 import { CardForm, type CardFormValue } from '@/components/study/CardForm';
@@ -33,6 +36,9 @@ import { CardPicture, usePreloadPicture } from '@/components/study/CardPicture';
 import { ClozeText } from '@/components/study/ClozeText';
 import { OcclusionReview } from '@/components/study/OcclusionReview';
 import { DeckCardList } from '@/components/study/DeckCardList';
+import { DeckEditors, DeckInvitationLine } from '@/components/study/DeckEditors';
+import type { DeckInvitation } from '@/lib/study/deck-editors';
+import type { DeckRole } from '@/lib/study/deck-access';
 import { isReverseCard } from '@/lib/study/card-types';
 import type { DeckCard as Card } from '@/lib/study.server';
 interface Deck {
@@ -41,9 +47,18 @@ interface Deck {
  description: string | null;
  isPublic: boolean;
  isOwner: boolean;
+ /** `owner`, `editor` (an accepted editor: cards and study, nothing of the settings) or null (s11-10). */
+ role?: DeckRole | null;
+ /** A copy of another member's deck: it takes no editors. */
+ isCopy?: boolean;
  cardCount: number;
  /** The owner's private folder (owner only). */
  folderId?: string | null;
+ /** The languages the fronts and backs are written in, for Listen (s11-17); absent or null: the site's. */
+ frontLang?: string | null;
+ backLang?: string | null;
+ /** A public deck's owner and its number of editors, no names. */
+ byline?: { owner: { name: string; handle: string | null }; editors: number };
 }
 
 const GRADES: { grade: number; cls: string }[] = [
@@ -70,6 +85,7 @@ export function DeckStudyColumn({
  dueCount: number;
  signedIn: boolean;
  updates?: UpdatesSummary | null;
+ invitation?: DeckInvitation;
  } | null;
 }) {
  const { t } = useTranslation('feed');
@@ -88,6 +104,8 @@ export function DeckStudyColumn({
  const [signedIn, setSignedIn] = useState(initialData?.signedIn ?? false);
  // What the author of the original changed (owner of a copy only).
  const [updates, setUpdates] = useState<UpdatesSummary | null>(initialData?.updates ?? null);
+ // The viewer's open invitation to edit this deck (s11-10).
+ const [invitation, setInvitation] = useState<DeckInvitation | null>(initialData?.invitation ?? null);
  const [loading, setLoading] = useState(initialData === undefined);
  const [notFound, setNotFound] = useState(initialData === null);
 
@@ -109,6 +127,21 @@ export function DeckStudyColumn({
  setQueue(null);
  };
 
+ // Listen (s11-17): off, it starts nothing and this review is exactly as before. On, each side is said in the
+ // deck's language for it and the answer is shown by itself after the member's delay; it never grades.
+ const listenCard = queue?.[idx] ?? null;
+ const listen = useCardListen({
+ card: listenCard,
+ deck: { frontLang: deck?.frontLang ?? null, backLang: deck?.backLang ?? null },
+ revealed,
+ onReveal: () => setRevealed(true),
+ });
+ // Keys while Listening, for a review with the eyes off the screen: Space or Enter shows the answer, 1-4 grade it
+ // (Again to Easy), `a` plays the side again. Not bound at all when Listen is off.
+ const keysRef = useReviewKeys();
+ const lastKeyRef = useRef('');
+ const lastKeyAtRef = useRef(0);
+
  // Steel M9: a deck fetched here replaces the spinner; the loader's is there on first paint.
  const arrival = useArrival(!loading);
 
@@ -121,6 +154,7 @@ export function DeckStudyColumn({
  setReviewCount(data.reviewCount ?? 0);
  setSignedIn(!!data.signedIn);
  setUpdates(data.updates ?? null);
+ setInvitation(data.invitation ?? null);
  } catch (err) {
  // 404 is the not-found state; any other failure leaves the page as it was.
  if (err instanceof HttpError && err.status === 404) setNotFound(true);
@@ -244,9 +278,64 @@ export function DeckStudyColumn({
  );
  }
 
+ // The owner and an accepted editor may edit the cards (s11-10); everything else of the deck's settings stays the owner's.
+ const role: DeckRole | null = deck.role ?? (deck.isOwner ? 'owner' : null);
+ const canEdit = role !== null;
+
+ // A member who has only been invited to edit a private deck reads the invitation and nothing else of it.
+ if (invitation && role === null && !deck.isPublic) {
+ return (
+ <div className={arrival}>
+ <header className="surface-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
+ <Link to="/study"className="text-site-text-muted hover:text-site-text"aria-label={t('back-to-decks', { defaultValue:'Back to decks'})}>
+ <ArrowLeft className="h-5 w-5"/>
+ </Link>
+ <h1 dir="auto" className="truncate text-lg font-semibold text-site-text">{deck.title}</h1>
+ </header>
+ <div className="p-4">
+ <DeckInvitationLine
+ invitation={invitation}
+ onAnswered={(accepted) => {
+ if (accepted) void load();
+ else navigate({ to:'/study'});
+ }}
+ />
+ </div>
+ </div>
+ );
+ }
+
  // Review mode
  if (queue && queue.length > 0) {
  const card = queue[idx];
+ keysRef.current = listen.on
+ ? (e) => {
+ const afterG = lastKeyRef.current === 'g' && e.timeStamp - lastKeyAtRef.current < 1500;
+ lastKeyRef.current = e.key;
+ lastKeyAtRef.current = e.timeStamp;
+ if (e.metaKey || e.ctrlKey || e.altKey) return;
+ const el = e.target as HTMLElement | null;
+ const tag = el?.tagName;
+ if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el?.isContentEditable) return;
+ if (e.key === 'a' && !afterG) {
+ e.preventDefault();
+ listen.replay();
+ return;
+ }
+ if (!revealed) {
+ if ((e.key === ' ' || e.key === 'Enter') && tag !== 'BUTTON' && tag !== 'A') {
+ e.preventDefault();
+ setRevealed(true);
+ }
+ return;
+ }
+ const n = Number(e.key);
+ if (n >= 1 && n <= 4 && !reviewBusy) {
+ e.preventDefault();
+ void grade(n - 1);
+ }
+ }
+ : null;
  return (
  <div>
  <header className="surface-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
@@ -262,6 +351,7 @@ export function DeckStudyColumn({
  </span>
  </header>
  <div className="p-4">
+ <ListenControls listen={listen} />
  <div className="flex min-h-64 flex-col items-center justify-center relative py-8 text-center">
  {isReverseCard(card) && <p className="t-meta mb-2">{ts('reverse-label', { defaultValue:'Reverse'})}</p>}
  {card.kind === 'occlusion' && card.occlusionReview && card.frontImage ? (
@@ -326,11 +416,24 @@ export function DeckStudyColumn({
  {deck.description && (
  <p dir="auto" className="truncate text-xs text-site-text-muted">{deck.description}</p>
  )}
+ {deck.byline && (
+ <p className="t-meta truncate">
+ {t('byline', { ns:'deck-coeditors', defaultValue:'By'})}{' '}
+ <bdi dir="auto">{deck.byline.owner.name}</bdi>
+ {deck.byline.editors > 0 &&
+ ` ${t('byline-editors', {
+ ns:'deck-coeditors',
+ count: deck.byline.editors,
+ defaultValue_one:'with {{count}} editor',
+ defaultValue:'with {{count}} editors',
+ })}`}
+ </p>
+ )}
  </div>
- {deck.isOwner && <EditDeckLink deckId={deckId} />}
+ {canEdit && <EditDeckLink deckId={deckId} />}
  {deck.isOwner && <DeckPageFolderMenu deckId={deckId} folderId={deck.folderId ?? null} onMoved={() => void load()} />}
  {/* Anyone may export a public deck; the owner exports from the editor. */}
- {!deck.isOwner && cards.length > 0 && (
+ {!canEdit && cards.length > 0 && (
  <ExportMenu deck={{ title: deck.title, description: deck.description ?? null, cards }} />
  )}
  {deck.isOwner && (
@@ -346,6 +449,17 @@ export function DeckStudyColumn({
  </header>
 
  <div className="space-y-4 p-4">
+ {invitation && role === null && (
+ <DeckInvitationLine
+ invitation={invitation}
+ onAnswered={(accepted) => {
+ if (accepted) void load();
+ else setInvitation(null);
+ }}
+ />
+ )}
+ {role === 'owner' && !deck.isCopy && <DeckEditors deckId={deckId} perspective="owner"/>}
+ {role === 'editor' && <DeckEditors deckId={deckId} perspective="editor"onLeft={() => navigate({ to:'/study'})} />}
  {deck.isOwner && updates && <DeckUpdatesLine deckId={deckId} summary={updates} onChanged={() => void load()} />}
  {signedIn && <DeckStatsSummary deckId={deckId} />}
  {deck.isOwner && <DeckPace deckId={deckId} />}
@@ -372,12 +486,12 @@ export function DeckStudyColumn({
  {cards.length > 0 && <PracticeTestLink deckId={deckId} />}
  {signedIn && <TestHistory deckId={deckId} />}
 
- {deck.isOwner && (
+ {canEdit && (
  <div className="relative py-4">
  <p className="mb-2 flex items-center gap-1.5 site-section-label">
  <Plus className="h-3.5 w-3.5"/> {t('add-a-card', { defaultValue:'Add a card'})}
  </p>
- <CardForm submitLabel={t('add', { defaultValue:'Add'})} resetOnSave onSubmit={addCard}/>
+ <CardForm submitLabel={t('add', { defaultValue:'Add'})} resetOnSave allowSound={deck.isOwner} onSubmit={addCard}/>
  </div>
  )}
 
@@ -389,7 +503,7 @@ export function DeckStudyColumn({
  <p className="t-meta mb-2">
  {ts('review-count', { count: reviewCount, defaultValue:'{{count}} to review'})}
  </p>
- <DeckCardList deckId={deckId} cards={cards} isOwner={deck.isOwner} signedIn={signedIn} onChanged={() => void load()} />
+ <DeckCardList deckId={deckId} cards={cards} isOwner={canEdit} signedIn={signedIn} onChanged={() => void load()} />
  </section>
  </div>
  </div>

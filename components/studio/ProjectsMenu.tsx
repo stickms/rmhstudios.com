@@ -14,8 +14,10 @@ import {
   FolderOpen,
   History,
   LogIn,
+  Link2,
   Pencil,
   Save,
+  Share2,
   SaveAll,
   Trash2,
 } from 'lucide-react';
@@ -23,6 +25,8 @@ import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem, MenuSeparator } from '@/components/ui/menu';
 import { ExportMenuItems } from '@/components/studio/ExportMenuItems';
 import { ProjectVersionsDialog } from '@/components/studio/ProjectVersionsDialog';
+import { ShareProjectDialog } from '@/components/studio/ShareProjectDialog';
+import { SharedLinksDialog } from '@/components/studio/SharedLinksDialog';
 import type { ProjectSession } from '@/components/studio/useProjectSession';
 
 export function ProjectsMenu({ session }: { session: ProjectSession }) {
@@ -30,6 +34,8 @@ export function ProjectsMenu({ session }: { session: ProjectSession }) {
   const anchorRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [versionsOpen, setVersionsOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [linksOpen, setLinksOpen] = useState(false);
 
   const close = () => setOpen(false);
   /** Run a menu action after the menu has closed, so focus returns to the trigger first. */
@@ -116,6 +122,12 @@ export function ProjectsMenu({ session }: { session: ProjectSession }) {
                 {t('menu-versions', { ns: 'studio-history', defaultValue: 'Versions…' })}
               </MenuItem>
             ) : null}
+            <MenuItem icon={Share2} onSelect={run(() => setShareOpen(true))}>
+              {t('menu-share', { ns: 'studio-share', defaultValue: 'Share a copy…' })}
+            </MenuItem>
+            <MenuItem icon={Link2} onSelect={run(() => setLinksOpen(true))}>
+              {t('menu-shared-links', { ns: 'studio-share', defaultValue: 'Shared links…' })}
+            </MenuItem>
             {session.linked ? (
               <MenuItem icon={CloudOff} tone="danger" onSelect={run(session.deleteCurrentFromAccount)}>
                 {t('menu-delete-account', { defaultValue: 'Delete from account…' })}
@@ -129,6 +141,8 @@ export function ProjectsMenu({ session }: { session: ProjectSession }) {
         )}
       </AnchoredMenu>
       {versionsOpen ? <ProjectVersionsDialog session={session} onClose={() => setVersionsOpen(false)} /> : null}
+      {shareOpen ? <ShareProjectDialog session={session} onClose={() => setShareOpen(false)} /> : null}
+      {linksOpen ? <SharedLinksDialog signedIn={session.signedIn} onClose={() => setLinksOpen(false)} /> : null}
     </div>
   );
 }

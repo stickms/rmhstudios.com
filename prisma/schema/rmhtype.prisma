@@ -190,3 +190,46 @@ model RmhTypeTextRun {
   @@index([userId])
   @@map("rmhtype_text_run")
 }
+
+/// A best run sent to a mutual to race (s11-12). The challenger's ghost is copied in when it is sent (a later best
+/// changes nothing already sent); the passage text is re-read from the curated source when the race starts. One
+/// attempt: `pending` -> `racing` (the opponent starts) -> `done`, each a compare-and-set. `declined` and `expired`
+/// are ends with no result. `finished = false` is "Did not finish" (the challenger wins).
+model RmhTypeChallenge {
+  id                 String    @id @default(cuid())
+  challengerId       String
+  challenger         User      @relation("RmhTypeChallengesSent", fields: [challengerId], references: [id], onDelete: Cascade)
+  opponentId         String
+  opponent           User      @relation("RmhTypeChallengesReceived", fields: [opponentId], references: [id], onDelete: Cascade)
+  passageId          String    @db.VarChar(64)
+  challengerWpm      Float
+  challengerAccuracy Float
+  challengerTimeMs   Int
+  samples            Int[]
+  /// pending | racing | done | declined | expired
+  status             String    @default("pending") @db.VarChar(10)
+  opponentWpm        Float?
+  opponentAccuracy   Float?
+  opponentTimeMs     Int?
+  /// challenger | opponent | draw
+  outcome            String?   @db.VarChar(12)
+  finished           Boolean?
+  raceStartedAt      DateTime?
+  createdAt          DateTime  @default(now())
+  expiresAt          DateTime
+  settledAt          DateTime?
+
+  @@index([opponentId, status])
+  @@index([challengerId, status])
+  @@index([status, expiresAt])
+  @@map("rmhtype_challenge")
+}
+
+/// A row means this member has turned challenges off (s11-12). No row = on, the default.
+model RmhTypeChallengeOptOut {
+  userId    String   @id
+  user      User     @relation("RmhTypeChallengeOptOut", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("rmhtype_challenge_opt_out")
+}

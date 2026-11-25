@@ -8,6 +8,7 @@ import { CARD_IMAGE_SELECT, picturesOfRow } from '@/lib/study/card-images';
 import { reviewDataFor } from '@/lib/study/occlusion';
 import { CARD_SOUND_SELECT, soundFields, soundsOfRow } from '@/lib/study/card-sound';
 import { pictureFields } from '@/lib/study.server';
+import { canReadDeck } from '@/lib/study/deck-access.server';
 
 /** GET /api/study/decks/$id/review — the viewer's due cards for this deck. */
 export const route = apiRoute('/api/study/decks/$id/review', {
@@ -19,8 +20,8 @@ export const route = apiRoute('/api/study/decks/$id/review', {
       select: { id: true, isPublic: true, userId: true },
     });
     if (!deck) return Response.json({ error: 'Not found' }, { status: 404 });
-    if (!deck.isPublic && deck.userId !== userId)
-      return Response.json({ error: 'Not found' }, { status: 404 });
+    // The owner, an accepted editor or anyone (a public deck); a pending invitee or a removed editor finds nothing.
+    if (!(await canReadDeck(userId, deck))) return Response.json({ error: 'Not found' }, { status: 404 });
 
     const cards = await prisma.flashcard.findMany({
       // Reviewable cards only: an authored cloze card is the text its generated cards are made from.

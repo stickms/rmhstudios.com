@@ -4,12 +4,13 @@
  * `aria-hidden` on purpose. What it shows is said in words by the runner (the key's
  * finger, and Shift when needed), so a screen reader loses nothing. The highlight is
  * one attribute (`data-next`) moved from key to key in an effect; no layout is read
- * and nothing animates. Colour is not the only cue: the lit key inverts to ink on the
+ * and nothing animates. The keys drawn are the chosen layout's (`keyboardRows`), so a Dvorak typist sees Dvorak. Colour is not the only cue: the lit key inverts to ink on the
  * accent and the runner prints the finger.
  */
 import { memo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { baseKeyOf, fingerFor, KEYBOARD_LAYOUT, needsShift } from '@/lib/rmhtype/lessons';
+import type { TypingLayout } from '@/lib/rmhtype/keystats';
+import { baseKeyOn, fingerForOn, keyboardRows, needsShiftOn } from '@/lib/rmhtype/layouts';
 
 const KEY_CLASS =
   'flex h-9 min-w-0 flex-1 items-center justify-center rounded-app-sm border border-app-border bg-app-bg font-mono text-sm text-app-text-muted data-[next]:border-app-accent data-[next]:bg-app-accent data-[next]:text-app-accent-fg';
@@ -17,7 +18,7 @@ const KEY_CLASS =
 /** Row indents, in key widths, so the rows stagger like a real board. */
 const ROW_INDENT = ['', 'pl-[2%]', 'pl-[4%]', 'pl-[6%]'];
 
-function LessonKeyboardView({ nextChar }: { nextChar: string | null }) {
+function LessonKeyboardView({ nextChar, layout = 'qwerty' }: { nextChar: string | null; layout?: TypingLayout }) {
   const { t } = useTranslation('rmhtype-lessons');
   const root = useRef<HTMLDivElement>(null);
   const shiftLabel = t('key-shift', {
@@ -29,17 +30,17 @@ function LessonKeyboardView({ nextChar }: { nextChar: string | null }) {
     if (!host) return;
     host.querySelectorAll('[data-next]').forEach((el) => el.removeAttribute('data-next'));
     if (!nextChar) return;
-    const lit: string[] = [nextChar === ' ' ? 'space' : baseKeyOf(nextChar)];
-    if (needsShift(nextChar)) {
+    const lit: string[] = [nextChar === ' ' ? 'space' : (baseKeyOn(layout, nextChar) ?? nextChar.toLowerCase())];
+    if (needsShiftOn(layout, nextChar)) {
       // Shift is held by the hand opposite the key being struck.
-      lit.push(fingerFor(nextChar)?.startsWith('left') ? 'shift-right' : 'shift-left');
+      lit.push(fingerForOn(layout, nextChar)?.startsWith('left') ? 'shift-right' : 'shift-left');
     }
     for (const key of lit) host.querySelector(`[data-key="${CSS.escape(key)}"]`)?.setAttribute('data-next', '');
-  }, [nextChar]);
+  }, [nextChar, layout]);
 
   return (
     <div ref={root} aria-hidden="true" className="mx-auto flex w-full max-w-xl select-none flex-col gap-1">
-      {KEYBOARD_LAYOUT.map((row, i) => (
+      {keyboardRows(layout).map((row, i) => (
         <div key={row} className={`flex gap-1 ${ROW_INDENT[i] ?? ''}`}>
           {[...row].map((key) => (
             <span key={key} data-key={key} className={KEY_CLASS}>

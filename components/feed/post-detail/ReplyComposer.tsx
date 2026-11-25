@@ -77,7 +77,7 @@ export function ReplyComposer({
           linkToProfile={false}
         />
         <div className="min-w-0 flex-1">
-          <MentionTextarea
+          <MentionTextarea aria-label={t('field-reply', { defaultValue: 'Your reply' })}
             id={REPLY_INPUT_ID}
             value={commentContent}
             onChange={setCommentContent}

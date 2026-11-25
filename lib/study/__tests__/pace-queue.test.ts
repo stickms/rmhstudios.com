@@ -73,7 +73,7 @@ const card = (id: string, deckId: string, deck: Record<string, unknown> = {}) =>
   sourceId: null,
   clozeIndex: null,
   deckId,
-  deck: { title: `Deck ${deckId}`, newPerDay: null, extraNewDay: null, extraNew: 0, ...deck },
+  deck: { title: `Deck ${deckId}`, userId: 'me', newPerDay: null, extraNewDay: null, extraNew: 0, ...deck },
 });
 const many = (deckId: string, n: number, deck: Record<string, unknown> = {}) =>
   Array.from({ length: n }, (_, i) => card(`${deckId}${i}`, deckId, deck));

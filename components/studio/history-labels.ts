@@ -142,5 +142,10 @@ export function stepName(t: TFunction, label: HistoryLabel): string {
         ns: 'studio-export',
         defaultValue: 'Import MIDI',
       });
+    case 'record-take':
+      return t('step-record-take', {
+        ns: 'studio-record',
+        defaultValue: 'Record take',
+      });
   }
 }

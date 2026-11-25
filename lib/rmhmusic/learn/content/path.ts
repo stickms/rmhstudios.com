@@ -31,7 +31,8 @@ export type LessonMode =
   | 'play-scale'
   | 'key-signature'
   | 'staff-intervals'
-  | 'grand-staff-find';
+  | 'grand-staff-find'
+  | 'staff-chords';
 
 export interface Lesson {
   id: string;
@@ -233,6 +234,63 @@ const KEY_SIGNATURES_MINOR: Lesson = {
   available: true,
 };
 
+/**
+ * Chords in every key: the four triads by ear, read on the staff in root position and in
+ * inversions (`staff-chords`, `machines/staff-chords.ts`), and played in all twelve keys
+ * (`play-chord`, `machines/play-chord.ts`). On the piano and guitar path only, after Scales and
+ * keys: a singer plays no chords. `chord-play-c-major` stays in "Train your ear". Ids are stored
+ * with progress: add new ones, never rename.
+ */
+export const CHORDS_UNIT_ID = 'chords-in-every-key';
+
+const CHORDS_UNIT: Unit = {
+  id: CHORDS_UNIT_ID,
+  title: 'Chords in every key',
+  lessons: [
+    {
+      id: 'chords-ear-four-qualities',
+      unit: CHORDS_UNIT_ID,
+      title: 'Four kinds of chord by ear',
+      summary: 'Hear three notes together and tell a major, a minor, a diminished and an augmented chord apart.',
+      mode: 'ear-chord',
+      available: true,
+      pool: ['major', 'minor', 'diminished', 'augmented'],
+    },
+    {
+      id: 'chords-read-root-position',
+      unit: CHORDS_UNIT_ID,
+      title: 'Read a chord on the staff',
+      summary: 'Three notes stacked in thirds: name the root, with its sharp or flat, and the kind of chord.',
+      mode: 'staff-chords',
+      available: true,
+    },
+    {
+      id: 'chords-play-major-minor',
+      unit: CHORDS_UNIT_ID,
+      title: 'Every major and minor chord',
+      summary: 'Play all twelve major and all twelve minor chords, with the sharps and flats spelled right.',
+      mode: 'play-chord',
+      available: true,
+    },
+    {
+      id: 'chords-play-dim-aug',
+      unit: CHORDS_UNIT_ID,
+      title: 'Diminished and augmented chords',
+      summary: 'Play the diminished and augmented chords on the seven natural notes.',
+      mode: 'play-chord',
+      available: true,
+    },
+    {
+      id: 'chords-read-inversions',
+      unit: CHORDS_UNIT_ID,
+      title: 'Read inversions',
+      summary: 'The same three notes with another one lowest: name the chord and whether it is in root position or inverted.',
+      mode: 'staff-chords',
+      available: true,
+    },
+  ],
+};
+
 export const PATH: Unit[] = [
   {
     id: 'meet-staff-and-keys',
@@ -386,6 +444,7 @@ export const PATH: Unit[] = [
       },
     ],
   },
+  CHORDS_UNIT,
   READ_INTERVALS_UNIT,
   RHYTHM_UNIT,
   READ_SPELLED_UNIT,

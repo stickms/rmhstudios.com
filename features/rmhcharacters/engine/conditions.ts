@@ -1,0 +1,52 @@
+/** The conditions a sheet can track, per system. The party summary shows only these, never a free-text entry. */
+
+/** SRD 5.2 conditions. */
+export const DND5E_CONDITIONS = [
+  'Blinded',
+  'Charmed',
+  'Deafened',
+  'Frightened',
+  'Grappled',
+  'Incapacitated',
+  'Invisible',
+  'Paralyzed',
+  'Petrified',
+  'Poisoned',
+  'Prone',
+  'Restrained',
+  'Stunned',
+  'Unconscious',
+];
+
+/** Player Core conditions that are commonly tracked. */
+export const PF2E_CONDITIONS = [
+  'Blinded',
+  'Clumsy',
+  'Concealed',
+  'Confused',
+  'Controlled',
+  'Dazzled',
+  'Deafened',
+  'Drained',
+  'Doomed',
+  'Enfeebled',
+  'Fascinated',
+  'Fatigued',
+  'Fleeing',
+  'Frightened',
+  'Grabbed',
+  'Hidden',
+  'Immobilized',
+  'Off-Guard',
+  'Paralyzed',
+  'Persistent Damage',
+  'Petrified',
+  'Prone',
+  'Quickened',
+  'Restrained',
+  'Sickened',
+  'Slowed',
+  'Stunned',
+  'Stupefied',
+  'Unconscious',
+];

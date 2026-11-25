@@ -35,6 +35,7 @@ const U = 'user-1';
 const EXPECTED: Array<[string, string, Record<string, unknown>]> = [
   ['aiPersonaMessage', 'deleteMany', { userId: U }],
   ['aiPersona', 'deleteMany', { ownerId: U, isPublic: false, messages: { none: { userId: { not: U } } } }],
+  ['aiPersona', 'updateMany', { ownerId: U, isPublic: false }],
   ['emojiPackSubscription', 'deleteMany', { userId: U }],
   ['feedSignal', 'deleteMany', { userId: U }],
   ['postAutoDelete', 'deleteMany', { userId: U }],
@@ -62,6 +63,12 @@ describe('listsErasureOps', () => {
     expect(ops.map((o) => [o.model, o.method, o.args.where])).toEqual(EXPECTED);
   });
 
+  it('empties the prompt, tagline and greeting of a kept private persona, and nothing else on it', () => {
+    const scrub = ops.find((o) => o.model === 'aiPersona' && o.method === 'updateMany')!;
+    expect(scrub.args.where).toEqual({ ownerId: U, isPublic: false });
+    expect(scrub.args.data).toEqual({ systemPrompt: '', tagline: null, greeting: null });
+  });
+
   it('keeps public personas, public feeds (either flag), and other members tuning', () => {
     expect(ops.find((o) => o.model === 'aiPersona')!.args.where).toMatchObject({
       isPublic: false,
@@ -78,7 +85,7 @@ describe('listsErasureOps', () => {
   });
 
   it('clears the message of decided join requests instead of deleting them', () => {
-    const up = ops.find((o) => o.method === 'updateMany')!;
+    const up = ops.find((o) => o.model === 'communityJoinRequest' && o.method === 'updateMany')!;
     expect(up.model).toBe('communityJoinRequest');
     expect(up.args.data).toEqual({ message: null });
     expect(JSON.stringify(up.args.where)).toContain('PENDING');

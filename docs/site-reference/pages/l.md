@@ -15,6 +15,9 @@ Standard pages, rendered inside the sidebar shell.
 | URL | Title | Access | Source |
 | --- | ----- | ------ | ------ |
 | `/library` | Library | public | `app/routes/_site/library/index.tsx` |
+| `/lights-out/b/:id` | Lights Out Board | public | `app/routes/_site/lights-out.b.$id.tsx` |
+| `/lights-out/boards` | Lights Out Boards | public | `app/routes/_site/lights-out.boards.tsx` |
+| `/lights-out/new` | Make a Lights Out Board | public | `app/routes/_site/lights-out.new.tsx` |
 | `/lists/:id` | List | public | `app/routes/_site/lists/$id.tsx` |
 
 ## Full-screen

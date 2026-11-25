@@ -289,14 +289,14 @@ export function CommunitiesColumn({
               {t('create-community-title', { defaultValue: 'Create a community' })}
             </DialogTitle>
           </DialogHeader>
-          <input
+          <input aria-label={t('field-community-name', { defaultValue: 'Community name' })}
             className={inputCls}
             placeholder={t('name-placeholder', { defaultValue: 'Name' })}
             value={name}
             maxLength={60}
             onChange={(e) => setName(e.target.value)}
           />
-          <textarea
+          <textarea aria-label={t('field-community-description', { defaultValue: 'Community description' })}
             className={inputCls}
             placeholder={t('description-placeholder', { defaultValue: 'Description (optional)' })}
             rows={2}
@@ -304,7 +304,7 @@ export function CommunitiesColumn({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
-          <input
+          <input aria-label={t('field-community-icon', { defaultValue: 'Community emoji icon' })}
             className={inputCls}
             placeholder={t('icon-placeholder', { defaultValue: 'Emoji icon (optional, e.g. 🎮)' })}
             value={icon}

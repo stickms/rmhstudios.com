@@ -9,6 +9,7 @@ import { nextState, type Grade } from '@/lib/rmhstudy/srs';
 import { isLapse } from '@/lib/study/queue';
 import { saveReview } from '@/lib/study/review-log.server';
 import { recordStudyReview } from '@/lib/quests/engine.server';
+import { canReadDeck } from '@/lib/study/deck-access.server';
 
 /** POST /api/study/cards/$id/review — submit an SRS grade for a card. */
 export const route = apiRoute('/api/study/cards/$id/review', {
@@ -36,7 +37,7 @@ export const route = apiRoute('/api/study/cards/$id/review', {
       if (!card) return Response.json({ error: 'Not found' }, { status: 404 });
       // An authored cloze card is never reviewed; its generated cards are.
       if (!isReviewable(card)) return Response.json({ error: 'Not found' }, { status: 404 });
-      if (!card.deck.isPublic && card.deck.userId !== userId) {
+      if (!(await canReadDeck(userId, { id: card.deckId, ...card.deck }))) {
         return Response.json({ error: 'Not found' }, { status: 404 });
       }
 

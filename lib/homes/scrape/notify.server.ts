@@ -10,6 +10,7 @@
  */
 
 import { notice, noticeColumns } from '@/lib/notifications/notice-keys';
+import { dropLink, notifyPriceDrop, type DropPrisma, type PriceDrop } from '../price-drop-notify.server';
 import { listingMatchesWatch, type MatchableListing, type WatchCriteria } from '../watch-match';
 
 type WatchRow = WatchCriteria & { id: string; userId: string; label: string };
@@ -37,6 +38,8 @@ export interface NotifyPrisma {
   notification: {
     createMany(args: { data: Record<string, unknown>[] }): Promise<{ count: number }>;
   };
+  homeFavorite: DropPrisma['homeFavorite'];
+  userBlock: DropPrisma['userBlock'];
 }
 
 /**
@@ -93,4 +96,38 @@ export async function notifyWatchersOfExternalListing(
     console.error('[homes-worker] notifyWatchersOfExternalListing failed:', err);
     return 0;
   }
+}
+
+/**
+ * Tell the favouriters of a scraped listing that its price dropped. The rules (switch, one notice a week,
+ * bans, the cap) are `notifyPriceDrop`'s; delivery here is a direct Notification insert, like the watch alerts
+ * above, so the worker bundle stays small. Best-effort: never throws.
+ */
+export async function notifyFavouritersOfExternalDrop(
+  prisma: NotifyPrisma,
+  drop: Omit<PriceDrop, 'authorId'>,
+  now: Date = new Date(),
+): Promise<number> {
+  return notifyPriceDrop(
+    {
+      prisma,
+      deliver: async (userId, d, preview) => {
+        await prisma.notification.createMany({
+          data: [
+            {
+              userId,
+              actorId: null,
+              type: 'SYSTEM' as const,
+              entityType: 'home_price_drop',
+              entityId: d.listingId,
+              ...noticeColumns(preview),
+              link: dropLink(d.listingId),
+            },
+          ],
+        });
+      },
+    },
+    { ...drop, authorId: null },
+    now,
+  );
 }

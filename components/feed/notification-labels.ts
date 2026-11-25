@@ -173,6 +173,19 @@ export function systemLabels(t: TFunction): Record<string, string> {
     // s10-17 admin-communities
     'community-delisted': t('system-label-community-delisted', { ns: 'feed', defaultValue: 'Out of discovery' }),
 
+    // Sprint 11 system labels (docs/autonomous/sprint-11/plan.md §Anchors)
+    // s11-09 read-alongs
+    'read-along': t('system-label-read-along', { ns: 'feed', defaultValue: 'Read-alongs' }),
+
+    // s11-10 deck-coeditors
+    'deck-editor': t('system-label-deck-editor', { ns: 'feed', defaultValue: 'Deck editors' }),
+
+    // s11-12 type-challenges
+    'type-challenge': t('system-label-type-challenge', { ns: 'feed', defaultValue: 'Typing challenge' }),
+
+    // s11-13 listing-prices
+    home_price_drop: t('system-label-home_price_drop', { ns: 'feed', defaultValue: 'Price drop' }),
+
     default: t('system-label-default', { ns: 'feed', defaultValue: 'RMH Studios' }),
   };
 }

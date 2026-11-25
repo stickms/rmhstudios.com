@@ -112,6 +112,11 @@ export const BOARD_PRIVACY_READ_PATHS = [
   'app/routes/api/rmhbox/leaderboard.ts',
   // The RMHbox hub is its own process with its own Prisma client; it keeps a twin of the helper.
   'server/rmhbox/leaderboard.ts',
+  // Sprint 11
+  // s11-05 lights-out-maker
+  'lib/lights-out/boards.server.ts',
+  // s11-06 daily-following
+  'lib/daily-puzzles/following.server.ts',
 ] as const;
 
 /**
@@ -247,5 +252,10 @@ export const BOARD_PRIVACY_EXEMPT: Readonly<Record<string, BoardPrivacyExemption
   },
   'lib/account/erasure-boards.server.ts': {
     reason: "Account erasure: deletes the member's own board rows; it returns no list of members.",
+  },
+  // s11-12 type-challenges
+  'lib/rmhtype/challenges.server.ts': {
+    reason:
+      "The caller's own ghosts ranked by speed (which run to send as a challenge) and the caller's own challenges; no list of other members is ranked.",
   },
 };

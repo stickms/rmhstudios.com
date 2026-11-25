@@ -51,7 +51,7 @@ const BUTTERFLY_MASK = maskFrom(['#...#', '##.##', '..#..', '##.##', '#...#']);
 const T_MASK = maskFrom(['#####', '..#..', '..#..', '..#..']);
 
 /** All shapes that can appear. Seed picks one. */
-const SHAPES: GridShape[] = [
+export const SHAPES: GridShape[] = [
   // Classic rectangles
   {
     type: 'rect',

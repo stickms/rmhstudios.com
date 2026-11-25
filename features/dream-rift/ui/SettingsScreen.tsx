@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDreamRift } from '@features/dream-rift/engine/store';
 import { BIND_ACTIONS, BIND_LABELS, DEFAULT_BINDINGS, keyLabel, normalizeKey, rebind, type BindAction } from '@features/dream-rift/engine/keybinds';
 import { useRuntime } from './runtime';
@@ -47,10 +48,10 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
                 <section className="dr-frame rounded-sm p-4">
                     <h3 className="dr-serif mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-[color:var(--dr-gold-soft)]">Audio</h3>
                     <Toggle label="Music" checked={musicOn} onChange={(v) => { setMusicOn(v); if (v) void music.resume(); }} />
-                    <VolumeSlider value={musicVol} onChange={setMusicVol} disabled={!musicOn} />
+                    <VolumeSlider kind="music" value={musicVol} onChange={setMusicVol} disabled={!musicOn} />
                     <div className="h-3" />
                     <Toggle label="Sound Effects" checked={sfxOn} onChange={setSfxOn} />
-                    <VolumeSlider value={sfxVol} onChange={(v) => { setSfxVol(v); }} onCommit={() => sfx.play('menuMove')} disabled={!sfxOn} />
+                    <VolumeSlider kind="sfx" value={sfxVol} onChange={(v) => { setSfxVol(v); }} onCommit={() => sfx.play('menuMove')} disabled={!sfxOn} />
                 </section>
 
                 {/* Gameplay */}
@@ -113,10 +114,11 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
 }
 
 /** Fine-grained volume slider (1% steps) with a live percentage readout. */
-function VolumeSlider({ value, onChange, onCommit, disabled }: { value: number; onChange: (v: number) => void; onCommit?: () => void; disabled?: boolean }) {
+function VolumeSlider({ value, onChange, onCommit, disabled, kind }: { value: number; onChange: (v: number) => void; onCommit?: () => void; disabled?: boolean; kind: 'music' | 'sfx' }) {
+    const { t } = useTranslation('c-dream-rift');
     return (
         <div className={`flex items-center gap-3 ${disabled ? 'opacity-40' : ''}`}>
-            <input
+            <input aria-label={kind === 'music' ? t('field-music-volume', { defaultValue: 'Music volume' }) : t('field-sfx-volume', { defaultValue: 'Sound effects volume' })}
                 type="range"
                 min={0}
                 max={1}

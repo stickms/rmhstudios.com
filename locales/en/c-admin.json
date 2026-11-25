@@ -19,6 +19,7 @@
   "description-placeholder": "A short summary of the post...",
   "editing-title": "Editing: {{title}}",
   "failed-to-create-post": "Failed to create post",
+  "field-content-file": "Content file",
   "generate-initial-preview": "Generate Initial Preview",
   "generic-error": "An error occurred",
   "hide-preview": "Hide Preview",

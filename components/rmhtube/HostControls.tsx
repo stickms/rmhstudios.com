@@ -733,7 +733,7 @@ export default function HostControls({
           >
             <VolumeIcon className="h-4 w-4" />
           </button>
-          <input
+          <input aria-label={t('field-volume', { defaultValue: 'Volume' })}
             type="range"
             min={
               0

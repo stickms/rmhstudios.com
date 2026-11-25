@@ -27,6 +27,12 @@ export function listsErasureOps(userId: string) {
     prisma.aiPersona.deleteMany({
       where: { ownerId: userId, isPublic: false, messages: { none: { userId: { not: userId } } } },
     }),
+    // What the delete above left of a private persona is kept for the other members' chats, which show its name,
+    // emoji and avatar; the member's own words on it (prompt, tagline, greeting) go in the same step.
+    prisma.aiPersona.updateMany({
+      where: { ownerId: userId, isPublic: false },
+      data: { systemPrompt: '', tagline: null, greeting: null },
+    }),
     prisma.emojiPackSubscription.deleteMany({ where: { userId } }),
     // Feed tuning, own rows only.
     prisma.feedSignal.deleteMany({ where: { userId } }),

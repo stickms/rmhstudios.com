@@ -37,8 +37,11 @@ export function CardRow({
   card,
   onSave,
   onDelete,
+  allowSound = true,
 }: {
   card: EditorCard;
+  /** Offer the recorder: the deck's owner only (an editor's save leaves a card's sounds as they are, s11-10). */
+  allowSound?: boolean;
   /** Resolves true when the change was saved. */
   onSave: (id: string, next: CardFormValue) => Promise<boolean>;
   onDelete: (card: EditorCard) => void;
@@ -53,6 +56,7 @@ export function CardRow({
       <div className="py-2">
         <CardForm
           initial={card}
+          allowSound={allowSound}
           submitLabel={t('save-card', { defaultValue: 'Save card' })}
           onSubmit={async (next) => {
             const ok = await onSave(card.id, next);

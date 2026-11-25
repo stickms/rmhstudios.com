@@ -155,6 +155,12 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/communities/:slug/onboarding` | `GET` `POST` `PUT` | `lib/communities/api/communities.$slug.onboarding.server.ts` |
 | `/api/communities/:slug/pins` | `GET` `POST` `PUT` | `lib/communities/api/communities.$slug.pins.server.ts` |
 | `/api/communities/:slug/pins/:postId` | `DELETE` | `lib/communities/api/communities.$slug.pins.$postId.server.ts` |
+| `/api/communities/:slug/read-alongs` | `GET` `POST` | `lib/communities/api/communities.$slug.read-alongs.server.ts` |
+| `/api/communities/:slug/read-alongs/:id` | `GET` `PATCH` | `lib/communities/api/communities.$slug.read-alongs.$id.server.ts` |
+| `/api/communities/:slug/read-alongs/:id/join` | `DELETE` `POST` | `lib/communities/api/communities.$slug.read-alongs.$id.join.server.ts` |
+| `/api/communities/:slug/read-alongs/:id/progress` | `PUT` | `lib/communities/api/communities.$slug.read-alongs.$id.progress.server.ts` |
+| `/api/communities/:slug/read-alongs/books` | `GET` | `lib/communities/api/communities.$slug.read-alongs.books.server.ts` |
+| `/api/communities/:slug/read-alongs/plan` | `GET` | `lib/communities/api/communities.$slug.read-alongs.plan.server.ts` |
 | `/api/communities/:slug/recurring` | `GET` `POST` | `lib/communities/api/communities.$slug.recurring.server.ts` |
 | `/api/communities/:slug/recurring/:id` | `DELETE` `PATCH` `POST` | `lib/communities/api/communities.$slug.recurring.$id.server.ts` |
 | `/api/communities/:slug/report` | `POST` | `lib/communities/api/communities.$slug.report.server.ts` |

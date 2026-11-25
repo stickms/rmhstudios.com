@@ -92,6 +92,7 @@ export default function GuessInput({ onSubmit, disabled, maxGuesses, guessesUsed
       <div className="flex gap-2">
         <div className="relative flex-1">
           <input
+            aria-label={t('field-guess', { defaultValue: 'Your guess' })}
             ref={inputRef}
             type="text"
             placeholder={

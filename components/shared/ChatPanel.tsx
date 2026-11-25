@@ -353,7 +353,7 @@ export default function ChatPanel({
         }}
       >
         <div className="relative flex-1 min-w-0">
-          <input
+          <input aria-label={t('field-chat-message', { defaultValue: 'Chat message' })}
             ref={inputRef}
             type="text"
             value={message}

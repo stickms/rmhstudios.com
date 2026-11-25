@@ -49,7 +49,7 @@ export function CoverField({
           {t('change-cover', { defaultValue: 'Change cover' })}
         </span>
       </button>
-      <input
+      <input aria-label={t('field-cover-file', { defaultValue: 'Choose a cover picture' })}
         ref={inputRef}
         type="file"
         accept="image/png,image/jpeg,image/gif,image/webp"

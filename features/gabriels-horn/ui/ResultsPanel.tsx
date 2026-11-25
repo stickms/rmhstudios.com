@@ -13,6 +13,8 @@ import { Megaphone, Trophy } from 'lucide-react';
 import type { GameResults } from '@features/gabriels-horn/engine/net/events';
 import { HornButton, Panel, SeatAvatar } from './ui';
 import { TableReadPanel } from './TableReadPanel';
+import { useBotText } from './botNames';
+import { BotMark, PracticeLine } from './BotParts';
 
 export function ResultsPanel({
   results,
@@ -26,6 +28,7 @@ export function ResultsPanel({
   onLeave: () => void;
 }) {
   const { t } = useTranslation('c-gabriels-horn');
+  const { seatName } = useBotText();
   const winner = results.standings.find((row) => row.place === 1);
   const backfired = results.standings.find((row) => row.endBackfired);
 
@@ -42,7 +45,7 @@ export function ResultsPanel({
               : winner
                 ? t('results-winner', {
                     defaultValue: '{{name}} wins',
-                    name: winner.name,
+                    name: seatName(winner),
                   })
                 : t('results-none', {
                     defaultValue: 'No winner',
@@ -67,7 +70,7 @@ export function ResultsPanel({
               {t('results-backfired', {
                 defaultValue:
                   '{{name}} sounded the horn without being strictly lowest, so the call backfired and drops them to last.',
-                name: backfired.name,
+                name: seatName(backfired),
               })}
             </span>
           </p>
@@ -78,9 +81,10 @@ export function ResultsPanel({
             {results.standings.map((row) => (
               <li key={row.socketId} className="flex items-center gap-2">
                 <span className="w-5 shrink-0 text-end font-mono text-sm text-app-text-dim">{row.place}</span>
-                <SeatAvatar name={row.name} avatarUrl={row.avatarUrl} size={28} />
+                <SeatAvatar name={seatName(row)} avatarUrl={row.avatarUrl} size={28} />
                 <span className="min-w-0 grow truncate text-sm">
-                  {row.name}
+                  <BotMark bot={row.bot} />
+                  {seatName(row)}
                   {row.socketId === selfSocketId ? (
                     <span className="ms-1 text-app-text-dim">
                       {t('you-suffix', {
@@ -108,6 +112,8 @@ export function ResultsPanel({
             ))}
           </ol>
         </Panel>
+
+        {results.practice ? <PracticeLine /> : null}
 
         <TableReadPanel results={results} selfSocketId={selfSocketId} />
 

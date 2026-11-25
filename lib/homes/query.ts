@@ -68,6 +68,7 @@ export function parseFilters(params: URLSearchParams): SearchFilters {
     minBeds: optionalPositive(params.get('minBeds')),
     minBaths: optionalPositive(params.get('minBaths')),
     petsAllowed: params.get('pets') === '1' ? true : undefined,
+    reduced: params.get('reduced') === '1' ? true : undefined,
     sort,
     page: clampInt(params.get('page'), 1, 500, 1),
     pageSize: clampInt(params.get('pageSize'), 1, 60, DEFAULT_FILTERS.pageSize),
@@ -88,6 +89,7 @@ export function serializeFilters(filters: SearchFilters): URLSearchParams {
   if (filters.minBeds != null) p.set('minBeds', String(filters.minBeds));
   if (filters.minBaths != null) p.set('minBaths', String(filters.minBaths));
   if (filters.petsAllowed) p.set('pets', '1');
+  if (filters.reduced) p.set('reduced', '1');
   if (filters.sort !== DEFAULT_FILTERS.sort) p.set('sort', filters.sort);
   if (filters.page > 1) p.set('page', String(filters.page));
   return p;

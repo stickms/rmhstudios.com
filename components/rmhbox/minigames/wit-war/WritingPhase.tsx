@@ -118,7 +118,7 @@ export default function WritingPhase({
               </div>
 
               <div className="relative">
-                <textarea
+                <textarea aria-label={t('field-answer', { defaultValue: 'Your answer' })}
                   value={value}
                   onChange={(e) => handleChange(prompt.promptIndex, e.target.value)}
                   maxLength={WW_MAX_ANSWER_LENGTH}

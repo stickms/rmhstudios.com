@@ -11,7 +11,7 @@
  * a non-test `.ts`/`.tsx` file under app/, lib/ or server/ counts once when it has
  *  - a MODULE-LEVEL `new Map(` — a line that starts at column 0 with
  *    `[export] const|let <name>[: type] = new Map` — AND
- *  - a `TTL`, `ttl` or `expiresAt` identifier anywhere in the file.
+ *  - a `TTL`, `ttl…`, `…Ttl…` or `expiresAt` identifier anywhere in the file.
  * It over-counts files that merely hold a Map beside an unrelated TTL and under-counts
  * maps built inside a class or a factory; both are fine for a ratchet, which only
  * needs the number to be stable and to move when someone adds or removes a cache.
@@ -26,10 +26,12 @@ import { globSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 /** Lower this when you migrate files. Never raise it. */
-const BASELINE = 63;
+const BASELINE = 41;
 
 const MODULE_MAP = /^(?:export\s+)?(?:const|let)\s+\w+\s*(?::[^=\n]+)?=\s*new Map\b/m;
-const TTL_WORD = /\b(?:\w*TTL\w*|\w*[tT]tl\w*|expiresAt)\b/;
+// `ttl` only as a word or a camelCase part (`ttlMs`, `cacheTtl`, `CACHE_TTL`): a lowercase `ttl` inside a word is
+// `settle`, `throttle`, `battle` or `subtitle`, which named no cache and once made 22 files count.
+const TTL_WORD = /\b(?:\w*TTL\w*|ttl\w*|\w*Ttl\w*|expiresAt)\b/;
 
 function count(): {
   total: number;

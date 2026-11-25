@@ -94,5 +94,39 @@ export function deviceStoreText(t: TFunction): Record<string, DeviceStoreText> {
         defaultValue: 'Volume, controls and other settings from the games',
       }),
     },
+
+    // Sprint 11
+    // s11-02 character-rolls
+    'character-rolls': {
+      label: t('store-character-rolls', { ns: 'device-data', defaultValue: 'Character rolls' }),
+      hint: t('store-character-rolls-hint', {
+        ns: 'device-data',
+        defaultValue: 'The last 50 dice rolls of each character, kept on this device only',
+      }),
+    },
+    // s11-11 type-layouts
+    'rmhtype-layout': {
+      label: t('store-rmhtype-layout', { ns: 'device-data', defaultValue: 'RMHType keyboard layout' }),
+      hint: t('store-rmhtype-layout-hint', {
+        ns: 'device-data',
+        defaultValue: 'The keyboard layout you chose for the typing lessons and key statistics',
+      }),
+    },
+    // s11-16 rmhtube-subtitles
+    'rmhtube-subtitles': {
+      label: t('store-rmhtube-subtitles', { ns: 'device-data', defaultValue: 'RMHTube subtitles' }),
+      hint: t('store-rmhtube-subtitles-hint', {
+        ns: 'device-data',
+        defaultValue: 'The subtitle language and size you chose for watch parties',
+      }),
+    },
+    // s11-17 card-listen
+    'card-listen': {
+      label: t('store-card-listen', { ns: 'device-data', defaultValue: 'Flashcard Listen' }),
+      hint: t('store-card-listen-hint', {
+        ns: 'device-data',
+        defaultValue: 'Whether Listen is on in your reviews and how long it waits before showing the answer',
+      }),
+    },
   };
 }

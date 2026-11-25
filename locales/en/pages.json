@@ -309,5 +309,7 @@
   "two-factor-use-app": "Use your authenticator app",
   "two-factor-use-backup": "Use a backup code",
   "two-factor-verify": "Verify",
-  "captcha-wait": "Checking your browser. Try again in a moment."
+  "captcha-wait": "Checking your browser. Try again in a moment.",
+  "field-avatar-file": "Choose an avatar picture",
+  "field-prompt": "Describe the change"
 }

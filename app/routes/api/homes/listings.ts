@@ -20,6 +20,8 @@ import {
 } from '@/lib/homes/listings.server';
 import { resolveCenter } from '@/lib/homes/geo.server';
 import { PROPERTY_TYPES } from '@/lib/homes/types';
+import { imageAltsRefusal } from '@/lib/homes/photos';
+import { listingPhotoOriginRefusal } from '@/lib/homes/photo-origin';
 import type { ListingInput } from '@/lib/homes/types';
 
 const listingInputSchema = z.object({
@@ -42,6 +44,8 @@ const listingInputSchema = z.object({
   availableFrom: z.string().max(40).nullish(),
   images: z.array(z.string().max(1000)).max(12).default([]),
   aiImages: z.array(z.string().max(1000)).max(12).default([]),
+  // Longer than the limit still parses: the handler answers it with its own refusal code (`imageAltsRefusal`).
+  imageAlts: z.array(z.string().max(4000)).max(12).default([]),
 });
 
 /** Resolve lat/lng from the payload, geocoding the address if not supplied. */
@@ -107,6 +111,12 @@ export const Route = createFileRoute('/api/homes/listings')({
           if (!parsed.success) {
             return Response.json({ error: 'Please check the listing details.' }, { status: 400 });
           }
+
+          const altsRefusal = imageAltsRefusal(parsed.data.imageAlts);
+          if (altsRefusal) return Response.json(altsRefusal, { status: 400 });
+          // Community listings name the author's own site photos only (the form runs the same pure check).
+          const photoRefusal = listingPhotoOriginRefusal(parsed.data.images, session.user.id);
+          if (photoRefusal) return Response.json(photoRefusal, { status: 400 });
 
           const coords = await resolveCoords(parsed.data);
           if (!coords) {

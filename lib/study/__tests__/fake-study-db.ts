@@ -19,6 +19,9 @@ export interface FakeDeck {
   sourceSyncedAt?: Date | null;
   cardsChangedAt?: Date | null;
   notifyUpdates?: boolean;
+  /** The languages the deck's sides are written in (s11-17). */
+  frontLang?: string | null;
+  backLang?: string | null;
 }
 export interface FakeCard {
   id: string;
@@ -31,6 +34,8 @@ export interface FakeCard {
   clozeIndex?: number | null;
   originCardId?: string | null;
   originHash?: string | null;
+  /** An importer's own key for the card (an editor's import never sets it; s11-10). */
+  externalId?: string | null;
   frontImageUrl?: string | null;
   frontImageAlt?: string | null;
   backImageUrl?: string | null;
@@ -60,6 +65,15 @@ export interface FakeMedia {
   /** Absent means just now (the sound claim refuses an upload older than a day, s10-02). */
   createdAt?: Date;
 }
+/** A `DeckEditor` row (s11-10). */
+export interface FakeEditor {
+  deckId: string;
+  userId: string;
+  invitedById: string;
+  status: 'pending' | 'accepted';
+  createdAt?: Date;
+  acceptedAt?: Date | null;
+}
 export interface FakeReview {
   id: string;
   cardId: string;
@@ -70,6 +84,18 @@ export interface FakeDb {
   decks: FakeDeck[];
   cards: FakeCard[];
   reviews: FakeReview[];
+  /** Editors of decks (s11-10); absent means none. */
+  editors?: FakeEditor[];
+  /** Members a test needs the editor rules to read (`bannedUntil`, `deletionScheduledAt`). */
+  users?: {
+    id: string;
+    name?: string | null;
+    handle?: string | null;
+    bannedUntil?: Date | null;
+    deletionScheduledAt?: Date | null;
+  }[];
+  /** `UserBlock` rows. */
+  blocks?: { id: string; blockerId: string; blockedId: string }[];
   /** `Media` rows (only the pictures-on-cards code reads them). */
   media?: FakeMedia[];
   /** Sync tombstones written (s09-10): the deletion functions record one each. */
@@ -100,6 +126,12 @@ function matches(db: FakeDb, row: Row, where: Row | undefined): boolean {
       if (!(want as Row[]).every((w) => matches(db, row, w))) return false;
     } else if (key === 'NOT') {
       if (matches(db, row, want as Row)) return false;
+    } else if (key === 'editors') {
+      // `editors: { some | none: { userId, status } }` on a deck row (s11-10).
+      const spec = want as { some?: Row; none?: Row };
+      const rows = (db.editors ?? []).filter((e) => e.deckId === row.id);
+      if (spec.some && !rows.some((e) => matches(db, e as unknown as Row, spec.some))) return false;
+      if (spec.none && rows.some((e) => matches(db, e as unknown as Row, spec.none))) return false;
     } else if (key === 'deck') {
       const deck = db.decks.find((d) => d.id === row.deckId);
       if (!deck || !matches(db, deck as unknown as Row, want as Row)) return false;
@@ -128,6 +160,7 @@ const withDefaults = (c: FakeCard): Required<FakeCard> => ({
   clozeIndex: null,
   originCardId: null,
   originHash: null,
+  externalId: null,
   frontImageUrl: null,
   frontImageAlt: null,
   backImageUrl: null,
@@ -174,6 +207,23 @@ export function makeStudyPrisma(db: FakeDb) {
     return before - db.cards.length;
   };
 
+  /** A stored editor row as a query sees it: `createdAt` is always set. */
+  const editorRow = (e: FakeEditor) => ({
+    ...e,
+    createdAt: e.createdAt ?? new Date(0),
+    acceptedAt: e.acceptedAt ?? null,
+  });
+  const userOf = (id: string) => {
+    const u = (db.users ?? []).find((x) => x.id === id) as { name?: string | null; handle?: string | null } | undefined;
+    return { name: u?.name ?? null, handle: u?.handle ?? null, profile: null };
+  };
+  const deckOf = (id: string) => {
+    const d = db.decks.find((x) => x.id === id);
+    return d
+      ? { title: d.title, userId: d.userId, clonedFromId: d.clonedFromId ?? null, user: userOf(d.userId) }
+      : undefined;
+  };
+
   const client = {
     $executeRaw: async (strings: TemplateStringsArray, ...values: unknown[]) => {
       if (strings.join('?').includes('pg_advisory_xact_lock')) db.locks.push(String(values[0]));
@@ -197,11 +247,14 @@ export function makeStudyPrisma(db: FakeDb) {
       findUnique: async ({ where, select }: { where: { id: string }; select?: { cards?: { where?: Row } } }) => {
         const deck = db.decks.find((d) => d.id === where.id);
         if (!deck) return null;
-        if (!select?.cards) return deck;
+        const user = (db.users ?? []).find((u) => u.id === deck.userId) as
+          { name?: string | null; handle?: string | null } | undefined;
+        const withOwner = { ...deck, user: { name: user?.name ?? null, handle: user?.handle ?? null, profile: null } };
+        if (!select?.cards) return withOwner;
         const cards = cardsOf({ deckId: deck.id, ...(select.cards.where ?? {}) })
           .map((c) => withDefaults(c))
           .sort((a, b) => a.position - b.position);
-        return { ...deck, cards };
+        return { ...withOwner, cards };
       },
       update: async ({
         where,
@@ -232,6 +285,12 @@ export function makeStudyPrisma(db: FakeDb) {
       },
       count: async ({ where }: { where: Row }) =>
         db.decks.filter((d) => matches(db, d as unknown as Row, where)).length,
+      /** The decks a `where` selects (no ordering or `select`: a row comes back whole, with its owner). */
+      findMany: async ({ where, take }: { where?: Row; take?: number }) =>
+        db.decks
+          .filter((d) => matches(db, d as unknown as Row, where))
+          .slice(0, take ?? db.decks.length)
+          .map((d) => ({ ...d, user: userOf(d.userId) })),
       /** A deck's cards and their reviews go with it (the foreign keys' cascade). */
       deleteMany: async ({ where }: { where: Row }) => {
         const doomed = db.decks.filter((d) => matches(db, d as unknown as Row, where));
@@ -244,7 +303,9 @@ export function makeStudyPrisma(db: FakeDb) {
     flashcard: {
       findFirst: async ({ where }: { where: Row }) => {
         const card = cardsOf(where)[0];
-        return card ? asCard(card) : null;
+        if (!card) return null;
+        const deck = db.decks.find((d) => d.id === card.deckId);
+        return { ...asCard(card), deck: deck ? { ...deck } : undefined };
       },
       findUnique: async ({ where }: { where: { id: string } }) => {
         const card = db.cards.find((c) => c.id === where.id);
@@ -294,6 +355,63 @@ export function makeStudyPrisma(db: FakeDb) {
         const made = data.map((row) => newCard(row));
         db.writes++;
         return made.map((c) => ({ id: c.id, position: c.position }));
+      },
+    },
+    deckFolder: { findMany: async () => [] as unknown[] },
+    deckEditor: {
+      findUnique: async ({ where }: { where: { deckId_userId: { deckId: string; userId: string } } }) => {
+        const { deckId, userId } = where.deckId_userId;
+        const row = (db.editors ?? []).find((e) => e.deckId === deckId && e.userId === userId);
+        return row ? { ...editorRow(row), deck: deckOf(row.deckId) } : null;
+      },
+      findFirst: async ({ where }: { where: Row }) => {
+        const row = (db.editors ?? []).find((e) => matches(db, editorRow(e) as unknown as Row, where));
+        return row ? { ...editorRow(row), deck: deckOf(row.deckId) } : null;
+      },
+      findMany: async ({ where }: { where: Row }) =>
+        (db.editors ?? [])
+          .filter((e) => matches(db, editorRow(e) as unknown as Row, where))
+          .map((e) => ({ ...editorRow(e), deck: deckOf(e.deckId), user: userOf(e.userId) })),
+      count: async ({ where }: { where: Row }) =>
+        (db.editors ?? []).filter((e) => matches(db, editorRow(e) as unknown as Row, where)).length,
+      groupBy: async ({ where }: { where: Row }) => {
+        const counts = new Map<string, number>();
+        for (const e of (db.editors ?? []).filter((x) => matches(db, editorRow(x) as unknown as Row, where))) {
+          counts.set(e.deckId, (counts.get(e.deckId) ?? 0) + 1);
+        }
+        return [...counts].map(([deckId, n]) => ({ deckId, _count: { _all: n } }));
+      },
+      create: async ({ data }: { data: FakeEditor }) => {
+        const row = { createdAt: new Date(), acceptedAt: null, ...data };
+        (db.editors ??= []).push(row);
+        db.writes++;
+        return { ...row };
+      },
+      updateMany: async ({ where, data }: { where: Row; data: Partial<FakeEditor> }) => {
+        const found = (db.editors ?? []).filter((e) => matches(db, editorRow(e) as unknown as Row, where));
+        for (const e of found) Object.assign(e, data);
+        if (found.length > 0) db.writes++;
+        return { count: found.length };
+      },
+      deleteMany: async ({ where }: { where: Row }) => {
+        const doomed = (db.editors ?? []).filter((e) => matches(db, editorRow(e) as unknown as Row, where));
+        db.editors = (db.editors ?? []).filter((e) => !doomed.includes(e));
+        if (doomed.length > 0) db.writes++;
+        return { count: doomed.length };
+      },
+    },
+    userBlock: {
+      findFirst: async ({ where }: { where: { OR: { blockerId: string; blockedId: string }[] } }) => {
+        const hit = (db.blocks ?? []).find((b) =>
+          where.OR.some((w) => w.blockerId === b.blockerId && w.blockedId === b.blockedId),
+        );
+        return hit ? { id: hit.id } : null;
+      },
+    },
+    user: {
+      findUnique: async ({ where }: { where: { id: string } }) => {
+        const u = (db.users ?? []).find((x) => x.id === where.id);
+        return u ? { ...u, profile: null } : null;
       },
     },
     media: {

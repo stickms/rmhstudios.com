@@ -1,0 +1,9 @@
+{
+  "layout-azerty": "AZERTY",
+  "layout-colemak": "Colemak",
+  "layout-dvorak": "Dvorak",
+  "layout-label": "Keyboard layout",
+  "layout-qwerty": "QWERTY",
+  "not-in-azerty": "Not part of the AZERTY course. AZERTY digits and punctuation need Shift, and a full symbol course is still to come.",
+  "not-in-course": "Not part of this course."
+}

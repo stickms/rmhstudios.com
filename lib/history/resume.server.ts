@@ -39,6 +39,7 @@
  */
 
 import { ACTIVE_REVIEW_WHERE, REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
+import { readableDeckWhere } from '@/lib/study/deck-access.server';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { games } from '@/lib/catalog';
@@ -414,8 +415,9 @@ async function dueDeckCards(userId: string, take: number): Promise<ResumeCard[]>
     }
   }
 
+  // Only decks the member may still read: a removed editor's old reviews of a private deck do not name it (s11-10).
   const decks = await prisma.flashcardDeck.findMany({
-    where: { id: { in: [...tally.keys()] } },
+    where: { id: { in: [...tally.keys()] }, ...readableDeckWhere(userId) },
     select: { id: true, title: true },
   });
   // The deck's size is what a member studies (generated cards included), the same rows `tally`

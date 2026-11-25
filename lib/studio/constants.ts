@@ -110,4 +110,8 @@ export const DEFAULT_SETTINGS: StudioSettings = {
   keybindOverrides: {},
   typingKeyboardVelocity: DEFAULT_VELOCITY,
   typingKeyboardOctave: 3,
+  recordCountIn: true,
+  recordQuantize: 'off',
+  inputLatencyMs: 0,
+  midiInputName: null,
 };

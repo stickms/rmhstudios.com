@@ -3,6 +3,7 @@
  * procedurally-drawn portraits), the pause menu and the end-of-run results.
  */
 
+import { useTranslation } from 'react-i18next';
 import { useDreamRift } from '@features/dream-rift/engine/store';
 import { CHARACTERS } from '@features/dream-rift/engine/render/sprites';
 import type { PlayerId } from '@features/dream-rift/engine/types';
@@ -72,6 +73,7 @@ export function StageBanner() {
 }
 
 export function PauseOverlay({ onResume, onQuit }: { onResume: () => void; onQuit: () => void }) {
+    const { t } = useTranslation('c-dream-rift');
     const { musicOn, sfxOn, setMusicOn, setSfxOn, musicVol, sfxVol, setMusicVol, setSfxVol, showHitbox, setShowHitbox } = useDreamRift();
     return (
         <div className="app-safe-pad absolute inset-0 z-40 flex items-center-safe justify-center-safe overflow-y-auto bg-black/70 backdrop-blur-sm">
@@ -83,12 +85,12 @@ export function PauseOverlay({ onResume, onQuit }: { onResume: () => void; onQui
                         Music
                         <input type="checkbox" checked={musicOn} onChange={(e) => setMusicOn(e.target.checked)} className="accent-[color:var(--dr-crimson)]" />
                     </label>
-                    <input type="range" min={0} max={1} step={0.05} value={musicVol} onChange={(e) => setMusicVol(Number(e.target.value))} className="w-full accent-[color:var(--dr-crimson)]" />
+                    <input aria-label={t('field-music-volume', { defaultValue: 'Music volume' })} type="range" min={0} max={1} step={0.05} value={musicVol} onChange={(e) => setMusicVol(Number(e.target.value))} className="w-full accent-[color:var(--dr-crimson)]" />
                     <label className="flex items-center justify-between text-[color:var(--dr-cream)]">
                         SFX
                         <input type="checkbox" checked={sfxOn} onChange={(e) => setSfxOn(e.target.checked)} className="accent-[color:var(--dr-crimson)]" />
                     </label>
-                    <input type="range" min={0} max={1} step={0.05} value={sfxVol} onChange={(e) => setSfxVol(Number(e.target.value))} className="w-full accent-[color:var(--dr-crimson)]" />
+                    <input aria-label={t('field-sfx-volume', { defaultValue: 'Sound effects volume' })} type="range" min={0} max={1} step={0.05} value={sfxVol} onChange={(e) => setSfxVol(Number(e.target.value))} className="w-full accent-[color:var(--dr-crimson)]" />
                     <label className="flex items-center justify-between text-[color:var(--dr-cream)]">
                         Always show hitbox
                         <input type="checkbox" checked={showHitbox} onChange={(e) => setShowHitbox(e.target.checked)} className="accent-[color:var(--dr-crimson)]" />

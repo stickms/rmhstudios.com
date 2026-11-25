@@ -39,6 +39,15 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/library/quota` | `GET` `POST` | `lib/library/api/library.quota.server.ts` |
 | `/api/library/upload` | `POST` | `lib/library/api/library.upload.server.ts` |
 
+## `/api/lights-out`
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/lights-out/b` | `GET` `POST` | `lib/lights-out/api/lights-out.b.server.ts` |
+| `/api/lights-out/b/:id` | `DELETE` `GET` | `lib/lights-out/api/lights-out.b.$id.server.ts` |
+| `/api/lights-out/b/:id/play` | `POST` | `lib/lights-out/api/lights-out.b.$id.play.server.ts` |
+| `/api/lights-out/b/:id/solve` | `POST` | `lib/lights-out/api/lights-out.b.$id.solve.server.ts` |
+
 ## `/api/links`
 
 | Route | Methods | Source |

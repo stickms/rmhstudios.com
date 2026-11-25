@@ -47,6 +47,8 @@ import {
   readListingImageUrls,
 } from '@/lib/account/erasure-follows.server';
 import { ERASURE_REGISTRY, TODO_CEILING } from '@/lib/account/erasure-registry';
+import { variantKeysFor } from '@/lib/media/ingest.server';
+import { referencedUrls, type SweepDeps } from '@/lib/media/sweep.server';
 
 const U = 'user-1';
 const NOW = new Date('2026-12-01T00:00:00Z');
@@ -156,6 +158,44 @@ describe('listing photo objects', () => {
     expect(h.deleteObject).not.toHaveBeenCalledWith(`rmharks/${U}-3-3.webp`);
     expect(h.media.deleteMany).toHaveBeenCalledWith({ where: { userId: U, url: { in: [a] } } });
     h.deleteObject.mockReset();
+  });
+
+  it('deletes an owned photo and every variant with no Media row, and never another member’s or a third-party URL', async () => {
+    h.deleteObject.mockReset();
+    const a = url(`${U}-5-5.webp`);
+    const b = url(`${U}-6-6.webp`);
+    await deleteMemberListingImageObjects(
+      U,
+      [a, b, url('someone-else-1-2.webp'), 'https://elsewhere.example/a.jpg'],
+      none,
+    );
+    const deleted = h.deleteObject.mock.calls.map((c) => c[0]);
+    for (const key of [`rmharks/${U}-5-5.webp`, `rmharks/${U}-6-6.webp`]) {
+      expect(deleted).toContain(key);
+      for (const variant of variantKeysFor(key)) expect(deleted).toContain(variant);
+    }
+    expect(deleted.some((k) => k.includes('someone-else') || k.includes('elsewhere'))).toBe(false);
+  });
+
+  it('keeps a url a post still names, through the sweep’s own reference check', async () => {
+    h.deleteObject.mockReset();
+    const kept = url(`${U}-7-7.webp`);
+    const free = url(`${U}-8-8.webp`);
+    const empty = vi.fn(async () => []);
+    const fake = {
+      prisma: new Proxy(
+        {},
+        {
+          get: (_t, model: string) => ({
+            findMany: model === 'rMHark' ? vi.fn(async () => [{ imageUrls: [kept] }]) : empty,
+          }),
+        },
+      ),
+    } as unknown as SweepDeps;
+    await deleteMemberListingImageObjects(U, [kept, free], { referenced: (urls) => referencedUrls(fake, urls) });
+    const deleted = h.deleteObject.mock.calls.map((c) => c[0]);
+    expect(deleted).toContain(`rmharks/${U}-8-8.webp`);
+    expect(deleted).not.toContain(`rmharks/${U}-7-7.webp`);
   });
 });
 

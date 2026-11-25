@@ -7,6 +7,7 @@
   "copy-room-code": "Copy room code",
   "dismiss": "Dismiss",
   "failed-to-load-media": "Failed to load media",
+  "field-chat-message": "Chat message",
   "game-crashed": "Game crashed",
   "game-crashed-named": "{{gameName}} crashed",
   "game-paused": "Game paused",

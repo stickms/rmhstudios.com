@@ -15,6 +15,7 @@ import QueueItem from './QueueItem';
 import AddMediaModal from './AddMediaModal';
 import { durationSecToMs } from '@/lib/rmhtube/playlist-queue';
 import SaveQueueDialog from './SaveQueueDialog';
+import AddSubtitlesDialog from './AddSubtitlesDialog';
 import { PlaylistResultNotice } from './PlaylistPicker';
 import { AddToPlaylistDialog, type PlaylistItemInput } from '@/components/feed/AddToPlaylistDialog';
 
@@ -24,6 +25,7 @@ export default function MediaQueue() {
   const [showHistory, setShowHistory] = useState(false);
   const [showSave, setShowSave] = useState(false);
   const [playlistItem, setPlaylistItem] = useState<PlaylistItemInput | null>(null);
+  const [subtitleItemId, setSubtitleItemId] = useState<string | null>(null);
 
   // Total queue duration (sum of all item durations)
   const totalDuration = useMemo(() => {
@@ -162,6 +164,12 @@ export default function MediaQueue() {
                 onRemove={() => handleRemove(item.id)}
                 onPlay={() => handlePlayItem(item.id)}
                 onVote={() => handleVote(item.id)}
+                onAddSubtitles={
+                  // The adder or the host, a video with a timeline (the dialog also removes tracks).
+                  (isHost || item.addedBy === room.myUserId) && !item.live
+                    ? () => setSubtitleItemId(item.id)
+                    : undefined
+                }
                 onAddToPlaylist={() =>
                   setPlaylistItem({
                     externalId: item.url,
@@ -236,6 +244,13 @@ export default function MediaQueue() {
             emit(C2S.QUEUE_ADD_PLAYLIST, { playlistId });
             setShowAddModal(false);
           }}
+        />
+      )}
+
+      {subtitleItemId && (
+        <AddSubtitlesDialog
+          item={room.queue.find((q) => q.id === subtitleItemId) ?? null}
+          onClose={() => setSubtitleItemId(null)}
         />
       )}
 

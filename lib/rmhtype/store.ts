@@ -13,6 +13,9 @@ import type {
   FinalResults,
   ChatMessage,
   SoloResult,
+  SoloChallenge,
+  SoloChallengeRefusal,
+  SoloChallengeResult,
   Difficulty,
   PassageLength,
 } from './types';
@@ -71,6 +74,10 @@ export interface RmhTypeStore {
    * progress page). Never persisted; the solo page takes it once and clears it.
    */
   pendingPractice: string | null;
+  /** The challenge race this solo run is (s11-12), its settled result, or why the server refused to start it. */
+  soloChallenge: SoloChallenge | null;
+  soloChallengeResult: SoloChallengeResult | null;
+  soloChallengeRefusal: SoloChallengeRefusal | null;
 
   // Actions
   setConnectionStatus: (status: RmhTypeStore['connectionStatus']) => void;
@@ -94,7 +101,9 @@ export interface RmhTypeStore {
   setCountdown: (seconds: number | null) => void;
 
   // Solo
-  setSoloPassage: (passageId: string, text: string) => void;
+  setSoloPassage: (passageId: string, text: string, challenge?: SoloChallenge | null) => void;
+  setSoloChallengeResult: (result: SoloChallengeResult | null) => void;
+  setSoloChallengeRefusal: (refusal: SoloChallengeRefusal | null) => void;
   setSoloResult: (result: SoloResult) => void;
   setSoloCountdown: (seconds: number | null) => void;
   setSoloGeneratingTopic: (topic: string | null) => void;
@@ -123,6 +132,9 @@ export const useRmhTypeStore = create<RmhTypeStore>()(
       soloCountdown: null,
       soloGeneratingTopic: null,
       pendingPractice: null,
+      soloChallenge: null,
+      soloChallengeResult: null,
+      soloChallengeRefusal: null,
 
       setConnectionStatus: (status) =>
         set({
@@ -274,12 +286,16 @@ export const useRmhTypeStore = create<RmhTypeStore>()(
       },
 
       // Solo
-      setSoloPassage: (passageId, text) =>
+      setSoloPassage: (passageId, text, challenge = null) =>
         set({
           soloPassageId: passageId,
           soloPassage: text,
           soloResult: null,
+          soloChallenge: challenge,
+          soloChallengeResult: null,
         }),
+      setSoloChallengeResult: (result) => set({ soloChallengeResult: result }),
+      setSoloChallengeRefusal: (refusal) => set({ soloChallengeRefusal: refusal }),
       setSoloResult: (result) =>
         set({
           soloResult: result,
@@ -300,6 +316,9 @@ export const useRmhTypeStore = create<RmhTypeStore>()(
           soloResult: null,
           soloCountdown: null,
           soloGeneratingTopic: null,
+          soloChallenge: null,
+          soloChallengeResult: null,
+          soloChallengeRefusal: null,
         }),
 
       updateSettings: (partial) => {
@@ -326,6 +345,9 @@ export const useRmhTypeStore = create<RmhTypeStore>()(
           soloResult: null,
           soloCountdown: null,
           soloGeneratingTopic: null,
+          soloChallenge: null,
+          soloChallengeResult: null,
+          soloChallengeRefusal: null,
         }),
     }),
     {

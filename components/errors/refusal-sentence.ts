@@ -590,6 +590,128 @@ function sentence(t: Translate, code: ErrorCode, p: Record<string, string | numb
         defaultValue: 'No application dates were found in that file',
         ...p,
       });
+
+    // Sprint 11
+    // s11-03 character-party
+    case 'PARTY_FULL':
+      return t('partyFull', { ns: 'errors', defaultValue: 'This party is full', ...p });
+    case 'PARTY_LIMIT':
+      return t('partyLimit', { ns: 'errors', defaultValue: 'You have reached the limit for parties', ...p });
+    case 'PARTY_SYSTEM_MISMATCH':
+      return t('partySystemMismatch', {
+        ns: 'errors',
+        defaultValue: 'That character is for a different game than this party',
+        ...p,
+      });
+    case 'PARTY_JOIN_REFUSED':
+      return t('partyJoinRefused', { ns: 'errors', defaultValue: 'You cannot join this party', ...p });
+    case 'PARTY_ALREADY_MEMBER':
+      return t('partyAlreadyMember', { ns: 'errors', defaultValue: 'You are already in this party', ...p });
+    case 'PARTY_ORDER_CHANGED':
+      return t('partyOrderChanged', {
+        ns: 'errors',
+        defaultValue: 'The turn order changed. Reload it and try again',
+        ...p,
+      });
+    // s11-05 lights-out-maker
+    case 'LIGHTS_OUT_BOARD_LIMIT':
+      return t('lightsOutBoardLimit', {
+        ns: 'errors',
+        defaultValue: 'You have reached the limit for new boards',
+        ...p,
+      });
+    case 'LIGHTS_OUT_BOARD_UNPLAYABLE':
+      return t('lightsOutBoardUnplayable', {
+        ns: 'errors',
+        defaultValue: 'A board must be solvable in at least three moves',
+        ...p,
+      });
+    // s11-06 daily-following
+    // s11-07 studio-share
+    case 'STUDIO_SHARE_LIMIT':
+      return t('studioShareLimit', {
+        ns: 'errors',
+        defaultValue: 'You can have {{max}} shared links at a time. Stop sharing one to make another.',
+        ...p,
+      });
+    // s11-09 read-alongs
+    case 'READ_ALONG_CAP':
+      return t('readAlongCap', { ns: 'errors', defaultValue: 'A community can have {{max}} active read-alongs', ...p });
+    case 'READ_ALONG_FULL':
+      return t('readAlongFull', {
+        ns: 'errors',
+        defaultValue: 'This read-along has {{max}} readers and is full',
+        ...p,
+      });
+    case 'READ_ALONG_STARTED':
+      return t('readAlongStarted', {
+        ns: 'errors',
+        defaultValue: 'The first part has opened, so the parts can no longer be changed',
+        ...p,
+      });
+    case 'READ_ALONG_ENDED':
+      return t('readAlongEnded', { ns: 'errors', defaultValue: 'This read-along has ended', ...p });
+    // s11-10 deck-coeditors
+    case 'DECK_EDITOR_ALREADY':
+      return t('deckEditorAlready', { ns: 'errors', defaultValue: 'This member is already invited', ...p });
+    case 'DECK_EDITOR_COPY':
+      return t('deckEditorCopy', {
+        ns: 'errors',
+        defaultValue: "A copy of another member's deck can't have editors",
+        ...p,
+      });
+    case 'DECK_EDITOR_FULL':
+      return t('deckEditorFull', { ns: 'errors', defaultValue: 'A deck can have at most {{max}} editors', ...p });
+    case 'DECK_EDITOR_INVITES_FULL':
+      return t('deckEditorInvitesFull', {
+        ns: 'errors',
+        defaultValue: 'You can have at most {{max}} invitations waiting',
+        ...p,
+      });
+    case 'DECK_EDITOR_UNAVAILABLE':
+      return t('deckEditorUnavailable', { ns: 'errors', defaultValue: "This member can't be invited", ...p });
+    // s11-12 type-challenges
+    case 'TYPE_CHALLENGE_RACED':
+      return t('typeChallengeRaced', { ns: 'errors', defaultValue: 'This race has already been run', ...p });
+    case 'TYPE_CHALLENGE_UNAVAILABLE':
+      return t('typeChallengeUnavailable', { ns: 'errors', defaultValue: "This member can't be challenged", ...p });
+    case 'TYPE_CHALLENGE_PASSAGE':
+      return t('typeChallengePassage', {
+        ns: 'errors',
+        defaultValue: "That passage can't be sent as a challenge",
+        ...p,
+      });
+    case 'TYPE_CHALLENGE_NO_RUN':
+      return t('typeChallengeNoRun', { ns: 'errors', defaultValue: 'Set a best run on that passage first', ...p });
+    case 'TYPE_CHALLENGE_FULL':
+      return t('typeChallengeFull', {
+        ns: 'errors',
+        defaultValue: 'You can have at most {{max}} challenges waiting',
+        ...p,
+      });
+    case 'TYPE_CHALLENGE_PAIR_FULL':
+      return t('typeChallengePairFull', {
+        ns: 'errors',
+        defaultValue: 'You already have {{max}} challenges waiting for this member',
+        ...p,
+      });
+    // s11-13 listing-prices
+    // s11-14 listing-photo-alt
+    case 'LISTING_PHOTO_ALT_TOO_LONG':
+      return t('listingPhotoAltTooLong', {
+        ns: 'errors',
+        defaultValue: 'A photo description can have at most {{max}} characters',
+        ...p,
+      });
+    // s11-16 rmhtube-subtitles
+    // s11-17 card-listen
+    // s11-18 sweep-references
+    case 'LISTING_PHOTO_NOT_SITE':
+      return t('listingPhotoNotSite', {
+        ns: 'errors',
+        defaultValue: 'Use photos uploaded to this listing',
+        ...p,
+      });
     case 'MEDSCHOOLS_LIST_IMPORT_EMPTY':
       return t('medschoolsListImportEmpty', {
         ns: 'errors',

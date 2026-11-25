@@ -303,6 +303,8 @@
   "extra-binds-lane-b": "Lane B extras",
   "extra-binds-listening": "Press key…",
   "extra-binds-remove": "Remove {{bind}}",
+  "field-setlist-name": "New setlist name",
+  "field-setlist-search": "Search tracks to add",
   "filtered-by-artist": "Artist",
   "game-title": "Slice It!",
   "gameplay": "Gameplay",

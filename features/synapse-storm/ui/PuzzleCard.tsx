@@ -296,7 +296,7 @@ const LanguageRenderer: React.FC<{
         <div className="puzzle-content">
             <div className="puzzle-prompt">{data.prompt}</div>
             <form onSubmit={handleSubmit} className="puzzle-input-form">
-                <input
+                <input aria-label={t('field-letter-answer', { defaultValue: 'Your answer' })}
                     type="text"
                     value={input}
                     onChange={handleChange}
@@ -433,7 +433,7 @@ const MemoryRenderer: React.FC<{
         <div className="puzzle-content">
             <form onSubmit={handleSubmit} className="puzzle-input-form" style={{ flexDirection: 'column' }}>
                 {data.variant === 'numbers' ? (
-                    <input
+                    <input aria-label={t('field-number-answer', { defaultValue: 'Your answer' })}
                         type="text"
                         autoFocus={canAutoFocus()}
                         value={input}
@@ -898,7 +898,7 @@ const PowerUpRenderer: React.FC<{
             )}
 
             {data.actionType === 'slider' && (
-                <input
+                <input aria-label={t('field-power-up-progress', { defaultValue: 'Power-up progress' })}
                     type="range"
                     min="0"
                     max="100"

@@ -99,7 +99,7 @@ export default function TokenGenerator() {
       {/* Generate New Token */}
       <div className="space-y-3">
         <div className="flex flex-wrap gap-3">
-          <input
+          <input aria-label={t('field-token-name', { defaultValue: 'Token name' })}
             type="text"
             placeholder={t("token-name-placeholder", { defaultValue: "Token name (optional)" })}
             value={tokenName}

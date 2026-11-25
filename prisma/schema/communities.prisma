@@ -60,6 +60,7 @@ model Community {
   bans                 CommunityBan[]
   memberNotes          CommunityMemberNote[]
   recurringThreads     CommunityRecurringThread[]
+  readAlongs           ReadAlong[]
 
   createdBy      User                    @relation("CommunityCreator", fields: [createdById], references: [id], onDelete: Cascade)
   members        CommunityMember[]
@@ -736,4 +737,73 @@ model CommunityRecurringThread {
   @@index([active, nextAt])
   @@index([communityId])
   @@map("community_recurring_thread")
+}
+
+/// s11-09 — a book read together in a community: a library book (`docSlug`, a slug, no relation: the library has
+/// static and uploaded books) split into weekly parts. Each part's thread is posted by the jobs worker as `createdById`,
+/// the moderator who started it, through the same gate as a member's post. `status`: active | paused | cancelled | done.
+model ReadAlong {
+  id           String   @id @default(cuid())
+  communityId  String
+  createdById  String
+  docSlug      String   @db.VarChar(200)
+  /// The book's title when it was started, so the page still names it if the book later leaves the library.
+  bookTitle    String   @db.VarChar(200)
+  /// 0 (Sunday) to 6.
+  weekday      Int
+  /// Minutes after local midnight, 0 to 1439.
+  minuteOfDay  Int
+  timeZone     String   @db.VarChar(64)
+  status       String   @db.VarChar(12)
+  /// Why a paused read-along stopped (a short code), null otherwise.
+  pausedReason String?  @db.VarChar(32)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  community Community         @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  createdBy User              @relation("ReadAlongsStarted", fields: [createdById], references: [id], onDelete: Cascade)
+  parts     ReadAlongPart[]
+  readers   ReadAlongReader[]
+
+  @@index([communityId, status])
+  @@map("read_along")
+}
+
+/// One part of a read-along: a labelled page range that opens on `opensAt`. The job claims it with a compare-and-set
+/// on `postedAt IS NULL` before posting, and its notices with `notifiedAt`.
+model ReadAlongPart {
+  id          String    @id @default(cuid())
+  readAlongId String
+  /// 1-based, in reading order.
+  position    Int
+  label       String    @db.VarChar(80)
+  startPage   Int
+  endPage     Int
+  opensAt     DateTime
+  /// The part's thread (a plain id: the post may be removed later).
+  postId      String?
+  postedAt    DateTime?
+  notifiedAt  DateTime?
+
+  readAlong ReadAlong @relation(fields: [readAlongId], references: [id], onDelete: Cascade)
+
+  @@unique([readAlongId, position])
+  @@index([postedAt, opensAt])
+  @@map("read_along_part")
+}
+
+/// A member who joined a read-along. `lastPartDone` is the highest part they marked finished (0 = none).
+model ReadAlongReader {
+  readAlongId  String
+  userId       String
+  notify       Boolean  @default(true)
+  lastPartDone Int      @default(0)
+  joinedAt     DateTime @default(now())
+
+  readAlong ReadAlong @relation(fields: [readAlongId], references: [id], onDelete: Cascade)
+  user      User      @relation("ReadAlongReaders", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([readAlongId, userId])
+  @@index([userId])
+  @@map("read_along_reader")
 }

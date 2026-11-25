@@ -341,6 +341,13 @@ export const STATIC_CARDS: StaticCard[] = [
     subtitle: 'Member-made Connections grids. Solve them, rate them and catch the daily pick.',
   },
   {
+    path: '/lights-out/boards',
+    file: 'lights-out-boards',
+    eyebrow: 'Lights Out boards',
+    title: 'Turn every light off.',
+    subtitle: 'Boards members made for Lights Out. Solve them in the fewest moves, or make one of your own.',
+  },
+  {
     path: '/quotes',
     file: 'quotes',
     eyebrow: 'Steve Jobs quotes',

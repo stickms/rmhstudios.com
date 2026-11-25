@@ -9,7 +9,14 @@
 import { Link } from '@tanstack/react-router';
 import { RotateCcw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { LESSONS, lessonById, starsFor, type Lesson, type RecordedRun } from '@/lib/rmhtype/lessons';
+import {
+  courseFor,
+  layoutOfLessonId,
+  lessonById,
+  starsFor,
+  type Lesson,
+  type RecordedRun,
+} from '@/lib/rmhtype/lessons';
 import type { TypingRunResult } from '@/lib/rmhtype/typing-run';
 import { LessonStars } from '@/components/rmhtype/lessons/LessonStars';
 import { useLessonLabels } from '@/components/rmhtype/lessons/lesson-labels';
@@ -38,7 +45,10 @@ export function LessonResult({ lesson, result, save, saved, onRetry, onRetrySave
   const arrival = useArrival(true);
   const stars = lesson ? starsFor(result.wpm, result.accuracy, lesson) : 0;
   // The recommended lesson once the server has answered; the one after this until then.
-  const nextId = stars >= 1 ? (saved?.nextLessonId ?? (lesson ? LESSONS[lesson.n]?.id : undefined)) : undefined;
+  const nextId =
+    stars >= 1
+      ? (saved?.nextLessonId ?? (lesson ? courseFor(layoutOfLessonId(lesson.id))[lesson.n]?.id : undefined))
+      : undefined;
   const next = nextId ? lessonById(nextId) : undefined;
 
   return (

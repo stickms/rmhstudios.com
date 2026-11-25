@@ -181,6 +181,16 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/rmhcharacters/advisor` | `POST` | `features/rmhcharacters/api/rmhcharacters.advisor.server.ts` |
 | `/api/rmhcharacters/characters` | `GET` | `features/rmhcharacters/api/rmhcharacters.characters.server.ts` |
 | `/api/rmhcharacters/characters/:id` | `DELETE` `PUT` | `features/rmhcharacters/api/rmhcharacters.characters.$id.server.ts` |
+| `/api/rmhcharacters/parties` | `GET` `POST` | `features/rmhcharacters/api/rmhcharacters.parties.server.ts` |
+| `/api/rmhcharacters/parties/:id` | `DELETE` `GET` `PATCH` | `features/rmhcharacters/api/rmhcharacters.parties.$id.server.ts` |
+| `/api/rmhcharacters/parties/:id/character` | `PUT` | `features/rmhcharacters/api/rmhcharacters.parties.$id.character.server.ts` |
+| `/api/rmhcharacters/parties/:id/code` | `POST` | `features/rmhcharacters/api/rmhcharacters.parties.$id.code.server.ts` |
+| `/api/rmhcharacters/parties/:id/leave` | `POST` | `features/rmhcharacters/api/rmhcharacters.parties.$id.leave.server.ts` |
+| `/api/rmhcharacters/parties/:id/members/:userId` | `DELETE` | `features/rmhcharacters/api/rmhcharacters.parties.$id.members.$userId.server.ts` |
+| `/api/rmhcharacters/parties/:id/order` | `PUT` | `features/rmhcharacters/api/rmhcharacters.parties.$id.order.server.ts` |
+| `/api/rmhcharacters/parties/:id/sharing` | `PUT` | `features/rmhcharacters/api/rmhcharacters.parties.$id.sharing.server.ts` |
+| `/api/rmhcharacters/parties/:id/sheet/:userId` | `GET` | `features/rmhcharacters/api/rmhcharacters.parties.$id.sheet.$userId.server.ts` |
+| `/api/rmhcharacters/party-join` | `GET` `POST` | `features/rmhcharacters/api/rmhcharacters.party-join.server.ts` |
 
 ## `/api/rmhcode`
 
@@ -259,6 +269,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/rmhtube/parties/:roomId` | `DELETE` `GET` `PATCH` | `lib/rmhtube/api/rmhtube.parties.$roomId.server.ts` |
 | `/api/rmhtube/parties/:roomId/ics` | `GET` | `app/routes/api/rmhtube/parties/$roomId/ics.ts` |
 | `/api/rmhtube/parties/:roomId/rsvp` | `DELETE` `PUT` | `lib/rmhtube/api/rmhtube.parties.$roomId.rsvp.server.ts` |
+| `/api/rmhtube/rooms/:roomId/items/:itemId/subtitles/:subtitleId` | `GET` | `lib/rmhtube/api/rmhtube.rooms.$roomId.items.$itemId.subtitles.$subtitleId.server.ts` |
 | `/api/rmhtube/stats` | `DELETE` `GET` | `lib/rmhtube/api/rmhtube.stats.server.ts` |
 | `/api/rmhtube/stats/pause` | `PUT` | `lib/rmhtube/api/rmhtube.stats.pause.server.ts` |
 | `/api/rmhtube/subscribe/:channelId` | `POST` | `lib/rmhtube/api/rmhtube.subscribe.$channelId.server.ts` |
@@ -269,6 +280,11 @@ See the [API inventory](../api.md) for how to read the tables.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
+| `/api/rmhtype/challenges` | `GET` `POST` | `lib/rmhtype/api/rmhtype.challenges.server.ts` |
+| `/api/rmhtype/challenges/:id/decline` | `POST` | `lib/rmhtype/api/rmhtype.challenges.$id.decline.server.ts` |
+| `/api/rmhtype/challenges/mutuals` | `GET` | `lib/rmhtype/api/rmhtype.challenges.mutuals.server.ts` |
+| `/api/rmhtype/challenges/runs` | `GET` | `lib/rmhtype/api/rmhtype.challenges.runs.server.ts` |
+| `/api/rmhtype/challenges/settings` | `PUT` | `lib/rmhtype/api/rmhtype.challenges.settings.server.ts` |
 | `/api/rmhtype/daily` | `GET` | `lib/rmhtype/api/rmhtype.daily.server.ts` |
 | `/api/rmhtype/daily/finish` | `POST` | `lib/rmhtype/api/rmhtype.daily.finish.server.ts` |
 | `/api/rmhtype/daily/leaderboard` | `GET` | `lib/rmhtype/api/rmhtype.daily.leaderboard.server.ts` |

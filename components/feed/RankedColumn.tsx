@@ -236,7 +236,7 @@ export function RankedColumn({
  ))}
  </Select>
  <div className="flex-1">
- <HandleInput
+ <HandleInput aria-label={t('field-handle', { defaultValue: 'Handle' })}
  value={opponent}
  onChange={setOpponent}
  placeholder={t('handle-placeholder', { defaultValue:'@handle'})}

@@ -15,6 +15,13 @@ import {
 /** Bound on the rows an account export carries, as the other exports bound theirs. */
 const EXPORT_CAP = 50_000;
 
+/**
+ * "The member is an accepted editor of deck `d`" as a raw SQL subquery (s11-10): the table `deck_editor` and its quoted
+ * camelCase columns, read from the schema's `@@map`. A pending or removed row is not in it.
+ */
+const editorOf = (userId: string) =>
+  Prisma.sql`(SELECT 1 FROM deck_editor e WHERE e."deckId" = d.id AND e."userId" = ${userId} AND e."status" = 'accepted')`;
+
 interface DayRow {
   day: string;
   n: number;
@@ -89,7 +96,7 @@ export async function getStudyStats(
       JOIN flashcard c ON c.id = r."cardId"
       WHERE r."userId" = ${userId} AND r."suspendedAt" IS NULL AND r."dueAt" < ${forecastEnd} ${cardDeck}
       GROUP BY 1`,
-    // Decks the member owns or has studied (and may still see), with each card's state.
+    // Decks the member owns, edits or has studied (and may still see), with each card's state.
     prisma.$queryRaw<DeckRow[]>`
       SELECT d.id, d.title,
              count(c.id)::int AS cards,
@@ -101,8 +108,9 @@ export async function getStudyStats(
       FROM flashcard_deck d
       JOIN flashcard c ON c."deckId" = d.id AND NOT (c.kind = 'cloze' AND c."sourceId" IS NULL) AND NOT (c.kind = 'occlusion' AND c."sourceId" IS NULL)
       LEFT JOIN flashcard_review r ON r."cardId" = c.id AND r."userId" = ${userId}
-      WHERE (d."isPublic" OR d."userId" = ${userId})
+      WHERE (d."isPublic" OR d."userId" = ${userId} OR EXISTS ${editorOf(userId)})
         AND (d."userId" = ${userId}
+             OR EXISTS ${editorOf(userId)}
              OR EXISTS (SELECT 1 FROM flashcard_review x
                         JOIN flashcard xc ON xc.id = x."cardId"
                         WHERE x."userId" = ${userId} AND xc."deckId" = d.id))

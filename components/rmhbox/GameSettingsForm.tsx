@@ -115,6 +115,7 @@ function IntegerSetting({
         </button>
         {editing ? (
           <input
+            aria-label={def.label}
             ref={inputRef}
             type="number"
             value={draft}
@@ -149,6 +150,7 @@ function IntegerSetting({
   return (
     <div className="flex items-center gap-2">
       <input
+        aria-label={def.label}
         type="range"
         min={min}
         max={max}
@@ -160,6 +162,7 @@ function IntegerSetting({
       />
       {editing ? (
         <input
+          aria-label={def.label}
           ref={inputRef}
           type="number"
           value={draft}
@@ -202,6 +205,7 @@ function FloatSetting({
   return (
     <div className="flex items-center gap-2">
       <input
+        aria-label={def.label}
         type="range"
         min={min}
         max={max}
@@ -230,6 +234,7 @@ function SelectSetting({
   const options = def.options ?? [];
   return (
     <Select
+      aria-label={def.label}
       tier="app"
       controlSize="sm"
       containerClassName="inline-block"

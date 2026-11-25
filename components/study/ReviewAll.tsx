@@ -25,6 +25,8 @@ import { LEARN_MORE_STEP } from '@/lib/study/pace';
 import { useReviewKeys } from '@/components/study/useReviewKeys';
 import { LEECH_THRESHOLD } from '@/lib/study/queue';
 import { stopCardSound, toggleCardSound } from '@/lib/study/card-sound-player';
+import { ListenControls } from '@/components/study/ListenControls';
+import { useCardListen } from '@/components/study/useCardListen';
 
 const GRADES = [0, 1, 2, 3] as const;
 
@@ -99,6 +101,18 @@ export function ReviewAll({
   usePreloadPicture(batch?.cards[idx + 1]?.frontImage);
   // Leaving the review silences whatever is playing.
   useStopCardSoundOnUnmount();
+  // Listen (s11-17): off, it starts nothing. On, each side is said in its deck's language and the answer is shown by
+  // itself after the member's delay; it never grades.
+  const listenCard = batch?.cards[idx] ?? null;
+  const listen = useCardListen({
+    card: listenCard,
+    deck: {
+      frontLang: listenCard?.frontLang ?? null,
+      backLang: listenCard?.backLang ?? null,
+    },
+    revealed,
+    onReveal: () => setRevealed(true),
+  });
   const [reviewed, setReviewed] = useState(0);
   const [setAside, setSetAside] = useState(0);
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -457,6 +471,14 @@ export function ReviewAll({
       }
       return;
     }
+    // `a` says the side showing again (s11-17), only while Listen is on; like `p`, never straight after `g`.
+    if (e.key === 'a' && !afterG) {
+      if (listen.on) {
+        e.preventDefault();
+        listen.replay();
+      }
+      return;
+    }
     if (!revealed) {
       if ((e.key === ' ' || e.key === 'Enter') && tag !== 'BUTTON' && tag !== 'A') {
         e.preventDefault();
@@ -498,6 +520,7 @@ export function ReviewAll({
             </Button>
           </p>
         )}
+        <ListenControls listen={listen} />
         <div className="mt-2 flex items-center justify-between">
           <p className="t-meta min-w-0 truncate" dir="auto">
             {card.deckTitle}

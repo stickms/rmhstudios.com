@@ -9,6 +9,7 @@ import { dayOf } from '@/lib/calendar/tz';
 import { createNotification } from '@/lib/notifications.server';
 import { prisma } from '@/lib/prisma.server';
 import { ACTIVE_REVIEW_WHERE, REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
+import { studiedDeckWhere } from '@/lib/study/deck-access.server';
 import type { ReminderSettings } from '@/lib/study/reminders.contract';
 import { PAUSE_AFTER_REMINDERS, SWEEP_BATCH, isStale, nextReminderMs } from '@/lib/study/reminders';
 
@@ -77,12 +78,13 @@ export async function markReviewed(userId: string): Promise<void> {
 
 /**
  * What the deck page calls "due today" (lib/study/stats.server.ts): scheduled cards whose `dueAt` has come,
- * plus reviewable cards the member has never reviewed, in decks they own (clones included); a suspended card
+ * plus reviewable cards the member has never reviewed, in decks they own or edit (clones included); a suspended card
  * (it has a review row) is in neither. There is no
  * daily new-card limit in the study code, so new cards are not capped here either.
  */
 async function dueCount(userId: string, now: Date): Promise<number> {
-  const card = { ...REVIEWABLE_WHERE, deck: { userId } };
+  // Decks the member owns or edits (clones included): the same ones the deck page counts.
+  const card = { ...REVIEWABLE_WHERE, deck: studiedDeckWhere(userId) };
   const [scheduled, fresh] = await Promise.all([
     prisma.flashcardReview.count({ where: { userId, ...ACTIVE_REVIEW_WHERE, dueAt: { lte: now }, card } }),
     prisma.flashcard.count({ where: { ...card, reviews: { none: { userId } } } }),

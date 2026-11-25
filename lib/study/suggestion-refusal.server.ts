@@ -18,6 +18,13 @@ const MESSAGES: Record<SuggestionRefusal, string> = {
 };
 
 /** The JSON refusal of a suggestion endpoint: the status, a static `error` and the stable `reason`. */
-export function refusedResponse(result: { status: number; reason: SuggestionRefusal }): Response {
-  return Response.json({ error: MESSAGES[result.reason], reason: result.reason }, { status: result.status });
+export function refusedResponse(result: { status: number; reason: SuggestionRefusal; declined?: number }): Response {
+  return Response.json(
+    {
+      error: MESSAGES[result.reason],
+      reason: result.reason,
+      ...(result.declined === undefined ? {} : { declined: result.declined }),
+    },
+    { status: result.status },
+  );
 }

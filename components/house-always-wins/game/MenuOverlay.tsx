@@ -145,7 +145,7 @@ export function MenuOverlay({ open, onClose, onMainMenu }: MenuOverlayProps) {
               {musicMuted ? <Music2 className="h-4 w-4" /> : <Music className="h-4 w-4" />}
             </button>
             <span className="w-16 font-mono text-[11px] text-[#cabba0]">{t("menu-music", { defaultValue: "Music" })}</span>
-            <input
+            <input aria-label={t('menu-music', { defaultValue: 'Music' })}
               type="range"
               min={0}
               max={1}
@@ -171,7 +171,7 @@ export function MenuOverlay({ open, onClose, onMainMenu }: MenuOverlayProps) {
               {sfxMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
             </button>
             <span className="w-16 font-mono text-[11px] text-[#cabba0]">{t("menu-sfx", { defaultValue: "Sound FX" })}</span>
-            <input
+            <input aria-label={t('menu-sfx', { defaultValue: 'Sound FX' })}
               type="range"
               min={0}
               max={1}

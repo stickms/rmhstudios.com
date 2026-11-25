@@ -228,6 +228,7 @@ vi.mock('@/lib/prisma.server', () => {
         },
       ),
     },
+    deckEditor: { deleteMany: vi.fn(async () => ({ count: 0 })) },
     follow: {
       findMany: vi.fn(async () => []),
       deleteMany: vi.fn(async () => ({

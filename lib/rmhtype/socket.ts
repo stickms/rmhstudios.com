@@ -14,7 +14,15 @@ import type { PeerWaitState } from '@/lib/shared/realtime/types';
 import { useRmhTypeStore } from './store';
 import { S2C } from './events';
 import { toast } from '@/lib/shared/app-toast';
-import type { ChatMessage, PlayerProgress, RoundResults, FinalResults, SoloResult } from './types';
+import type {
+  ChatMessage,
+  PlayerProgress,
+  RoundResults,
+  FinalResults,
+  SoloChallenge,
+  SoloChallengeResult,
+  SoloResult,
+} from './types';
 
 let client: RealtimeClient | null = null;
 /** The room to (re)join on every successful connect. */
@@ -133,12 +141,15 @@ function registerHandlers(socket: Socket) {
     toast.warning('Could not write that passage — using a standard one.');
   });
 
-  socket.on(S2C.SOLO_STARTED, (data: { passage: string; passageId: string }) => {
+  socket.on(S2C.SOLO_STARTED, (data: { passage: string; passageId: string; challenge?: SoloChallenge }) => {
     const s = store();
     s.setSoloCountdown(null);
     s.setSoloGeneratingTopic(null);
-    s.setSoloPassage(data.passageId, data.passage);
+    s.setSoloPassage(data.passageId, data.passage, data.challenge ?? null);
   });
+
+  // A challenge race was settled on the server from its own checked figures (s11-12).
+  socket.on(S2C.SOLO_CHALLENGE_RESULT, (data: SoloChallengeResult) => store().setSoloChallengeResult(data));
 
   socket.on(S2C.SOLO_RESULT, (data: SoloResult) => store().setSoloResult(data));
 
@@ -149,9 +160,15 @@ function registerHandlers(socket: Socket) {
     toast.warning('You have been kicked from the room.');
   });
 
-  socket.on(S2C.ERROR, (error: { message?: string }) => {
+  socket.on(S2C.ERROR, (error: { message?: string; code?: string }) => {
     const message = error?.message ?? 'An error occurred.';
     console.error(`[RmhType] Server error: ${message}`);
+    // A refusal with a taxonomy code is a challenge race the server would not start: the solo page says why in the
+    // reader's language (`useRefusalText`), so it is not also a toast in English.
+    if (typeof error?.code === 'string') {
+      store().setSoloChallengeRefusal({ error: message, code: error.code });
+      return;
+    }
     toast.error(message);
   });
 }

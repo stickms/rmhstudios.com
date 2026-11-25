@@ -16,6 +16,7 @@ import { ModSettings } from '@/components/communities/ModSettings';
 import { HandoverPanel } from '@/components/communities/HandoverPanel';
 import { ModSisters } from '@/components/communities/ModSisters';
 import { ModRecurring } from '@/components/communities/ModRecurring';
+import { ReadAlongStart } from '@/components/communities/ReadAlongStart';
 import type { CommunityExtrasDTO } from '@/lib/communities/plus';
 
 export default function ModPanel({
@@ -33,7 +34,7 @@ export default function ModPanel({
   extras: CommunityExtrasDTO | null;
   onExtrasChange: () => void;
 }) {
-  const { t } = useTranslation(['f-communities-plus', 'community-bans', 'recurring-threads']);
+  const { t } = useTranslation(['f-communities-plus', 'community-bans', 'recurring-threads', 'read-alongs']);
   const { t: tr } = useTranslation('community-rules');
   const { t: tl } = useTranslation('community-modlog');
   const insightsLabel = useInsightsTabLabel();
@@ -85,6 +86,13 @@ export default function ModPanel({
       label: t('tab', {
         ns: 'recurring-threads',
         defaultValue: 'Recurring',
+      }),
+    },
+    {
+      id: 'read-alongs',
+      label: t('tab', {
+        ns: 'read-alongs',
+        defaultValue: 'Read-alongs',
       }),
     },
     {
@@ -140,6 +148,7 @@ export default function ModPanel({
       {sub === 'flairs' && <ModFlairs slug={slug} flairs={extras?.flairs ?? []} onChange={onExtrasChange} />}
       {sub === 'recurring' && <ModRecurring slug={slug} flairs={extras?.flairs ?? []} />}
       {sub === 'rules' && <ModRules slug={slug} onChange={onExtrasChange} />}
+      {sub === 'read-alongs' && <ReadAlongStart slug={slug} />}
       {sub === 'settings' && extras && <ModSettings slug={slug} extras={extras} onChange={onExtrasChange} />}
       {sub === 'settings' && isOwner && <HandoverPanel slug={slug} />}
       {sub === 'onboarding' && <ModOnboarding slug={slug} flairs={extras?.flairs ?? []} onChange={onExtrasChange} />}

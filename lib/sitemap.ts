@@ -416,6 +416,15 @@ export const STATIC_ROUTES: SitemapEntry[] = [
     changefreq: 'yearly',
     priority: 0.3,
   },
+
+  // Sprint 11 (docs/autonomous/sprint-11/plan.md §Anchors)
+  // s11-05 lights-out-maker
+  // (/lights-out/boards)
+  {
+    loc: '/lights-out/boards',
+    changefreq: 'daily',
+    priority: 0.5,
+  },
 ];
 
 // ────────────────────── games, apps and their hubs ──────────────────────
@@ -637,6 +646,15 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   // s10-17 admin-communities
   '/admin/communities': 'admin',
   // (/admin/communities, 'admin')
+
+  // Sprint 11 (docs/autonomous/sprint-11/plan.md §Anchors)
+  // s11-05 lights-out-maker
+  // (/lights-out/new, 'personal')
+  '/lights-out/new': 'personal', // signed-in authoring form
+
+  // s11-12 type-challenges
+  // (/rmhtype/challenges, 'personal')
+  '/rmhtype/challenges': 'personal', // signed-in; a member's own challenges
 
   '/account/connect': 'personal', // the account-merge step after a new sign-in; needs a session
   '/settings': 'personal',
@@ -964,6 +982,14 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   // s10-09 build-issues
   // (/builds/$slug/issues, 'content')
   '/builds/$slug/issues': null, // reached from the build page; unlisted builds' issues are link-only, and public ones are not indexed yet
+
+  // Sprint 11 (docs/autonomous/sprint-11/plan.md §Anchors)
+  // s11-05 lights-out-maker
+  // (/lights-out/b/$id, null)
+  '/lights-out/b/$id': null, // member-made boards: unbounded user content, reached from /lights-out/boards
+
+  // s11-09 read-alongs
+  '/c/$slug/read/$id': null, // one community's read-along: a private community's is for its members, and the page is reached from the community
 };
 
 // ──────────────────────────── XML rendering ────────────────────────────

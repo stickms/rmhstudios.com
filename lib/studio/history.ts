@@ -55,7 +55,8 @@ export type HistoryLabel =
   | 'duplicate'
   | 'transpose'
   | 'shift-notes'
-  | 'import-midi';
+  | 'import-midi'
+  | 'record-take';
 
 export interface HistoryStep {
   label: HistoryLabel;

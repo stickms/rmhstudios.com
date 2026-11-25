@@ -47,6 +47,7 @@ export function useKeybinds(
         store.setIsPlaying(!store.isPlaying);
         break;
       case 'transport.stop':
+        store.setIsRecording(false);
         store.setIsPlaying(false);
         store.setCurrentBeat(0);
         break;

@@ -22,10 +22,11 @@ import {
   recordKeyStats,
   recordLessonRun,
 } from '@/lib/rmhtype/rmhtype.queries';
-import { DEFAULT_LAYOUT } from '@/lib/rmhtype/keystats';
+import { readLayoutPref } from '@/lib/rmhtype/layout-pref';
 import { buildKeyStatsBody } from '@/lib/rmhtype/record-keystats';
 import { useRmhTypeStore } from '@/lib/rmhtype/store';
-import { PRACTICE_ID, drillFor, fingerFor, lessonById, shiftFingerFor, type RecordedRun } from '@/lib/rmhtype/lessons';
+import { fingerForOn, shiftFingerForOn } from '@/lib/rmhtype/layouts';
+import { PRACTICE_ID, drillFor, layoutOfLessonId, lessonById, type RecordedRun } from '@/lib/rmhtype/lessons';
 import { createTypingRun, type TypingRun, type TypingRunResult } from '@/lib/rmhtype/typing-run';
 import RmhTypeHeader from '@/components/rmhtype/RmhTypeHeader';
 import { LessonKeyboard } from '@/components/rmhtype/lessons/LessonKeyboard';
@@ -42,6 +43,8 @@ export default function LessonRunner({ lessonId }: { lessonId: string }) {
   const queryClient = useQueryClient();
   const lesson = lessonById(lessonId) ?? null;
   const isPractice = lessonId === PRACTICE_ID;
+  // A lesson belongs to one layout's course; the free practice drill uses the layout this device types on.
+  const layout = lesson ? layoutOfLessonId(lesson.id) : readLayoutPref();
 
   const [text, setText] = useState<string | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -72,7 +75,7 @@ export default function LessonRunner({ lessonId }: { lessonId: string }) {
         drill = drillFor(lesson, Math.floor(Math.random() * 0x100000000));
       } else if (isPractice) {
         try {
-          const data = await buildPracticeDrill(PRACTICE_WORDS);
+          const data = await buildPracticeDrill(PRACTICE_WORDS, layout);
           drill = data.test.text || null;
         } catch {
           drill = null;
@@ -90,7 +93,7 @@ export default function LessonRunner({ lessonId }: { lessonId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [lesson, isPractice, attempt]);
+  }, [lesson, isPractice, attempt, layout]);
 
   useEffect(() => {
     if (text !== null && !result) input.current?.focus();
@@ -128,12 +131,12 @@ export default function LessonRunner({ lessonId }: { lessonId: string }) {
         enabled: useRmhTypeStore.getState().settings.recordKeyStats,
         finished: true,
         aggregates: finished.keyStats,
-        layout: DEFAULT_LAYOUT,
+        layout,
       });
       if (body) recordKeyStats(body).catch(() => undefined);
       void submitProgress(finished);
     },
-    [submitProgress],
+    [submitProgress, layout],
   );
 
   const onKeyDown = useCallback(
@@ -244,8 +247,8 @@ export default function LessonRunner({ lessonId }: { lessonId: string }) {
   const words = text.split(' ');
   const wordIndex = text.slice(0, typed.length).split(' ').length - 1;
   const liveAccuracy = run.current?.liveAccuracy() ?? 100;
-  const finger = nextChar && !hasMistake ? fingerFor(nextChar) : null;
-  const shiftFinger = nextChar && !hasMistake ? shiftFingerFor(nextChar) : null;
+  const finger = nextChar && !hasMistake ? fingerForOn(layout, nextChar) : null;
+  const shiftFinger = nextChar && !hasMistake ? shiftFingerForOn(layout, nextChar) : null;
 
   return (
     <div className="app-page">
@@ -336,7 +339,7 @@ export default function LessonRunner({ lessonId }: { lessonId: string }) {
           </p>
         </div>
 
-        <LessonKeyboard nextChar={hasMistake ? null : nextChar} />
+        <LessonKeyboard layout={layout} nextChar={hasMistake ? null : nextChar} />
 
         <p className="text-xs text-app-text-dim">
           {t('hint-escape', {

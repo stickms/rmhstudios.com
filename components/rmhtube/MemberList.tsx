@@ -237,6 +237,7 @@ function BanConfirmDialog({
             })}
           </p>
           <input
+            aria-label={t('field-remove-reason', { defaultValue: 'Reason for removing this member' })}
             type="text"
             value={reason}
             onChange={(e) => setReason(e.target.value)}

@@ -14,10 +14,31 @@ import { config } from '../config';
 import { awardAppProgress } from '../economy';
 import { nextStudyStreak } from '../../../lib/rmhstudy/streak';
 import { isValidTimeZone } from '../../../lib/calendar/tz';
+import {
+  REVEAL_MS,
+  advance,
+  allAnswered,
+  buildQuizQuestions,
+  createQuiz,
+  endQuiz,
+  isQuizCount,
+  publicQuestion,
+  quizDeckProblem,
+  removeFromQuiz,
+  reveal,
+  snapshotFor,
+  submitAnswer,
+  type QuizState,
+} from '../../../lib/rmhstudy/quiz';
 
 // ─── Interfaces ───
 
 type TimerPhase = 'idle' | 'working' | 'short_break' | 'long_break';
+
+/** A room's timer phase, read fresh (after an await, a direct read keeps the narrowing from before it). */
+function timerPhase(room: { timer: { phase: TimerPhase } }): TimerPhase {
+  return room.timer.phase;
+}
 type MemberStatus = 'studying' | 'break' | 'idle' | 'away';
 
 interface TimerSettings {
@@ -85,6 +106,15 @@ interface StudyRoom {
   chat: ChatMessage[];
   chatReactions: Map<string, Map<string, Set<string>>>; // messageId -> emoji -> userIds
   workPhaseStartedAt: number | null; // tracks when current work phase started (for DB)
+  /** The room quiz (s11-15): in memory only, never stored; ends with the room. */
+  quiz: RoomQuiz | null;
+  /** True while the host's deck is being read, so a second start cannot overlap it. */
+  quizLoading: boolean;
+}
+
+interface RoomQuiz {
+  state: QuizState;
+  timer: NodeJS.Timeout | null;
 }
 
 // ─── Constants ───
@@ -217,10 +247,70 @@ function broadcastRoomState(io: Server, room: StudyRoom): void {
   }
 }
 
-function emitError(socket: Socket, message: string): void {
+function emitError(socket: Socket, message: string, code?: string): void {
   socket.emit('rmhstudy:error', {
     message,
+    ...(code ? { code } : {}),
   });
+}
+
+// ─── Room Quiz (s11-15) ───
+
+function presentMemberIds(room: StudyRoom): string[] {
+  return Array.from(room.members.values())
+    .filter((m) => m.isConnected)
+    .map((m) => m.userId);
+}
+
+function clearQuizTimer(room: StudyRoom): void {
+  if (room.quiz?.timer) {
+    clearTimeout(room.quiz.timer);
+    room.quiz.timer = null;
+  }
+}
+
+/** End the quiz (if one runs) with the standings so far, clearing its timer. `notify` false when the room is gone. */
+function endRoomQuiz(io: Server, room: StudyRoom, notify = true): void {
+  const quiz = room.quiz;
+  if (!quiz) return;
+  clearQuizTimer(room);
+  room.quiz = null;
+  if (notify) io.to(socketRoom(room.code)).emit('rmhstudy:quiz:end', endQuiz(quiz.state));
+}
+
+function openQuizQuestion(io: Server, room: StudyRoom): void {
+  const quiz = room.quiz;
+  if (!quiz) return;
+  clearQuizTimer(room);
+  quiz.timer = setTimeout(() => revealQuizQuestion(io, room), Math.max(0, quiz.state.deadline - Date.now()));
+  io.to(socketRoom(room.code)).emit('rmhstudy:quiz:question', publicQuestion(quiz.state));
+}
+
+function revealQuizQuestion(io: Server, room: StudyRoom): void {
+  const quiz = room.quiz;
+  if (!quiz || quiz.state.phase !== 'question') return;
+  clearQuizTimer(room);
+  const view = reveal(quiz.state);
+  io.to(socketRoom(room.code)).emit('rmhstudy:quiz:reveal', view);
+  quiz.timer = setTimeout(() => {
+    if (room.quiz !== quiz) return;
+    clearQuizTimer(room);
+    if (advance(quiz.state, presentMemberIds(room), Date.now()) === 'ended') {
+      endRoomQuiz(io, room);
+    } else {
+      openQuizQuestion(io, room);
+    }
+  }, REVEAL_MS);
+}
+
+/** A member left the room (or was removed): they are out of the quiz, and it may now be complete. */
+function quizMemberGone(io: Server, room: StudyRoom, userId: string): void {
+  const quiz = room.quiz;
+  if (!quiz) return;
+  removeFromQuiz(quiz.state, userId);
+  if (quiz.state.phase === 'question' && allAnswered(quiz.state, presentMemberIds(room))) {
+    revealQuizQuestion(io, room);
+  }
 }
 
 // ─── Timer Logic ───
@@ -305,6 +395,9 @@ function completePhase(io: Server, room: StudyRoom): void {
   const completedPhase = room.timer.phase;
   const nextPhase = getNextPhase(room);
 
+  // A work phase is coming: a quiz in progress ends with the standings so far.
+  if (nextPhase === 'working') endRoomQuiz(io, room);
+
   // Record DB stats when a work phase completes
   if (completedPhase === 'working') {
     persistWorkSession(room);
@@ -370,6 +463,7 @@ function completePhase(io: Server, room: StudyRoom): void {
 }
 
 function transitionToPhase(io: Server, room: StudyRoom, phase: TimerPhase): void {
+  if (phase === 'working') endRoomQuiz(io, room);
   const totalMs = getTotalMsForPhase(room, phase);
   room.timer.phase = phase;
   room.timer.totalMs = totalMs;
@@ -613,6 +707,7 @@ function removePlayerFromRoom(io: Server, userId: string, roomCode: string): voi
   if (room.members.size === 0) {
     // Room empty — clean up entirely
     stopTimerInterval(room);
+    endRoomQuiz(io, room, false);
     rooms.delete(roomCode);
     logger.info({
       event: 'rmhstudy_room_deleted',
@@ -620,6 +715,10 @@ function removePlayerFromRoom(io: Server, userId: string, roomCode: string): voi
     });
     return;
   }
+
+  // The host leaving ends the quiz they started; anyone else leaving is just out of it.
+  if (room.hostUserId === userId) endRoomQuiz(io, room);
+  else quizMemberGone(io, room, userId);
 
   // Host migration — only pick from connected members first, then any member
   if (room.hostUserId === userId) {
@@ -735,6 +834,8 @@ function createRoomForSocket(
     chat: [],
     chatReactions: new Map(),
     workPhaseStartedAt: null,
+    quiz: null,
+    quizLoading: false,
   };
 
   const member: RoomMember = {
@@ -969,6 +1070,9 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
 
     socket.join(socketRoom(roomCode));
     broadcastRoomState(io, room);
+
+    // A quiz in progress: the member watches from the next question (they were not present when this one opened).
+    if (room.quiz) socket.emit('rmhstudy:quiz:state', { quiz: snapshotFor(room.quiz.state, userId) });
 
     // Send the member their task list on join
     socket.emit('rmhstudy:task:list', {
@@ -1522,6 +1626,7 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
     room.members.delete(targetUserId);
     userSocketMap.delete(targetUserId);
     clearDisconnectTimer(targetUserId);
+    quizMemberGone(io, room, targetUserId);
     broadcastRoomState(io, room);
 
     logger.info({
@@ -1579,6 +1684,7 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
     room.members.delete(targetUserId);
     userSocketMap.delete(targetUserId);
     clearDisconnectTimer(targetUserId);
+    quizMemberGone(io, room, targetUserId);
     broadcastRoomState(io, room);
 
     logger.info({
@@ -1615,6 +1721,112 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
       targetUserId,
       hostUserId: userId,
     });
+  });
+
+  // ─── Room Quiz: Start (host only, a break or idle, one at a time) ───
+  socket.on(
+    'rmhstudy:quiz:start',
+    async (payload?: { deckId?: unknown; count?: unknown; confirmPrivate?: unknown }) => {
+      if (!checkRateLimit(socket.id, 'rmhstudy:quiz:start')) {
+        emitError(socket, 'Rate limited.', 'RATE_LIMITED');
+        return;
+      }
+      const roomCode = socketRoomMap.get(socket.id);
+      const room = roomCode ? getRoomByCode(roomCode) : undefined;
+      const userId = socketUserMap.get(socket.id);
+      if (!room || !userId) {
+        emitError(socket, 'Room not found', 'ROOM_NOT_FOUND');
+        return;
+      }
+      if (room.hostUserId !== userId) {
+        emitError(socket, 'Only the host can run a quiz', 'NOT_HOST');
+        return;
+      }
+      if (room.timer.phase === 'working') {
+        emitError(socket, 'A quiz can run only on a break', 'QUIZ_REFUSED');
+        return;
+      }
+      if (room.quiz || room.quizLoading) {
+        emitError(socket, 'A quiz is already running', 'QUIZ_REFUSED');
+        return;
+      }
+      const deckId = typeof payload?.deckId === 'string' ? payload.deckId.slice(0, 64) : '';
+      if (!deckId || !isQuizCount(payload?.count)) {
+        emitError(socket, 'Pick a deck and 5, 10 or 15 questions', 'INVALID_PAYLOAD');
+        return;
+      }
+      const count = payload.count;
+
+      room.quizLoading = true;
+      try {
+        // The access rule runs here, against the deck as it is now.
+        // Loaded on first use: the card read needs Prisma, which the handler's other paths (and their tests) do not.
+        const { loadQuizCards } = await import('../../../lib/rmhstudy/quiz-cards.server');
+        const loaded = await loadQuizCards(userId, deckId, { confirmPrivate: payload?.confirmPrivate === true });
+        // The room may have moved on while the deck was read (TypeScript keeps the pre-await narrowing of the
+        // phase, so it is re-read through a call, at its declared type).
+        const phaseNow = timerPhase(room);
+        if (rooms.get(room.code) !== room || room.hostUserId !== userId || phaseNow === 'working' || room.quiz) {
+          return;
+        }
+        if (!loaded.ok) {
+          emitError(
+            socket,
+            loaded.reason === 'private-editor'
+              ? 'Only the owner can quiz a room on a private deck'
+              : loaded.reason === 'confirm-required'
+                ? 'Confirm that everyone in the room will see these cards'
+                : 'Deck not found',
+            'QUIZ_REFUSED',
+          );
+          return;
+        }
+        const problem = quizDeckProblem(loaded.cards);
+        const questions = problem ? [] : buildQuizQuestions(loaded.cards, count, Math.floor(Math.random() * 2 ** 31));
+        if (questions.length === 0) {
+          emitError(socket, 'This deck needs at least four different answers to make a quiz', 'QUIZ_REFUSED');
+          return;
+        }
+        room.quiz = { state: createQuiz(loaded.deckTitle, questions, presentMemberIds(room), Date.now()), timer: null };
+        logger.info({ event: 'rmhstudy_quiz_started', roomCode: room.code, questions: questions.length });
+        openQuizQuestion(io, room);
+      } catch (err) {
+        logger.error({ event: 'rmhstudy_quiz_start_failed', roomCode: room.code, err: String(err) });
+        emitError(socket, 'Could not start the quiz.', 'QUIZ_REFUSED');
+      } finally {
+        room.quizLoading = false;
+      }
+    },
+  );
+
+  // ─── Room Quiz: Answer (any member present when the question opened; once) ───
+  socket.on('rmhstudy:quiz:answer', (payload?: { choice?: unknown }) => {
+    if (!checkRateLimit(socket.id, 'rmhstudy:quiz:answer')) return;
+    const roomCode = socketRoomMap.get(socket.id);
+    const room = roomCode ? getRoomByCode(roomCode) : undefined;
+    const userId = socketUserMap.get(socket.id);
+    const quiz = room?.quiz;
+    if (!room || !userId || !quiz) return;
+    const member = room.members.get(userId);
+    if (!member) return;
+    if (submitAnswer(quiz.state, userId, member.userName, payload?.choice, Date.now()) !== 'accepted') return;
+    // The member is told their own answer was taken; the correct one comes with the reveal.
+    socket.emit('rmhstudy:quiz:state', { quiz: snapshotFor(quiz.state, userId) });
+    if (allAnswered(quiz.state, presentMemberIds(room))) revealQuizQuestion(io, room);
+  });
+
+  // ─── Room Quiz: Stop (host only) ───
+  socket.on('rmhstudy:quiz:stop', () => {
+    if (!checkRateLimit(socket.id, 'rmhstudy:quiz:stop')) return;
+    const roomCode = socketRoomMap.get(socket.id);
+    const room = roomCode ? getRoomByCode(roomCode) : undefined;
+    const userId = socketUserMap.get(socket.id);
+    if (!room || !userId || !room.quiz) return;
+    if (room.hostUserId !== userId) {
+      emitError(socket, 'Only the host can stop the quiz', 'NOT_HOST');
+      return;
+    }
+    endRoomQuiz(io, room);
   });
 
   // ─── Transfer Host ───

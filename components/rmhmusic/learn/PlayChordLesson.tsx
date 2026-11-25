@@ -1,6 +1,7 @@
 /**
- * PlayChordLesson — playing a chord (`play-chord`: Play a C major chord): three major chords, each
- * asked by name, played on the on-screen keys, the computer keys or a MIDI controller. The notes
+ * PlayChordLesson — playing a chord (`play-chord`: Play a C major chord, and the chords unit's
+ * Every major and minor chord and Diminished and augmented chords): chords each
+ * asked by name (spelled as written in the keyed lessons: F♯ major, listed as F♯, A♯ and C♯), played on the on-screen keys, the computer keys or a MIDI controller. The notes
  * of one chord arrive as separate events, so the first note opens a 600 ms window and the notes
  * inside it are the answer (`input/chord-window.ts`); right means exactly the chord's pitch
  * classes, in any octave, order or inversion (`theory/chords.ts`, `machines/play-chord.ts`).
@@ -38,7 +39,8 @@ import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
 import { scoreFrom, starsFor } from '@/lib/rmhmusic/learn/scoring/stars';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { noteLetter } from '@/lib/rmhmusic/learn/theory/clef';
-import { chordNotes } from '@/lib/rmhmusic/learn/theory/chords';
+import { chordNotes, spellTriad } from '@/lib/rmhmusic/learn/theory/chords';
+import { noteGlyphs, type SpelledNote } from '@/lib/rmhmusic/learn/theory/scales';
 import { TEXT_BUTTON } from './buttons';
 import { DeviceRegion, LessonResult } from './LessonParts';
 import { OnScreenKeyboard } from './OnScreenKeyboard';
@@ -61,6 +63,7 @@ export function PlayChordLesson({
   onChangeInput?: () => void;
 }) {
   const { t, i18n } = useTranslation('c-rmhmusic');
+  const { t: tChords } = useTranslation('music-chords');
   const input = useLearnStore((s) => s.profile?.input ?? 'screen');
   const [questions] = useState(() => playChordQuestions(lessonId));
   const session = useQuestionSession<ChordQuestion, ChordAnswer>({
@@ -120,7 +123,16 @@ export function PlayChordLesson({
   const question = session.card;
   const names = (midis: readonly number[]) => noteList(i18n.language, midis.map(noteLetter));
   const chordName = question ? chordLabel(t, question) : '';
-  const notes = question ? names(chordNotes(question.root, question.quality)) : '';
+  // The chords of the keyed lessons are named and listed as they are spelled (F♯, A♯ and C♯); the
+  // first lesson's are all natural notes, listed by letter as before.
+  const notes = !question
+    ? ''
+    : question.spelled
+      ? noteList(
+          i18n.language,
+          spellTriad(question.spelled, question.quality).map((n) => spelledWord(tChords, n)),
+        )
+      : names(chordNotes(question.root, question.quality));
 
   const title = sessionTitle(
     session,
@@ -303,10 +315,20 @@ export function ChordNameBox({ name, skeleton = false }: { name?: string; skelet
   );
 }
 
+/**
+ * A written note as the lesson lists it: "F♯", "B♭". A double sharp or flat (B augmented's F𝄪) is said in
+ * words, because the 𝄪 and 𝄫 glyphs are in few system fonts and a screen reader reads them badly.
+ */
+function spelledWord(t: TFunction<'music-chords'>, n: SpelledNote): string {
+  if (n.accidental >= 2) return t('note-double-sharp', { letter: n.letter, defaultValue: '{{letter}} double sharp' });
+  if (n.accidental <= -2) return t('note-double-flat', { letter: n.letter, defaultValue: '{{letter}} double flat' });
+  return noteGlyphs(n);
+}
+
 /** "C major": the root's letter and the quality's word, set in one key so languages can reorder. */
 function chordLabel(t: TFunction<'c-rmhmusic'>, q: ChordQuestion): string {
   return t('chord-name', {
-    root: noteLetter(q.root),
+    root: q.spelled ? noteGlyphs(q.spelled) : noteLetter(q.root),
     quality: qualityName(t, q.quality),
     defaultValue: '{{root}} {{quality}}',
   });

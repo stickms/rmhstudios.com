@@ -83,6 +83,7 @@ export function AdminPatchNotes() {
             ))}
           </Select>
           <Input
+            aria-label={t('field-patch-version', { defaultValue: 'Version' })}
             value={version}
             maxLength={32}
             onChange={(e) => setVersion(e.target.value)}
@@ -91,6 +92,7 @@ export function AdminPatchNotes() {
             })}
           />
           <Input
+            aria-label={t('field-patch-headline', { defaultValue: 'Headline' })}
             value={title}
             maxLength={120}
             onChange={(e) => setTitle(e.target.value)}
@@ -99,6 +101,7 @@ export function AdminPatchNotes() {
             })}
           />
           <Textarea
+            aria-label={t('field-patch-body', { defaultValue: 'What changed' })}
             rows={5}
             value={body}
             maxLength={1000}

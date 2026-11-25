@@ -193,7 +193,7 @@ export default function RmhTubeLanding() {
                 {t("join-room-desc", { defaultValue: "Enter a 6-character room code to join." })}
               </p>
               <form onSubmit={(e) => { e.preventDefault(); handleJoinRoom(); }} className="flex gap-2">
-                <input
+                <input aria-label={t('field-room-code', { defaultValue: 'Room code' })}
                   id="joinCode"
                   name="joinCode"
                   type="text"

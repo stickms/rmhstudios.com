@@ -394,6 +394,8 @@
   "mode-practice": "Practice mode",
   "mode-test": "Test",
   "mode-test-says": "One answer per question, then on to the next.",
+  "note-double-flat": "{{letter}} double flat",
+  "note-double-sharp": "{{letter}} double sharp",
   "practice": "Practice",
   "practice-done": "Practice done",
   "practice-load-failed": "Couldn't load your practice cards.",

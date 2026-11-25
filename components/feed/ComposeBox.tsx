@@ -594,6 +594,7 @@ export function ComposeBox({
 
   const fileInput = (
     <input
+      aria-label={t('field-attach-images', { defaultValue: 'Attach images' })}
       ref={imageInputRef}
       type="file"
       accept="image/png,image/jpeg,image/gif,image/webp"
@@ -807,6 +808,7 @@ export function ComposeBox({
         {/* Compose area */}
         <div className="flex-1 min-w-0">
           <MentionTextarea
+            aria-label={t('compose-placeholder', { defaultValue: "What's on your mind?" })}
             ref={textareaRef}
             id="compose-box"
             value={content}

@@ -54,6 +54,8 @@ import { HouseRulesSummary } from './HouseRulesPanel';
 import { Dice } from './Dice';
 import { TableChat } from './TableChat';
 import { TableLog } from './TableLog';
+import { useBotText } from './botNames';
+import { BotMark, PracticeLine } from './BotParts';
 import {
   HornButton,
   Panel,
@@ -150,6 +152,7 @@ function Roster({
     useTranslation(
       'c-gabriels-horn',
     );
+  const { seatName } = useBotText();
   return (
     <ul className="app-scroll-x flex gap-2 pb-1">
       {view.players.map(
@@ -178,7 +181,7 @@ function Roster({
                 is jumping people for no reason. */}
               <SeatAvatar
                 name={
-                  player.name
+                  seatName(player)
                 }
                 avatarUrl={
                   player.avatarUrl
@@ -201,7 +204,12 @@ function Roster({
                           '(you)',
                       },
                     )
-                  : player.name}
+                  : (
+                    <>
+                      <BotMark bot={player.bot} />
+                      {seatName(player)}
+                    </>
+                  )}
               </span>
               <span className="flex items-center gap-1 font-mono text-sm font-bold tabular-nums">
                 {
@@ -257,6 +265,7 @@ function TargetPicker({
   ) => void;
   label: string;
 }) {
+  const { seatName } = useBotText();
   return (
     <div className="space-y-1.5">
       <p className="text-xs text-app-text-muted">
@@ -289,7 +298,7 @@ function TargetPicker({
                 }
               >
                 {
-                  player.name
+                  seatName(player)
                 }
                 <span className="font-mono text-app-text-dim">
                   {
@@ -319,6 +328,7 @@ export function TableScreen({
     useTranslation(
       'c-gabriels-horn',
     );
+  const { seatName, botName } = useBotText();
   const effectLabel =
     useEffectLabel();
   const effectDescription =
@@ -359,8 +369,7 @@ export function TableScreen({
         view.activeSocketId,
     );
   const activeName =
-    active?.name ??
-    '';
+    active ? seatName(active) : '';
   const myClaim =
     view.claims.find(
       (
@@ -588,6 +597,8 @@ export function TableScreen({
           }
         </p>
 
+        {view.practice ? <PracticeLine /> : null}
+
         {view.endCalledBy ? (
           <p className="flex items-center justify-center gap-1.5 text-center text-xs text-app-accent">
             <Megaphone
@@ -810,8 +821,7 @@ export function TableScreen({
                       className="flex flex-wrap items-center gap-x-2 gap-y-1.5"
                     >
                       <span className="min-w-0 grow truncate text-sm">
-                        {who?.name ??
-                          '—'}
+                        {who ? seatName(who) : '—'}
                       </span>
                       <span className="font-mono text-base font-bold tabular-nums">
                         {claim.total ??
@@ -933,17 +943,17 @@ export function TableScreen({
                     defaultValue:
                       '{{name}} draws {{count}}.',
                     name:
-                      view.players.find(
-                        (
-                          p,
-                        ) =>
-                          p.socketId ===
-                          view
-                            .outcome
-                            ?.drewSocketId,
-                      )
-                        ?.name ??
-                      '',
+                      seatName(
+                        view.players.find(
+                          (
+                            p,
+                          ) =>
+                            p.socketId ===
+                            view
+                              .outcome
+                              ?.drewSocketId,
+                        ) ?? { name: '', bot: null },
+                      ),
                     count:
                       view
                         .outcome
@@ -1152,7 +1162,11 @@ export function TableScreen({
                     '{{name}}’s hand',
                   name: view
                     .scry
-                    .name,
+                    .bot
+                    ? botName(view.scry.bot)
+                    : view
+                        .scry
+                        .name,
                 },
               )}
             </h2>

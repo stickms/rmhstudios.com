@@ -44,6 +44,7 @@ function ParamField({ param, value, onChange }: { param: ApiParam; value: string
         />
       ) : (
         <Input
+          aria-labelledby={labelId}
           id={id}
           dir="ltr"
           value={value}

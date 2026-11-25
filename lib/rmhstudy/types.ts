@@ -2,6 +2,8 @@
  * RMH Study — Shared Type Definitions
  */
 
+import type { EndView, PublicQuestion, QuizPhase, RevealView, Standing } from './quiz';
+
 // ─── Timer Settings ─────────────────────────────────────────────
 
 export interface TimerSettings {
@@ -113,4 +115,22 @@ export type RmhStudyErrorCode =
   | 'INVALID_PAYLOAD'
   | 'RATE_LIMITED'
   | 'TIMER_ACTIVE'
-  | 'BANNED';
+  | 'BANNED'
+  | 'QUIZ_REFUSED';
+
+// ─── Room Quiz (s11-15) ─────────────────────────────────────────
+
+/** The quiz as one member's client holds it. Never stored; it ends with the room. */
+export interface RoomQuizClientState {
+  phase: QuizPhase;
+  /** The question open now (or just revealed); null only once a stopped quiz is showing its standings. */
+  question: PublicQuestion | null;
+  /** This member's own choice on that question. */
+  myChoice: number | null;
+  /** False for a member who joined after this question opened: they watch and answer from the next one. */
+  canAnswer: boolean;
+  reveal: RevealView | null;
+  standings: Standing[];
+  /** Set when the quiz is over: the standings it ended with. */
+  end: EndView | null;
+}

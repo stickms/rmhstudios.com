@@ -150,6 +150,7 @@ export function EmailImages({
           })}
         </span>
         <input
+          aria-label={t('field-email-images', { defaultValue: 'Choose pictures' })}
           ref={inputRef}
           type="file"
           accept="image/png,image/jpeg,image/gif,image/webp"

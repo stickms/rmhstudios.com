@@ -408,6 +408,14 @@ describe('suspend, lift and cap', () => {
     expect(h.keys[0]!.suspendedAt).toBeNull();
   });
 
+  it('refuses the reserved deletion-hold reason, trimmed and in any case', async () => {
+    admin();
+    for (const reason of ['Account deletion requested', '  account DELETION requested  ']) {
+      expect((await call('PATCH', { id: 'k1' }, { body: { suspend: { reason } } })).status).toBe(400);
+    }
+    expect(h.keys[0]!.suspendedAt).toBeNull();
+  });
+
   it('suspends, audits in the transaction, and tells the owner once', async () => {
     admin();
     const out = await call(

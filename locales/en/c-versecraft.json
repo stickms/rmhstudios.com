@@ -102,5 +102,9 @@
   "your-journey": "Your Journey",
   "quit": "Quit",
   "move-line-down": "Move line down",
-  "move-line-up": "Move line up"
+  "move-line-up": "Move line up",
+  "field-player-name": "Your name",
+  "field-music-volume": "Music volume",
+  "field-sfx-volume": "Sound effects volume",
+  "field-custom-pronouns": "Custom pronouns"
 }

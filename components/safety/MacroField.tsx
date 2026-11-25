@@ -159,6 +159,7 @@ export function MacroField({
         )}
       </div>
       <Textarea
+        aria-label={t('field-macro-message', { defaultValue: 'Message to the author' })}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         maxLength={1000}

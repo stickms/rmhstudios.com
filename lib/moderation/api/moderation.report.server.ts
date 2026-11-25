@@ -93,6 +93,17 @@ async function resolveTargetUser(entityType: string, entityId: string): Promise<
         });
         return bi?.reporterId ?? null;
       }
+      // Sprint 11 (docs/autonomous/sprint-11/plan.md §Anchors)
+      // s11-05 lights-out-maker
+      case 'lights-out-board':
+        // The member who made the board is who a report is about.
+        return await (await import('@/lib/lights-out/boards.server')).lightsOutBoardAuthor(entityId);
+      // s11-07 studio-share
+      case 'studio-share': {
+        // The entity id is the share's token; the member who made the share is who a report is about.
+        const share = await prisma.studioProjectShare.findUnique({ where: { token: entityId }, select: { userId: true } });
+        return share?.userId ?? null;
+      }
       case 'music-score':
       case 'music-share':
         // RMH Music Phase 6: the learner whose Daily score (or shared result) it is.

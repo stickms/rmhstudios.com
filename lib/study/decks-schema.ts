@@ -11,6 +11,7 @@ import { CARD_SIDE_MAX, CLOZE_TEXT_MAX, MAX_DECK_CARDS, MAX_IMPORT_CARDS } from 
 import { addPictureIssue, cardPicturesShape } from '@/lib/study/card-images-schema';
 import { addSoundIssue, cardSoundsShape } from '@/lib/study/card-sound-schema';
 import { occlusionShape } from '@/lib/study/occlusion-schema';
+import { isDeckLanguageTag } from '@/lib/study/listen';
 
 export const createDeckBody = z.object({
   title: z.string().min(1).max(100),
@@ -47,14 +48,15 @@ const authoredCard = z.object(authoredFields).superRefine((card, ctx) => {
  * POST one card to a deck. Only the card form's own save takes sounds (s10-02): a bulk import and the developer API
  * never carry one, so `authoredCard` above stays soundless.
  */
-export const addCardBody = z
-  .object({ ...authoredFields, ...cardSoundsShape })
-  .superRefine((card, ctx) => {
-    const checked = validateCard(card);
-    if (!checked.ok) ctx.addIssue({ code: 'custom', message: checked.error });
-    addPictureIssue(card, ctx);
-    addSoundIssue(card, ctx);
-  });
+export const addCardBody = z.object({ ...authoredFields, ...cardSoundsShape }).superRefine((card, ctx) => {
+  const checked = validateCard(card);
+  if (!checked.ok) ctx.addIssue({ code: 'custom', message: checked.error });
+  addPictureIssue(card, ctx);
+  addSoundIssue(card, ctx);
+});
+
+/** A deck's language for one side (s11-17): a tag from the list, or null for "Same as the site". */
+const deckLanguage = z.string().max(16).refine(isDeckLanguageTag, { message: 'unknown-language' }).nullable();
 
 /** PATCH a deck: any of its settings. A blank description clears it. */
 export const updateDeckBody = z
@@ -66,6 +68,9 @@ export const updateDeckBody = z
     notifyUpdates: z.boolean().optional(),
     /** Let people who study the deck suggest fixes (s10-04); off until the author turns it on. */
     acceptsSuggestions: z.boolean().optional(),
+    /** The languages the fronts and backs are written in, for Listen (s11-17); the owner's setting. */
+    frontLang: deckLanguage.optional(),
+    backLang: deckLanguage.optional(),
   })
   .refine(
     (b) =>
@@ -73,7 +78,9 @@ export const updateDeckBody = z
       b.description !== undefined ||
       b.isPublic !== undefined ||
       b.notifyUpdates !== undefined ||
-      b.acceptsSuggestions !== undefined,
+      b.acceptsSuggestions !== undefined ||
+      b.frontLang !== undefined ||
+      b.backLang !== undefined,
   );
 
 /**

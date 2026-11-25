@@ -270,6 +270,7 @@ export function GroupCallInviteDialog({
         )}
 
         <SearchField
+          aria-label={t('field-search-people', { defaultValue: 'Search people' })}
           ref={searchRef}
           autoFocus
           value={query}

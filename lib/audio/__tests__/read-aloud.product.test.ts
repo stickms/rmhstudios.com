@@ -164,6 +164,47 @@ describe('read-aloud', () => {
     expect((u.voice as { voiceURI: string }).voiceURI).toBe('ar1');
   });
 
+  it('an explicit lang picks the voice and the utterance language, whatever the page says', () => {
+    const fake = makeSynth([
+      { voiceURI: 'en1', lang: 'en-US' },
+      { voiceURI: 'es-es', lang: 'es-ES' },
+      { voiceURI: 'es-mx', lang: 'es-MX' },
+    ]);
+    install(fake, 'en');
+    const reader = createReader(['Hola'], { lang: 'es-MX' })!;
+    reader.play();
+    const u = fake.tick()!;
+    expect(u.lang).toBe('es-MX');
+    expect((u.voice as { voiceURI: string }).voiceURI).toBe('es-mx');
+  });
+
+  it('an explicit lang falls back to the base language, and a saved voice still wins when installed', () => {
+    const fake = makeSynth([
+      { voiceURI: 'en1', lang: 'en-US' },
+      { voiceURI: 'es-es', lang: 'es-ES' },
+    ]);
+    install(fake, 'en');
+    const first = createReader(['Hola'], { lang: 'es-MX' })!;
+    first.play();
+    expect((fake.tick()!.voice as { voiceURI: string }).voiceURI).toBe('es-es');
+    const second = createReader(['Hola'], { lang: 'es-MX', voiceURI: 'en1' })!;
+    second.play();
+    expect((fake.tick()!.voice as { voiceURI: string }).voiceURI).toBe('en1');
+  });
+
+  it('without a lang the document language is read at speak time, as before', () => {
+    const fake = makeSynth([{ voiceURI: 'en1', lang: 'en-US' }]);
+    install(fake, 'en');
+    const reader = createReader(['One.', 'Two.'])!;
+    reader.play();
+    const first = fake.start()!;
+    expect(first.lang).toBe('en');
+    // The visitor changes locale between the two utterances: the next one follows.
+    vi.stubGlobal('document', { documentElement: { lang: 'fr' } });
+    first.onend?.();
+    expect(fake.start()!.lang).toBe('fr');
+  });
+
   it('play(from) starts at that paragraph and destroy silences the voice', () => {
     const fake = makeSynth();
     install(fake);

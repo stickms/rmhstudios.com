@@ -103,5 +103,8 @@
   "you-badge": "YOU",
   "new-best-yes": "Yes",
   "new-best-no": "No",
-  "quit": "Quit"
+  "quit": "Quit",
+  "field-letter-answer": "Your answer",
+  "field-number-answer": "Your answer",
+  "field-power-up-progress": "Power-up progress"
 }

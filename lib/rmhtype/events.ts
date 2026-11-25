@@ -43,6 +43,7 @@ export const S2C = {
   SOLO_AI_UNAVAILABLE: 'rmhtype:solo:aiUnavailable',
   SOLO_STARTED: 'rmhtype:solo:started',
   SOLO_RESULT: 'rmhtype:solo:result',
+  SOLO_CHALLENGE_RESULT: 'rmhtype:solo:challengeResult',
   LEADERBOARD_DATA: 'rmhtype:leaderboard:data',
   PEERS_WAITING: 'rmhtype:peers:waiting',
   ERROR: 'rmhtype:error',

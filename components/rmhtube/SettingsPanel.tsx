@@ -23,6 +23,7 @@ import { C2S } from '@/lib/rmhtube/events';
 import { useRmhTubeStore, type RmhTubeUserSettings } from '@/lib/rmhtube/store';
 import { ABSOLUTE_MAX_MEMBERS, AVAILABLE_REACTIONS } from '@/lib/rmhtube/constants';
 import type { RoomSettings } from '@/lib/rmhtube/types';
+import SubtitleSettings from './SubtitleSettings';
 
 export default function SettingsPanel() {
   const { t } = useTranslation('c-rmhtube');
@@ -212,6 +213,7 @@ function YourSettings({
             })
           }
         />
+        <SubtitleSettings />
         <ToggleOption
           label={t('show-timestamps', {
             defaultValue: 'Message times',

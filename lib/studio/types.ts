@@ -219,4 +219,12 @@ export interface StudioSettings {
   keybindOverrides: KeybindMap;
   typingKeyboardVelocity: number; // 0–127
   typingKeyboardOctave: number; // base octave for lower row
+  /** One bar of clicks before a take starts. */
+  recordCountIn: boolean;
+  /** Snap a take's notes to this grid when recording stops. */
+  recordQuantize: 'off' | '1/4' | '1/8' | '1/16';
+  /** Subtracted from every recorded note, 0-200 ms. */
+  inputLatencyMs: number;
+  /** The MIDI input chosen for recording, by name; null for none. */
+  midiInputName: string | null;
 }

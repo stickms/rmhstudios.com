@@ -81,6 +81,8 @@ export const BAN_ENFORCEMENT_PATHS = [
   'lib/events.server.ts',
   // the community wiki: one helper (`pageAccess`) reads the sanction for every page read and write (s09-04)
   'lib/communities/page-access.server.ts',
+  // joining a read-along: a ban or timeout refuses it, and the starter's part threads are gated the same way (s11-09)
+  'lib/communities/read-along.server.ts',
 ] as const;
 
 const NOTICE_DATE: Intl.DateTimeFormatOptions = {

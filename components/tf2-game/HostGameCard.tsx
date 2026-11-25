@@ -128,6 +128,7 @@ export default function HostGameCard({
             })}
           >
             <TextField
+              aria-label={t('field-server-name', { defaultValue: 'Server name' })}
               value={room.name}
               maxLength={TF2_LIMITS.ROOM_NAME_MAX_LENGTH}
               placeholder={defaultName}
@@ -146,6 +147,7 @@ export default function HostGameCard({
             })}
           >
             <SelectField
+              aria-label={t('play_map', { defaultValue: 'Map' })}
               value={room.map}
               data-menu-item
               onChange={(e) =>
@@ -209,6 +211,7 @@ export default function HostGameCard({
               })}
             >
               <SelectField
+                aria-label={t('play_difficulty', { defaultValue: 'Difficulty' })}
                 value={room.botDifficulty}
                 onChange={(e) =>
                   setRoom({

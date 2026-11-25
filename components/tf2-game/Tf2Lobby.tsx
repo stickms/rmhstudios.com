@@ -149,6 +149,7 @@ export default function Tf2Lobby({
                 })}
               >
                 <TextField
+                  aria-label={t('field-your-name', { defaultValue: 'Your name' })}
                   value={name}
                   maxLength={32}
                   placeholder={
@@ -165,7 +166,11 @@ export default function Tf2Lobby({
                   defaultValue: 'Map',
                 })}
               >
-                <SelectField value={offMap} onChange={(e) => setOffMap(e.target.value)}>
+                <SelectField
+                  aria-label={t('play_map', { defaultValue: 'Map' })}
+                  value={offMap}
+                  onChange={(e) => setOffMap(e.target.value)}
+                >
                   {TF2_MAPS.map((m) => (
                     <option key={m.name} value={m.name}>
                       {m.title}
@@ -194,7 +199,11 @@ export default function Tf2Lobby({
                     defaultValue: 'Difficulty',
                   })}
                 >
-                  <SelectField value={offDiff} onChange={(e) => setOffDiff(e.target.value as BotDifficulty)}>
+                  <SelectField
+                    aria-label={t('play_difficulty', { defaultValue: 'Difficulty' })}
+                    value={offDiff}
+                    onChange={(e) => setOffDiff(e.target.value as BotDifficulty)}
+                  >
                     {BOT_DIFFICULTIES.map((d) => (
                       <option key={d} value={d}>
                         {difficultyLabel(d)}

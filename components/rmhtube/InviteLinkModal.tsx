@@ -125,6 +125,7 @@ export default function InviteLinkModal({ roomId, onClose }: InviteLinkModalProp
           </label>
           <div className="flex items-center gap-2">
             <input
+              aria-label={t('field-room-link', { defaultValue: 'Room link' })}
               type="text"
               readOnly
               value={shareUrl}

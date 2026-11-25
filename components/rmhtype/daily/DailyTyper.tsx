@@ -10,6 +10,7 @@ import { createTypingRun, type TypingRun, type TypingRunResult } from '@/lib/rmh
 import { useArrival } from '@/components/ui/arrive';
 import { recordKeyStats } from '@/lib/rmhtype/rmhtype.queries';
 import { buildKeyStatsBody } from '@/lib/rmhtype/record-keystats';
+import { readLayoutPref } from '@/lib/rmhtype/layout-pref';
 import { useRmhTypeStore } from '@/lib/rmhtype/store';
 
 function clock(ms: number): string {
@@ -64,6 +65,7 @@ export function DailyTyper({
           enabled: useRmhTypeStore.getState().settings.recordKeyStats,
           finished: true,
           aggregates: result.keyStats,
+          layout: readLayoutPref(),
         });
         if (body) recordKeyStats(body).catch(() => undefined);
         onDone(result);

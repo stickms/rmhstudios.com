@@ -26,6 +26,8 @@ vi.mock('@/lib/prisma.server', () => ({
         async ({ where }: { where: { id: string } }) => db.decks.find((d) => d.id === where.id) ?? null,
       ),
     },
+    // Nobody edits a deck here (s11-10): the access rule reads this for a member who is not the owner.
+    deckEditor: { findUnique: vi.fn(async () => null) },
     flashcard: {
       count: vi.fn(
         async ({ where }: { where: { deckId: string; id?: { in: string[] } } }) =>

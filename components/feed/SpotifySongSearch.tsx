@@ -138,7 +138,7 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
  {/* Search input */}
  <div className="relative">
  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-muted"/>
- <input
+ <input aria-label={t('field-search-songs', { defaultValue: 'Search for a song' })}
  type="text"
  value={query}
  onChange={(e) => handleQueryChange(e.target.value)}

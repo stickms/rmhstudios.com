@@ -236,6 +236,25 @@ export const NOTICE_TEMPLATES = {
 
   // s10-17 admin-communities
   'community-delisted': '{{community}} is out of discovery: {{reason}}',
+
+  // Sprint 11 notices (docs/autonomous/sprint-11/plan.md §Anchors)
+  // s11-09 read-alongs
+  'read-along-part-open': '{{book}}: "{{part}}" is open in {{community}}',
+
+  // s11-10 deck-coeditors
+  'deck-editor-invited': '{{name}} invited you to edit {{deck}}',
+  'deck-editor-accepted': '{{name}} accepted your invitation to edit {{deck}}',
+
+  // s11-12 type-challenges
+  'type-challenge-received': "{{name}} challenged you to beat {{wpm}} WPM on '{{passage}}'",
+  'type-challenge-won': "You beat {{name}}'s {{wpm}} WPM on '{{passage}}'",
+  'type-challenge-lost': "You lost to {{name}}'s {{wpm}} WPM on '{{passage}}'",
+  'type-challenge-draw': "You drew with {{name}} at {{wpm}} WPM on '{{passage}}'",
+  'type-challenge-unfinished': "You did not finish the race against {{name}}'s {{wpm}} WPM on '{{passage}}'",
+  'type-challenge-forfeited': "{{name}} did not finish your race on '{{passage}}'",
+
+  // s11-13 listing-prices
+  'home-price-drop': '{{title}} in {{city}}, {{state}} dropped from ${{was}} to ${{now}}',
 } as const;
 
 export type NoticeKey = keyof typeof NOTICE_TEMPLATES;
@@ -471,6 +490,31 @@ export interface NoticeParamTypes {
 
   // s10-17 admin-communities
   'community-delisted': { community: string | number; reason: string | number };
+
+  // Sprint 11 notices (docs/autonomous/sprint-11/plan.md §Anchors)
+  // s11-09 read-alongs
+  'read-along-part-open': { book: string | number; part: string | number; community: string | number };
+
+  // s11-10 deck-coeditors
+  'deck-editor-invited': { name: string | number; deck: string | number };
+  'deck-editor-accepted': { name: string | number; deck: string | number };
+
+  // s11-12 type-challenges
+  'type-challenge-received': { name: string | number; wpm: string | number; passage: string | number };
+  'type-challenge-won': { name: string | number; wpm: string | number; passage: string | number };
+  'type-challenge-lost': { name: string | number; wpm: string | number; passage: string | number };
+  'type-challenge-draw': { name: string | number; wpm: string | number; passage: string | number };
+  'type-challenge-unfinished': { name: string | number; wpm: string | number; passage: string | number };
+  'type-challenge-forfeited': { name: string | number; passage: string | number };
+
+  // s11-13 listing-prices
+  'home-price-drop': {
+    title: string | number;
+    city: string | number;
+    state: string | number;
+    was: string | number;
+    now: string | number;
+  };
 }
 
 export type NoticeParamValue = string | number;

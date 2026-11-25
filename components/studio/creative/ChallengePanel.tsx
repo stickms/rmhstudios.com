@@ -224,6 +224,7 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
                 })}
           </p>
           <Input
+            aria-label={t('field-entry-title', { defaultValue: 'Entry title' })}
             className="surface-field"
             placeholder={t('entry-title', {
               defaultValue: 'Title',
@@ -233,6 +234,7 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
             onChange={(e) => setTitle(e.target.value)}
           />
           <Input
+            aria-label={t('field-entry-link', { defaultValue: 'Link to your project export' })}
             className="surface-field"
             placeholder={t('entry-link', {
               defaultValue: 'Link to your project export (https)',

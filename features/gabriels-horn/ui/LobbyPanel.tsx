@@ -38,6 +38,8 @@ import {
   SeatAvatar,
 } from './ui';
 import { MenuBackdrop } from './MenuScene';
+import { useBotText } from './botNames';
+import { BotMark, BotSeatsPanel, PracticeLine } from './BotParts';
 import {
   useArrival,
   useArrivingKeys,
@@ -234,6 +236,7 @@ export function LobbyPanel({
     );
   const message =
     useLobbyErrorMessage();
+  const { seatName } = useBotText();
   const lobby =
     useHornStore(
       (
@@ -511,7 +514,7 @@ export function LobbyPanel({
                 >
                   <SeatAvatar
                     name={
-                      player.name
+                      seatName(player)
                     }
                     avatarUrl={
                       player.avatarUrl
@@ -521,8 +524,9 @@ export function LobbyPanel({
                     }
                   />
                   <span className="min-w-0 grow truncate text-sm">
+                    <BotMark bot={player.bot} />
                     {
-                      player.name
+                      seatName(player)
                     }
                     {player.socketId ===
                     selfSocketId ? (
@@ -571,6 +575,7 @@ export function LobbyPanel({
                     </span>
                   )}
                   {isHost &&
+                  !player.bot &&
                   player.socketId !==
                     selfSocketId ? (
                     <HornButton
@@ -601,6 +606,17 @@ export function LobbyPanel({
             )}
           </ul>
         </Panel>
+
+        <BotSeatsPanel
+          players={
+            lobby.players
+          }
+          maxPlayers={
+            lobby.maxPlayers
+          }
+        />
+
+        {lobby.practice ? <PracticeLine /> : null}
 
         <HouseRulesSummary
           rules={
@@ -926,13 +942,19 @@ export function BrowsePanel({
                       </span>
                     </span>
                     <span className="shrink-0 text-xs text-app-text-muted tabular-nums">
-                      {
-                        entry.playerCount
-                      }
-                      /
-                      {
-                        entry.maxPlayers
-                      }
+                      {entry.bots > 0
+                        ? `${t('lobby-people', {
+                            ns: 'gabriels-horn-bots',
+                            count: entry.playerCount - entry.bots,
+                            defaultValue_one: '{{count}} person',
+                            defaultValue: '{{count}} people',
+                          })}, ${t('lobby-bots', {
+                            ns: 'gabriels-horn-bots',
+                            count: entry.bots,
+                            defaultValue_one: '{{count}} bot',
+                            defaultValue: '{{count}} bots',
+                          })}`
+                        : `${entry.playerCount}/${entry.maxPlayers}`}
                     </span>
                     <HornButton
                       size="sm"

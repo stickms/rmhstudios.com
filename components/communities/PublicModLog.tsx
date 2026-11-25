@@ -98,6 +98,12 @@ export function PublicModLog({
     if (e.action === 'event_cancelled') {
       return t('public-event-cancelled', { ns: 'community-events', defaultValue: 'A moderator cancelled an event' });
     }
+    if (e.action === 'read_along_started') {
+      return t('public-started', { ns: 'read-alongs', defaultValue: 'A moderator started a read-along' });
+    }
+    if (e.action === 'read_along_cancelled') {
+      return t('public-cancelled', { ns: 'read-alongs', defaultValue: 'A moderator cancelled a read-along' });
+    }
     if (e.action === 'content_removed') {
       return e.targetType === 'comment'
         ? t('public-comment-removed', {

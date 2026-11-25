@@ -10,6 +10,8 @@ import { Switch } from '@/components/ui/switch';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { toast } from '@/lib/toast';
 import { aheadByMs, formatGapSeconds } from '@/lib/rmhtype/ghost';
+import { isolate, resultFor } from '@/lib/rmhtype/challenges';
+import type { SoloChallengeResult } from '@/lib/rmhtype/types';
 import { RMHTYPE_GHOST_KEY, clearRmhTypeGhosts } from '@/lib/rmhtype/rmhtype.queries';
 
 /** The "Race my best" switch in the solo settings. */
@@ -43,6 +45,65 @@ export function GhostRacingNote({ wpm }: { wpm: number }) {
   return (
     <p className="text-center text-xs text-app-text-muted">
       {t('racing-note', { wpm: Math.round(wpm), defaultValue: 'Racing your best of {{wpm}} WPM' })}
+    </p>
+  );
+}
+
+/**
+ * While typing a challenge (s11-12): whose run the second caret is. The name is member text, so it sits in a `<bdi>`
+ * and the line carries `dir="auto"`; the gap to the caret is the same ahead/behind line as for a best of your own.
+ */
+export function ChallengeRacingNote({ name, wpm }: { name: string; wpm: number }) {
+  const { t } = useTranslation('type-challenges');
+  return (
+    <p dir="auto" className="text-center text-xs text-app-text-muted">
+      <bdi className="font-medium">{name}</bdi>{' '}
+      {t('caret-note', {
+        ns: 'type-challenges',
+        wpm: Math.round(wpm),
+        defaultValue: 'is the second caret, best of {{wpm}} WPM',
+      })}
+    </p>
+  );
+}
+
+/** On the finish screen of a challenge race: how the server settled it, once it has. Announced when it appears. */
+export function ChallengeRaceResult({ result, name }: { result: SoloChallengeResult | null; name: string }) {
+  const { t } = useTranslation('type-challenges');
+  if (!result) {
+    return (
+      <p role="status" className="mb-4 text-sm text-app-text-muted">
+        {t('race-settling', { ns: 'type-challenges', defaultValue: 'Settling the race…' })}
+      </p>
+    );
+  }
+  const side = resultFor('opponent', result.outcome, result.finished);
+  const who = isolate(name);
+  const wpm = Math.round(result.challengerWpm);
+  return (
+    <p role="status" dir="auto" className="mb-4 text-sm">
+      {side === 'won'
+        ? t('race-won', { ns: 'type-challenges', defaultValue: "You beat {{name}}'s {{wpm}} WPM", name: who, wpm })
+        : side === 'lost'
+          ? t('race-lost', {
+              ns: 'type-challenges',
+              defaultValue: "You lost to {{name}}'s {{wpm}} WPM",
+              name: who,
+              wpm,
+            })
+          : side === 'drew'
+            ? t('race-drew', {
+                ns: 'type-challenges',
+                defaultValue: 'You drew with {{name}} at {{wpm}} WPM',
+                name: who,
+                wpm,
+              })
+            : t('race-unfinished', {
+                ns: 'type-challenges',
+                defaultValue: 'Did not finish. {{name}} wins with {{wpm}} WPM',
+                name: who,
+                wpm,
+              })}
     </p>
   );
 }

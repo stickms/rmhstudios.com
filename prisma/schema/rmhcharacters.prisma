@@ -19,6 +19,52 @@ model RmhCharacter {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  partyMemberships RmhCharacterPartyMember[]
+
   @@index([userId, updatedAt(sort: Desc)])
   @@map("rmh_character")
+}
+
+// ─── RMHCharacters parties ─────────────────────────────────
+//
+// A game master (the creator) gathers players' characters into a party: everyone in it sees each character's computed
+// summary (armour class, hit points, conditions, ...), and the game master alone may open a sheet read-only, and only a
+// sheet whose player switched `sheetShared` on (off by default). A party never copies a sheet: the member row points at
+// the player's own character, so deleting the character leaves the party, and every read re-checks the membership.
+// `initiative` is the turn order, written only by the game master; `orderVersion` is its compare-and-set token, so two
+// writers (two tabs, a stale page) cannot silently overwrite each other.
+
+model RmhCharacterParty {
+  id           String   @id @default(cuid())
+  ownerId      String
+  owner        User     @relation("RmhCharacterPartiesRun", fields: [ownerId], references: [id], onDelete: Cascade)
+  name         String   @db.VarChar(60)
+  system       String   @db.VarChar(8)
+  inviteCode   String   @unique @db.VarChar(16)
+  initiative   Json     @default("[]")
+  turnIndex    Int      @default(0)
+  orderVersion Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  members RmhCharacterPartyMember[]
+
+  @@index([ownerId])
+  @@map("rmh_character_party")
+}
+
+model RmhCharacterPartyMember {
+  partyId     String
+  party       RmhCharacterParty @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User              @relation("RmhCharacterPartyMemberships", fields: [userId], references: [id], onDelete: Cascade)
+  characterId String
+  character   RmhCharacter      @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  sheetShared Boolean           @default(false)
+  joinedAt    DateTime          @default(now())
+
+  @@id([partyId, userId])
+  @@index([userId])
+  @@index([characterId])
+  @@map("rmh_character_party_member")
 }

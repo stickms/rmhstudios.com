@@ -341,7 +341,7 @@ export default function RmhTypeRoom() {
                       </div>
                       <div>
                         <div className="text-xs uppercase tracking-wide mb-1">{t("rounds-count", { defaultValue: "Rounds: {{count}}", count: room.totalRounds })}</div>
-                        <input
+                        <input aria-label={t('field-rounds', { defaultValue: 'Rounds' })}
                           type="range"
                           min={1}
                           max={10}
@@ -440,7 +440,7 @@ export default function RmhTypeRoom() {
               </div>
 
               {/* Input — pinned below passage, seamless on mobile */}
-              <input
+              <input aria-label={t('field-typing', { defaultValue: 'Type the passage' })}
                 ref={inputRef}
                 type="text"
                 value={typedText}
@@ -549,7 +549,7 @@ export default function RmhTypeRoom() {
             <p className="text-sm text-app-text-muted mb-4">
               {t("ban-confirm-body", { defaultValue: "This player will be removed and cannot rejoin this room." })}
             </p>
-            <input
+            <input aria-label={t('field-ban-reason', { defaultValue: 'Reason for removing this player' })}
               type="text"
               value={banReason}
               onChange={(e) => setBanReason(e.target.value)}

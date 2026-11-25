@@ -96,6 +96,8 @@ export const DISCOVERY_EXEMPT_PATHS: Readonly<Record<string, string>> = {
   'lib/communities/settings.server.ts': 'Reads one community by id for its own settings.',
   'lib/communities/rules.server.ts': 'Reads one community by id for its own rules.',
   'lib/communities/extras.server.ts': 'Reads one community by id for its own page extras.',
+  'lib/communities/read-along.server.ts':
+    'Reads one community by slug for its own read-alongs (the page, the mod tab and the parts job).',
   'lib/communities/recurring.server.ts': "A community's own recurring threads and the members' own memberships.",
   'lib/communities/contributors.server.ts':
     "Batches over every community to compute members' scores; nothing is listed.",

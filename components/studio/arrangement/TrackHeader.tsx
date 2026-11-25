@@ -2,6 +2,7 @@ import { Volume2, VolumeX, Headphones, Mic, GripVertical } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useStudioStore } from '@/lib/studio/store';
 import { TRACK_COLORS, DEFAULT_TRACK_HEIGHT } from '@/lib/studio/constants';
+import { toast } from '@/lib/toast';
 import type { Track } from '@/lib/studio/types';
 
 interface TrackHeaderProps {
@@ -84,6 +85,16 @@ export function TrackHeader({ track, isSelected, width }: TrackHeaderProps) {
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                // Audio recording is not offered: say so instead of arming a track that cannot record.
+                if (track.type === 'audio' && !track.armed) {
+                  toast.error(
+                    t('arm-audio-refused', {
+                      ns: 'studio-record',
+                      defaultValue: 'Recording is for MIDI tracks',
+                    }),
+                  );
+                  return;
+                }
                 toggleTrackArm(track.id);
               }}
               className={`rounded-app-sm p-0.5 ${
