@@ -63,6 +63,7 @@ import type {
   TodayQuery,
 } from './read-schemas';
 import { buildSourceLinks } from './source-links';
+import { programLinksOf } from './program-links.server';
 
 /**
  * Anonymous read loaders for the public pages (spec §6, §10). Every Prisma read has an explicit `select`
@@ -427,6 +428,7 @@ export async function getSchool(slug: string, now: Date = new Date()): Promise<M
       city: school.city,
       state: school.state,
       website: school.website,
+      ...programLinksOf(school.slug),
       interviewFormat: school.interviewFormat,
       interviewType: school.interviewType,
     },

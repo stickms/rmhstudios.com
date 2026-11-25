@@ -1,0 +1,24 @@
+import { describe, expect, it } from 'vitest';
+import schools from '../../../data/medschools/schools.json';
+import { programLinksOf } from './program-links.server';
+
+describe('programLinksOf', () => {
+  it('returns the admissions and MD-PhD pages for a school that has both', () => {
+    const l = programLinksOf('alabama');
+    expect(l.admissionsUrl).toMatch(/^https:\/\//);
+    expect(l.mdphdUrl).toBe('https://www.uab.edu/medicine/home/mstp/curriculum');
+  });
+
+  it('is null, not undefined, for a school with nothing read', () => {
+    expect(programLinksOf('no-such-school')).toEqual({ admissionsUrl: null, mdphdUrl: null });
+  });
+
+  it('every link is https and the registry has some of each', () => {
+    const all = schools.schools.map((s) => programLinksOf(s.slug));
+    for (const l of all) {
+      for (const u of [l.admissionsUrl, l.mdphdUrl]) if (u) expect(u.startsWith('https://')).toBe(true);
+    }
+    expect(all.filter((l) => l.admissionsUrl).length).toBeGreaterThan(100);
+    expect(all.filter((l) => l.mdphdUrl).length).toBeGreaterThan(100);
+  });
+});
