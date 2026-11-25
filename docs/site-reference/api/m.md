@@ -34,6 +34,8 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/medschools/me/ask` | `GET` `POST` | `features/medschools/api/medschools.me.ask.server.ts` |
 | `/api/medschools/me/chances` | `GET` | `features/medschools/api/medschools.me.chances.server.ts` |
 | `/api/medschools/me/interview/followups` | `POST` | `features/medschools/api/medschools.me.interview.followups.server.ts` |
+| `/api/medschools/me/list-builder` | `POST` | `features/medschools/api/medschools.me.list-builder.server.ts` |
+| `/api/medschools/me/list-builder/save` | `POST` | `features/medschools/api/medschools.me.list-builder.save.server.ts` |
 | `/api/medschools/me/list-items` | `POST` | `features/medschools/api/medschools.me.list-items.server.ts` |
 | `/api/medschools/me/list-order` | `PUT` | `features/medschools/api/medschools.me.list-order.server.ts` |
 | `/api/medschools/me/lists` | `GET` `POST` | `features/medschools/api/medschools.me.lists.server.ts` |

@@ -593,6 +593,8 @@ import { route as r_features_medschools_api_medschools_live_summary } from '@/fe
 import { route as r_features_medschools_api_medschools_me_ask } from '@/features/medschools/api/medschools.me.ask.server';
 import { route as r_features_medschools_api_medschools_me_chances } from '@/features/medschools/api/medschools.me.chances.server';
 import { route as r_features_medschools_api_medschools_me_interview_followups } from '@/features/medschools/api/medschools.me.interview.followups.server';
+import { route as r_features_medschools_api_medschools_me_list_builder } from '@/features/medschools/api/medschools.me.list-builder.server';
+import { route as r_features_medschools_api_medschools_me_list_builder_save } from '@/features/medschools/api/medschools.me.list-builder.save.server';
 import { route as r_features_medschools_api_medschools_me_list_items } from '@/features/medschools/api/medschools.me.list-items.server';
 import { route as r_features_medschools_api_medschools_me_list_order } from '@/features/medschools/api/medschools.me.list-order.server';
 import { route as r_features_medschools_api_medschools_me_lists } from '@/features/medschools/api/medschools.me.lists.server';
@@ -1802,6 +1804,8 @@ const API_ROUTES_M: readonly ApiRoute[] = [
   r_features_medschools_api_medschools_me_ask, // /api/medschools/me/ask
   r_features_medschools_api_medschools_me_chances, // /api/medschools/me/chances
   r_features_medschools_api_medschools_me_interview_followups, // /api/medschools/me/interview/followups
+  r_features_medschools_api_medschools_me_list_builder, // /api/medschools/me/list-builder
+  r_features_medschools_api_medschools_me_list_builder_save, // /api/medschools/me/list-builder/save
   r_features_medschools_api_medschools_me_list_items, // /api/medschools/me/list-items
   r_features_medschools_api_medschools_me_list_order, // /api/medschools/me/list-order
   r_features_medschools_api_medschools_me_lists, // /api/medschools/me/lists

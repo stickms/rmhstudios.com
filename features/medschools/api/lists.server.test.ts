@@ -18,6 +18,7 @@ vi.mock('@/lib/prisma.server', () => ({
 import {
   addListToTracker,
   createList,
+  createListWithItems,
   deleteItem,
   deleteList,
   listLists,
@@ -422,5 +423,35 @@ describe('bodies', () => {
     expect(saveListItemBody.safeParse({ schoolSlug: 'duke', program: 'ANY', listId: 'a' }).success).toBe(true);
     expect(addListToTrackerBody.safeParse({ cycleYear: '2027' }).success).toBe(false);
     expect(addListToTrackerBody.safeParse({}).success).toBe(true);
+  });
+});
+
+describe('saving a built list (phase D)', () => {
+  it('creates one list with the active schools in order, once each, skipping an inactive or unknown slug', async () => {
+    const r = must(
+      await createListWithItems('a', ' Northeast ', [
+        { slug: 'school-y' },
+        { slug: 'school-x', program: 'PHD' },
+        { slug: 'school-y' },
+        { slug: 'school-off' },
+        { slug: 'school-nope' },
+      ]),
+    );
+    expect(r.name).toBe('Northeast');
+    expect(r.items.map((i) => [i.school.slug, i.program])).toEqual([
+      ['school-y', 'ANY'],
+      ['school-x', 'PHD'],
+    ]);
+    expect(f.tables.medSchoolList).toHaveLength(1);
+    expect(f.lockLog.at(-1)).toEqual(['med-lists:a']);
+  });
+
+  it('nothing usable is no-schools and writes nothing; the 21st list is cap', async () => {
+    const before = snapshot();
+    expect(await createListWithItems('a', 'x', [{ slug: 'school-off' }])).toBe('no-schools');
+    expect(snapshot()).toBe(before);
+    for (let n = 0; n < 20; n++) must(await createList('a', `L${n}`));
+    expect(await createListWithItems('a', 'more', [{ slug: 'school-x' }])).toBe('cap');
+    expect(await createListWithItems('a', '   ', [{ slug: 'school-x' }])).toBe('bad-name');
   });
 });

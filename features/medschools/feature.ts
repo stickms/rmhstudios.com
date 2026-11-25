@@ -41,6 +41,8 @@ export default defineFeature({
     'features/medschools/api/medschools.me.ask.server.ts',
     'features/medschools/api/medschools.me.stats.server.ts',
     'features/medschools/api/medschools.me.stats.onboarding.server.ts',
+    'features/medschools/api/medschools.me.list-builder.server.ts',
+    'features/medschools/api/medschools.me.list-builder.save.server.ts',
   ],
   namespaces: ['medschools'],
   listed: false,

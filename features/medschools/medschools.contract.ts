@@ -25,7 +25,7 @@ import type {
 } from './api/me-schemas';
 import type { MedEventType, MedProgram, MedSource } from './engine/types';
 import type { ApplicantStats } from './engine/applicant';
-import type { putOnboardingBody, putStatsBody } from './api/stats-schemas';
+import type { buildListBody, putOnboardingBody, putStatsBody, saveBuiltListBody } from './api/stats-schemas';
 
 export interface AliasMissDto {
   id: string;
@@ -1153,4 +1153,101 @@ export const deleteMedStatsApi = endpoint<{ res: MedStatsRes }>()({
 export const putMedStatsOnboardingApi = endpoint<{ body: z.infer<typeof putOnboardingBody>; res: MedStatsRes }>()({
   method: 'PUT',
   path: '/api/medschools/me/stats/onboarding',
+});
+
+/* ------------------------- The AI list builder (phase D) ------------------------- */
+
+/** Computed in code (`engine/builder/label.ts`), never by the model. `not-compared`: the member did not use their stats. */
+export type MedBuildLabel = 'likely' | 'target' | 'reach' | 'not-enough-data' | 'not-compared';
+
+/** One comparison a label rests on: the member's figure against the class's published one. */
+export interface MedBuildComparisonDto {
+  metric: 'MCAT' | 'GPA';
+  /** As the member entered it ("512", "3.81"). */
+  yours: string;
+  /** As the school publishes it. */
+  theirs: string;
+  /** Which statistic the school published: median, mean, or a figure whose statistic the page does not name. */
+  stat: 'median' | 'mean' | 'unnamed';
+  band: 'above' | 'near' | 'below';
+}
+
+/** A public figure a school's row used, with where it came from. */
+export interface MedBuildFigureDto {
+  ref: string;
+  /** The profile kind (`MCAT_MEDIAN`, `IN_STATE_PCT`, ...); the page labels it. */
+  kind: string;
+  value: string;
+  /** The class the figure is from, as the page gives it. */
+  classLabel: string;
+  enteringYear: number | null;
+  sourceUrl: string;
+  checkedOn: string;
+  /** The page's own words the figure was read from (the class profile's evidence). */
+  evidence: string;
+}
+
+export interface MedBuildSchoolDto {
+  slug: string;
+  name: string;
+  shortName: string;
+  state: string;
+  degree: 'MD' | 'DO';
+  /** What saving this row stores: `PHD` when the request asked for MD-PhD / DO-PhD programs. */
+  program: 'ANY' | 'PHD';
+  label: MedBuildLabel;
+  comparisons: MedBuildComparisonDto[];
+  figures: MedBuildFigureDto[];
+  /** Plain facts the code knows about the school (an MD-PhD program, an NIH MSTP, in the member's home state). */
+  notes: ('mdphd' | 'mstp' | 'home-state')[];
+  /** The model's one sentence, kept only when the grounding check kept it; `cites` are refs of `figures` and `member`. */
+  reason: { text: string; cites: string[] } | null;
+}
+
+/** The member's own figures the build used, labelled as theirs. Returned to the member only; never stored. */
+export interface MedBuildMemberFactDto {
+  ref: string;
+  label: string;
+  text: string;
+}
+
+export interface MedBuildRes {
+  status: 'built' | 'partial' | 'no-candidates' | 'no-picks' | 'declined';
+  usedStats: boolean;
+  /** The member asked to use their stats and has no MCAT or GPA entered: nothing could be compared. */
+  statsMissing: boolean;
+  schools: MedBuildSchoolDto[];
+  member: MedBuildMemberFactDto[];
+  /** What the request was read as, so the page can say it. */
+  filters: {
+    states: string[];
+    degree: 'MD' | 'DO' | null;
+    mdphd: boolean;
+    size: 'small' | 'medium' | 'large' | null;
+    missions: string[];
+    /** Asked-for missions RMH has no public data on, so they chose nothing. */
+    unused: string[];
+    count: number;
+  };
+  notice: 'removed-ungrounded' | null;
+  tier: MedQaTier;
+  remainingToday: number | null;
+  dailyCap: number | null;
+  thinking: boolean;
+}
+
+/**
+ * Signed in. One build is one of the member's daily Q&A questions and runs under the Q&A's gates: 429
+ * `MEDSCHOOLS_QA_DAILY_CAP` or `MEDSCHOOLS_QA_BUSY`, 503 `MEDSCHOOLS_QA_PAUSED` or `AI_UNAVAILABLE`, 402
+ * `AI_BUDGET_EXCEEDED`, 403 for a suspended account. Nothing in the request or the result is stored. Never cached.
+ */
+export const buildMedListApi = endpoint<{ body: z.infer<typeof buildListBody>; res: MedBuildRes }>()({
+  method: 'POST',
+  path: '/api/medschools/me/list-builder',
+});
+
+/** Save the ticked schools of a build as one new list (409 `MEDSCHOOLS_LIST_CAP` at 20 lists). */
+export const saveMedBuiltListApi = endpoint<{ body: z.infer<typeof saveBuiltListBody>; res: MedListDto }>()({
+  method: 'POST',
+  path: '/api/medschools/me/list-builder/save',
 });

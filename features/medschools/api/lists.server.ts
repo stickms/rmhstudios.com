@@ -102,6 +102,48 @@ export async function createList(userId: string, name: string): Promise<MedListD
   });
 }
 
+/**
+ * A new list holding the given schools in the given order (the list builder's "Save as a list", phase D): one
+ * transaction under the list lock, the 20-list cap re-read after it, only active schools (an unknown or inactive slug
+ * is skipped and counted), a school and program once. Nothing links the list to the build that suggested it.
+ */
+export async function createListWithItems(
+  userId: string,
+  name: string,
+  items: readonly { slug: string; program?: MedListProgramId | undefined }[],
+): Promise<MedListDto | 'cap' | 'bad-name' | 'no-schools'> {
+  const clean = cleanText(name, LIMITS.listName);
+  if (!clean) return 'bad-name';
+  return prisma.$transaction(async (tx) => {
+    await listLock(tx, userId);
+    const have = await listRows(tx, userId);
+    if (have.length >= LIMITS.lists) return 'cap' as const;
+    const slugs = [...new Set(items.map((i) => i.slug))];
+    const schools = await tx.medSchool.findMany({
+      where: { slug: { in: slugs }, active: true },
+      select: { id: true, slug: true },
+    });
+    const idOf = new Map(schools.map((s) => [s.slug, s.id]));
+    const rows: { schoolId: string; program: MedListProgramId }[] = [];
+    for (const i of items) {
+      const schoolId = idOf.get(i.slug);
+      const program = i.program ?? 'ANY';
+      if (!schoolId || rows.some((r) => r.schoolId === schoolId && r.program === program)) continue;
+      if (rows.length >= LIMITS.itemsPerList) break;
+      rows.push({ schoolId, program });
+    }
+    if (rows.length === 0) return 'no-schools' as const;
+    const list = await tx.medSchoolList.create({
+      data: { userId, name: clean, position: have.length },
+      select: { id: true, name: true, position: true },
+    });
+    for (const [position, r] of rows.entries()) {
+      await tx.medSchoolListItem.create({ data: { listId: list.id, schoolId: r.schoolId, program: r.program, position } });
+    }
+    return (await toDtos(tx, [list]))[0] as MedListDto;
+  });
+}
+
 export async function renameList(userId: string, id: string, name: string): Promise<MedListDto | null | 'bad-name'> {
   const clean = cleanText(name, LIMITS.listName);
   if (!clean) return 'bad-name';
