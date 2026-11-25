@@ -2,8 +2,8 @@ import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, ChevronUp, Clock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ChevronDown, ChevronUp, Clock, Pencil, RefreshCw, Send, Trash2 } from 'lucide-react';
+import { IconButton } from '@/components/ui/icon-button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScheduleControl } from '@/components/ui/schedule-control';
@@ -187,11 +187,14 @@ export function ScheduledStrip({
             defaultValue: 'Scheduled messages did not load.',
           })}
         </p>
-        <Button size="xs" variant="ghost" onClick={() => void list.refetch()}>
-          {t('retry', {
+        <IconButton
+          icon={RefreshCw}
+          size="icon-xs"
+          label={t('retry', {
             defaultValue: 'Retry',
           })}
-        </Button>
+          onClick={() => void list.refetch()}
+        />
       </div>
     );
   }
@@ -253,33 +256,43 @@ export function ScheduledStrip({
               <div className="flex shrink-0 items-center gap-1">
                 {row.status === 'pending' ? (
                   <>
-                    <Button size="xs" variant="ghost" onClick={() => setEditing(row)}>
-                      {t('edit', {
+                    <IconButton
+                      icon={Pencil}
+                      size="icon-xs"
+                      label={t('edit', {
                         defaultValue: 'Edit',
                       })}
-                    </Button>
-                    <Button
-                      size="xs"
-                      variant="ghost"
-                      disabled={sendNow.isPending}
-                      onClick={() => sendNow.mutate(row.id)}
-                    >
-                      {t('send-now', {
+                      onClick={() => setEditing(row)}
+                    />
+                    <IconButton
+                      icon={Send}
+                      size="icon-xs"
+                      label={t('send-now', {
                         defaultValue: 'Send now',
                       })}
-                    </Button>
-                    <Button size="xs" variant="ghost" disabled={remove.isPending} onClick={() => void cancel(row)}>
-                      {t('cancel', {
+                      disabled={sendNow.isPending}
+                      onClick={() => sendNow.mutate(row.id)}
+                    />
+                    <IconButton
+                      icon={Trash2}
+                      size="icon-xs"
+                      label={t('cancel', {
                         defaultValue: 'Cancel',
                       })}
-                    </Button>
+                      disabled={remove.isPending}
+                      onClick={() => void cancel(row)}
+                    />
                   </>
                 ) : (
-                  <Button size="xs" variant="ghost" disabled={remove.isPending} onClick={() => remove.mutate(row.id)}>
-                    {t('delete', {
+                  <IconButton
+                    icon={Trash2}
+                    size="icon-xs"
+                    label={t('delete', {
                       defaultValue: 'Delete',
                     })}
-                  </Button>
+                    disabled={remove.isPending}
+                    onClick={() => remove.mutate(row.id)}
+                  />
                 )}
               </div>
             </li>

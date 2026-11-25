@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { History } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs } from '@/components/ui/tabs';
@@ -24,14 +25,16 @@ import {
 export function GuideHistoryLink({ gameId, guideId }: { gameId: string; guideId: string }) {
   const { t } = useTranslation('guide-history');
   return (
-    <Button variant="ghost" size="sm" asChild>
+    <IconButton
+      asChild
+      label={t('history-link', {
+        defaultValue: 'History',
+      })}
+    >
       <Link to="/games/$gameId/guides/$guideId/history" params={{ gameId, guideId }}>
-        <History className="h-4 w-4" aria-hidden />
-        {t('history-link', {
-          defaultValue: 'History',
-        })}
+        <History aria-hidden />
       </Link>
-    </Button>
+    </IconButton>
   );
 }
 

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { MESSAGE_MAX_LENGTH } from '@/lib/messages/edit-policy';
 
 /**
@@ -83,18 +84,14 @@ export function MessageEditor({
             })}
           </span>
         ) : null}
-        <Button
-          variant="ghost"
-          size="sm"
+        <IconButton
+          icon={X}
           onClick={onCancel}
           disabled={saving}
-          aria-label={t('message-edit-cancel', {
+          label={t('message-edit-cancel', {
             defaultValue: 'Cancel edit',
           })}
-          className="size-11 rounded-site p-0"
-        >
-          <X className="size-4" />
-        </Button>
+        />
         <Button
           variant="default"
           size="sm"

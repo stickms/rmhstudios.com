@@ -100,7 +100,12 @@ rules, a vertical rule at `@xl`). Rules are inset and floating (S12): they stop 
 under `PageLayout` (S13). Catalogues are news-style rows (S14), hubs are `Cells` (S15). An overlay (menu, dialog,
 popover) is the only raised surface: `--site-surface`, 1px border, 8px radius, the overlay shadow, no blur; the scrim
 behind a dialog is `--site-bg` at 80%. Controls are 8px radius, 1px border, 500 weight, 14px text, 36px high (44px on
-touch). The focus ring is `outline: 2px solid var(--site-text); outline-offset: 2px` on every focusable element (K10). A
+touch). A ghost text button (K3) has no border or fill at rest, so its layout box carries no padding (`padding: 0`,
+`block-size: auto`): the words sit flush horizontally and vertically with surrounding copy and container edges, while
+its `--site-bg-subtle` hover/press fill and K10 focus ring overhang outside the container on `::before` (parents leave
+`overflow` unclipped). Toolbar, header and row utility actions with a clear glyph (Refresh, Edit, Delete, Settings,
+Analytics, Copy, Export, Preview) use `IconButton` with a tooltip instead of text (K8). The focus ring is
+`outline: 2px solid var(--site-text); outline-offset: 2px` on every focusable element (K10). A
 page's one structural signature is the spine, a 1px vertical line with a dot per item and a hollow dot per section
 heading. Phone navigation is the globe alone; desktop navigation is a word list in a left sidebar. Controls (plan
 section 6), the spine (7), the globe and shell (8, 9) and the page recipes (10) are specified in the plan.
@@ -109,8 +114,9 @@ section 6), the spine (7), the globe and shell (8, 9) and the page recipes (10) 
 
 - `pnpm check:consistency` is the commit gate. Its executable gates are in `lib/__tests__/`: `steel-tokens.test.ts`
   (exact token values, contrast, type classes), `steel-flat.test.ts` (no `backdrop-filter`, `filter` or gradient in
-  site-tier CSS except the chrome stylesheets, no deleted token anywhere), `design-consistency.test.ts` (one tab-strip
-  grammar, no eyebrows, CSS debt ratchets) and `ios-edge-contract.test.ts`.
+  site-tier CSS except the chrome stylesheets, no deleted token anywhere), `steel-ghost-buttons.test.ts` (K3 flush
+  ghost-text CSS contract, no negative-margin bleed hacks, no icon-only ghost buttons on a text size),
+  `design-consistency.test.ts` (one tab-strip grammar, no eyebrows, CSS debt ratchets) and `ios-edge-contract.test.ts`.
 - The eslint rules `local/no-raw-palette-color` (only section-2 colours: no palette families, `white`, `black` or colour
   literals), `local/no-hardcoded-radius` (only `rounded-site`, `rounded-site-sm`, `rounded-full`, `rounded-none`, or a
   token), `local/no-transition-all` and `local/no-dead-animate-classes`. The files that still break the first two are in

@@ -263,7 +263,13 @@ function StringRow({
         .map((s) => (
           <div key={s.id} className="flex items-center gap-2 text-sm">
             <span className="min-w-0 flex-1 text-site-text">{s.text}</span>
-            <Button size="sm" variant={s.voted ? 'default' : 'ghost'} onClick={() => void onVote(s.id)}>
+            <Button
+              size="sm"
+              variant="default"
+              aria-pressed={s.voted}
+              className={s.voted ? 'border-site-text font-semibold' : undefined}
+              onClick={() => void onVote(s.id)}
+            >
               <ThumbsUp className="size-4" aria-hidden />
               {s.votes}
             </Button>

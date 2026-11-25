@@ -176,7 +176,9 @@ warnings versus the base branch, and a message that explains _why_.
    wrapper under `PageLayout`, S13; catalogues are news-style rows, `components/create/storefront.tsx`, S14), not a box.
    `lib/__tests__/steel-rules.test.ts` fails a bordered group box, `surface-card`/`surface-panel`, a `ui/card` import
    and a padded ghost wrapper on the site tier, with no allowlist; it cannot see a card drawn in a stylesheet, so audit
-   `.css` by hand. One ink primary button per view (R4). Type is the seven `t-*` classes (`t-title`, `t-heading`,
+   `.css` by hand. One ink primary button per view (R4); ghost text buttons sit flush with zero box padding at rest and
+   an overhanging `::before` hover/focus box (K3, never `-ms-*`/`-ml-*` hacks or clipped parent `overflow`), while
+   utility actions with a clear glyph use `IconButton` (K8). Type is the seven `t-*` classes (`t-title`, `t-heading`,
    `t-body`, `t-post`, `t-prose`, `t-label`, `t-meta`; `app/styles/steel-type.css`), weights 400/500/600, no
    letterspaced capitals. Use `components/ui/` primitives, `PageLayout`, lucide icons, sonner toasts. Surface roles are
    `surface-overlay` (the only raised surface), `surface-field`, `surface-chrome` and `surface-press`
@@ -185,10 +187,10 @@ warnings versus the base branch, and a message that explains _why_.
    games and apps (L8), where `components/shared/app-theme.css` draws them as the app tier's panels. **Before any UI
    commit** read [`design.md`](design.md), [`docs/design-language.md`](docs/design-language.md) §0 and
    [`docs/page-consistency.md`](docs/page-consistency.md). Part of this is CI-enforced —
-   `lib/__tests__/steel-tokens.test.ts`, `steel-flat.test.ts` and `design-consistency.test.ts` (hand-rolled tab strips,
-   floating UI below the overlay tier) plus the eslint rules `local/no-transition-all` and
-   `local/no-dead-animate-classes` — and `pnpm check:consistency` is how you find that out **before** you commit rather
-   than in CI. `docs/archive/2026/plasmatic-jelly-design-language.md` and `docs/archive/2026/plasmatic-jelly-system.md`
+   `lib/__tests__/steel-tokens.test.ts`, `steel-flat.test.ts`, `steel-ghost-buttons.test.ts` and
+   `design-consistency.test.ts` (hand-rolled tab strips, floating UI below the overlay tier) plus the eslint rules
+   `local/no-transition-all` and `local/no-dead-animate-classes` — and `pnpm check:consistency` is how you find that out
+   **before** you commit rather than in CI. `docs/archive/2026/plasmatic-jelly-design-language.md` and `docs/archive/2026/plasmatic-jelly-system.md`
    describe the deleted material and are historical.
 5. **i18n:** all user-facing strings through `t("key", { defaultValue })`; then `pnpm i18n:extract`. English is
    authoritative. Two silent failure modes to know: **(a)** `defaultValue` is only used when a key is MISSING, so

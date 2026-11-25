@@ -237,7 +237,8 @@ export function CallOverlay() {
             ref={moreRef}
             type="button"
             variant="ghost"
-            className="h-9 w-9 shrink-0 rounded-full p-0"
+            size="icon"
+            className="shrink-0 rounded-full"
             onClick={() => setMenuOpen((o) => !o)}
             aria-haspopup="menu"
             aria-expanded={menuOpen}
@@ -392,7 +393,8 @@ export function CallOverlay() {
               <Button
                 type="button"
                 variant="ghost"
-                className="h-9 w-9 rounded-full p-0"
+                size="icon"
+                className="rounded-full"
                 onClick={() => toggleMute()}
                 aria-pressed={muted}
                 aria-label={

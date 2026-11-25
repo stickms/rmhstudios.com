@@ -27,14 +27,17 @@ A change is done when all of this is true, in both editions, at 390px and at 128
    wrapper under `PageLayout` per S13) are how a page sets a group off. A bordered box is for a control or a picture. No
    gradient, blur, glow, translucency or shadow, except an overlay's shadow (T4) and the three chrome elements (R2).
 3. **One ink primary per view (R4).** `<Button variant="primary">` marks the main action; every other button is bordered
-   or borderless.
+   (`default`) or borderless (`ghost`). Chrome, toolbar and row utility actions with an unmistakable glyph use
+   `<IconButton>` rather than a text ghost button (K8). A ghost text button (K3) sits flush horizontally and vertically
+   with no box padding at rest, and its hover fill and focus ring overhang outside its container on `::before` — never
+   clip its parent's `overflow` or add `-ms-*` / `-ml-*` bleed hacks.
 4. **Type is the seven `t-*` classes** (`t-title`, `t-heading`, `t-body`, `t-post`, `t-prose`, `t-label`, `t-meta`),
    weights 400, 500 and 600, sentence case, no letterspaced capitals (Y1, Y2). One `t-title` per page, supplied by
    `PageLayout`.
 5. **Tokens only.** Colours, radii and fonts come from the `--site-*` utilities (`bg-site-bg`, `text-site-text-muted`,
    `border-site-border`, `rounded-site`, `rounded-site-sm`). No raw palette colour, hardcoded radius or
    `transition-all`.
-6. **Primitives, not copies.** `components/ui/` first: Button, Input, Select, Tabs, Switch, Slider, Dialog, EmptyState,
+6. **Primitives, not copies.** `components/ui/` first: Button, IconButton, Input, Select, Tabs, Switch, Slider, Dialog, EmptyState,
    Skeleton (a still block, M6), `useConfirm`, sonner toasts, lucide icons. A hand-rolled tab strip is a bug even
    without `role="tablist"`.
 7. **Logical properties** (`ps-*`, `ms-*`, `border-s`, `inset-inline-start`), so the page mirrors in `ar` and `ur` (P5,
@@ -83,9 +86,14 @@ They are in `@layer components`, so a Tailwind utility on the same element wins.
 
 ## 5. Controls and the spine
 
-Controls follow plan section 6 (K1 to K11). The spine is `components/ui/spine.tsx` (`Spine`, `SpineItem`,
-`SpineStation`) and `spine.css`: pure CSS, one per column, a dot per discrete item, a hollow dot per section heading,
-dotless items for prose and forms. What it means on each page is fixed by the recipes (P4); do not invent a meaning.
+Controls follow plan section 6 (K1 to K11). Ghost text buttons (K3) have zero layout padding (`padding: 0`,
+`block-size: auto`) so their label sits flush horizontally and vertically with copy and container edges, while
+`::before` draws the overhanging hover/press fill (`--site-bg-subtle`, 8px inline / 6px block; 6px / 4px on `xs`) and
+K10 focus ring, and `::after` supplies the 44px coarse-pointer touch target (`app/styles/steel-surfaces.css`,
+`app/globals/base-interaction.css`). Utility actions in toolbars, headers and rows use `IconButton` (K8). The spine is
+`components/ui/spine.tsx` (`Spine`, `SpineItem`, `SpineStation`) and `spine.css`: pure CSS, one per column, a dot per
+discrete item, a hollow dot per section heading, dotless items for prose and forms. What it means on each page is fixed
+by the recipes (P4); do not invent a meaning.
 
 ## 6. The shell
 
@@ -153,8 +161,10 @@ the gates below, which are the authority.
   | 8, no `transition-all`                                                                                                                    | `local/no-transition-all`       | whole tree |
   | 9, no `tailwindcss-animate` class (`animate-in`, `fade-in-0`, `zoom-in-95`, ...): the plugin is not installed, so they compile to nothing | `local/no-dead-animate-classes` | whole tree |
 
-- **`steel-tokens.test.ts`** (exact token values, contrast, type classes) and **`steel-flat.test.ts`** (no
-  `backdrop-filter`, `filter` or gradient in site-tier CSS except the chrome stylesheets, no deleted token anywhere).
+- **`steel-tokens.test.ts`** (exact token values, contrast, type classes), **`steel-flat.test.ts`** (no
+  `backdrop-filter`, `filter` or gradient in site-tier CSS except the chrome stylesheets, no deleted token anywhere) and
+  **`steel-ghost-buttons.test.ts`** (K3 flush ghost-text CSS contract, no `-ms-*`/`-ml-*` bleed hacks on ghost buttons,
+  no icon-only ghost buttons on a text size).
 - **`stacking-consistency.test.ts`**: nothing `position: fixed` inside a surface role that could carry a transform;
   portal it.
 - **`ios-edge-contract.test.ts`**: no `theme-color` on iOS, no full-viewport fixed decoration, and a ratchet against any

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { OfficeHoursProfileButton } from '@/components/calendar/OfficeHoursProfileButton';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { BadgeCheck, CalendarDays, Coins, Gift, Link2, MapPin, ShieldCheck } from 'lucide-react';
+import { BadgeCheck, CalendarDays, ChartColumn, Coins, Eye, Gift, Link2, MapPin, Palette, ShieldCheck } from 'lucide-react';
 import { AutomatedBadge } from '@/components/feed/AutomatedBadge';
 
 import { AchievementBadgeStrip } from '@/components/feed/AchievementBadgeStrip';
@@ -14,11 +14,11 @@ import { AddToListSheet } from '@/components/lists/AddToListSheet';
 import { WishButton } from '@/components/wishlist/WishButton';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { CallButton } from '@/components/call/CallButton';
 import { GroupCallButton } from '@/components/groupcall/GroupCallButton';
 import { CopyButton } from '@/components/ui/copy-button';
 import { ProfileStorefrontStrip } from '@/components/profile/ProfileStorefrontStrip';
-import { CoinIcon } from '@/components/ui/CoinIcon';
 import { buildOptimizedUrl } from '@/components/ui/OptimizedImage';
 import { safeHref } from '@/lib/url-safety';
 import { getFeaturedProfileLink } from '@/lib/profile/featured-links';
@@ -296,7 +296,7 @@ export function ProfileHero({
         <button
           type="button"
           onClick={onEdit}
-          className="t-body mt-3 text-site-text-muted underline"
+          className="t-body mt-3 justify-self-start text-start text-site-text-muted underline"
         >
           {t('add-profile-bio', {
             defaultValue: 'Add a bio so people know what you make and love.',
@@ -312,21 +312,24 @@ export function ProfileHero({
             <Button variant="default" onClick={onEdit}>
               {t('edit-profile', { defaultValue: 'Edit profile' })}
             </Button>
-            <Button asChild variant="ghost">
+            <IconButton asChild label={t('creator-analytics', { defaultValue: 'Creator analytics' })}>
               <Link to="/analytics">
-                {t('creator-analytics', { defaultValue: 'Creator analytics' })}
+                <ChartColumn aria-hidden />
               </Link>
-            </Button>
-            <Button asChild variant="ghost">
+            </IconButton>
+            <IconButton asChild label={t('profile-cosmetics-title', { defaultValue: 'Profile customization' })}>
               <Link to="/settings/profile">
-                {t('profile-cosmetics-title', { defaultValue: 'Profile customization' })}
+                <Palette aria-hidden />
               </Link>
-            </Button>
-            <Button asChild variant="ghost">
+            </IconButton>
+            <IconButton
+              asChild
+              label={t('preview-profile', { ns: 'profile-preview', defaultValue: 'Preview as others see it' })}
+            >
               <Link to="/settings/preview">
-                {t('preview-profile', { ns: 'profile-preview', defaultValue: 'Preview as others see it' })}
+                <Eye aria-hidden />
               </Link>
-            </Button>
+            </IconButton>
           </>
         ) : signedIn ? (
           <>
@@ -362,12 +365,12 @@ export function ProfileHero({
             />
             <OfficeHoursProfileButton userId={profile.id} />
             <CompareProfileLink handle={profile.handle} id={profile.id} />
-            <Button variant="ghost" onClick={onTip}>
-              {t('send-a-tip', { defaultValue: 'Send a tip' })}
-            </Button>
-            <Button variant="ghost" onClick={onGift}>
-              {t('gift-a-membership', { defaultValue: 'Gift a membership' })}
-            </Button>
+            <IconButton icon={Coins} label={t('send-a-tip', { defaultValue: 'Send a tip' })} onClick={onTip} />
+            <IconButton
+              icon={Gift}
+              label={t('gift-a-membership', { defaultValue: 'Gift a membership' })}
+              onClick={onGift}
+            />
             {/* Mute, block, report and "pretending to be someone": someone else's profile only. */}
             <ProfileMenu profile={profile} name={name} signedIn={signedIn} onChange={onViewerChange} />
           </>

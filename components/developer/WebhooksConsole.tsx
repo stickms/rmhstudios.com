@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, RefreshCw, Webhook } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
@@ -71,9 +72,12 @@ export function WebhooksConsole() {
         </div>
         {endpoints.length > 0 && (
           <div className="flex items-center gap-2">
-            <Button variant="ghost" loading={isFetching} onClick={() => void refetch()}>
-              <RefreshCw aria-hidden /> {t('console-refresh', { defaultValue: 'Refresh' })}
-            </Button>
+            <IconButton
+              icon={RefreshCw}
+              label={t('console-refresh', { defaultValue: 'Refresh' })}
+              loading={isFetching}
+              onClick={() => void refetch()}
+            />
             <Button variant="primary" disabled={full} onClick={() => setCreating(true)}>
               <Plus aria-hidden /> {t('console-create', { defaultValue: 'Create endpoint' })}
             </Button>

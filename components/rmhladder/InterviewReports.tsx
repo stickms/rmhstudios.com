@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -181,18 +182,16 @@ export function InterviewReports({
                   })}
                 </span>
                 {isAuthenticated && (
-                  <Button
+                  <IconButton
                     type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="ml-auto min-h-11"
-                    aria-label={t('ir-report', {
+                    icon={Flag}
+                    size="icon-xs"
+                    className="ms-auto"
+                    label={t('ir-report', {
                       defaultValue: 'Report this interview report',
                     })}
                     onClick={() => setReporting(r.id)}
-                  >
-                    <Flag aria-hidden />
-                  </Button>
+                  />
                 )}
               </div>
               <div className="mt-2 flex flex-wrap gap-1">

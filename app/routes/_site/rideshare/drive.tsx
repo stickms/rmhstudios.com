@@ -16,6 +16,7 @@ import {
   Star,
   Power,
   CalendarClock,
+  RefreshCw,
   Route as RouteLucide,
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
@@ -23,6 +24,7 @@ import { format } from 'date-fns';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Notice } from '@/components/ui/rules';
 import { Badge } from '@/components/ui/badge';
+import { IconButton } from '@/components/ui/icon-button';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
@@ -463,9 +465,13 @@ function DriverDashboard({
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="site-section-label">{t('open-ride-requests', { defaultValue: 'Open ride requests' })}</h2>
-          <Button type="button" variant="ghost" size="sm" className="min-h-11" onClick={load}>
-            {t('refresh', { defaultValue: 'Refresh' })}
-          </Button>
+          <IconButton
+            type="button"
+            icon={RefreshCw}
+            size="icon-xs"
+            label={t('refresh', { defaultValue: 'Refresh' })}
+            onClick={load}
+          />
         </div>
         {loading ? (
           <div className="flex justify-center py-8"><Spinner size={20} className="text-site-text-muted" /></div>

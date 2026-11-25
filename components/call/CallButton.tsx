@@ -57,6 +57,7 @@ export function CallButton({ user, conversationId, viewerId, variant = 'icon', c
     <Button
       type="button"
       variant={variant === 'icon' ? 'ghost' : 'default'}
+      size={variant === 'icon' ? 'icon' : 'default'}
       // Disabled rather than hidden while a call is live: the control vanishing
       // mid-call would read as a bug.
       disabled={busy}
@@ -72,7 +73,7 @@ export function CallButton({ user, conversationId, viewerId, variant = 'icon', c
         )
       }
       aria-label={variant === 'icon' ? label : undefined}
-      className={cn(variant === 'icon' && 'h-9 w-9 rounded-full p-0', className)}
+      className={cn(variant === 'icon' && 'rounded-full', className)}
     >
       <Phone className={variant === 'icon' ? 'h-4 w-4' : 'h-4 w-4'} aria-hidden />
       {variant === 'full' && <span>{label}</span>}

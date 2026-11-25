@@ -316,8 +316,13 @@ body {
    is used inside a toolbar. The glyph/pill styling stays compact; only the
    interactive box grows, which also gives adjacent controls reliable air. */
 @media (pointer: coarse) {
-  /* The `compact` and `icon-compact` button sizes stay 32px painted and reach 44px through `.hit-slop` below. */
-  [data-slot='button']:not([data-size$='compact']),
+  /* The `compact`/`icon-compact` button sizes stay 32px painted and K3 site-tier ghost text buttons stay flush with
+     text; both reach 44px through `.hit-slop` (`::after`) below. */
+  :is(
+      [data-slot='button']:not([data-variant='ghost']),
+      [data-slot='button'][data-size^='icon'],
+      html.app-route [data-slot='button']
+    ):not([data-size$='compact']),
   [data-slot='select'],
   [role='tab']:not([data-tab-dense] *) {
     min-block-size: var(--site-touch-target);
@@ -357,7 +362,8 @@ body {
     position: relative;
   }
   .hit-slop::after,
-  .touch-target::after {
+  .touch-target::after,
+  html:not(.app-route) [data-slot='button'][data-variant='ghost']:not([data-size^='icon'])::after {
     content: '';
     position: absolute;
     top: 50%;

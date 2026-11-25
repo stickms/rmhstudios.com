@@ -18,6 +18,7 @@ import { canEditDraft } from './draft-edit';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
 import { Button } from'@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { CoinIcon } from'@/components/ui/CoinIcon';
 import { api } from'@/lib/contract/client';
 import {
@@ -253,12 +254,6 @@ function Section({
  )}
  </div>
  <div className="mt-3 flex items-center gap-2">
- {canEditDraft(r) && (
- <Button size="sm" variant="ghost" onClick={() => onEdit(r)}>
- <Pencil className="h-3.5 w-3.5"/>
- {t('edit', { ns:'draft-edit', defaultValue:'Edit'})}
- </Button>
- )}
  <Button
  size="sm"
  variant="default"
@@ -268,16 +263,20 @@ function Section({
  {busy !== `p:${r.id}`&& <Send className="h-3.5 w-3.5"/>}
  {t('post-now', { defaultValue:'Post now'})}
  </Button>
- <Button
- size="sm"
- variant="ghost"
+ {canEditDraft(r) && (
+ <IconButton
+ icon={Pencil}
+ label={t('edit', { ns:'draft-edit', defaultValue:'Edit'})}
+ onClick={() => onEdit(r)}
+ />
+ )}
+ <IconButton
+ icon={Trash2}
  loading={busy === `d:${r.id}`}
  onClick={() => onDiscard(r.id)}
  className="text-site-text-muted hover:text-site-danger"
- >
- {busy !== `d:${r.id}`&& <Trash2 className="h-3.5 w-3.5"/>}
- {t('discard', { defaultValue:'Discard'})}
- </Button>
+ label={t('discard', { defaultValue:'Discard'})}
+ />
  </div>
  </div>
  );

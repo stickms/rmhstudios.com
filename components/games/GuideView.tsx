@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
-import { Edit } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { GuideHistoryLink } from '@/components/games/GuideHistory';
 import { DocBody, DocEditor, type DocDraft } from '@/components/communities/DocEditor';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -203,11 +204,14 @@ export function GuideView({ gameId, guide }: { gameId: string; guide: GuideData 
                         defaultValue: 'Publish',
                       })}
                 </Button>
-                <Button variant="ghost" size="sm" onClick={remove} className="text-site-danger">
-                  {t('delete', {
+                <IconButton
+                  icon={Trash2}
+                  onClick={remove}
+                  className="text-site-danger"
+                  label={t('delete', {
                     defaultValue: 'Delete',
                   })}
-                </Button>
+                />
               </>
             ) : null
           }
@@ -217,7 +221,7 @@ export function GuideView({ gameId, guide }: { gameId: string; guide: GuideData 
   }
 
   return (
-    <article className="px-4 pt-4 pb-12">
+    <article className="pt-4 pb-12">
       {/* The title is the page's h1 (PageLayout), so it is not repeated here. */}
       <header className="mb-4">
         <div className="flex items-center justify-between gap-2">
@@ -231,14 +235,15 @@ export function GuideView({ gameId, guide }: { gameId: string; guide: GuideData 
             <span className="text-sm text-site-text-muted">{guide!.author.name ?? guide!.author.handle}</span>
           </span>
           {guide!.removed ? null : guide!.isAuthor ? (
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-1">
               <GuideHistoryLink gameId={gameId} guideId={guide!.id} />
-              <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
-                <Edit className="h-4 w-4" aria-hidden />
-                {t('edit', {
+              <IconButton
+                icon={Edit}
+                onClick={() => setEditing(true)}
+                label={t('edit', {
                   defaultValue: 'Edit',
                 })}
-              </Button>
+              />
             </span>
           ) : (
             <ReportItemButton

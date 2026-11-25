@@ -10,7 +10,9 @@ import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { api, apiQuery } from '@/lib/contract/client';
 import { cn } from '@/lib/utils';
+import { Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -277,7 +279,7 @@ export function ModRecurring({ slug, flairs }: { slug: string; flairs: FlairDTO[
                   )}
                 </p>
               )}
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-4">
                 <Button variant="ghost" size="sm" onClick={() => void postNow(r)} disabled={busy === r.id}>
                   {t('now', {
                     defaultValue: 'Post now',
@@ -297,16 +299,24 @@ export function ModRecurring({ slug, flairs }: { slug: string; flairs: FlairDTO[
                         defaultValue: 'Resume',
                       })}
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => setEditing(r)}>
-                  {t('edit', {
-                    defaultValue: 'Edit',
-                  })}
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => void remove(r)}>
-                  {t('delete', {
-                    defaultValue: 'Delete',
-                  })}
-                </Button>
+                <div className="ms-auto flex items-center gap-1">
+                  <IconButton
+                    icon={Pencil}
+                    size="icon-xs"
+                    label={t('edit', {
+                      defaultValue: 'Edit',
+                    })}
+                    onClick={() => setEditing(r)}
+                  />
+                  <IconButton
+                    icon={Trash2}
+                    size="icon-xs"
+                    label={t('delete', {
+                      defaultValue: 'Delete',
+                    })}
+                    onClick={() => void remove(r)}
+                  />
+                </div>
               </div>
             </li>
           ))}

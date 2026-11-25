@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { AppWindow, Gamepad2, Pencil } from 'lucide-react';
 import { WidgetFrame } from '@/components/ui/widget-frame';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import type { TopFourItem } from '@/lib/profile/modules';
 import { resolveTopFour, type TopFourEntry } from '@/lib/profile/top-four';
 
@@ -82,14 +83,17 @@ export default function TopFourModule({
       }
       action={
         isOwner && entries.length > 0 ? (
-          <Button asChild variant="ghost" size="xs">
+          <IconButton
+            asChild
+            size="icon-xs"
+            label={t('top-four-edit', {
+              defaultValue: 'Edit',
+            })}
+          >
             <Link to="/settings/profile" hash="plus-top-four">
               <Pencil aria-hidden />
-              {t('top-four-edit', {
-                defaultValue: 'Edit',
-              })}
             </Link>
-          </Button>
+          </IconButton>
         ) : null
       }
     >

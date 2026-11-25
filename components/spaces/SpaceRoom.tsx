@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { ColumnHeader } from '@/components/feed/ColumnHeader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { useSession } from '@/components/Providers';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -389,23 +390,17 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
             placeholder={t('space-pin-placeholder', { defaultValue: 'Pin a link (URL)…' })}
             className="min-w-0 flex-1"
           />
-          <Button
-            size="sm"
-            variant="ghost"
+          <IconButton
+            icon={Pin}
             onClick={submitPin}
-            aria-label={t('space-pin', { defaultValue: 'Pin' })}
-          >
-            <Pin aria-hidden />
-          </Button>
+            label={t('space-pin', { defaultValue: 'Pin' })}
+          />
           {pinned && (
-            <Button
-              size="sm"
-              variant="ghost"
+            <IconButton
+              icon={PinOff}
               onClick={unpin}
-              aria-label={t('space-unpin', { defaultValue: 'Unpin' })}
-            >
-              <PinOff aria-hidden />
-            </Button>
+              label={t('space-unpin', { defaultValue: 'Unpin' })}
+            />
           )}
         </div>
       )}

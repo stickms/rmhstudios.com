@@ -169,7 +169,9 @@ export function PhotoPage() {
                     {session && !n.mine && (
                       <Button
                         size="sm"
-                        variant={d.votedFor === n.id ? 'default' : 'ghost'}
+                        variant="default"
+                        aria-pressed={d.votedFor === n.id}
+                        className={d.votedFor === n.id ? 'border-site-text font-semibold' : undefined}
                         disabled={busy || d.votedFor !== null}
                         onClick={() =>
                           void act(() =>

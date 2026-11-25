@@ -677,15 +677,12 @@ export function NotificationsColumn({
                         </p>
                       </div>
                     </button>
-                    <Button
-                      variant="ghost"
-                      size="xs"
+                    <IconButton
+                      icon={Bell}
+                      size="icon-xs"
                       onClick={snooze}
-                      aria-label={t('snooze', { defaultValue: 'Later' })}
-                      title={t('snooze', { defaultValue: 'Later' })}
-                    >
-                      <Bell className="h-4 w-4" aria-hidden />
-                    </Button>
+                      label={t('snooze', { defaultValue: 'Later' })}
+                    />
                     <NotificationRowMenu
                       summary={rowSummary}
                       read={g.read}

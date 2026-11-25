@@ -47,7 +47,7 @@ function DeveloperHome() {
       title={t('developer-title', { defaultValue: 'Developer API' })}
       wide
       headerRight={
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 min-[480px]:gap-x-6">
           <Button asChild variant="ghost" size="sm">
             <Link to="/developer/webhooks">
               <Webhook aria-hidden /> {t('developer-webhooks', { defaultValue: 'Webhooks' })}
@@ -75,7 +75,7 @@ function DeveloperHome() {
         </div>
       }
     >
-      <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
+      <div className="space-y-[var(--site-section-gap)] pt-4 pb-12">
         <p className="max-w-prose text-sm leading-relaxed text-site-text-muted">
           {t('developer-intro', {
             defaultValue:

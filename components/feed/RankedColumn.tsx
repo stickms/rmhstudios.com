@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { RankedStanding, RANKED_STANDING_QUERY_KEY } from './RankedStanding';
 import { Swords, Trophy, Check, X, Flag } from'lucide-react';
 import { Button } from'@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { EmptyState } from'@/components/ui/empty-state';
 import { Spinner } from'@/components/ui/spinner';
 import { toast } from '@/lib/toast';
@@ -297,16 +298,14 @@ export function RankedColumn({
  <Check className="h-3.5 w-3.5"aria-hidden />{''}
  {t('accept', { defaultValue:'Accept'})}
  </Button>
- <Button
- size="sm"
- variant="ghost"
+ <IconButton
+ icon={X}
+ size="icon-sm"
  disabled={busy !== null}
  onClick={() => act(c.id, { action:'decline'}, `a:${c.id}`)}
  className="text-site-text-muted hover:text-site-danger"
- aria-label={t('decline-challenge', { defaultValue:'Decline challenge'})}
- >
- <X className="h-3.5 w-3.5"aria-hidden />
- </Button>
+ label={t('decline-challenge', { defaultValue:'Decline challenge'})}
+ />
  </div>
  ) : (
  <ReportButtons id={c.id} busy={busy} act={act} />

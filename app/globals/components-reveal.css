@@ -207,12 +207,16 @@ body {
 }
 
 @media (max-width: 479px) {
-  [data-slot='page-header-action'] [data-slot='button'] {
-    width: 2.75rem;
-    min-width: 2.75rem;
+  [data-slot='page-header-action'] [data-slot='button']:has(svg) {
+    inline-size: 2.75rem;
+    min-inline-size: 2.75rem;
+    block-size: 2.75rem;
+    min-block-size: 2.75rem;
     padding-inline: 0;
     gap: 0;
     font-size: 0;
+    --ghost-x: 0px;
+    --ghost-y: 0px;
   }
 }
 

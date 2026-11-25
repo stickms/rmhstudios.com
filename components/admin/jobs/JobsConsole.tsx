@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -138,12 +138,14 @@ export function JobsConsole({ queue }: { queue: string | undefined }) {
             defaultValue: 'Filter queues by name',
           })}
         />
-        <Button variant="ghost" onClick={() => void list.refetch()} disabled={list.isFetching}>
-          <RefreshCw aria-hidden />
-          {t('refresh', {
+        <IconButton
+          icon={RefreshCw}
+          label={t('refresh', {
             defaultValue: 'Refresh',
           })}
-        </Button>
+          onClick={() => void list.refetch()}
+          disabled={list.isFetching}
+        />
       </div>
       {list.data?.leased ? <LeasedJobs leased={list.data.leased} /> : null}
       {list.isPending ? (

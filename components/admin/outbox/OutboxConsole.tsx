@@ -4,6 +4,7 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { Tabs } from '@/components/ui/tabs';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -280,12 +281,15 @@ function TopicEvents({ topic, deadCount }: { topic: string; deadCount: number })
             })}
           </span>
         ) : null}
-        <Button variant="ghost" className="ml-auto" onClick={() => void list.refetch()} disabled={list.isFetching}>
-          <RefreshCw aria-hidden />
-          {t('refresh', {
+        <IconButton
+          icon={RefreshCw}
+          className="ms-auto"
+          label={t('refresh', {
             defaultValue: 'Refresh',
           })}
-        </Button>
+          onClick={() => void list.refetch()}
+          disabled={list.isFetching}
+        />
       </div>
       {list.isPending ? (
         <div className="space-y-2" aria-busy="true">
@@ -417,12 +421,14 @@ export function OutboxConsole({ topic }: { topic: string | undefined }) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button variant="ghost" onClick={() => void summary.refetch()} disabled={summary.isFetching}>
-          <RefreshCw aria-hidden />
-          {t('refresh', {
+        <IconButton
+          icon={RefreshCw}
+          label={t('refresh', {
             defaultValue: 'Refresh',
           })}
-        </Button>
+          onClick={() => void summary.refetch()}
+          disabled={summary.isFetching}
+        />
       </div>
       {summary.isPending ? (
         <div className="space-y-2" aria-busy="true">

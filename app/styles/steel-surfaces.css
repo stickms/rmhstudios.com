@@ -96,3 +96,79 @@
     background: var(--site-surface);
   }
 }
+
+/* K3 (owner amendment, 2026-11-25): a ghost text button has no border or fill at rest, so box padding reads as an
+   unintended indent horizontally and vertically. Unlayered (above `@layer utilities`, matching `base-interaction.css`)
+   and scoped to `html:not(.app-route)` so full-screen games and apps keep their own controls (L8). Its layout box is
+   the tight glyph/icon+label box (`padding: 0; block-size: auto; border-width: 0`), sitting flush with surrounding
+   copy and container edges. Its M1 hover/press fill (`--site-bg-subtle`) and K10 focus ring sit on `::before` instead,
+   overhanging 8px inline and 6px block (`6px` / `4px` on `xs`, capped at 36px when flex-stretched) outside the button
+   and its container. On coarse pointers `::after` supplies the 44px touch target (`base-interaction.css`). Icon-only
+   ghost buttons (`data-size^='icon'`) keep their square target box. */
+html:not(.app-route) [data-slot='button'][data-variant='ghost']:not([data-size^='icon']) {
+  --ghost-x: 8px;
+  --ghost-y: 6px;
+  position: relative;
+  isolation: isolate;
+  block-size: auto;
+  min-block-size: 0;
+  min-inline-size: 0;
+  padding: 0;
+  border-width: 0;
+  background-color: transparent;
+}
+html:not(.app-route) [data-slot='button'][data-variant='ghost'][data-size='xs'] {
+  --ghost-x: 6px;
+  --ghost-y: 4px;
+}
+html:not(.app-route) [data-slot='button'][data-variant='ghost']:not([data-size^='icon'])::before {
+  content: '';
+  position: absolute;
+  inset-inline: calc(-1 * var(--ghost-x));
+  top: 50%;
+  translate: 0 -50%;
+  block-size: min(calc(100% + 2 * var(--ghost-y)), max(100%, 2.25rem));
+  z-index: -1;
+  border-radius: var(--site-radius);
+  background-color: transparent;
+  transition: background-color 90ms ease;
+  pointer-events: none;
+}
+@media (hover: hover) {
+  html:not(.app-route) [data-slot='button'][data-variant='ghost']:not([data-size^='icon']):hover {
+    background-color: transparent;
+  }
+  html:not(.app-route) [data-slot='button'][data-variant='ghost']:not([data-size^='icon']):hover::before {
+    background-color: var(--site-bg-subtle);
+  }
+}
+html:not(.app-route) [data-slot='button'][data-variant='ghost']:not([data-size^='icon']):active::before {
+  background-color: var(--site-bg-subtle);
+}
+html:not(.app-route) [data-slot='button'][data-variant='ghost']:not([data-size^='icon']):focus-visible {
+  outline: none;
+}
+html:not(.app-route) [data-slot='button'][data-variant='ghost']:not([data-size^='icon']):focus-visible::before {
+  outline: 2px solid var(--site-text);
+  outline-offset: 2px;
+}
+/* In a tight, non-wrapping horizontal button row (`flex gap-2`), reserve each ghost text button's 8px inline overhang
+   between adjacent buttons (16px when two ghost text buttons meet) so hover/focus boxes never touch, while start and
+   end edges stay flush. */
+html:not(.app-route)
+  :where(.flex, .inline-flex):not(.flex-col, .flex-col-reverse, .flex-wrap, .justify-between, [class*='gap-4'], [class*='gap-5'], [class*='gap-6'])
+  > :is(
+    [data-slot='button'][data-variant='ghost']:not([data-size^='icon']) + [data-slot='button'][data-size^='icon'],
+    [data-slot='button'][data-variant='ghost']:not([data-size^='icon']) + [data-slot='button']:not([data-variant='ghost']),
+    [data-slot='button']:not([data-variant='ghost']) + [data-slot='button'][data-variant='ghost']:not([data-size^='icon']),
+    [data-slot='button'][data-size^='icon'] + [data-slot='button'][data-variant='ghost']:not([data-size^='icon'])
+  ) {
+  margin-inline-start: 8px;
+}
+html:not(.app-route)
+  :where(.flex, .inline-flex):not(.flex-col, .flex-col-reverse, .flex-wrap, .justify-between, [class*='gap-5'], [class*='gap-6'])
+  > [data-slot='button'][data-variant='ghost']:not([data-size^='icon'])
+  + [data-slot='button'][data-variant='ghost']:not([data-size^='icon']) {
+  margin-inline-start: 16px;
+}
+

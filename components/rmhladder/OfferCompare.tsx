@@ -6,7 +6,9 @@
  */
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import {
   Dialog,
@@ -373,12 +375,7 @@ export function OfferCompare({
   }
 
   const actions = (offer: OfferDto) => (
-    <div className="flex flex-wrap gap-2">
-      <Button type="button" size="sm" variant="ghost" onClick={() => onEdit(offer)}>
-        {t('compare.edit', {
-          defaultValue: 'Edit',
-        })}
-      </Button>
+    <div className="flex flex-wrap items-center gap-2">
       {offer.state === 'open' && (
         <>
           <Button type="button" size="sm" variant="default" onClick={() => setAccepting(offer)}>
@@ -393,11 +390,24 @@ export function OfferCompare({
           </Button>
         </>
       )}
-      <Button type="button" size="sm" variant="ghost" onClick={() => void remove(offer)}>
-        {t('compare.delete', {
+      <IconButton
+        type="button"
+        icon={Pencil}
+        size="icon-xs"
+        label={t('compare.edit', {
+          defaultValue: 'Edit',
+        })}
+        onClick={() => onEdit(offer)}
+      />
+      <IconButton
+        type="button"
+        icon={Trash2}
+        size="icon-xs"
+        label={t('compare.delete', {
           defaultValue: 'Delete',
         })}
-      </Button>
+        onClick={() => void remove(offer)}
+      />
     </div>
   );
 

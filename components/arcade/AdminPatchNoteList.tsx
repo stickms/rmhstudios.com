@@ -3,7 +3,9 @@ import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
+import { Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -185,16 +187,21 @@ export function AdminPatchNoteList({ gameId }: { gameId: string }) {
                     <p className="t-body mt-1 whitespace-pre-line break-words text-site-text-muted">{n.body}</p>
                   </div>
                   <div className="flex shrink-0 gap-1">
-                    <Button variant="ghost" onClick={() => startEdit(n)}>
-                      {t('admin-edit', {
+                    <IconButton
+                      icon={Pencil}
+                      label={t('admin-edit', {
                         defaultValue: 'Edit',
                       })}
-                    </Button>
-                    <Button variant="danger" onClick={() => void remove(n)}>
-                      {t('admin-delete', {
+                      onClick={() => startEdit(n)}
+                    />
+                    <IconButton
+                      icon={Trash2}
+                      className="text-site-danger"
+                      label={t('admin-delete', {
                         defaultValue: 'Delete',
                       })}
-                    </Button>
+                      onClick={() => void remove(n)}
+                    />
                   </div>
                 </div>
               )}
