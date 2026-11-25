@@ -70,6 +70,7 @@ const chance = (o: Partial<ChanceDto>): ChanceDto => ({
   program: 'REG',
   status: 'estimate',
   completeOn: '2026-10-01',
+  completeFrom: 'complete',
   invitedOn: null,
   asOf: null,
   basis: null,
