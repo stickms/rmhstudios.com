@@ -28,10 +28,10 @@ Games, apps and standalone pages that intentionally render without the site shel
 
 | URL | Title | Access | Source |
 | --- | ----- | ------ | ------ |
-| `/med` | RMH Med Schools | public | `app/routes/med/index.tsx` |
+| `/med` | Med school admissions by day \| RMH Med Schools | public | `app/routes/med/index.tsx` |
 | `/med/:slug` | — | public | `app/routes/med/$slug.tsx` |
-| `/med/ask` | Ask the data | public | `app/routes/med/ask.tsx` |
-| `/med/lists` | My lists | public | `app/routes/med/lists.tsx` |
+| `/med/ask` | Ask the data \| RMH Med Schools | public | `app/routes/med/ask.tsx` |
+| `/med/lists` | My lists \| RMH Med Schools | public | `app/routes/med/lists.tsx` |
 | `/med/live` | Live reported events \| RMH Med Schools | public | `app/routes/med/live.tsx` |
-| `/med/practice` | Interview practice | public | `app/routes/med/practice.tsx` |
-| `/med/tracker` | My tracker | public | `app/routes/med/tracker.tsx` |
+| `/med/practice` | Interview practice \| RMH Med Schools | public | `app/routes/med/practice.tsx` |
+| `/med/tracker` | My tracker \| RMH Med Schools | public | `app/routes/med/tracker.tsx` |
