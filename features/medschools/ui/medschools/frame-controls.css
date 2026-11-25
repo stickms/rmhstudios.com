@@ -534,3 +534,45 @@
     min-block-size: 44px;
   }
 }
+
+/* ── The header's source choice (owner 2026-11-24) ───────────────────────── */
+/* CycleTrack or Admit.org (`SourceToggle`): the segmented well as a 44px pill of two 44px round options showing each
+   source's favicon in the text colour; the checked one takes `.medapp-chip[aria-checked]`'s paper fill and border.
+   From 600px only: under that the bar has no room beside its four round buttons, and the choice is in the member's
+   menu (signed out, the sign-in link becomes a menu button there). */
+.medapp-chips.medapp-srctoggle {
+  display: none;
+  flex: none;
+  align-self: center;
+  min-block-size: 44px;
+  padding: 0;
+  gap: 0;
+  overflow: visible;
+  border-radius: 22px;
+}
+.medapp-srctoggle .medapp-chip.medapp-srctoggle__opt {
+  inline-size: 44px;
+  min-block-size: 44px;
+  padding: 0;
+  border-radius: 50%;
+  corner-shape: round;
+}
+.medapp-srcmenu {
+  display: inline-flex;
+  align-items: center;
+  /* The menu portals outside `.medapp-theme`, where the spacing tokens live: 8px is space-2. */
+  gap: var(--app-med-space-2, 8px);
+}
+@media (min-width: 600px) {
+  .medapp-chips.medapp-srctoggle {
+    display: inline-flex;
+  }
+  .medapp-round.medapp-narrow-only {
+    display: none;
+  }
+}
+@media (max-width: 599px) {
+  .medapp-round.medapp-wide-only {
+    display: none;
+  }
+}

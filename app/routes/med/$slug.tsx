@@ -1,7 +1,7 @@
 import { createFileRoute, stripSearchParams } from '@tanstack/react-router';
 import { definePage } from '@/lib/route/define-page';
 import { breadcrumbSchema } from '@/lib/schema';
-import { SCHOOL_SEARCH_DEFAULTS, validateSchoolSearch } from '@features/medschools/engine/search';
+import { SCHOOL_SEARCH_DEFAULTS, parseSourcePref, validateSchoolSearch } from '@features/medschools/engine/search';
 import { loadPrefs, loadSchoolHead, type SchoolHead } from '@features/medschools/medschools.queries';
 import { SchoolPage } from '@features/medschools/ui/SchoolPage';
 
@@ -18,6 +18,8 @@ export const Route = createFileRoute('/med/$slug')({
     program: search.program,
     type: search.type,
     cycle: search.cycle,
+    // The reader's CycleTrack / Admit.org choice where the URL names one (History's `source=SDN` names none).
+    source: parseSourcePref(search.source),
   }),
   // Preferences first (private, quiet when signed out), then the school and its tab with explicit parameters (D13).
   // `head()` reads only the school, so a preference never changes the title, canonical or card.

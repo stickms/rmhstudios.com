@@ -14,6 +14,7 @@ import { MedEmpty } from './MedEmpty';
 import { PrefsNote } from './PrefsNote';
 import { useEffectiveView } from './useEffectiveView';
 import { prefetchSchoolTabs } from './prefetch-tabs';
+import { useSourcePref } from './useSourcePref';
 import { ForecastTab } from './ForecastTab';
 import { HistoryTab } from './HistoryTab';
 import { InterviewsTab } from './InterviewsTab';
@@ -65,10 +66,11 @@ export function SchoolPage() {
   // switch renders from the cache. Not keyed on the tab: switching tabs neither restarts nor cancels it.
   const qc = useQueryClient();
   const ready = !!detail;
+  const pref = useSourcePref().value;
   useEffect(
-    () => (ready ? prefetchSchoolTabs(qc, slug, search) : undefined),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- one wave per school and program, not per search change
-    [ready, qc, slug, search.program],
+    () => (ready ? prefetchSchoolTabs(qc, slug, search, pref) : undefined),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one wave per school, program and source, not per search change
+    [ready, qc, slug, search.program, pref],
   );
 
   const setSearch = (patch: SchoolSearchPatch) => {

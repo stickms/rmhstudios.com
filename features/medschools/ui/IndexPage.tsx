@@ -15,6 +15,7 @@ import { MineSelect, MineSignedOutNote, useMineEmptyText } from './MineSelect';
 import { PrefsNote } from './PrefsNote';
 import { clearSavedFilters, saveFilters, useSavedFilters } from './useSavedFilters';
 import { useMineFilter } from './useMineFilter';
+import { useSourcePref } from './useSourcePref';
 import { useEffectiveView } from './useEffectiveView';
 import { ProgramMultiSelect, StateMultiSelect } from './ProgramMultiSelect';
 import { SaveToList } from './SaveToList';
@@ -43,7 +44,14 @@ export function IndexPage() {
   const saved = useSavedFilters().page;
   const states = pickFilter(search.states, saved?.states, undefined, [] as string[]);
   const mine = useMineFilter(mineOfSearch(search), saved?.mine);
-  const schools = useQuery(schoolsQuery(indexQuery({ q: search.q, states: states.value }, view)));
+  // The header's CycleTrack / Admit.org choice: each row's reported count is that source's where the school has one.
+  const source = useSourcePref();
+  const schools = useQuery(schoolsQuery(indexQuery({ q: search.q, states: states.value, source: source.value }, view)));
+  // A link that named the source hands it on to the school pages (a device choice needs no help: it is read there).
+  const schoolSearch =
+    source.from === 'url' && source.value === 'admit'
+      ? { ...SCHOOL_SEARCH_DEFAULTS, source: 'ADMIT' as const }
+      : SCHOOL_SEARCH_DEFAULTS;
   // The live signal refetches the list in place (each row's newest status), at every width; the rail is separate.
   useLiveSignal();
   const mineEmpty = useMineEmptyText();
@@ -129,7 +137,7 @@ export function IndexPage() {
                     <SchoolCrest slug={s.slug} name={s.name} size={40} />
                     <div className="medapp-row__body">
                       <p className="medapp-row__name">
-                        <Link to="/med/$slug" params={{ slug: s.slug }} search={SCHOOL_SEARCH_DEFAULTS}>
+                        <Link to="/med/$slug" params={{ slug: s.slug }} search={schoolSearch}>
                           {s.name}
                         </Link>
                       </p>

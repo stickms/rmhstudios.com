@@ -46,9 +46,17 @@ export interface TypeSeries {
   sources: { source: MedSource; days: { date: string; count: number }[]; total: number }[];
 }
 
-export function pickPrimary(present: Iterable<MedSource>): MedSource | null {
+/**
+ * `PRIMARY_ORDER` with the reader's chosen source (the header's CycleTrack / Admit.org choice, owner 2026-11-24) moved
+ * to the front: the chosen source is primary where it has data, else the existing order decides. It only reorders; no
+ * figure is ever added across sources.
+ */
+export const primaryOrder = (prefer?: MedSource | null): readonly MedSource[] =>
+  prefer ? [prefer, ...PRIMARY_ORDER.filter((s) => s !== prefer)] : PRIMARY_ORDER;
+
+export function pickPrimary(present: Iterable<MedSource>, prefer?: MedSource | null): MedSource | null {
   const set = new Set(present);
-  return PRIMARY_ORDER.find((s) => set.has(s)) ?? null;
+  return primaryOrder(prefer).find((s) => set.has(s)) ?? null;
 }
 
 /** The UTC calendar day of `now`, `YYYY-MM-DD`. */
@@ -106,7 +114,8 @@ export function floorSplit(
   return { inState, outOfState };
 }
 
-export function buildTypeSeries(rows: readonly CountCell[], today?: string): TypeSeries {
+/** `prefer`: the reader's chosen source, primary when present after the floor (`primaryOrder`). */
+export function buildTypeSeries(rows: readonly CountCell[], today?: string, prefer?: MedSource | null): TypeSeries {
   const visible = applyKFloor(rows, today); // floor first: a suppressed source can never be primary
   const bySource = new Map<MedSource, CountCell[]>();
   for (const r of visible) {
@@ -120,7 +129,13 @@ export function buildTypeSeries(rows: readonly CountCell[], today?: string): Typ
     const days = list.map(({ date, count }) => ({ date, count })).sort((a, b) => a.date.localeCompare(b.date));
     return [{ source, days, total: days.reduce((n, d) => n + d.count, 0) }];
   });
-  return { primary: pickPrimary(sources.map((s) => s.source)), sources };
+  return {
+    primary: pickPrimary(
+      sources.map((s) => s.source),
+      prefer,
+    ),
+    sources,
+  };
 }
 
 /** Latest cycle with data, never later than the June 1 rollover; an explicit request wins. */
@@ -143,15 +158,17 @@ export function toCumulativeByDay(
     });
 }
 
-/** `cycles` newest first. One source only, so overlay lines are never cross-source. */
-export function overlaySource(cycles: { cycleYear: number; sources: MedSource[] }[]): MedSource | null {
+/** `cycles` newest first. One source only, so overlay lines are never cross-source. `prefer` leads the order. */
+export function overlaySource(
+  cycles: { cycleYear: number; sources: MedSource[] }[],
+  prefer?: MedSource | null,
+): MedSource | null {
   const newest = cycles[0];
   if (!newest) return null;
   const earlier = new Set(cycles.slice(1).flatMap((c) => c.sources));
   const inNewest = new Set(newest.sources);
-  return (
-    PRIMARY_ORDER.find((s) => inNewest.has(s) && earlier.has(s)) ?? PRIMARY_ORDER.find((s) => inNewest.has(s)) ?? null
-  );
+  const order = primaryOrder(prefer);
+  return order.find((s) => inNewest.has(s) && earlier.has(s)) ?? order.find((s) => inNewest.has(s)) ?? null;
 }
 
 /** Lower case, accents and punctuation folded to spaces: "Keck School of Medicine" and "keck-school-of-medicine" meet. */

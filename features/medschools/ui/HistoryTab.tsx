@@ -13,6 +13,7 @@ import type { SchoolSearch, SetSchoolSearch } from './school-search';
 import { ArrivalsSection } from './ArrivalsSection';
 import { ChartSkeleton, SkeletonSwap } from './skeletons';
 import { SourceLinks } from './SourceLinks';
+import { useSourcePref } from './useSourcePref';
 
 /** History: one source's cumulative line per cycle, newest first (D4: never cross-source). */
 export function HistoryTab({
@@ -34,6 +35,7 @@ export function HistoryTab({
   const chartLabels = useChartLabels();
   const type = search.type as MedChartedTypeId;
   const query = useQuery(historyQuery(slug, { program: search.program, type }));
+  const pref = useSourcePref();
 
   if (query.isError) {
     return (
@@ -47,7 +49,11 @@ export function HistoryTab({
   const cycles = [...(query.data?.cycles ?? [])].sort((a, b) => b.cycleYear - a.cycleYear);
   const present = new Set<MedSourceId>(cycles.flatMap((c) => c.sources.map((s) => s.source)));
   const options = PRIMARY_ORDER.filter((s) => present.has(s));
-  const auto = overlaySource(cycles.map((c) => ({ cycleYear: c.cycleYear, sources: c.sources.map((s) => s.source) })));
+  // The header's CycleTrack / Admit.org choice leads the automatic pick; the picker below (the URL's `source`) wins.
+  const auto = overlaySource(
+    cycles.map((c) => ({ cycleYear: c.cycleYear, sources: c.sources.map((s) => s.source) })),
+    pref.source,
+  );
   const chosen: MedSourceId | null = search.source && present.has(search.source) ? search.source : auto;
   const lines = chosen
     ? cycles.flatMap((c) => {

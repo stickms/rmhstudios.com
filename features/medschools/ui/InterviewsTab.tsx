@@ -7,7 +7,8 @@ import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import type { InterviewProfileDto, MedSchoolDetailDto, MedSourceId, SchoolStatsDto } from '../medschools.contract';
 import { PRIMARY_ORDER } from '../engine/public-read';
 import { INTERVIEW_TABS, Q_MAX, type InterviewTab } from '../engine/search';
-import { activityQuery } from '../medschools.queries';
+import { activityQuery, sourceParamOf } from '../medschools.queries';
+import { useSourcePref } from './useSourcePref';
 import { CATEGORY_COLOR } from './charts/chartColors';
 import { useMedLabels } from './labels';
 import { MedEmpty } from './MedEmpty';
@@ -104,7 +105,11 @@ function Overview({ slug, detail, search }: { slug: string; detail: MedSchoolDet
   const { locale } = useLocaleFormat();
   const nf = new Intl.NumberFormat(locale);
   const n = (v: number | null) => (v === null ? null : nf.format(v));
-  const activity = useQuery(activityQuery(slug, { program: search.program, cycle: undefined }));
+  // The same request as the Activity tab's (the header's source choice included), so the two share one answer.
+  const pref = useSourcePref();
+  const activity = useQuery(
+    activityQuery(slug, { program: search.program, cycle: undefined, ...sourceParamOf(pref.value) }),
+  );
   const programOk = (p: SchoolStatsDto['program']) => search.program === 'ALL' || p === null || p === search.program;
   const stats = detail.stats.filter((s) => programOk(s.program));
 
@@ -185,6 +190,11 @@ function Overview({ slug, detail, search }: { slug: string; detail: MedSchoolDet
               defaultValue: '{{n}} reported interview invites this cycle',
             })}
           </h2>
+          {hasInvites && interview?.primary ? (
+            <p className="medapp-meta">
+              {t('source-line', { defaultValue: 'Source: {{name}}', name: sourceName(interview.primary) })}
+            </p>
+          ) : null}
           {perYear !== null ? (
             <>
               <p className="medapp-text">

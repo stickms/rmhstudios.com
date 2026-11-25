@@ -14,6 +14,7 @@ import { OptionGroup } from './OptionGroup';
 import type { SchoolSearch, SetSchoolSearch } from './school-search';
 import { SchoolChances } from './SchoolChances';
 import { ChartSkeleton, SkeletonSwap } from './skeletons';
+import { useSourcePref } from './useSourcePref';
 
 /**
  * Forecast: where this cycle's running total of one category is likely to end, from earlier cycles of the same source,
@@ -46,6 +47,9 @@ export function ForecastTab({
   const program = search.program === 'PHD' ? 'PHD' : 'REG';
   const query = useQuery(forecastQuery(slug, { program, type }));
   const data = query.data;
+  // The worker fits one forecast per school, on its primary source; a different choice in the header keeps that one
+  // (never fitted on request) and says which source it is.
+  const pref = useSourcePref();
 
   const controls = (
     <div className="flex flex-wrap gap-x-6 gap-y-3">
@@ -133,6 +137,16 @@ export function ForecastTab({
                 {t('forecast-program-note', {
                   defaultValue: 'A forecast is made for one program at a time. Showing {{program}}.',
                   program: programFilterLabel(program, detail.school.degree),
+                })}
+              </p>
+            ) : null}
+            {drawn && data.source && data.source !== pref.source ? (
+              <p className="medapp-meta">
+                {t('source-forecast-other', {
+                  defaultValue:
+                    'This forecast is made from {{source}}, the school’s primary source. There is none from {{chosen}}.',
+                  source: sourceName(data.source),
+                  chosen: sourceName(pref.source),
                 })}
               </p>
             ) : null}
