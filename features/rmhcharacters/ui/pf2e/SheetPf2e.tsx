@@ -51,7 +51,7 @@ function SheetPf2eBody({
       <StatRow
         label={`${label} (${R.RANK_LETTER[s.rank]})`}
         value={
-          <RollButton kind="save" name={label} bonus={s.bonus}>
+          <RollButton kind="save" name={label} bonus={s.bonus} which={k}>
             {R.signed(s.bonus)}
           </RollButton>
         }
@@ -79,7 +79,7 @@ function SheetPf2eBody({
           <div key={a} className="rmhc-stat">
             <div className="text-xs font-medium text-app-text-muted">{ABILITY_NAMES[a]}</div>
             <div className="font-mono text-2xl tabular-nums text-app-text">
-              <RollButton kind="check" name={ABILITY_NAMES[a]} bonus={mods[a]}>
+              <RollButton kind="check" name={ABILITY_NAMES[a]} bonus={mods[a]} which={a}>
                 {R.signed(mods[a])}
               </RollButton>
               {R.partialBoosts(c).includes(a) ? '½' : ''}
@@ -235,7 +235,7 @@ function SheetPf2eBody({
           </Section>
 
           <Section title={t('sp.strikes', { defaultValue: 'Strikes' })}>
-            {R.strikes(c, d).map((s) => (
+            {R.strikes(c, d).map((s, strikeIndex) => (
               <StatRow
                 key={s.name}
                 label={s.name}
@@ -249,11 +249,12 @@ function SheetPf2eBody({
                         bonus={bonus}
                         damage={s.damage}
                         step={(i + 1) as 1 | 2 | 3}
+                        which={strikeIndex}
                       >
                         {R.signed(bonus)}
                       </RollButton>
                     ))}
-                    <RollButton kind="damage" name={s.name} damage={s.damage}>
+                    <RollButton kind="damage" name={s.name} damage={s.damage} which={strikeIndex}>
                       {s.damage}
                     </RollButton>
                   </span>
@@ -271,7 +272,7 @@ function SheetPf2eBody({
                 key={s.id}
                 label={`${s.name} (${R.RANK_LETTER[s.rank]})`}
                 value={
-                  <RollButton kind="skill" name={s.name} bonus={s.bonus}>
+                  <RollButton kind="skill" name={s.name} bonus={s.bonus} which={s.id}>
                     {R.signed(s.bonus)}
                   </RollButton>
                 }

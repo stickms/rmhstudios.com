@@ -1,0 +1,14 @@
+{
+  "description": "Friends who follow you back and have a ghost on level {{level}}, fastest first.",
+  "empty": "No friend has a ghost on this level yet",
+  "empty-hint": "Friends appear here when you follow each other and they have driven this level.",
+  "error": "Friends could not be loaded",
+  "ghost-label": "Friend",
+  "ghost-mode": "Ghost: a friend",
+  "loading": "Loading friends",
+  "missing": "No ghost from {{name}} on this level",
+  "missing-anon": "No ghost from that friend on this level",
+  "retry": "Try again",
+  "signed-out": "Sign in to race friends",
+  "title": "Race a friend"
+}

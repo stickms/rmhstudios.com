@@ -102,6 +102,11 @@ export function MyReportsPanel() {
     'lights-out-board': t('kind-lights-out-board', { defaultValue: 'Lights Out board' }),
     // s11-07 studio-share
     'studio-share': t('kind-studio-share', { defaultValue: 'Shared Studio project' }),
+    // s12-16 member-reports
+    'connections-grid': t('kind-connections-grid', { defaultValue: 'Connections grid' }),
+    'study-deck': t('kind-study-deck', { defaultValue: 'Flashcard deck' }),
+    persona: t('kind-persona', { defaultValue: 'AI persona' }),
+    'home-listing': t('kind-home-listing', { defaultValue: 'Home listing' }),
   };
   const GONE: Partial<Record<ReportEntityType, string>> = {
     rmhark: t('gone-rmhark', { defaultValue: 'A post that is no longer available' }),
@@ -115,6 +120,11 @@ export function MyReportsPanel() {
     'lights-out-board': t('gone-lights-out-board', { defaultValue: 'A Lights Out board that is no longer available' }),
     // s11-07 studio-share
     'studio-share': t('gone-studio-share', { defaultValue: 'A shared Studio project that is no longer available' }),
+    // s12-16 member-reports
+    'connections-grid': t('gone-connections-grid', { defaultValue: 'A Connections grid that is no longer available' }),
+    'study-deck': t('gone-study-deck', { defaultValue: 'A flashcard deck that is no longer available' }),
+    persona: t('gone-persona', { defaultValue: 'An AI persona that is no longer available' }),
+    'home-listing': t('gone-home-listing', { defaultValue: 'A home listing that is no longer available' }),
   };
 
   const whatOf = (r: MyReport): string =>

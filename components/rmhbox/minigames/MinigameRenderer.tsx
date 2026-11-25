@@ -185,11 +185,6 @@ const MINIGAME_COMPONENTS: Record<string, React.LazyExoticComponent<ComponentTyp
       default: createStub('Identity Crisis'),
     }),
   ),
-  'ranking-file': lazy(() =>
-    Promise.resolve({
-      default: createStub('Ranking File'),
-    }),
-  ),
   'pixel-pushers': lazy(() =>
     Promise.resolve({
       default: createStub('Pixel Pushers'),

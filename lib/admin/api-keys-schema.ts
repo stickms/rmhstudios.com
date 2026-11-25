@@ -9,6 +9,14 @@ import {
   SUSPEND_REASON_MIN,
 } from '@/lib/admin/api-keys';
 
+/**
+ * The deletion hold's own text: restoring a cancelled deletion lifts keys suspended with it, so an admin's suspension
+ * must never carry it. Not a zod refinement, so the route can answer `API_KEY_REASON_RESERVED` (a refinement can only
+ * say "Invalid input").
+ */
+export const isReservedSuspendReason = (reason: string): boolean =>
+  reason.trim().toLowerCase() === DELETION_REQUESTED.toLowerCase();
+
 /** Every list parameter is a single value: repeated parameters do not survive. */
 export const apiKeysQuery = z.object({
   status: z.enum(API_KEY_STATUSES).optional(),
@@ -30,16 +38,7 @@ export const apiKeyPatchBody = z
     suspend: z
       .union([
         z.object({
-          reason: z
-            .string()
-            .trim()
-            .min(SUSPEND_REASON_MIN)
-            .max(SUSPEND_REASON_MAX)
-            // The deletion hold's own text: restoring a cancelled deletion lifts keys suspended with it, so an
-            // admin's suspension must never carry it.
-            .refine((r) => r.toLowerCase() !== DELETION_REQUESTED.toLowerCase(), {
-              message: 'That reason text is reserved for account deletion.',
-            }),
+          reason: z.string().trim().min(SUSPEND_REASON_MIN).max(SUSPEND_REASON_MAX),
         }),
         z.null(),
       ])

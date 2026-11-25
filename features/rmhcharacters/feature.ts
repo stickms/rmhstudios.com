@@ -7,7 +7,7 @@ export default defineFeature({
   basePath: '/rmhcharacters',
   delivery: 'shell',
   routes: ['app/routes/rmhcharacters.tsx', 'features/rmhcharacters/api/rmhcharacters.advisor.server.ts'],
-  namespaces: ['c-rmhcharacters', 'character-party'],
+  namespaces: ['c-rmhcharacters', 'character-party', 'party-rolls'],
   catalog: 'features/rmhcharacters/catalog.ts',
   listed: true,
 });

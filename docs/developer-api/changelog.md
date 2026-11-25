@@ -1,5 +1,17 @@
 # Changelog
 
+## Sprint 12 — 2026-11
+
+<!-- s12-12 api-reviews -->
+- New scope `write:study-reviews` (group Study): grade your flashcard reviews from your own tools. It is **explicit**: `*` and `write:*` do not grant it, and `write:study` keeps its meaning (decks and cards), so no existing key gains the power to change your review schedule; a key must list `write:study-reviews` itself. The key-creation pickers leave it unticked under "All".
+- New endpoints, both acting as the key owner on the site's own review functions: `GET /api/v1/me/decks/{id}/review?limit=` (`read:study`; 1 to 50 cards, default 20) returns `{ data: [...] }`, the cards the site's review queue would show now for that deck, in its order and within its daily pace: id, kind, front, back, `clozeIndex`, `externalId`, pictures with their descriptions, occlusion masks and the `schedule` (`state` `new` or `review`, `dueAt`, `intervalDays`). Card sounds are never returned. `POST /api/v1/me/decks/{id}/cards/{cardId}/review` (`write:study-reviews`, honours `Idempotency-Key`) takes `{ "grade": "again" | "hard" | "good" | "easy" }` and answers `{ data: { dueAt, intervalDays, leech } }`. A grade is the same review as one in the browser (same schedule, history and leech rule) but earns no quest progress or XP. At most 120 grades a minute per account, as on the site.
+- A card that is not in the deck, or not one you may read, is `404 not_found`; a suspended card is `409 conflict`.
+
+<!-- s12-13 api-characters -->
+- New scope `read:characters` (group RMHCharacters): read your RMHCharacters sheets and the party views you already have on the site. Read only; no write scope. It is an ordinary scope, so `*` and `read:*` include it.
+- New endpoints, all `read:characters` and all answered with `Cache-Control: private, no-store`: `GET /api/v1/me/characters?limit=&cursor=` (your characters, newest edit first, each `{ id, system, name, level, summary, updatedAt }` where `summary` is the site's party summary: AC, hit points, conditions, Perception, speed and initiative; cursor pages, 1 to 50, default 25), `GET /api/v1/me/characters/{id}` (the same plus `sheet`, the stored sheet without its `portrait` image, and `portrait`, a boolean saying whether it had one), `GET /api/v1/me/parties` (the parties you run or play in) and `GET /api/v1/me/parties/{id}` (members' names, each member's character summary, the turn order and the current turn; never another player's sheet or notes, and never the invite code).
+- Another member's character, a party you are not in (or have left, or were removed from) and an unknown id are all `404 not_found`.
+
 ## Sprint 10 — 2026-11
 
 <!-- s10-12 api-events -->

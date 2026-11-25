@@ -471,7 +471,7 @@ describe('deciding a group', () => {
     expect(h.messages).toHaveLength(1);
     expect(h.messages[0]).toMatchObject({
       userId: 'author',
-      preview: 'Please read the rules.',
+      preview: expect.objectContaining({ key: 'report-decision', params: { message: 'Please read the rules.' } }),
     });
   });
 });

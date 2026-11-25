@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { withRateLimit } from '@/lib/rate-limit';
 import { notifyAdminsOfReview } from '@/lib/admin-review.server';
+import { notice } from '@/lib/notifications/notice-keys';
 import { APPEAL_WINDOW_DAYS } from '@/lib/moderation/standing.server';
 
 const schema = z.object({
@@ -74,7 +75,7 @@ export const route = apiRoute('/api/account/strikes/$id/appeal', {
     // Fire-and-forget: an appeal nobody is told about is a queue that
     // silently grows. `dedupeUnread` inside collapses a burst into one.
     await notifyAdminsOfReview({
-      preview: 'A user has appealed a moderation strike.',
+      notice: notice('admin-review-appeal', {}),
       kind: 'appeals',
       link: '/admin/appeals',
     });

@@ -37,13 +37,17 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/v1/me` | `GET` `OPTIONS` | `app/routes/api/v1/me.ts` |
 | `/api/v1/me/achievements` | `GET` `OPTIONS` | `app/routes/api/v1/me/achievements.ts` |
 | `/api/v1/me/bookmarks` | `GET` `OPTIONS` | `app/routes/api/v1/me/bookmarks.ts` |
+| `/api/v1/me/characters` | `GET` `OPTIONS` | `app/routes/api/v1/me/characters.ts` |
+| `/api/v1/me/characters/:id` | `GET` `OPTIONS` | `app/routes/api/v1/me/characters/$id.ts` |
 | `/api/v1/me/communities` | `GET` `OPTIONS` | `app/routes/api/v1/me/communities.ts` |
 | `/api/v1/me/decks` | `GET` `OPTIONS` `POST` | `app/routes/api/v1/me/decks.ts` |
 | `/api/v1/me/decks/:id` | `DELETE` `GET` `OPTIONS` `PATCH` | `app/routes/api/v1/me/decks/$id.ts` |
 | `/api/v1/me/decks/:id/cards` | `GET` `OPTIONS` `POST` | `app/routes/api/v1/me/decks/$id/cards.ts` |
 | `/api/v1/me/decks/:id/cards/:cardId` | `DELETE` `OPTIONS` `PATCH` | `app/routes/api/v1/me/decks/$id/cards/$cardId.ts` |
+| `/api/v1/me/decks/:id/cards/:cardId/review` | `OPTIONS` `POST` | `app/routes/api/v1/me/decks/$id/cards/$cardId/review.ts` |
 | `/api/v1/me/decks/:id/cards/by-external-id/:externalId` | `OPTIONS` `PUT` | `app/routes/api/v1/me/decks/$id/cards/by-external-id/$externalId.ts` |
 | `/api/v1/me/decks/:id/due` | `GET` `OPTIONS` | `app/routes/api/v1/me/decks/$id/due.ts` |
+| `/api/v1/me/decks/:id/review` | `GET` `OPTIONS` | `app/routes/api/v1/me/decks/$id/review.ts` |
 | `/api/v1/me/deleted` | `GET` `OPTIONS` | `app/routes/api/v1/me/deleted.ts` |
 | `/api/v1/me/events` | `GET` `OPTIONS` | `app/routes/api/v1/me/events.ts` |
 | `/api/v1/me/feeds` | `GET` `OPTIONS` | `app/routes/api/v1/me/feeds.ts` |
@@ -58,6 +62,8 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/v1/me/highlights/:id` | `DELETE` `OPTIONS` `PATCH` | `app/routes/api/v1/me/highlights/$id.ts` |
 | `/api/v1/me/music/practice` | `GET` `OPTIONS` | `app/routes/api/v1/me/music/practice.ts` |
 | `/api/v1/me/notifications` | `GET` `OPTIONS` | `app/routes/api/v1/me/notifications.ts` |
+| `/api/v1/me/parties` | `GET` `OPTIONS` | `app/routes/api/v1/me/parties.ts` |
+| `/api/v1/me/parties/:id` | `GET` `OPTIONS` | `app/routes/api/v1/me/parties/$id.ts` |
 | `/api/v1/me/personal-bests` | `GET` `OPTIONS` | `app/routes/api/v1/me/personal-bests.ts` |
 | `/api/v1/me/reading-goal` | `GET` `OPTIONS` | `app/routes/api/v1/me/reading-goal.ts` |
 | `/api/v1/me/rmhtube/stats` | `GET` `OPTIONS` | `app/routes/api/v1/me/rmhtube/stats.ts` |

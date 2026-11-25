@@ -22,6 +22,7 @@ export type LessonMode =
   | 'keyboard-map'
   | 'fretboard'
   | 'rhythm-basics'
+  | 'rhythm-reading'
   | 'play-note'
   | 'match-note'
   | 'ear-interval'
@@ -91,6 +92,61 @@ const RHYTHM_UNIT: Unit = {
       title: 'Tap the beat',
       summary: 'Keep a steady beat by tapping along.',
       mode: 'rhythm-basics',
+      available: true,
+    },
+  ],
+};
+
+/**
+ * Read rhythms: five lessons of eight one-bar patterns (`rhythm-patterns.ts`), each drawn on a
+ * one-line percussion staff, heard once, then tapped after a count-in. Like Rhythm basics it needs no
+ * instrument and no voice range, and it is the same unit (and progress) on every path, directly
+ * after it. Ids are stored with progress: add new ones, never rename.
+ */
+export const READ_RHYTHMS_UNIT_ID = 'read-rhythms';
+
+const READ_RHYTHMS_UNIT: Unit = {
+  id: READ_RHYTHMS_UNIT_ID,
+  title: 'Read rhythms',
+  lessons: [
+    {
+      id: 'rhythm-read-quarters-halves',
+      unit: READ_RHYTHMS_UNIT_ID,
+      title: 'Quarters and halves',
+      summary: 'Read bars of quarter, half and whole notes, then tap them in time.',
+      mode: 'rhythm-reading',
+      available: true,
+    },
+    {
+      id: 'rhythm-read-eighths',
+      unit: READ_RHYTHMS_UNIT_ID,
+      title: 'Eighth notes',
+      summary: 'Read beamed pairs of eighth notes and tap two to a beat.',
+      mode: 'rhythm-reading',
+      available: true,
+    },
+    {
+      id: 'rhythm-read-rests',
+      unit: READ_RHYTHMS_UNIT_ID,
+      title: 'Rests',
+      summary: 'Read quarter and half rests: stay silent for them, and tap again on time.',
+      mode: 'rhythm-reading',
+      available: true,
+    },
+    {
+      id: 'rhythm-read-dotted',
+      unit: READ_RHYTHMS_UNIT_ID,
+      title: 'Dotted notes',
+      summary: 'Read the dotted half, and the dotted quarter followed by an eighth.',
+      mode: 'rhythm-reading',
+      available: true,
+    },
+    {
+      id: 'rhythm-read-ties-34',
+      unit: READ_RHYTHMS_UNIT_ID,
+      title: 'Ties and 3/4',
+      summary: 'Read ties that hold a note across the beat, and bars of three beats.',
+      mode: 'rhythm-reading',
       available: true,
     },
   ],
@@ -447,6 +503,7 @@ export const PATH: Unit[] = [
   CHORDS_UNIT,
   READ_INTERVALS_UNIT,
   RHYTHM_UNIT,
+  READ_RHYTHMS_UNIT,
   READ_SPELLED_UNIT,
 ];
 
@@ -583,6 +640,7 @@ export const VOICE_PATH: Unit[] = [
     ],
   },
   RHYTHM_UNIT,
+  READ_RHYTHMS_UNIT,
 ];
 
 /** The path a learner sees. */
@@ -592,7 +650,7 @@ export function pathFor(instrument: Instrument): Unit[] {
 }
 
 const RANGE_LESSONS = new Set(
-  VOICE_PATH.filter((u) => u !== RHYTHM_UNIT)
+  VOICE_PATH.filter((u) => u !== RHYTHM_UNIT && u !== READ_RHYTHMS_UNIT)
     .flatMap((u) => u.lessons)
     // A key signature is read from the page: it needs no range, and no instrument either.
     .filter((l) => l.mode !== 'key-signature')
@@ -600,7 +658,7 @@ const RANGE_LESSONS = new Set(
 );
 
 /**
- * Whether a lesson reads or sings in the learner's voice range (every singer lesson but rhythm):
+ * Whether a lesson reads or sings in the learner's voice range (every singer lesson but the rhythm units):
  * such a lesson asks a singer with no range to choose one first, rather than assume one.
  */
 export function needsVoiceRange(lesson: Lesson | undefined): boolean {

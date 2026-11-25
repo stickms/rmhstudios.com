@@ -29,6 +29,7 @@ const DOCUMENTED_GROUPS: ReadonlySet<string> = new Set([
   'posts',
   'practice',
   'reading',
+  'rmhcharacters',
   'rmhtube',
   'scheduled',
   'search',

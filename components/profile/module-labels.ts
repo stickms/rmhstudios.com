@@ -24,5 +24,6 @@ export function profileModuleLabels(t: TFunction): Record<ModuleKind, string> {
     webrings: t('module-webrings', { ns: 'c-profile-modules', defaultValue: 'Webrings' }),
     endorsements: t('module-endorsements', { ns: 'c-profile-modules', defaultValue: 'Skills' }),
     counter: t('module-counter', { ns: 'c-profile-modules', defaultValue: 'Visitor counter' }),
+    made: t('module-made', { ns: 'c-profile-modules', defaultValue: 'Made here' }),
   };
 }

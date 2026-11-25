@@ -3,19 +3,22 @@
  * Every write goes through `lib/study/deck-editor.server.ts`, so the limits, `cardCount`, generated
  * siblings and `cardsChangedAt` behave exactly as in the editor. A deck or card that is not the key
  * owner's is `null` / `not_found`, never a different answer (no existence oracle). Generated siblings are
- * never listed (`AUTHORED_WHERE`) and are never addressable. Reviews are not exposed.
+ * never listed (`AUTHORED_WHERE`) and are never addressable. Reviews are the exception (s12-12): `reviewQueueFor` and
+ * `gradeFor` go through the site's own queue and `reviewCard`, never return a card sound, and grade for no reward.
  */
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { RATE_LIMIT_POLICIES, rateLimit } from '@/lib/rate-limit';
 import type { ApiContext } from '@/lib/api/with-developer-api.server';
 import type { z } from 'zod';
-import { AUTHORED_WHERE } from '@/lib/study/card-query.server';
+import { AUTHORED_WHERE, REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
 import { CARD_IMAGE_SELECT, fromColumns, type CardImage } from '@/lib/study/card-images';
 import { CARD_SOUND_SELECT, fromSoundColumns, type CardSound } from '@/lib/study/card-sound';
 import { readOcclusion, type Occlusion } from '@/lib/study/occlusion';
 import { resolveMediaUrls } from '@/lib/study/card-images.server';
-import { requireDeckRole } from '@/lib/study/deck-access.server';
+import { canReadDeck, requireDeckRole } from '@/lib/study/deck-access.server';
+import { reviewQueue } from '@/lib/study/queue.server';
+import { reviewCard } from '@/lib/study/review.server';
 import {
   createDeck,
   deleteCard,
@@ -30,6 +33,8 @@ import {
 } from '@/lib/study/deck-editor.server';
 import {
   API_BATCH_MAX,
+  gradeOf,
+  type GradeName,
   decodeCardCursor,
   decodeDeckCursor,
   encodeCardCursor,
@@ -615,6 +620,173 @@ export async function dueFor(userId: string, deckId: string, now = new Date()) {
     dueNext24h: counts.dueNext24h,
     asOf: now.toISOString(),
   };
+}
+
+/** A card due for review, as `GET …/review` returns it. No sound fields: sounds are the recorder's, on the site. */
+export interface ApiReviewCard {
+  id: string;
+  kind: string;
+  front: string;
+  back: string;
+  /** A cloze card: the deletion this card asks. An occlusion card: the id of the mask it asks. Otherwise null. */
+  clozeIndex: number | null;
+  /** The external id of the card (a generated card carries its source's), or null. */
+  externalId: string | null;
+  frontImage: CardImage | null;
+  backImage: CardImage | null;
+  /** The masks of an occlusion card, or null on every other kind. */
+  occlusion: Occlusion | null;
+  /** Where the card is on the key owner's schedule. */
+  schedule: {
+    /** `new` when it was never reviewed. */
+    state: 'new' | 'review';
+    dueAt: string | null;
+    intervalDays: number;
+  };
+}
+
+/**
+ * The cards the site's review queue would show the key owner now for one deck, in its order: scheduled cards due,
+ * then new cards within the deck's pace. The deck must be one the owner may read (their own, one they edit, a public
+ * one); anything else is null. Sound columns are never read into the answer.
+ */
+export async function reviewQueueFor(
+  userId: string,
+  deckId: string,
+  limit: number,
+  now = new Date(),
+): Promise<ApiReviewCard[] | null> {
+  const deck = await prisma.flashcardDeck.findUnique({
+    where: {
+      id: deckId,
+    },
+    select: {
+      id: true,
+      isPublic: true,
+      userId: true,
+    },
+  });
+  if (!deck || !(await canReadDeck(userId, deck))) return null;
+  const queue = await reviewQueue(userId, undefined, now, undefined, undefined, deckId);
+  const cards = queue.cards.slice(0, limit);
+  if (cards.length === 0) return [];
+  const cardIds = cards.map((c) => c.id);
+  const authoredIds = cards.map((c) => c.sourceId ?? c.id);
+  const [authored, reviews] = await Promise.all([
+    prisma.flashcard.findMany({
+      where: {
+        id: {
+          in: authoredIds,
+        },
+      },
+      select: {
+        id: true,
+        externalId: true,
+      },
+    }),
+    prisma.flashcardReview.findMany({
+      where: {
+        userId,
+        cardId: {
+          in: cardIds,
+        },
+      },
+      select: {
+        cardId: true,
+        dueAt: true,
+        intervalDays: true,
+      },
+    }),
+  ]);
+  const externalIds = new Map((Array.isArray(authored) ? authored : []).map((r) => [r.id, r.externalId]));
+  const schedules = new Map((Array.isArray(reviews) ? reviews : []).map((r) => [r.cardId, r]));
+  return cards.map((c) => {
+    const review = schedules.get(c.id);
+    return {
+      id: c.id,
+      kind: c.kind,
+      front: c.front,
+      back: c.back,
+      clozeIndex: c.clozeIndex,
+      externalId: externalIds.get(c.sourceId ?? c.id) ?? null,
+      frontImage: c.frontImage ?? null,
+      backImage: c.backImage ?? null,
+      occlusion: c.occlusion ? { mode: c.occlusion.mode, masks: c.occlusion.masks } : null,
+      schedule: review
+        ? {
+            state: 'review' as const,
+            dueAt: review.dueAt.toISOString(),
+            intervalDays: review.intervalDays,
+          }
+        : {
+            state: 'new' as const,
+            dueAt: null,
+            intervalDays: 0,
+          },
+    };
+  });
+}
+
+/**
+ * Grade one card of a deck for the key owner, on their own schedule, through the same `reviewCard` as the site
+ * and without the quest and XP step. A card that is not in this deck, is not reviewed, or sits in a deck the owner
+ * may not read is `not_found`; a card the owner suspended is `conflict` (unsuspend it on the site first).
+ */
+export async function gradeFor(userId: string, deckId: string, cardId: string, grade: GradeName) {
+  const card = await prisma.flashcard.findFirst({
+    where: {
+      id: cardId,
+      deckId,
+      ...REVIEWABLE_WHERE,
+    },
+    select: {
+      id: true,
+      deck: {
+        select: {
+          isPublic: true,
+          userId: true,
+        },
+      },
+      reviews: {
+        where: {
+          userId,
+        },
+        select: {
+          suspendedAt: true,
+        },
+      },
+    },
+  });
+  if (!card || !(await canReadDeck(userId, { id: deckId, ...card.deck }))) return notFound();
+  if (card.reviews[0]?.suspendedAt) {
+    return {
+      ok: false,
+      status: 409,
+      error: 'This card is suspended. Unsuspend it on the site before grading it.',
+    } as const;
+  }
+  const result = await reviewCard(userId, cardId, gradeOf(grade), {
+    rewards: false,
+    deckId,
+  });
+  if (!result.ok) return notFound();
+  return {
+    ok: true,
+    review: {
+      dueAt: result.dueAt.toISOString(),
+      intervalDays: result.intervalDays,
+      leech: result.leech,
+    },
+  } as const;
+}
+
+/** Grades also draw on the key owner's own ceiling: 120 a minute, the site's, so a tool cannot grade faster than the app. */
+export function gradeBudgetExceeded(userId: string): boolean {
+  return !rateLimit(userId, {
+    limit: 120,
+    windowMs: 60_000,
+    prefix: 'card-review-api',
+  }).allowed;
 }
 
 /* ---------------------------- route helpers ------------------------------- */

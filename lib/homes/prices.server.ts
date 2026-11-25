@@ -130,3 +130,25 @@ export async function setPriceAlerts(userId: string, listingId: string, enabled:
   });
   return res.count > 0;
 }
+
+/** The most recent recorded change of each listing (one read for the lot); a listing that never changed is absent. */
+export async function lastChangesFor(listingIds: readonly string[]): Promise<Map<string, PriceChange>> {
+  const out = new Map<string, PriceChange>();
+  if (listingIds.length === 0) return out;
+  const rows = await prisma.homeListingPriceChange.findMany({
+    where: { listingId: { in: [...listingIds] } },
+    orderBy: { changedAt: 'desc' },
+  });
+  for (const r of rows) {
+    if (out.has(r.listingId)) continue;
+    out.set(r.listingId, {
+      id: r.id,
+      oldPrice: Math.round(r.oldCents) / 100,
+      newPrice: Math.round(r.newCents) / 100,
+      percent: percentChange(r.oldCents, r.newCents),
+      source: r.source === 'feed' ? 'feed' : 'author',
+      changedAt: r.changedAt.toISOString(),
+    });
+  }
+  return out;
+}

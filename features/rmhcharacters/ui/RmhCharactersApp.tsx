@@ -25,7 +25,7 @@ import { Roster } from './Roster';
 
 type View =
   | { kind: 'roster' }
-  | { kind: 'character'; id: string }
+  | { kind: 'character'; id: string; party?: string }
   | { kind: 'parties' }
   | { kind: 'party'; id: string }
   | { kind: 'join'; code: string };
@@ -35,8 +35,8 @@ function readView(): View {
   if (typeof location === 'undefined') return { kind: 'roster' };
   const code = /^[\w-]{8,16}$/.exec(new URLSearchParams(location.search).get('party') ?? '')?.[0];
   if (code) return { kind: 'join', code };
-  const c = /^#c=([\w-]+)$/.exec(location.hash)?.[1];
-  if (c) return { kind: 'character', id: c };
+  const c = /^#c=([\w-]+)(?:&p=([\w-]+))?$/.exec(location.hash);
+  if (c?.[1]) return c[2] ? { kind: 'character', id: c[1], party: c[2] } : { kind: 'character', id: c[1] };
   const p = /^#p=([\w-]+)$/.exec(location.hash)?.[1];
   if (p) return { kind: 'party', id: p };
   if (location.hash === '#parties') return { kind: 'parties' };
@@ -81,6 +81,8 @@ function SignedInApp() {
   const status = useRoster((s) => s.status);
   const [view, setView] = useState<View>(readView);
   const openId = view.kind === 'character' ? view.id : null;
+  // A sheet opened from a party (`#c=<id>&p=<party>`) can roll for that table.
+  const fromParty = view.kind === 'character' ? view.party : undefined;
   const character = useRoster((s) => s.characters.find((c) => c.id === openId));
 
   useEffect(() => {
@@ -102,7 +104,7 @@ function SignedInApp() {
   const go = (next: View) => {
     const url =
       next.kind === 'character'
-        ? `#c=${next.id}`
+        ? `#c=${next.id}${next.party ? `&p=${next.party}` : ''}`
         : next.kind === 'party'
           ? `#p=${next.id}`
           : next.kind === 'parties'
@@ -150,13 +152,24 @@ function SignedInApp() {
             id={view.id}
             onBack={() => go({ kind: 'parties' })}
             onBring={(code) => go({ kind: 'join', code })}
+            onOpenSheet={(characterId) => go({ kind: 'character', id: characterId, party: view.id })}
           />
         ) : view.kind === 'parties' ? (
           <Parties onBack={() => go({ kind: 'roster' })} onOpen={(id) => go({ kind: 'party', id })} />
         ) : character?.system === 'dnd5e' ? (
-          <Editor5e key={character.id} c={character} onBack={() => open(null)} />
+          <Editor5e
+            key={character.id}
+            c={character}
+            onBack={() => (fromParty ? go({ kind: 'party', id: fromParty }) : open(null))}
+            {...(fromParty ? { party: { id: fromParty, role: 'player' as const, system: 'dnd5e' as const } } : {})}
+          />
         ) : character?.system === 'pf2e' ? (
-          <EditorPf2e key={character.id} c={character} onBack={() => open(null)} />
+          <EditorPf2e
+            key={character.id}
+            c={character}
+            onBack={() => (fromParty ? go({ kind: 'party', id: fromParty }) : open(null))}
+            {...(fromParty ? { party: { id: fromParty, role: 'player' as const, system: 'pf2e' as const } } : {})}
+          />
         ) : (
           <Roster onOpen={open} onParties={() => go({ kind: 'parties' })} />
         )}

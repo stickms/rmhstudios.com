@@ -35,7 +35,9 @@ interface Row {
   lastSeenAt: Date;
 }
 
-function makePrisma() {
+function makePrisma(initialStatus = 'ACTIVE') {
+  /** The source row as the database holds it: only the columns a status write touches. */
+  const source: Record<string, unknown> = { status: initialStatus, lastError: null };
   const listings = new Map<string, Row>();
   const sourceUpdates: Record<string, unknown>[] = [];
   const key = (s: string, e: string) => `${s}::${e}`;
@@ -111,16 +113,19 @@ function makePrisma() {
       },
     },
     homeSource: {
-      async update({ data }) {
+      async updateMany({ where, data }) {
+        // The conditional write: `status: { not: 'DISABLED' }` skips a paused source, as Postgres would.
+        const not = (where.status as { not?: string } | undefined)?.not;
+        if (not !== undefined && source.status === not) return { count: 0 };
         sourceUpdates.push(data);
-        return {
-          id: SOURCE.id,
-        };
+        Object.assign(source, data);
+        return { count: 1 };
       },
     },
   };
 
   return {
+    source,
     prisma,
     listings,
     sourceUpdates,
@@ -357,5 +362,56 @@ describe('processSource', () => {
       expect(dropStamps).toEqual([]);
       expect(small.priceDrops).toEqual([]);
     });
+  });
+});
+
+describe('a pause outlives a run in flight', () => {
+  const NOW = new Date('2026-07-10T00:00:00Z');
+
+  it('writes the status conditionally: a source that is not DISABLED gets the outcome', async () => {
+    const { prisma, source } = makePrisma('ERROR');
+    await processSource({ prisma, fetchImpl: makeFetch({ feedBody: FIXTURE }), now: NOW }, SOURCE);
+    expect(source).toMatchObject({ status: 'ACTIVE', lastError: null, lastSuccessAt: NOW });
+  });
+
+  it('leaves a DISABLED source disabled after a good run, and still stamps its run times', async () => {
+    const { prisma, source } = makePrisma('DISABLED');
+    await processSource({ prisma, fetchImpl: makeFetch({ feedBody: FIXTURE }), now: NOW }, SOURCE);
+    expect(source.status).toBe('DISABLED');
+    expect(source).toMatchObject({ lastRunAt: NOW, lastSuccessAt: NOW });
+  });
+
+  it('keeps a pause made while the feed was being fetched (the end-of-run write does not undo it)', async () => {
+    const { prisma, source } = makePrisma('ACTIVE');
+    const inner = makeFetch({ feedBody: FIXTURE });
+    const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      // The admin pauses the source while its feed is in flight.
+      if (String(input) === FEED_URL) source.status = 'DISABLED';
+      return inner(input, init);
+    }) as typeof fetch;
+    await processSource({ prisma, fetchImpl, now: NOW }, SOURCE);
+    expect(source.status).toBe('DISABLED');
+  });
+
+  it('does not turn a DISABLED source into ERROR or BLOCKED, and keeps its last error', async () => {
+    const errored = makePrisma('DISABLED');
+    errored.source.lastError = 'older problem';
+    errored.prisma.homeListing.findMany = async () => {
+      throw new Error('database exploded');
+    };
+    const stats = await processSource(
+      { prisma: errored.prisma, fetchImpl: makeFetch({ feedBody: FIXTURE }), now: NOW },
+      SOURCE,
+    );
+    expect(stats.errored).toBe(true);
+    expect(errored.source).toMatchObject({ status: 'DISABLED', lastError: 'older problem' });
+
+    const blocked = makePrisma('DISABLED');
+    const robots = (async (input: RequestInfo | URL) =>
+      String(input) === ROBOTS_URL
+        ? new Response('User-agent: *\nDisallow: /', { status: 200 })
+        : new Response('', { status: 404 })) as typeof fetch;
+    await processSource({ prisma: blocked.prisma, fetchImpl: robots, now: NOW }, SOURCE);
+    expect(blocked.source.status).toBe('DISABLED');
   });
 });

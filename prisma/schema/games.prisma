@@ -875,6 +875,11 @@ model ConnectionsGrid {
   dailyDate   String?  @unique @db.VarChar(10)
   hidden      Boolean  @default(false)
   createdAt   DateTime @default(now())
+  // s12 06: a draft is private to its author and counts toward the cap; publishedAt is stamped when it goes public
+  // (the migration backfills existing rows from createdAt); updatedAt is set by an edit.
+  draft       Boolean   @default(false)
+  publishedAt DateTime?
+  updatedAt   DateTime?
 
   author User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
   plays  ConnectionsPlay[]

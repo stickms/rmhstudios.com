@@ -17,6 +17,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
 import { saveChartApi } from '@features/slice-it/engine/charts.contract';
 import { prisma } from '@/lib/prisma.server';
+import { ERROR_CODES, refusalBody } from '@/lib/errors/codes';
 import type { Difficulty } from '@features/slice-it/engine/constants';
 import type { LintNote } from '@features/slice-it/engine/beatmap/lint';
 import { ChartPatchZ } from '@features/slice-it/engine/editor/api-schemas';
@@ -64,6 +65,8 @@ export const route = apiRoute('/api/slice-it/charts/$id', {
     saveChartApi,
     {
       body: ChartPatchZ,
+      // A refused name (empty, over 120 characters, or sent without `manual`) is a plain invalid-input refusal.
+      invalid: () => Response.json(refusalBody('INVALID_INPUT'), { status: ERROR_CODES.INVALID_INPUT.http }),
       // Autosave fires every 20s per open editor; a session is ~90 writes an
       // hour. Scoped to the user, not the IP — two people editing on one
       // campus connection must not share a bucket, which is the mistake
@@ -137,7 +140,12 @@ export const route = apiRoute('/api/slice-it/charts/$id', {
         });
 
         await tx.chartRevision.create({
-          data: { chartId: chart.id, notes: body.notes, kind: body.kind ?? 'autosave' },
+          data: {
+            chartId: chart.id,
+            notes: body.notes,
+            kind: body.kind ?? 'autosave',
+            ...(body.label ? { label: body.label } : {}),
+          },
         });
 
         return row;

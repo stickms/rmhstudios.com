@@ -2,7 +2,8 @@ import { LiveryEditorButton } from './LiveryEditor';
 import { useCallback, useEffect, useState } from 'react';
 import { parseScoreMoment, ResultMomentSlot, useScoreMoment } from '@/components/games/result-moment-slot';
 import { SessionHighlight } from '@/components/games/SessionHighlight';
-import { GHOST_MODES, type GhostMode, type GhostTrace } from '@/lib/neon-driftway/ghost';
+import { nextGhostMode, readGhostFriend, writeGhostFriend, type GhostFriend, type GhostMode, type GhostTrace } from '@/lib/neon-driftway/ghost';
+import { FriendGhostPicker } from './FriendGhostPicker';
 import { useTranslation } from 'react-i18next';
 import { neonDriftwayLeaderboardApi } from '@/lib/neon-driftway/neon-driftway.contract';
 import { Button } from '@/components/ui/button';
@@ -83,6 +84,22 @@ export function NeonDriftwayUI({
   const session = useSession();
   const navigate = useNavigate();
   const quit = useQuitGame();
+  // The level whose friend is being picked ("A friend" ghost mode); null while the picker is closed.
+  const [friendPickLevel, setFriendPickLevel] = useState<LevelId | null>(null);
+  const [rememberedFriend, setRememberedFriend] = useState<GhostFriend | null>(null);
+  const openFriendPicker = useCallback((id: LevelId) => {
+    setRememberedFriend(readGhostFriend(id));
+    setFriendPickLevel(id);
+  }, []);
+  const chooseFriend = useCallback(
+    (friend: GhostFriend) => {
+      if (friendPickLevel === null) return;
+      writeGhostFriend(friendPickLevel, friend);
+      setFriendPickLevel(null);
+      onStartLevel(friendPickLevel);
+    },
+    [friendPickLevel, onStartLevel],
+  );
 
   const fetchLeaderboard = useCallback(async () => {
     try {
@@ -326,7 +343,7 @@ export function NeonDriftwayUI({
 
           <button
             type="button"
-            onClick={() => onGhostModeChange(GHOST_MODES[(GHOST_MODES.indexOf(ghostMode) + 1) % GHOST_MODES.length])}
+            onClick={() => onGhostModeChange(nextGhostMode(ghostMode))}
             className="mx-auto flex items-center gap-2 rounded-full border border-zinc-600 bg-zinc-900/80 px-3 py-1.5 pointer-coarse:min-h-11 text-xs text-zinc-300 transition-colors hover:border-cyan-500 hover:text-white"
             aria-label={t("ghost-toggle-aria", { defaultValue: "Change race ghost" })}
           >
@@ -335,7 +352,9 @@ export function NeonDriftwayUI({
               ? t("ghost-mode-pb", { defaultValue: "Ghost: your best" })
               : ghostMode === 'top'
                 ? t("ghost-mode-top", { defaultValue: "Ghost: world #1" })
-                : t("ghost-mode-off", { defaultValue: "Ghost: off" })}
+                : ghostMode === 'friend'
+                  ? t("ghost-mode", { ns: "friend-ghosts", defaultValue: "Ghost: a friend" })
+                  : t("ghost-mode-off", { defaultValue: "Ghost: off" })}
           </button>
 
           <div className="grid gap-3">
@@ -345,7 +364,7 @@ export function NeonDriftwayUI({
               return (
                 <button
                   key={id}
-                  onClick={() => unlocked && onStartLevel(id)}
+                  onClick={() => unlocked && (ghostMode === 'friend' ? openFriendPicker(id) : onStartLevel(id))}
                   disabled={!unlocked}
                   className={`relative text-left p-4 rounded-lg border transition-colors ${unlocked
                     ? 'border-zinc-600 hover:border-cyan-500 bg-zinc-900/80 cursor-pointer'
@@ -373,6 +392,14 @@ export function NeonDriftwayUI({
               );
             })}
           </div>
+
+          <FriendGhostPicker
+            level={friendPickLevel}
+            signedIn={!!session.data}
+            current={rememberedFriend}
+            onChoose={chooseFriend}
+            onClose={() => setFriendPickLevel(null)}
+          />
 
           <p className="text-[10px] sm:text-xs text-zinc-600 text-center">
             {t("unlock-hint", { defaultValue: "Drive 1,500m on a level to complete it and unlock the next" })}

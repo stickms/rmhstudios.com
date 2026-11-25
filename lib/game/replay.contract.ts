@@ -4,8 +4,9 @@
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
-import type { getGhostQuery, saveGhostBody, submitReplayBody } from './replay-schema';
+import type { friendGhostsQuery, getGhostQuery, saveGhostBody, submitReplayBody } from './replay-schema';
 import type { GhostView } from '@/lib/replays.server';
+import type { FriendGhostEntry } from '@/lib/game/friend-ghosts.server';
 
 /** Store a replay; the server re-simulates it and keeps the derived score. */
 export const submitReplayApi = endpoint<{
@@ -29,6 +30,17 @@ export const getGhostApi = endpoint<{
 }>()({
   method: 'GET',
   path: '/api/replays/ghost',
+});
+
+/** Mutual follows who have a ghost on a level, fastest first (no trace data). */
+export const friendGhostsApi = endpoint<{
+  query: z.infer<typeof friendGhostsQuery>;
+  res: {
+    friends: FriendGhostEntry[];
+  };
+}>()({
+  method: 'GET',
+  path: '/api/replays/ghost/friends',
 });
 
 /** Store the caller's ghost for a level (on a new best). */

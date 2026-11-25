@@ -16,3 +16,4 @@ sprint directory holds its index, its plan, one specification per feature and a 
 | 09     | Halves that never met: data nobody shows, backends with no page, and what deletion still leaves | [sprint-09/README.md](sprint-09/README.md)                                  |
 | 10     | Joining up what members already have, and the doors that skipped the rules                      | [sprint-10/README.md](sprint-10/README.md)                                  |
 | 11     | More to do in the games and apps, and people to do it with                                      | [sprint-11/README.md](sprint-11/README.md)                                  |
+| 12     | Members' work, made trustworthy and findable: twenty features                                   | [sprint-12/README.md](sprint-12/README.md), [summary](sprint-12/summary.md) |

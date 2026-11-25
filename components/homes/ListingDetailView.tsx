@@ -6,8 +6,9 @@
  * Select) out of the route's code-split chunk, which the production bundler
  * only resolves for primitives already shared across many routes.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   Bath,
@@ -15,6 +16,7 @@ import {
   CalendarClock,
   ExternalLink,
   Eye,
+  Flag,
   Globe,
   Home,
   MapPin,
@@ -35,6 +37,7 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { ListingsMap } from '@/components/homes/ListingsMap';
 import { FavoriteButton } from '@/components/homes/FavoriteButton';
 import { ListingGallery } from '@/components/homes/ListingGallery';
+import { FavoriteNote } from '@/components/homes/FavoriteNote';
 import { PriceHistory } from '@/components/homes/PriceHistory';
 import { RentSplitPanel } from '@/components/homes/RentSplitPanel';
 import { RoommateMatch } from '@/components/homes/RoommateMatch';
@@ -64,10 +67,16 @@ import {
   setHomeListingStatusApi,
 } from '@/lib/homes/homes.contract';
 
+// s12-16 member-reports: the dialog carries a zod schema, so it loads only when a member opens it.
+const ReportDialog = lazy(() =>
+  import('@/components/moderation/ReportDialog').then((m) => ({ default: m.ReportDialog })),
+);
+
 export function ListingDetailView({ id }: { id: string }) {
   const goBack = useBackOrFallback();
   const { data: session } = useSession();
   const confirm = useConfirm();
+  const { t } = useTranslation('homes-compare');
   const navigate = useNavigate();
 
   const [listing, setListing] = useState<Listing | null>(null);
@@ -76,6 +85,7 @@ export function ListingDetailView({ id }: { id: string }) {
   const [activeImage, setActiveImage] = useState(0);
   const [messaging, setMessaging] = useState(false);
   const [savingStatus, setSavingStatus] = useState(false);
+  const [reporting, setReporting] = useState(false);
   const arrival = useArrival(!loading);
 
   useEffect(() => {
@@ -205,9 +215,17 @@ export function ListingDetailView({ id }: { id: string }) {
         {listing.isOwner && (
           <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-site-border pb-3">
             <span className="t-body text-site-text-muted">You posted this</span>
+            {listing.removedByModerator && (
+              <span className="t-body text-site-text-muted">
+                {t('removed-listing', {
+                  ns: 'member-reports',
+                  defaultValue: 'Removed by a moderator. It cannot be made active again.',
+                })}
+              </span>
+            )}
             <Select
               value={listing.status}
-              disabled={savingStatus}
+              disabled={savingStatus || listing.removedByModerator === true}
               onChange={(e) => changeStatus(e.target.value as ListingStatus)}
               controlSize="sm"
               containerClassName="w-36"
@@ -253,17 +271,41 @@ export function ListingDetailView({ id }: { id: string }) {
               <span className="min-w-0 break-words">{listing.address || location}</span>
             </div>
           </div>
+          {session && !listing.isOwner && !isExternal && (
+            <Button variant="ghost" size="sm" onClick={() => setReporting(true)}>
+              <Flag className="h-4 w-4" aria-hidden />
+              {t('report-listing', { ns: 'member-reports', defaultValue: 'Report this listing' })}
+            </Button>
+          )}
           {!listing.isOwner && (
             <FavoriteButton
               listingId={listing.id}
               favorited={listing.favorited}
               priceAlerts={listing.priceAlerts}
-              onChange={(f) => setListing({ ...listing, favorited: f })}
+              confirmUnsave={async () =>
+                !listing.note ||
+                (await confirm({
+                  title: t('unsave-title', { defaultValue: 'Remove this saved home?' }),
+                  description: t('unsave-desc', { defaultValue: 'Your note on it is deleted with it.' }),
+                  confirmLabel: t('unsave-confirm', { defaultValue: 'Remove and delete note' }),
+                  danger: true,
+                }))
+              }
+              onChange={(f) => setListing({ ...listing, favorited: f, note: null })}
             />
           )}
         </div>
 
         <PriceHistory listingId={listing.id} />
+
+        {!listing.isOwner && listing.favorited && (
+          <FavoriteNote
+            listingId={listing.id}
+            note={listing.note ?? null}
+            onChange={(note) => setListing({ ...listing, note })}
+            className="mt-4"
+          />
+        )}
 
         {/* Specs */}
         <div className="mt-4 grid grid-cols-2 gap-x-4 border-y border-site-border sm:grid-cols-4">
@@ -402,6 +444,11 @@ export function ListingDetailView({ id }: { id: string }) {
           />
         </div>
       </div>
+      {reporting && (
+        <Suspense fallback={null}>
+          <ReportDialog open onOpenChange={setReporting} entityType="home-listing" entityId={listing.id} />
+        </Suspense>
+      )}
     </PageLayout>
   );
 }

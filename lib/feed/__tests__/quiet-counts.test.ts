@@ -607,6 +607,11 @@ const EXEMPT: Record<string, string> = {
   // s11-05 lights-out-maker
 
   // s11-09 read-alongs
+
+  // Sprint 12 (docs/autonomous/sprint-12/plan.md §Anchors)
+  // s12-06 connections-maker
+
+  // s12-07 profile-made
 };
 
 const V1_SERIALISER = /serializePublicPost\(.*, (?:input\.)?(?:userId|viewerId)\)/;

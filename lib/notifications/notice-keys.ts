@@ -255,6 +255,32 @@ export const NOTICE_TEMPLATES = {
 
   // s11-13 listing-prices
   'home-price-drop': '{{title}} in {{city}}, {{state}} dropped from ${{was}} to ${{now}}',
+
+  // Sprint 12 notices (docs/autonomous/sprint-12/plan.md §Anchors)
+  // s12-16 member-reports
+
+  // s12-19 notice-helpers
+  'ladder-match': '{{title}} at {{company}} is a {{relevance}}% preference match.',
+  'ladder-matches': '{{count}} new verified roles match your preferences.',
+  'ladder-matches-one': '1 new verified role matches your preferences.',
+  'ladder-search-match': '{{title}} at {{company}} matches your saved search “{{search}}”.',
+  'ladder-search-matches': '{{count}} new verified roles match your saved search “{{search}}”.',
+  'ladder-search-matches-one': '1 new verified role matches your saved search “{{search}}”.',
+  'ladder-follow-up': 'Follow up on {{title}} at {{company}}.',
+  'ladder-interview': 'Interview for {{title}} at {{company}} is {{interviewAt}}.',
+  'ladder-closing': '{{title}} at {{company}} closes in {{count}} days.',
+  'ladder-closing-one': '{{title}} at {{company}} closes in 1 day.',
+  'api-key-suspended': 'Your API key {{name}} was suspended: {{reason}}',
+  'api-key-restored': 'Your API key {{name}} works again',
+  'report-decision': 'A moderator reviewed a report about your content: {{message}}',
+  'recipe-message': '{{recipe}}: {{message}}',
+  'admin-review-impersonation': 'New impersonation report needs review',
+  'admin-review-report': 'New {{kind}} report needs review',
+  'admin-review-automod': 'Automated screening flagged a {{kind}} ({{category}})',
+  'admin-review-appeal': 'A user has appealed a moderation strike.',
+  'admin-review-redemption': 'New {{kind}} redemption for {{count}} coins',
+  'admin-review-music-score': 'A Daily board score asks for a look (automated check)',
+  'admin-review-market': 'Marketplace listing held for review: {{count}} coins (≥10× median)',
 } as const;
 
 export type NoticeKey = keyof typeof NOTICE_TEMPLATES;
@@ -515,6 +541,32 @@ export interface NoticeParamTypes {
     was: string | number;
     now: string | number;
   };
+
+  // Sprint 12 notices (docs/autonomous/sprint-12/plan.md §Anchors)
+  // s12-16 member-reports
+
+  // s12-19 notice-helpers
+  'ladder-match': { title: string | number; company: string | number; relevance: string | number };
+  'ladder-matches': { count: string | number };
+  'ladder-matches-one': Record<string, never>;
+  'ladder-search-match': { title: string | number; company: string | number; search: string | number };
+  'ladder-search-matches': { search: string | number; count: string | number };
+  'ladder-search-matches-one': { search: string | number };
+  'ladder-follow-up': { title: string | number; company: string | number };
+  'ladder-interview': { title: string | number; company: string | number; interviewAt: string | Date };
+  'ladder-closing': { title: string | number; company: string | number; count: string | number };
+  'ladder-closing-one': { title: string | number; company: string | number };
+  'api-key-suspended': { name: string | number; reason: string | number };
+  'api-key-restored': { name: string | number };
+  'report-decision': { message: string | number };
+  'recipe-message': { recipe: string | number; message: string | number };
+  'admin-review-impersonation': Record<string, never>;
+  'admin-review-report': { kind: string | number };
+  'admin-review-automod': { kind: string | number; category: string | number };
+  'admin-review-appeal': Record<string, never>;
+  'admin-review-redemption': { kind: string | number; count: string | number };
+  'admin-review-music-score': Record<string, never>;
+  'admin-review-market': { count: string | number };
 }
 
 export type NoticeParamValue = string | number;

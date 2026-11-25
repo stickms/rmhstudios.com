@@ -9,7 +9,12 @@
  */
 
 import { z } from 'zod';
-import { DIFFICULTIES, MAX_SONG_DURATION_SEC, SLICE_TYPES } from '@features/slice-it/engine/constants';
+import {
+  DIFFICULTIES,
+  MAX_SONG_DURATION_SEC,
+  REVISION_LABEL_MAX,
+  SLICE_TYPES,
+} from '@features/slice-it/engine/constants';
 
 /** Lanes are 0–1 today; G2 (4K/6K) is why the ceiling is 5 rather than 1. */
 export const MAX_LANE = 5;
@@ -56,14 +61,18 @@ export const ChartListQueryZ = z.object({
 });
 
 /** `PATCH /api/slice-it/charts/$id` — the autosave payload. */
-export const ChartPatchZ = z.object({
-  notes: z.array(SliceZ).max(MAX_NOTES_PER_CHART),
-  timingPoints: z.array(TimingPointZ).max(2_000).optional(),
-  svPoints: z.array(SvPointZ).max(2_000).optional(),
-  kind: RevisionKindZ.optional(),
-  /** Optional rename — "Expert (Vocal)" for an alternate take. */
-  name: z.string().trim().min(1).max(64).optional(),
-});
+export const ChartPatchZ = z
+  .object({
+    notes: z.array(SliceZ).max(MAX_NOTES_PER_CHART),
+    timingPoints: z.array(TimingPointZ).max(2_000).optional(),
+    svPoints: z.array(SvPointZ).max(2_000).optional(),
+    kind: RevisionKindZ.optional(),
+    /** Optional rename — "Expert (Vocal)" for an alternate take. */
+    name: z.string().trim().min(1).max(64).optional(),
+    /** The name of a saved version: 1–120 characters, and only on a `manual` save. */
+    label: z.string().trim().min(1).max(REVISION_LABEL_MAX).optional(),
+  })
+  .refine((body) => body.label === undefined || body.kind === 'manual', { path: ['label'] });
 export type ChartPatchInput = z.infer<typeof ChartPatchZ>;
 
 /** What the API returns for one chart. `notes` is present only on the reads. */
@@ -91,4 +100,13 @@ export interface ChartRevisionDto {
   label: string | null;
   noteCount: number;
   createdAt: string;
+}
+
+/** One revision with its notes (`GET /api/slice-it/charts/$id/revisions/$revisionId`). */
+export interface ChartRevisionDetailDto {
+  id: string;
+  kind: string;
+  label: string | null;
+  createdAt: string;
+  notes: z.infer<typeof SliceZ>[];
 }

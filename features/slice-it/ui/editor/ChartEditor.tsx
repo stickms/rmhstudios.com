@@ -45,6 +45,7 @@ import { useClipboardActions } from './useClipboardActions';
 import { clipboardOpForEvent, keyTargetIsOwned } from './clipboard-keys';
 import { Timeline } from './Timeline';
 import { Toolbar } from './Toolbar';
+import { VersionPreviewBar, VersionsPanel } from './VersionsPanel';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
@@ -66,6 +67,8 @@ export function ChartEditor({ songId }: { songId: string }) {
   const savingRef = useRef(false);
   const [scaleOpen, setScaleOpen] = useState(false);
   const openScale = useCallback(() => setScaleOpen(true), []);
+  const [versionsOpen, setVersionsOpen] = useState(false);
+  const [previewWhen, setPreviewWhen] = useState('');
   const { run: runClipboardOp, describe: describeClipboard } = useClipboardActions(setAnnounce, openScale);
 
   const loadState = useEditorStore((s) => s.loadState);
@@ -141,22 +144,31 @@ export function ChartEditor({ songId }: { songId: string }) {
    * per difficulty (§1.1), so a combined endpoint would be four writes behind one
    * request and a partial failure would have no honest status to return.
    */
-  const save = useCallback(
+  const persist = useCallback(
     async (
       kind: 'autosave' | 'manual',
       options?: {
         keepalive?: boolean;
+        /**
+         * Name the open difficulty's write as a saved version. The open difficulty is written even when it has no
+         * unsaved edits: a version is the chart as it stands, and the revision row is the point of the call.
+         */
+        label?: string;
       },
-    ) => {
+    ): Promise<boolean> => {
       const state = editorState();
-      if (savingRef.current) return;
+      const label = options?.label;
+      if (savingRef.current) return false;
       const revision = state.revision;
-      if (revision === state.lastSavedRevision) return;
+      if (!label && revision === state.lastSavedRevision) return false;
 
-      const pending = DIFFICULTIES.filter((difficulty) => state.charts[difficulty].dirty && state.chartIds[difficulty]);
+      const pending = DIFFICULTIES.filter(
+        (difficulty) =>
+          state.chartIds[difficulty] && (state.charts[difficulty].dirty || (label && difficulty === state.active)),
+      );
       if (pending.length === 0) {
         state.markSaved(revision, {});
-        return;
+        return false;
       }
 
       // The exact arrays being sent, so `markSaved` can tell an edit that landed
@@ -179,17 +191,24 @@ export function ChartEditor({ songId }: { songId: string }) {
               svPoints: state.svPoints,
               kind,
               keepalive: options?.keepalive,
+              ...(label && difficulty === state.active ? { label } : {}),
             }),
           ),
         );
         editorState().markSaved(revision, sent);
         if (kind === 'manual') {
           toast.success(
-            t('editor-save-ok', {
-              defaultValue: 'Chart saved',
-            }),
+            label
+              ? t('version-saved', {
+                  ns: 'chart-history',
+                  defaultValue: 'Version saved',
+                })
+              : t('editor-save-ok', {
+                  defaultValue: 'Chart saved',
+                }),
           );
         }
+        return true;
       } catch (cause: unknown) {
         editorState().setSaving(false);
         toast.error(
@@ -199,11 +218,41 @@ export function ChartEditor({ songId }: { songId: string }) {
                 defaultValue: 'Could not save the chart',
               }),
         );
+        return false;
       } finally {
         savingRef.current = false;
       }
     },
     [t],
+  );
+
+  const save = useCallback(
+    async (
+      kind: 'autosave' | 'manual',
+      options?: {
+        keepalive?: boolean;
+      },
+    ) => {
+      await persist(kind, options);
+    },
+    [persist],
+  );
+
+  /** "Save a version": the open difficulty as it stands, written as a named `manual` revision. */
+  const saveVersion = useCallback(
+    async (label: string) => {
+      const written = await persist('manual', { label });
+      if (!written && savingRef.current) {
+        toast.error(
+          t('version-busy', {
+            ns: 'chart-history',
+            defaultValue: 'The chart is saving. Try again in a moment.',
+          }),
+        );
+      }
+      return written;
+    },
+    [persist, t],
   );
 
   /**
@@ -538,8 +587,11 @@ export function ChartEditor({ songId }: { songId: string }) {
           column to the left of the timeline. They need the analyser's rejected
           onset candidates persisted, which is a change to the beatmap pipeline.
         */}
-        <div className="min-w-0 flex-1">
-          <Timeline />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <VersionPreviewBar when={previewWhen} onClose={() => setPreviewWhen('')} />
+          <div className="min-h-0 flex-1">
+            <Timeline />
+          </div>
         </div>
         <aside className="hidden w-72 shrink-0 flex-col gap-3 overflow-y-auto lg:flex">
           <NoteInspector />
@@ -549,7 +601,18 @@ export function ChartEditor({ songId }: { songId: string }) {
         </aside>
       </div>
 
-      <Toolbar onSave={() => void save('manual')} onClipboardOp={runClipboardOp} />
+      <Toolbar
+        onSave={() => void save('manual')}
+        onClipboardOp={runClipboardOp}
+        onVersions={() => setVersionsOpen(true)}
+      />
+
+      <VersionsPanel
+        open={versionsOpen}
+        onOpenChange={setVersionsOpen}
+        onSaveVersion={saveVersion}
+        onPreview={setPreviewWhen}
+      />
 
       <DensityMinimap />
 

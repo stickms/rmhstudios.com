@@ -31,12 +31,14 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/census` | Census | admin | `app/routes/_site/admin/census.tsx` |
 | `/admin/communities` | Communities \| Admin | admin | `app/routes/_site/admin/communities.tsx` |
 | `/admin/deepseek` | DeepSeek Balance | admin | `app/routes/_site/admin/deepseek.tsx` |
+| `/admin/deletions` | Account deletions \| Admin | admin | `app/routes/_site/admin/deletions.tsx` |
 | `/admin/delight` | Delight tools \| Admin | admin | `app/routes/_site/admin/delight.tsx` |
 | `/admin/economy` | Coin Economy | admin | `app/routes/_site/admin/economy.tsx` |
 | `/admin/email` | Email | admin | `app/routes/_site/admin/email.tsx` |
 | `/admin/emoji-packs` | Emoji Pack Review | admin | `app/routes/_site/admin/emoji-packs.tsx` |
 | `/admin/feedback` | Feedback \| Admin | admin | `app/routes/_site/admin/feedback.tsx` |
 | `/admin/flags` | Feature Flags | admin | `app/routes/_site/admin/flags.tsx` |
+| `/admin/homes` | Homes feeds \| Admin | admin | `app/routes/_site/admin/homes.tsx` |
 | `/admin/insights` | Insights | admin | `app/routes/_site/admin/insights.tsx` |
 | `/admin/jobs` | Background Jobs \| Admin | admin | `app/routes/_site/admin/jobs.tsx` |
 | `/admin/library` | Library \| Admin | admin | `app/routes/_site/admin/library.tsx` |

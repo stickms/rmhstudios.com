@@ -26,6 +26,7 @@ export const MINIGAME_LOADERS: Record<string, () => Promise<MinigameModule>> = {
   'undercover-editor': () => import('./undercover-editor/UndercoverEditorGame'),
   'minimalist-masterpiece': () => import('./minimalist-masterpiece/MinimalistMasterpieceGame'),
   'emoji-cinema': () => import('./emoji-cinema/EmojiCinemaGame'),
+  'ranking-file': () => import('./ranking-file/RankingFileGame'),
 };
 
 /** Load a minigame's code. Resolves (never rejects) once it is loaded or has failed. */

@@ -170,6 +170,11 @@ describe('system notification labels', () => {
       // s11-13 listing-prices
       home_price_drop: 'Price drop',
 
+      // Sprint 12 system labels (docs/autonomous/sprint-12/plan.md §Anchors)
+      // s12-16 member-reports
+
+      // s12-19 notice-helpers
+
       default: 'RMH Studios',
     });
   });

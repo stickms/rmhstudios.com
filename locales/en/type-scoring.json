@@ -1,0 +1,6 @@
+{
+  "did-not-finish": "Did not finish",
+  "reason-implausible": "Not ranked: the run could not be checked.",
+  "reason-short": "Not ranked: the run did not reach the end of the passage.",
+  "reason-too-fast": "Not ranked: the speed is above what can be typed."
+}

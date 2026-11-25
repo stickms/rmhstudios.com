@@ -223,19 +223,6 @@ function ApplicationForm({
     }
   }
 
-  const field = (
-    id: string,
-    label: string,
-    input: React.ReactNode,
-  ) => (
-    <div>
-      <label htmlFor={id} className="mb-2 block text-sm font-medium text-site-text">
-        {label}
-      </label>
-      {input}
-    </div>
-  );
-
   return (
     <form onSubmit={submit} className="space-y-4">
       <div className="space-y-2">
@@ -263,20 +250,48 @@ function ApplicationForm({
       <div className="py-5">
         <h3 className="site-section-label mb-3">{t('vehicle-details', { defaultValue: 'Vehicle details' })}</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {field('drv-make', t('label-make', { defaultValue: 'Make' }),
-            <Input aria-label={t('label-make', { defaultValue: 'Make' })} id="drv-make" required maxLength={60} value={form.vehicleMake} onChange={(e) => set('vehicleMake', e.target.value)} placeholder={t('placeholder-make', { defaultValue: 'Toyota' })} />)}
-          {field('drv-model', t('label-model', { defaultValue: 'Model' }),
-            <Input aria-label={t('label-model', { defaultValue: 'Model' })} id="drv-model" required maxLength={60} value={form.vehicleModel} onChange={(e) => set('vehicleModel', e.target.value)} placeholder={t('placeholder-model', { defaultValue: 'Camry' })} />)}
-          {field('drv-year', t('label-year', { defaultValue: 'Year' }),
-            <Input aria-label={t('label-year', { defaultValue: 'Year' })} id="drv-year" required type="number" min={1980} max={new Date().getFullYear() + 2} value={form.vehicleYear} onChange={(e) => set('vehicleYear', e.target.value)} placeholder={t('placeholder-year', { defaultValue: '2022' })} />)}
-          {field('drv-color', t('label-color', { defaultValue: 'Color' }),
-            <Input aria-label={t('label-color', { defaultValue: 'Color' })} id="drv-color" required maxLength={30} value={form.vehicleColor} onChange={(e) => set('vehicleColor', e.target.value)} placeholder={t('placeholder-color', { defaultValue: 'Silver' })} />)}
-          {field('drv-plate', t('label-license-plate', { defaultValue: 'License plate' }),
-            <Input aria-label={t('label-license-plate', { defaultValue: 'License plate' })} id="drv-plate" required maxLength={16} value={form.licensePlate} onChange={(e) => set('licensePlate', e.target.value.toUpperCase())} placeholder={t('placeholder-license-plate', { defaultValue: 'ABC-1234' })} />)}
-          {field('drv-license', t('label-drivers-license', { defaultValue: "Driver's license #" }),
-            <Input aria-label={t('label-drivers-license', { defaultValue: "Driver's license #" })} id="drv-license" required maxLength={40} value={form.licenseNumber} onChange={(e) => set('licenseNumber', e.target.value.toUpperCase())} placeholder={t('placeholder-drivers-license', { defaultValue: 'D1234567' })} />)}
-          {field('drv-seats', t('label-passenger-seats', { defaultValue: 'Passenger seats' }),
-            <Input aria-label={t('label-passenger-seats', { defaultValue: 'Passenger seats' })} id="drv-seats" required type="number" min={1} max={8} value={form.seats} onChange={(e) => set('seats', e.target.value)} />)}
+          <div>
+            <label htmlFor="drv-make" className="mb-2 block text-sm font-medium text-site-text">
+              {t('label-make', { defaultValue: 'Make' })}
+            </label>
+            <Input id="drv-make" required maxLength={60} value={form.vehicleMake} onChange={(e) => set('vehicleMake', e.target.value)} placeholder={t('placeholder-make', { defaultValue: 'Toyota' })} />
+          </div>
+          <div>
+            <label htmlFor="drv-model" className="mb-2 block text-sm font-medium text-site-text">
+              {t('label-model', { defaultValue: 'Model' })}
+            </label>
+            <Input id="drv-model" required maxLength={60} value={form.vehicleModel} onChange={(e) => set('vehicleModel', e.target.value)} placeholder={t('placeholder-model', { defaultValue: 'Camry' })} />
+          </div>
+          <div>
+            <label htmlFor="drv-year" className="mb-2 block text-sm font-medium text-site-text">
+              {t('label-year', { defaultValue: 'Year' })}
+            </label>
+            <Input id="drv-year" required type="number" min={1980} max={new Date().getFullYear() + 2} value={form.vehicleYear} onChange={(e) => set('vehicleYear', e.target.value)} placeholder={t('placeholder-year', { defaultValue: '2022' })} />
+          </div>
+          <div>
+            <label htmlFor="drv-color" className="mb-2 block text-sm font-medium text-site-text">
+              {t('label-color', { defaultValue: 'Color' })}
+            </label>
+            <Input id="drv-color" required maxLength={30} value={form.vehicleColor} onChange={(e) => set('vehicleColor', e.target.value)} placeholder={t('placeholder-color', { defaultValue: 'Silver' })} />
+          </div>
+          <div>
+            <label htmlFor="drv-plate" className="mb-2 block text-sm font-medium text-site-text">
+              {t('label-license-plate', { defaultValue: 'License plate' })}
+            </label>
+            <Input id="drv-plate" required maxLength={16} value={form.licensePlate} onChange={(e) => set('licensePlate', e.target.value.toUpperCase())} placeholder={t('placeholder-license-plate', { defaultValue: 'ABC-1234' })} />
+          </div>
+          <div>
+            <label htmlFor="drv-license" className="mb-2 block text-sm font-medium text-site-text">
+              {t('label-drivers-license', { defaultValue: "Driver's license #" })}
+            </label>
+            <Input id="drv-license" required maxLength={40} value={form.licenseNumber} onChange={(e) => set('licenseNumber', e.target.value.toUpperCase())} placeholder={t('placeholder-drivers-license', { defaultValue: 'D1234567' })} />
+          </div>
+          <div>
+            <label htmlFor="drv-seats" className="mb-2 block text-sm font-medium text-site-text">
+              {t('label-passenger-seats', { defaultValue: 'Passenger seats' })}
+            </label>
+            <Input id="drv-seats" required type="number" min={1} max={8} value={form.seats} onChange={(e) => set('seats', e.target.value)} />
+          </div>
         </div>
       </div>
 

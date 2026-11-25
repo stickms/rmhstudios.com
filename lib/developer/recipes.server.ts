@@ -10,6 +10,7 @@ import { prisma } from '@/lib/prisma.server';
 import { getBoss } from '@/lib/jobs/boss.server';
 import { safeFetch } from '@/lib/ssrf-guard.server';
 import { createNotification } from '@/lib/notifications.server';
+import { notice } from '@/lib/notifications/notice-keys';
 import { rateLimit } from '@/lib/rate-limit';
 import { getShopItem, SHOP_ITEMS } from '@/lib/shop/catalog';
 import { getGameAdapter } from '@/lib/game/adapters.server';
@@ -133,6 +134,7 @@ export async function deleteRecipe(userId: string, id: string): Promise<boolean>
 interface RecipeRow {
   id: string;
   userId: string;
+  name: string;
   action: string;
   actionConfig: unknown;
   lastFiredAt: Date | null;
@@ -147,7 +149,7 @@ async function deliver(r: RecipeRow, message: string): Promise<string | null> {
       type: 'SYSTEM',
       entityType: 'recipe',
       entityId: r.id,
-      preview: message.slice(0, 280),
+      preview: notice('recipe-message', { recipe: r.name, message: message.slice(0, 280) }),
       link: '/developer',
     });
     return null;

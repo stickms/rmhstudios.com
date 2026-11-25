@@ -14,10 +14,19 @@ import { useDnd5eData } from '../useData';
 import { Build5e } from './Build5e';
 import { LevelUp5e } from './LevelUp5e';
 import { Sheet5e } from './Sheet5e';
-import { RollsProvider } from '../useRolls';
+import { RollsProvider, type PartyRollContext } from '../useRolls';
 import { Spells5e } from './Spells5e';
 
-export function Editor5e({ c, onBack }: { c: Dnd5eCharacter; onBack: () => void }) {
+export function Editor5e({
+  c,
+  onBack,
+  party,
+}: {
+  c: Dnd5eCharacter;
+  onBack: () => void;
+  /** The party the sheet was opened from, if any: the table switch appears. */
+  party?: PartyRollContext;
+}) {
   const { t } = useTranslation('c-rmhcharacters');
   const d = useDnd5eData();
   const update = useRoster((s) => s.update);
@@ -105,7 +114,7 @@ export function Editor5e({ c, onBack }: { c: Dnd5eCharacter; onBack: () => void 
         panels={{
           build: <Build5e c={c} d={d} set={set} />,
           sheet: (
-            <RollsProvider characterId={c.id} system="5e" exhaustion={c.exhaustion}>
+            <RollsProvider characterId={c.id} system="5e" exhaustion={c.exhaustion} {...(party ? { party } : {})}>
               <Sheet5e c={c} d={d} set={set} />
             </RollsProvider>
           ),

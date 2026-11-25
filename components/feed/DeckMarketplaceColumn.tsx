@@ -8,6 +8,10 @@ import { Library, Search, Plus, Check, Loader2 } from'lucide-react';
 import { EmptyState } from'@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 import { StudyTabs } from'@/components/feed/StudyTabs';
+import { PageTabs } from '@/components/feed/PageTabs';
+import type { TabItem } from '@/components/ui/tabs';
+import { DeckRatingLine } from '@/components/study/DeckRating';
+import { isDeckSort, type DeckSort, type RatingDisplay } from '@/lib/study/deck-ratings';
 import { api } from '@/lib/contract/client';
 import { cloneDeckApi } from '@/lib/study/decks.contract';
 import { CardPicture } from '@/components/study/CardPicture';
@@ -26,6 +30,9 @@ interface MarketplaceDeck {
  editorCount?: number;
  /** The deck's first card with a picture (s08-15); absent when none has one. */
  preview?: { front: string; image: CardImage };
+ /** Ratings and copies (s12-08): the aggregate only, never who rated. */
+ rating: RatingDisplay;
+ copyCount: number;
 }
 
 interface MarketplaceData {
@@ -33,20 +40,40 @@ interface MarketplaceData {
  signedIn: boolean;
 }
 
-export function DeckMarketplaceColumn({ initialData }: { initialData: MarketplaceData }) {
+export function DeckMarketplaceColumn({
+ initialData,
+ sort: sortFromUrl = 'cards',
+ onSortChange,
+}: {
+ initialData: MarketplaceData;
+ /** The order in the URL (`?sort=`); the route owns it so the page can be shared and reloaded. */
+ sort?: DeckSort;
+ onSortChange?: (sort: DeckSort) => void;
+}) {
  const { t } = useTranslation('feed');
  const refusalText = useRefusalText();
  const [decks, setDecks] = useState<MarketplaceDeck[]>(initialData.decks);
  const [query, setQuery] = useState('');
+ const [sort, setSort] = useState<DeckSort>(sortFromUrl);
+ // The loader ran again for an order this page did not pick (back or forward): take its list and its order.
+ const [seen, setSeen] = useState(initialData);
+ if (seen !== initialData) {
+ setSeen(initialData);
+ if (sortFromUrl !== sort) {
+ setSort(sortFromUrl);
+ setDecks(initialData.decks);
+ setQuery('');
+ }
+ }
  const [loading, setLoading] = useState(false);
  // Per-deck clone status:'cloning'while the request is in flight,'done'once added.
  const [status, setStatus] = useState<Record<string,'cloning'|'done'>>({});
  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
- const search = useCallback(async (q: string) => {
+ const search = useCallback(async (q: string, order: DeckSort) => {
  setLoading(true);
  try {
- const data = await api(deckMarketplaceApi, { query: { q } });
+ const data = await api(deckMarketplaceApi, { query: { q, sort: order } });
  setDecks(data.decks);
  } catch {
  // A failed search keeps the decks on screen.
@@ -58,8 +85,22 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  const onQueryChange = (value: string) => {
  setQuery(value);
  clearTimeout(debounceRef.current);
- debounceRef.current = setTimeout(() => void search(value.trim()), 300);
+ debounceRef.current = setTimeout(() => void search(value.trim(), sort), 300);
  };
+
+ const changeSort = (next: string) => {
+ if (!isDeckSort(next) || next === sort) return;
+ setSort(next);
+ onSortChange?.(next);
+ clearTimeout(debounceRef.current);
+ void search(query.trim(), next);
+ };
+
+ const sortTabs: TabItem[] = [
+ { id: 'cards', label: t('sort-cards', { ns: 'deck-ratings', defaultValue: 'Most cards' }) },
+ { id: 'rated', label: t('sort-rated', { ns: 'deck-ratings', defaultValue: 'Best rated' }) },
+ { id: 'copied', label: t('sort-copied', { ns: 'deck-ratings', defaultValue: 'Most copied' }) },
+ ];
 
  const clone = async (deck: MarketplaceDeck) => {
  if (!initialData.signedIn) {
@@ -97,6 +138,13 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  <StudyTabs active="/study/browse"/>
 
  <div className="space-y-4 p-4">
+ <PageTabs
+ tabs={sortTabs}
+ value={sort}
+ onChange={changeSort}
+ idBase="deck-sort"
+ aria-label={t('sort-label', { ns: 'deck-ratings', defaultValue: 'Order decks by' })}
+ />
  <div className="relative">
  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-muted"/>
  <input
@@ -117,7 +165,12 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  })}
  />
  ) : (
- <div className={`grid gap-x-3 sm:grid-cols-2 ${loading ?'opacity-60':''}`}>
+ <div
+ role="tabpanel"
+ id={`deck-sort-panel-${sort}`}
+ aria-labelledby={`deck-sort-tab-${sort}`}
+ className={`grid gap-x-3 sm:grid-cols-2 ${loading ?'opacity-60':''}`}
+ >
  {decks.map((deck) => {
  const st = status[deck.id];
  const added = st ==='done'|| deck.alreadyCloned;
@@ -151,6 +204,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  })}`
  :''}
  </p>
+ <DeckRatingLine rating={deck.rating} copyCount={deck.copyCount} />
  <div className="mt-3">
  {deck.isOwn ? (
  <span className="text-xs font-medium text-site-text-muted">

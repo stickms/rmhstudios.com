@@ -57,7 +57,8 @@ export function filtersDecksByOwner(raw: string): boolean {
 }
 
 // `deck_editor` is the rule's own table, for the raw SQL that cannot call a helper.
-const ROLE_RULE = /\b(deckRole|requireDeckRole|studiedDeckWhere|readableDeckWhere|canReadDeck|deck_editor)\b/;
+const ROLE_RULE =
+  /\b(deckRole|requireDeckRole|studiedDeckWhere|readableDeckWhere|canReadDeck|activeEditorWhere|activeEditorSql|deck_editor)\b/;
 
 describe('DECK_ACCESS_PATHS', () => {
   const read = (file: string) => readFileSync(join(ROOT, file), 'utf8');
@@ -108,5 +109,20 @@ describe('DECK_ACCESS_PATHS', () => {
       expect(body, fn).not.toMatch(/deckRole|requireDeckRole/);
       expect(body, fn).toMatch(/where: \{ id: deckId, userId \}/);
     }
+  });
+
+  it('has no reader that filters a deck’s editors by hand (a banned editor must drop out, as in deckRole)', () => {
+    const offenders: string[] = [];
+    for (const file of files) {
+      if (file === 'lib/study/deck-access.server.ts') continue;
+      const src = stripComments(read(file));
+      // `editors: { some | none: { … } }` must be built by `activeEditorWhere`, never spelled out.
+      for (const m of src.matchAll(/\beditors:\s*\{\s*(some|none):\s*(.{0,40})/g)) {
+        if (!/^activeEditorWhere\(/.test(m[2] ?? '')) offenders.push(`${file}: editors.${m[1]}`);
+      }
+      // Raw SQL on the editors table is `activeEditorSql`'s alone.
+      if (/\bFROM\s+deck_editor\b/i.test(src)) offenders.push(`${file}: raw deck_editor`);
+    }
+    expect(offenders).toEqual([]);
   });
 });

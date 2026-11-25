@@ -752,6 +752,13 @@ model User {
   rmhTypeChallengeOptOut    RmhTypeChallengeOptOut? @relation("RmhTypeChallengeOptOut")
   // s11-16 rmhtube-subtitles
 
+  // Sprint 12 back-relations (one block per feature, docs/autonomous/sprint-12/plan.md)
+  // s12-01 party-rolls
+  rmhCharacterPartyRolls RmhCharacterPartyRoll[] @relation("RmhCharacterPartyRolls")
+
+  // s12-08 deck-ratings
+  deckRatings DeckRating[] @relation("DeckRatings")
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the nightly finalize-deletion sweep; partial in effect since the

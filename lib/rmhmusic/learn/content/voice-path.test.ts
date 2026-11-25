@@ -137,7 +137,11 @@ describe('needsVoiceRange', () => {
     const voiceLessons = VOICE_PATH.flatMap((u) => u.lessons);
     for (const l of voiceLessons)
       expect(needsVoiceRange(l), l.id).toBe(
-        !l.unit.startsWith('rhythm') && l.mode !== 'rhythm-basics' && l.mode !== 'key-signature',
+        !l.unit.startsWith('rhythm') &&
+          l.unit !== 'read-rhythms' &&
+          l.mode !== 'rhythm-basics' &&
+          l.mode !== 'rhythm-reading' &&
+          l.mode !== 'key-signature',
       );
     expect(needsVoiceRange(getLesson('voice-interval-steps'))).toBe(true);
     expect(needsVoiceRange(getLesson('staff-what-is-a-staff'))).toBe(false);

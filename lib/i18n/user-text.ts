@@ -174,6 +174,35 @@ export const USER_TEXT_RENDERERS: readonly UserTextRenderer[] = [
   { file: 'components/rmhtube/SubtitleSettings.tsx', kind: 'input' },
 
   // s11-19 s10-gaps
+
+  // Sprint 12 (docs/autonomous/sprint-12/plan.md §Anchors)
+  // s12-01 party-rolls
+  { file: 'features/rmhcharacters/ui/TableRolls.tsx', kind: 'inline' },
+
+  // s12-03 friend-ghosts
+  { file: 'components/neon-driftway/FriendGhostPicker.tsx', kind: 'inline' },
+
+  // s12-06 connections-maker
+  { file: 'components/party/ConnectionsPages.tsx', kind: 'block' },
+  { file: 'components/party/ConnectionsMine.tsx', kind: 'block' },
+  { file: 'components/party/ConnectionsEditor.tsx', kind: 'input' },
+  { file: 'components/party/ConnectionsPractice.tsx', kind: 'block' },
+
+  // s12-07 profile-made
+  { file: 'components/profile/plus/MadeModule.tsx', kind: 'block' },
+
+  // s12-08 deck-ratings
+
+  // s12-09 card-history
+  { file: 'components/study/CardHistoryDialog.tsx', kind: 'block' },
+
+  // s12-10 homes-compare
+  { file: 'components/homes/FavoriteNote.tsx', kind: 'input' },
+  { file: 'components/homes/CompareTable.tsx', kind: 'block' },
+
+  // s12-14 admin-deletions
+
+  // s12-16 member-reports
 ];
 
 /**
@@ -255,7 +284,27 @@ export const USER_TEXT_EXEMPT: Readonly<Record<string, string>> = {
   'components/create/': 'storefront copy is written by the site',
   'components/discovery/': 'feed settings the member edits for themselves',
   'components/sohumtracker/': 'the owner-run tracker',
-  'components/homes/': 'listings, a separate surface with its own review',
+  // Not the whole folder (s12 10): FavoriteNote and CompareTable render a member's own note and are listed above.
+  'components/homes/AffordabilityPanel.tsx': 'listings, a separate surface with its own review',
+  'components/homes/DistanceFilter.tsx': 'listings, a separate surface with its own review',
+  'components/homes/FavoriteButton.tsx': 'listings, a separate surface with its own review',
+  'components/homes/FiltersBar.tsx': 'listings, a separate surface with its own review',
+  'components/homes/ImageUploader.tsx': 'listings, a separate surface with its own review',
+  'components/homes/ListingCard.tsx': 'listings, a separate surface with its own review',
+  'components/homes/ListingDetailView.tsx': 'listings, a separate surface with its own review',
+  'components/homes/ListingForm.tsx': 'listings, a separate surface with its own review',
+  'components/homes/ListingGallery.tsx': 'listings, a separate surface with its own review',
+  'components/homes/ListingGrid.tsx': 'listings, a separate surface with its own review',
+  'components/homes/ListingsMap.tsx': 'listings, a separate surface with its own review',
+  'components/homes/LocationSearch.tsx': 'listings, a separate surface with its own review',
+  'components/homes/PriceHistory.tsx': 'listings, a separate surface with its own review',
+  'components/homes/RentSplitCalculator.tsx': 'listings, a separate surface with its own review',
+  'components/homes/RentSplitPage.tsx': 'listings, a separate surface with its own review',
+  'components/homes/RentSplitPanel.tsx': 'listings, a separate surface with its own review',
+  'components/homes/RoommateMatch.tsx': 'listings, a separate surface with its own review',
+  'components/homes/SavedShelf.tsx': 'listings, a separate surface with its own review',
+  'components/homes/WatchButton.tsx': 'listings, a separate surface with its own review',
+  'components/homes/WatchManager.tsx': 'listings, a separate surface with its own review',
   'components/calendar/': 'poll text of a separate surface',
   'components/posts-plus/': "the member's own time capsules",
   'components/daily-puzzles/': 'app tier, numbers and names only',

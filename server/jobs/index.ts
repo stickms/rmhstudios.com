@@ -87,6 +87,7 @@ import {
   registerClipSweepCron,
   registerMediaSweepCron,
 } from '@/lib/media/sweep-jobs.server';
+import { REVISION_PRUNE_QUEUE, registerRevisionPruneCron } from '@features/slice-it/engine/revision-prune.server';
 import { HANDLE_CHANGE_QUEUE, registerHandleChangeCron } from '@/lib/account/handle-change-jobs.server';
 import { MUTE_EXPIRY_QUEUE, registerMuteExpiryCron } from '@/lib/moderation/mute-expiry-jobs.server';
 import {
@@ -109,6 +110,7 @@ import {
 import { registerDiscordBot, stopDiscordBot } from '../discord-bot/jobs';
 import { RECURRING_QUEUE, registerRecurringThreadCron } from '@/lib/communities/recurring-jobs.server';
 import { READ_ALONG_QUEUE, registerReadAlongCron } from '@/lib/communities/read-along-jobs.server';
+import { BILLING_SYNC_QUEUE, registerBillingSyncWorker } from '@/lib/account/deletion-billing-jobs.server';
 
 // Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
 installProcessGuards({ service: 'jobs' });
@@ -343,6 +345,15 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
 
   // s11-12 type-challenges
   { queue: TYPE_CHALLENGE_EXPIRY_QUEUE, register: registerTypeChallengeExpiryCron },
+
+  // Sprint 12 (docs/autonomous/sprint-12/plan.md §Anchors)
+  // s12-04 chart-history
+  // s12-04: daily at 03:41 UTC, delete old autosaved Slice It chart revisions (named, published, the newest 30 and one a day for 30 days are kept) in batches of 1,000.
+  { queue: REVISION_PRUNE_QUEUE, register: registerRevisionPruneCron },
+
+  // s12-18 deletion-billing
+  // s12-18: a work queue fed by a deletion request and by signing back in (one job per member); stops or resumes the membership to match the member's latest choice, retried with backoff.
+  { queue: BILLING_SYNC_QUEUE, register: registerBillingSyncWorker },
 ];
 
 /**

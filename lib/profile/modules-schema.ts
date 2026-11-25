@@ -8,6 +8,7 @@
  */
 import { z } from 'zod';
 
+import { MADE_KINDS } from './made';
 import { MAX_MODULES, TOP_FOUR_SIZE, type ModuleKind } from './modules';
 
 export const topFourItemSchema = z.object({
@@ -33,6 +34,10 @@ const configByKind = {
   webrings: z.object({}).strip(),
   endorsements: z.object({}).strip(),
   counter: z.object({}).strip(),
+  // The kinds of work the module lists; all ticked by default.
+  made: z.object({
+    kinds: z.array(z.enum(MADE_KINDS)).max(MADE_KINDS.length).default([...MADE_KINDS]),
+  }),
 } as const;
 
 export const moduleSchema = z.discriminatedUnion('kind', [
@@ -81,6 +86,10 @@ export const moduleSchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('counter'),
     config: configByKind.counter.optional().default({}),
+  }),
+  z.object({
+    kind: z.literal('made'),
+    config: configByKind.made.optional().default({ kinds: [...MADE_KINDS] }),
   }),
 ]);
 

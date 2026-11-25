@@ -128,5 +128,24 @@ export function deviceStoreText(t: TFunction): Record<string, DeviceStoreText> {
         defaultValue: 'Whether Listen is on in your reviews and how long it waits before showing the answer',
       }),
     },
+
+    // Sprint 12
+    // s12-03 friend-ghosts
+    'ndw-ghost-friend': {
+      label: t('store-ndw-ghost-friend', { ns: 'device-data', defaultValue: 'Neon Driftway ghost friend' }),
+      hint: t('store-ndw-ghost-friend-hint', {
+        ns: 'device-data',
+        defaultValue: 'The friend whose ghost you race on each level',
+      }),
+    },
+
+    // s12-10 homes-compare
+    'homes-compare-place': {
+      label: t('store-homes-compare-place', { ns: 'device-data', defaultValue: 'Homes comparison place' }),
+      hint: t('store-homes-compare-place-hint', {
+        ns: 'device-data',
+        defaultValue: 'The place you entered to measure distance to when comparing saved homes',
+      }),
+    },
   };
 }

@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { personaVisibleTo } from '@/lib/personas/moderation.server';
 
 export interface PersonaChatPayload {
   persona: {
@@ -11,6 +12,8 @@ export interface PersonaChatPayload {
     avatarUrl: string | null;
     chatCount: number;
     isOwner: boolean;
+    /** s12-16: a moderator took this persona down; only its owner ever sees it, so the page says so. */
+    removedByModerator: boolean;
     owner: ReturnType<typeof resolveUser>;
   };
   messages: { role: string; content: string }[];
@@ -40,6 +43,7 @@ export async function getPersonaChat(
       emoji: true,
       avatarUrl: true,
       isPublic: true,
+      moderatedAt: true,
       chatCount: true,
       ownerId: true,
       owner: { select: userDisplaySelect },
@@ -48,7 +52,8 @@ export async function getPersonaChat(
   if (!persona) return null;
 
   const isOwner = userId === persona.ownerId;
-  if (!persona.isPublic && !isOwner) return null;
+  // s12-16 member-reports: a persona a moderator took down is 404 to everyone but its owner.
+  if (!personaVisibleTo(persona, userId)) return null;
 
   let messages: { role: string; content: string }[] = [];
   if (userId) {
@@ -70,6 +75,7 @@ export async function getPersonaChat(
       avatarUrl: persona.avatarUrl,
       chatCount: persona.chatCount,
       isOwner,
+      removedByModerator: persona.moderatedAt !== null,
       owner: resolveUser(persona.owner),
     },
     messages,

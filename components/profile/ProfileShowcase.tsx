@@ -24,6 +24,8 @@ import {
 import type { UserStatus } from '@/lib/profile/status';
 import type { WishlistItemView } from '@/lib/wishlist/types';
 import { SliceItModule } from '@/components/profile/modules/SliceItModule';
+import { MadeSettings } from '@/components/profile/plus/MadeSettings';
+import { MADE_KINDS, type MadeKind } from '@/lib/profile/made';
 import { api } from '@/lib/contract/client';
 import { profileModuleLabels } from '@/components/profile/module-labels';
 import { setProfileLayoutApi } from '@/lib/profile/profile-extras.contract';
@@ -55,6 +57,13 @@ function defaultModule(kind: ModuleKind): ProfileModule {
       kind: 'top-four',
       config: {
         items: [],
+      },
+    };
+  if (kind === 'made')
+    return {
+      kind: 'made',
+      config: {
+        kinds: [...MADE_KINDS],
       },
     };
   return {
@@ -123,6 +132,21 @@ export function ProfileShowcase({
               kind: 'about',
               config: {
                 text,
+              },
+            }
+          : m,
+      ),
+    );
+  }
+
+  function setMadeKinds(index: number, kinds: MadeKind[]) {
+    setModules((prev) =>
+      prev.map((m, i) =>
+        i === index && m.kind === 'made'
+          ? {
+              kind: 'made',
+              config: {
+                kinds,
               },
             }
           : m,
@@ -282,6 +306,13 @@ export function ProfileShowcase({
                 className="mt-3"
                 rows={3}
               />
+            ) : null,
+          )}
+
+          {/* Made here: which kinds of work it lists. */}
+          {modules.map((m, i) =>
+            m.kind === 'made' ? (
+              <MadeSettings key={`made-cfg-${i}`} kinds={m.config.kinds} onChange={(next) => setMadeKinds(i, next)} />
             ) : null,
           )}
 

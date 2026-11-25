@@ -45,12 +45,15 @@ import { isFullscreen, isLowPowerDevice, supportsWebGL, toggleFullscreen } from 
 import { useGameSession } from '@/hooks/useGameSession';
 import { api } from '@/lib/contract/client';
 import { getGhostApi } from '@/lib/game/replay.contract';
+import { HttpError } from '@/lib/http';
+import { toast } from '@/lib/toast';
 
 // U14 — loaded only when a player opens photo mode.
 const PhotoMode = lazy(() => import('@/components/games/PhotoMode'));
 import {
   GhostPlayer,
   GhostRecorder,
+  readGhostFriend,
   readGhostMode,
   writeGhostMode,
   type GhostMode,
@@ -196,7 +199,12 @@ export function NeonDriftwayGame() { const fmt = useLocaleFormat();
     (levelId: LevelId, mode: GhostMode) => {
       ghostPlayerRef.current = null;
       if (mode === 'off') return;
-      void api(getGhostApi, { query: { game: 'neon-driftway', level: levelId, vs: mode } })
+      // "A friend" races the friend remembered for this level; with none, the run has no ghost.
+      const friend = mode === 'friend' ? readGhostFriend(levelId) : null;
+      if (mode === 'friend' && !friend) return;
+      void api(getGhostApi, {
+        query: { game: 'neon-driftway', level: levelId, vs: mode, ...(friend ? { friend: friend.userId } : {}) },
+      })
         .then((body) => {
           const ghost = body.ghost;
           const game = gameRef.current;
@@ -204,10 +212,23 @@ export function NeonDriftwayGame() { const fmt = useLocaleFormat();
           const name =
             mode === 'pb'
               ? t('ghost-pb-label', { defaultValue: 'Your best' })
-              : ghost.owner.name || ghost.owner.handle || t('ghost-top-label', { defaultValue: 'World #1' });
+              : ghost.owner.name ||
+                ghost.owner.handle ||
+                (mode === 'friend'
+                  ? friend?.name || t('ghost-label', { ns: 'friend-ghosts', defaultValue: 'Friend' })
+                  : t('ghost-top-label', { defaultValue: 'World #1' }));
           ghostPlayerRef.current = new GhostPlayer(ghost.data as GhostTrace, name);
         })
-        .catch(() => {});
+        .catch((err: unknown) => {
+          // A friend who no longer qualifies is refused: the run starts with no ghost and says why in one line.
+          if (friend && err instanceof HttpError && err.status === 404) {
+            toast.message(
+              friend.name
+                ? t('missing', { ns: 'friend-ghosts', defaultValue: 'No ghost from {{name}} on this level', name: friend.name })
+                : t('missing-anon', { ns: 'friend-ghosts', defaultValue: 'No ghost from that friend on this level' }),
+            );
+          }
+        });
     },
     [t],
   );

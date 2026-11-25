@@ -6,7 +6,7 @@ import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { prisma } from '@/lib/prisma.server';
 import { generateHandle } from '@/lib/handle.server';
-import Stripe from 'stripe';
+import { getStripeClient } from '@/lib/billing/stripe-client.server';
 import { stripe } from '@better-auth/stripe';
 import { captcha, customSession, emailOTP, twoFactor } from 'better-auth/plugins';
 import { passkey } from '@better-auth/passkey';
@@ -58,7 +58,7 @@ import { CREDENTIAL_PROVIDER_ID } from '@/lib/auth/providers';
 // chose for email (see `emailConfigured` below). A billing feature being
 // unavailable when it is unconfigured is correct; the homepage being unavailable
 // is not.
-const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_unconfigured');
+const stripeClient = getStripeClient();
 
 // Unconfigured billing must be LOUD in production even though it must not take
 // the site down (above). One structured line at boot, so a deploy that lost the

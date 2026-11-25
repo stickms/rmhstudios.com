@@ -658,6 +658,23 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   // (/rmhtype/challenges, 'personal')
   '/rmhtype/challenges': 'personal', // signed-in; a member's own challenges
 
+  // Sprint 12 (docs/autonomous/sprint-12/plan.md §Anchors)
+  // s12-06 connections-maker
+  // (/connections/mine, 'personal')
+  '/connections/mine': 'personal', // a member's own grids and drafts, behind sign-in
+
+  // s12-10 homes-compare
+  // (/homes/compare, 'personal')
+  '/homes/compare': 'personal', // the member's own saved homes side by side, behind sign-in
+
+  // s12-14 admin-deletions
+  // (/admin/deletions, 'admin')
+  '/admin/deletions': 'admin',
+
+  // s12-15 admin-homes
+  // (/admin/homes, 'admin')
+  '/admin/homes': 'admin',
+
   '/account/connect': 'personal', // the account-merge step after a new sign-in; needs a session
   '/settings': 'personal',
   '/settings/appearance': 'personal',

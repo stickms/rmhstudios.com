@@ -80,6 +80,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/replays/:id` | `DELETE` `GET` `PATCH` | `lib/game/api/replays.$id.server.ts` |
 | `/api/replays/board` | `GET` | `lib/game/api/replays.board.server.ts` |
 | `/api/replays/ghost` | `GET` `POST` | `app/routes/api/replays/ghost.ts` |
+| `/api/replays/ghost/friends` | `GET` | `lib/game/api/replays.ghost.friends.server.ts` |
 | `/api/replays/mine` | `GET` | `lib/game/api/replays.mine.server.ts` |
 
 ## `/api/requests`
@@ -188,6 +189,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/rmhcharacters/parties/:id/leave` | `POST` | `features/rmhcharacters/api/rmhcharacters.parties.$id.leave.server.ts` |
 | `/api/rmhcharacters/parties/:id/members/:userId` | `DELETE` | `features/rmhcharacters/api/rmhcharacters.parties.$id.members.$userId.server.ts` |
 | `/api/rmhcharacters/parties/:id/order` | `PUT` | `features/rmhcharacters/api/rmhcharacters.parties.$id.order.server.ts` |
+| `/api/rmhcharacters/parties/:id/rolls` | `GET` `POST` | `features/rmhcharacters/api/rmhcharacters.parties.$id.rolls.server.ts` |
 | `/api/rmhcharacters/parties/:id/sharing` | `PUT` | `features/rmhcharacters/api/rmhcharacters.parties.$id.sharing.server.ts` |
 | `/api/rmhcharacters/parties/:id/sheet/:userId` | `GET` | `features/rmhcharacters/api/rmhcharacters.parties.$id.sheet.$userId.server.ts` |
 | `/api/rmhcharacters/party-join` | `GET` `POST` | `features/rmhcharacters/api/rmhcharacters.party-join.server.ts` |

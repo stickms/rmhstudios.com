@@ -403,6 +403,29 @@ function AdminDashboardPage() {
                 'Open reports, quiet moderators and fast growth for every community. Take one out of discovery with a reason its moderators read.',
             })}
           />
+
+          {/* Sprint 12 admin tools */}
+          {/* s12-14 admin-deletions */}
+          <AdminHubCard
+            to="/admin/deletions"
+            title={t('card-title', { ns: 'admin-deletions', defaultValue: 'Account deletions' })}
+            description={t('card-description', {
+              ns: 'admin-deletions',
+              defaultValue:
+                'Accounts waiting out their grace period, deletions that are overdue or failing, and a way to try an overdue one again.',
+            })}
+          />
+
+          {/* s12-15 admin-homes */}
+          <AdminHubCard
+            to="/admin/homes"
+            title={t('card-title', { ns: 'admin-homes', defaultValue: 'Homes feeds' })}
+            description={t('card-description', {
+              ns: 'admin-homes',
+              defaultValue:
+                'Every RMHHomes feed with its status and last error, the latest runs, and controls to pause a feed, add one or run a scrape.',
+            })}
+          />
         </div>
       </AdminBody>
     </PageLayout>

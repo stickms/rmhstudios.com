@@ -1,9 +1,9 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useRefusalText } from '@/components/errors/useRefusalText';
-import { useEffect, useRef, useState, useCallback } from'react';
+import { lazy, Suspense, useEffect, useRef, useState, useCallback } from'react';
 import { useTranslation } from'react-i18next';
 import { Link } from'@tanstack/react-router';
-import { Loader2, Bot, Send, ArrowLeft, Trash2 } from'lucide-react';
+import { Loader2, Bot, Send, ArrowLeft, Trash2, Flag } from'lucide-react';
 import { Button } from'@/components/ui/button';
 import { EmptyState } from'@/components/ui/empty-state';
 import { Spinner } from'@/components/ui/spinner';
@@ -18,6 +18,11 @@ import { AdminModerateButton } from '@/components/moderation/moderation-ui';
 import { NoGlobe } from '@/components/shell/NoGlobe';
 import './conversation/conversation.css';
 
+// s12-16 member-reports: the dialog carries a zod schema, so it loads only when a member opens it.
+const ReportDialog = lazy(() =>
+ import('@/components/moderation/ReportDialog').then((m) => ({ default: m.ReportDialog })),
+);
+
 interface Msg {
  role: string;
  content: string;
@@ -31,6 +36,8 @@ interface Persona {
  avatarUrl?: string | null;
  chatCount: number;
  isOwner: boolean;
+ /** A moderator took this persona down (only its owner ever loads it). */
+ removedByModerator?: boolean;
  owner: { name: string | null; handle: string | null };
 }
 
@@ -49,6 +56,7 @@ export function PersonaChatColumn({
  const { t } = useTranslation('feed');
  const refusalText = useRefusalText();
  const confirm = useConfirm();
+ const [reporting, setReporting] = useState(false);
  // Seed from the loader when it ran (even a `null`result is a definitive
  // not-found seed) so the column paints immediately without a mount fetch.
  const seeded = useRef(initialData !== undefined);
@@ -205,6 +213,18 @@ export function PersonaChatColumn({
  <Trash2 aria-hidden />
  </Button>
  )}
+ {signedIn && !persona.isOwner && (
+ <Button
+ variant="ghost"
+ size="icon"
+ onClick={() => setReporting(true)}
+ className="text-site-text-muted"
+ title={t('report-persona', { ns: 'member-reports', defaultValue: 'Report this persona' })}
+ aria-label={t('report-persona', { ns: 'member-reports', defaultValue: 'Report this persona' })}
+ >
+ <Flag aria-hidden />
+ </Button>
+ )}
  {!persona.isOwner && (
  <AdminModerateButton
  entityType="persona"
@@ -217,6 +237,16 @@ export function PersonaChatColumn({
  />
  )}
  </div>
+ {persona.removedByModerator && (
+ <p className="t-body border-b border-site-border px-4 py-3 text-site-text-muted">
+ {t('removed-persona', { ns: 'member-reports', defaultValue: 'Removed by a moderator. Only you can see this persona now, and it cannot be made public again.' })}
+ </p>
+ )}
+ {reporting && (
+ <Suspense fallback={null}>
+ <ReportDialog open onOpenChange={setReporting} entityType="persona" entityId={id} />
+ </Suspense>
+ )}
 
  <div ref={scrollRef} className="conversation__thread flex flex-col gap-3 pt-3">
  {greetingShown && (

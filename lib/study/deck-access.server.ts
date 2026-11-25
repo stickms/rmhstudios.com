@@ -7,7 +7,7 @@
  *
  * A pending invitation gives no access, and neither does an expired or removed one: the row is the grant.
  */
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import type { DeckRole } from '@/lib/study/deck-access';
 
@@ -50,16 +50,37 @@ export async function requireDeckRole(
   return role !== null && allowed.includes(role) ? role : null;
 }
 
-/** The decks a member studies and edits: their own and the ones they are an accepted editor of. */
-export const studiedDeckWhere = (userId: string) =>
+/**
+ * An accepted `DeckEditor` row of `userId` whose member is not banned now (`bannedUntil` null or past): the editor
+ * branch every filter shares, so it says what `deckRole` says. A hand-written `editors: { some: { userId … } }` is the
+ * bug this closes (a banned co-editor kept the deck in their queue and statistics).
+ */
+export const activeEditorWhere = (userId: string, now: Date = new Date()) =>
   ({
-    OR: [{ userId }, { editors: { some: { userId, status: 'accepted' } } }],
+    userId,
+    status: 'accepted',
+    user: { OR: [{ bannedUntil: null }, { bannedUntil: { lte: now } }] },
+  }) satisfies Prisma.DeckEditorWhereInput;
+
+/**
+ * `activeEditorWhere` as a raw SQL condition on the deck aliased `d` (the table `deck_editor`, the table `user`, and
+ * their quoted camelCase columns, read from the schema's `@@map`): true when the member is an accepted editor of `d`
+ * and not banned now.
+ */
+export const activeEditorSql = (userId: string) =>
+  Prisma.sql`EXISTS (SELECT 1 FROM deck_editor e WHERE e."deckId" = d."id" AND e."userId" = ${userId} AND e."status" = 'accepted'
+    AND NOT EXISTS (SELECT 1 FROM "user" u WHERE u."id" = e."userId" AND u."bannedUntil" > now()))`;
+
+/** The decks a member studies and edits: their own and the ones they are an accepted editor of. */
+export const studiedDeckWhere = (userId: string, now: Date = new Date()) =>
+  ({
+    OR: [{ userId }, { editors: { some: activeEditorWhere(userId, now) } }],
   }) satisfies Prisma.FlashcardDeckWhereInput;
 
 /** A deck the member may read: a public one, their own, or one they edit. A deck made private drops out. */
-export const readableDeckWhere = (userId: string) =>
+export const readableDeckWhere = (userId: string, now: Date = new Date()) =>
   ({
-    OR: [{ isPublic: true }, { userId }, { editors: { some: { userId, status: 'accepted' } } }],
+    OR: [{ isPublic: true }, { userId }, { editors: { some: activeEditorWhere(userId, now) } }],
   }) satisfies Prisma.FlashcardDeckWhereInput;
 
 /** Whether `userId` may read a deck row already loaded with its owner and visibility (by id: block and ban aware). */

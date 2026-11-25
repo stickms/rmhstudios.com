@@ -20,6 +20,8 @@ interface RsvpButtonProps {
   /** Disable interaction (e.g. canceled or past events). */
   disabled?: boolean;
   onChange?: (result: RsvpResult) => void;
+  /** Called when the server refused the RSVP (or it failed), so a list can read what the server decided. */
+  onRefused?: () => void;
 }
 
 /**
@@ -36,6 +38,7 @@ export function RsvpButton({
   waitlistPosition = null,
   disabled,
   onChange,
+  onRefused,
 }: RsvpButtonProps) {
   const { t } = useTranslation('site');
   const { t: tr } = useTranslation('event-waitlist');
@@ -60,6 +63,7 @@ export function RsvpButton({
       setLeftWaitlist(withdrawing && next === 'waitlist');
       onChange?.(result);
     } catch (e) {
+      onRefused?.();
       const refusal = sanctionRefusalText(e);
       if (e instanceof HttpError && e.status === 401) {
         toast.error(t('sign-in-to-rsvp', { defaultValue: 'Sign in to RSVP.' }));

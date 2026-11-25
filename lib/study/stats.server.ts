@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
+import { activeEditorSql } from '@/lib/study/deck-access.server';
 import type { DeckStatsRow, StudyStats } from '@/lib/study/stats.contract';
 import {
   FORECAST_DAYS,
@@ -14,13 +15,6 @@ import {
 
 /** Bound on the rows an account export carries, as the other exports bound theirs. */
 const EXPORT_CAP = 50_000;
-
-/**
- * "The member is an accepted editor of deck `d`" as a raw SQL subquery (s11-10): the table `deck_editor` and its quoted
- * camelCase columns, read from the schema's `@@map`. A pending or removed row is not in it.
- */
-const editorOf = (userId: string) =>
-  Prisma.sql`(SELECT 1 FROM deck_editor e WHERE e."deckId" = d.id AND e."userId" = ${userId} AND e."status" = 'accepted')`;
 
 interface DayRow {
   day: string;
@@ -108,9 +102,9 @@ export async function getStudyStats(
       FROM flashcard_deck d
       JOIN flashcard c ON c."deckId" = d.id AND NOT (c.kind = 'cloze' AND c."sourceId" IS NULL) AND NOT (c.kind = 'occlusion' AND c."sourceId" IS NULL)
       LEFT JOIN flashcard_review r ON r."cardId" = c.id AND r."userId" = ${userId}
-      WHERE (d."isPublic" OR d."userId" = ${userId} OR EXISTS ${editorOf(userId)})
+      WHERE (d."isPublic" OR d."userId" = ${userId} OR ${activeEditorSql(userId)})
         AND (d."userId" = ${userId}
-             OR EXISTS ${editorOf(userId)}
+             OR ${activeEditorSql(userId)}
              OR EXISTS (SELECT 1 FROM flashcard_review x
                         JOIN flashcard xc ON xc.id = x."cardId"
                         WHERE x."userId" = ${userId} AND xc."deckId" = d.id))

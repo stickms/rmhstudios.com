@@ -1001,15 +1001,21 @@ describe('due counts', () => {
   });
 });
 
-describe('reviews are not writable', () => {
+describe('reviews are written only through the explicit scope (s12-12)', () => {
   const dir = join(process.cwd(), 'app/routes/api/v1/me/decks');
   const walk = (d: string): string[] =>
     readdirSync(d).flatMap((n) => (statSync(join(d, n)).isDirectory() ? walk(join(d, n)) : [join(d, n)]));
 
-  it('has no review route and no review write in the v1 study code', () => {
+  it('has exactly the two review routes, and no review row is written by the v1 study code itself', () => {
     // Match the path below the routes folder: a checkout whose own path says "review" must not fail the test.
     const files = walk(dir);
-    expect(files.filter((f) => /review|grade/i.test(f.slice(dir.length)))).toEqual([]);
+    expect(
+      files
+        .map((f) => f.slice(dir.length).replace(/\\/g, '/'))
+        .filter((f) => /review|grade/i.test(f))
+        .sort(),
+    ).toEqual(['/$id/cards/$cardId/review.ts', '/$id/review.ts']);
+    // A grade goes through `reviewCard` (the site's own path), never a write written here.
     for (const file of [...files, join(process.cwd(), 'lib/api/v1/study.server.ts')]) {
       expect(readFileSync(file, 'utf8')).not.toMatch(
         /flashcardReview\.(create|upsert|update|delete)|flashcardReviewLog/,
@@ -1017,9 +1023,13 @@ describe('reviews are not writable', () => {
     }
   });
 
-  it('the registry documents no review endpoint', async () => {
+  it('the registry documents the two review endpoints, the grade one under write:study-reviews', async () => {
     const { ENDPOINTS } = await import('@/lib/api/registry');
-    expect(ENDPOINTS.filter((e) => e.path.includes('/me/decks') && /review|grade/i.test(e.path))).toEqual([]);
-    expect(ENDPOINTS.filter((e) => e.path.includes('/me/decks')).length).toBe(11);
+    const review = ENDPOINTS.filter((e) => e.path.includes('/me/decks') && /review|grade/i.test(e.path));
+    expect(review.map((e) => `${e.method} ${e.path} ${e.scope}`).sort()).toEqual([
+      'GET /api/v1/me/decks/{id}/review read:study',
+      'POST /api/v1/me/decks/{id}/cards/{cardId}/review write:study-reviews',
+    ]);
+    expect(ENDPOINTS.filter((e) => e.path.includes('/me/decks')).length).toBe(13);
   });
 });

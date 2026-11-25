@@ -564,7 +564,10 @@ export function useProjectSession(): ProjectSession {
     async (data: Project, copyName: string): Promise<boolean> => {
       if (!(await canDiscard())) return false;
       const name = copyName.trim().slice(0, MAX_PROJECT_NAME) || 'Untitled Project';
-      const copy = copyFromShare(data, { name });
+      const copy = copyFromShare(data, {
+        name,
+        audioTrackName: (n) => t('shared-audio-track', { defaultValue: 'Audio track {{n}}', n }),
+      });
       applyProject(copy, name);
       if (!(await writeLocal())) {
         toast.error(t('save-failed', { defaultValue: 'Could not save this project on this device.' }));

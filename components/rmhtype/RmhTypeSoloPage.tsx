@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { SoloSourcePicker, SourcePracticeNote } from '@/components/rmhtype/SoloSourcePicker';
 import { autoIndent, backspaceIndent, type SoloSource } from '@/lib/rmhtype/sources';
 import { formatSoloResult } from '@/lib/rmhtype/result-text';
+import { RunReasonLine } from '@/components/rmhtype/RunReasonLine';
 import { isTypingTarget } from '@/lib/shortcuts/registry';
 import { useArrival } from '@/components/ui/arrive';
 import { GHOST_STEP_MS, buildSamples, ghostPositionAt, textPassageId } from '@/lib/rmhtype/ghost';
@@ -700,6 +701,8 @@ export default function RmhTypeSolo() {
                     defaultValue: "Practice run on a written-to-order passage — not posted to the leaderboard.",
                   })}
                 </p>
+              ) : soloResult.reason ? (
+                <RunReasonLine reason={soloResult.reason} />
               ) : soloResult.scorePosted === false ? (
                 <p className="text-sm text-app-danger mb-4">
                   {t("score-not-posted", { defaultValue: "Score not posted — 90% accuracy required for leaderboard" })}

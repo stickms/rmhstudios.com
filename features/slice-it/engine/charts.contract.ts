@@ -5,7 +5,12 @@
  * The autosave PATCH (batch 9) is called with `keepalive` on the unload path.
  */
 import { endpoint } from '@/lib/contract/endpoint';
-import type { ChartDto, ChartPatchInput, ChartRevisionDto } from '@features/slice-it/engine/editor/api-schemas';
+import type {
+  ChartDto,
+  ChartPatchInput,
+  ChartRevisionDetailDto,
+  ChartRevisionDto,
+} from '@features/slice-it/engine/editor/api-schemas';
 
 /** Seed (or fetch) the author's charts for a song: one row per difficulty. */
 export const seedChartsApi = endpoint<{
@@ -42,10 +47,22 @@ export const publishChartApi = endpoint<{
 });
 
 export const listChartRevisionsApi = endpoint<{
+  query: {
+    /** 1 to 50; the route's own default is 20. The Versions panel asks for 50. */
+    limit?: number;
+  };
   res: {
     revisions: ChartRevisionDto[];
   };
 }>()({
   method: 'GET',
   path: '/api/slice-it/charts/$id/revisions',
+});
+
+/** The notes of one revision, for the editor's Preview and Restore. The author only. */
+export const getChartRevisionApi = endpoint<{
+  res: ChartRevisionDetailDto;
+}>()({
+  method: 'GET',
+  path: '/api/slice-it/charts/$id/revisions/$revisionId',
 });

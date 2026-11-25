@@ -3,7 +3,7 @@
  * the prune. `logModAction` takes the transaction client of the action it records, so a
  * logged action always happened and an action is never unlogged.
  */
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { userChipSelect } from '@/lib/user-display';
 import {
@@ -201,19 +201,32 @@ export async function listPublicModLog(
   entries: PublicModLogEntryDTO[];
   nextCursor: string | null;
 }> {
+  // An event row is public only while its event is: an invite-only or draft event, and one that no longer
+  // exists, leave the public log (the moderators' log keeps every row; none is deleted). The exclusion is in the
+  // query, so a page is full whenever more public rows exist. The tables and quoted columns are the schema's `@@map`s
+  // (`community_mod_action`, `event`).
+  const found = await prisma.$queryRaw<{ id: bigint }[]>`
+    SELECT m."id"
+    FROM community_mod_action m
+    WHERE m."communityId" = ${communityId}
+      AND m."action" = ANY(${[...PUBLIC_MOD_ACTIONS]}::text[])
+      ${cursor ? Prisma.sql`AND m."id" < ${BigInt(cursor)}` : Prisma.empty}
+      AND (m."action" <> ALL(${[...EVENT_MOD_ACTIONS]}::text[])
+           OR EXISTS (SELECT 1 FROM event e WHERE e."id" = m."targetId" AND e."visibility" = 'PUBLIC'))
+    ORDER BY m."createdAt" DESC, m."id" DESC
+    LIMIT ${MOD_LOG_PAGE_SIZE + 1}`;
+  const ids = (Array.isArray(found) ? found : []).map((r) => r.id);
+  const pageIds = ids.slice(0, MOD_LOG_PAGE_SIZE);
+  if (pageIds.length === 0) return { entries: [], nextCursor: null };
   const rows = await prisma.communityModAction.findMany({
     where: {
       communityId,
       action: {
         in: [...PUBLIC_MOD_ACTIONS],
       },
-      ...(cursor
-        ? {
-            id: {
-              lt: BigInt(cursor),
-            },
-          }
-        : {}),
+      id: {
+        in: pageIds,
+      },
     },
     orderBy: [
       {
@@ -223,7 +236,7 @@ export async function listPublicModLog(
         id: 'desc',
       },
     ],
-    take: MOD_LOG_PAGE_SIZE + 1,
+    take: pageIds.length,
     select: {
       id: true,
       action: true,
@@ -231,34 +244,16 @@ export async function listPublicModLog(
       ruleTitle: true,
       reason: true,
       createdAt: true,
-      // Read only to look an event's visibility up; `toPublicEntry` never returns it.
+      // Read only for the event rows' visibility in the query above; `toPublicEntry` never returns it.
       targetId: true,
     },
   });
-  const page = rows.slice(0, MOD_LOG_PAGE_SIZE);
-  // An event row is public only while its event is: an invite-only or draft event, and one that no longer
-  // exists, leave the public log (the moderators' log keeps every row; none is deleted).
-  const eventIds = [
-    ...new Set(page.flatMap((r) => (EVENT_MOD_ACTIONS.has(r.action) && r.targetId ? [r.targetId] : []))),
-  ];
-  const publicEvents = new Set<string>(
-    eventIds.length === 0
-      ? []
-      : (
-          await prisma.event.findMany({
-            where: { id: { in: eventIds }, visibility: 'PUBLIC' },
-            select: { id: true },
-            take: eventIds.length,
-          })
-        ).map((e) => e.id),
-  );
   return {
-    entries: page.flatMap((r) => {
-      if (EVENT_MOD_ACTIONS.has(r.action) && !(r.targetId && publicEvents.has(r.targetId))) return [];
+    entries: rows.flatMap((r) => {
       const e = toPublicEntry(r);
       return e ? [e] : [];
     }),
-    nextCursor: rows.length > MOD_LOG_PAGE_SIZE ? String(page[page.length - 1]!.id) : null,
+    nextCursor: ids.length > MOD_LOG_PAGE_SIZE ? String(pageIds[pageIds.length - 1]) : null,
   };
 }
 

@@ -14,12 +14,21 @@ import { usePf2eData } from '../useData';
 import { BuildPf2e } from './BuildPf2e';
 import { LevelUpPf2e } from './LevelUpPf2e';
 import { SheetPf2e } from './SheetPf2e';
-import { RollsProvider } from '../useRolls';
+import { RollsProvider, type PartyRollContext } from '../useRolls';
 import { SpellsPf2e } from './SpellsPf2e';
 
 const bulkLabel = (b: number) => (b === 0 ? '—' : b < 1 ? 'L' : String(b));
 
-export function EditorPf2e({ c, onBack }: { c: Pf2eCharacter; onBack: () => void }) {
+export function EditorPf2e({
+  c,
+  onBack,
+  party,
+}: {
+  c: Pf2eCharacter;
+  onBack: () => void;
+  /** The party the sheet was opened from, if any: the table switch appears. */
+  party?: PartyRollContext;
+}) {
   const { t } = useTranslation('c-rmhcharacters');
   const d = usePf2eData();
   const update = useRoster((s) => s.update);
@@ -105,7 +114,7 @@ export function EditorPf2e({ c, onBack }: { c: Pf2eCharacter; onBack: () => void
         panels={{
           build: <BuildPf2e c={c} d={d} set={set} />,
           sheet: (
-            <RollsProvider characterId={c.id} system="pf2e" exhaustion={0}>
+            <RollsProvider characterId={c.id} system="pf2e" exhaustion={0} {...(party ? { party } : {})}>
               <SheetPf2e c={c} d={d} set={set} />
             </RollsProvider>
           ),

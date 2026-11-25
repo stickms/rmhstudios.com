@@ -131,6 +131,15 @@ const NULLABLE: Record<string, string> = {
   post: '{ id: string; content: string; imageUrls: string[]; imageAlts: string[]; gifUrl: string | null; gifAlt: string | null; sensitive: boolean; contentWarning: string | null; pinnedReplyId: string | null; createdAt: string; author: { id: string; name: string | null; handle: string | null; image: string | null }; metrics: { likes: number | null; comments: number | null; reposts: number | null; views: number | null } } | null',
 
   // s10-14 api-rmhtube
+
+  // Sprint 12
+  // s12-12 api-reviews
+  clozeIndex: 'number | null',
+  dueAt: 'string | null',
+
+  // s12-13 api-characters
+  ancestry: 'string | null',
+  userId: 'string | null',
 };
 
 const SCHEDULED_ROW_FIELDS: Record<string, string> = {
@@ -140,6 +149,10 @@ const SCHEDULED_ROW_FIELDS: Record<string, string> = {
 
 // Response fields a later page omits (s09-09: `summary` rides the first page of focus sessions only).
 const OPTIONAL_FIELDS = new Set(['summary']);
+// ...except RMHCharacters' `summary` (s12-13), the party summary: always present, and `null` (not omitted) on a party
+// member whose sheet cannot be read.
+const isPartySummary = (x: unknown): boolean =>
+  typeof x === 'object' && x !== null && 'ac' in x && 'hp' in x && 'classes' in x;
 
 function tsOf(v: unknown, k = ''): string {
   if (v === null) return NULLABLE[k] ?? 'unknown';
@@ -149,7 +162,9 @@ function tsOf(v: unknown, k = ''): string {
     const row = 'held' in (v as Json) && 'postId' in (v as Json) && 'kind' in (v as Json);
     const entries = Object.entries(v as Json).map(([k, x]) => {
       const over = row ? SCHEDULED_ROW_FIELDS[k] : undefined;
-      return `${key(k)}${OPTIONAL_FIELDS.has(k) ? '?' : ''}: ${over ?? tsOf(x, k)}`;
+      const party = isPartySummary(x);
+      const orNull = party && 'isGm' in (v as Json) ? ' | null' : '';
+      return `${key(k)}${OPTIONAL_FIELDS.has(k) && !party ? '?' : ''}: ${over ?? tsOf(x, k)}${orNull}`;
     });
     return entries.length ? `{ ${entries.join('; ')} }` : 'Record<string, unknown>';
   }

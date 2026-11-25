@@ -1308,6 +1308,57 @@ export type SetRmhtubePartyGoingResponse = { id: string; name: string; descripti
 
 export type GetMyRmhtubeStatsResponse = { counters: { totalWatchTimeMinutes: number; videosWatched: number; roomsCreated: number; roomsJoined: number; messagesSent: number; reactionsUsed: number }; paused: boolean; days: { day: string; minutes: number }[] };
 
+export interface GetMyDeckReviewArgs {
+  /** The deck id. */
+  id: string;
+  /** Cards to return, 1–50 (default 20). */
+  limit?: number;
+}
+
+export type GetMyDeckReviewResponse = { data: { id: string; kind: string; front: string; back: string; clozeIndex: number | null; externalId: string | null; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null; occlusion: { mode: 'hide-all' | 'hide-one'; masks: { id: number; x: number; y: number; w: number; h: number; label: string }[] } | null; schedule: { state: string; dueAt: string | null; intervalDays: number } }[] };
+
+export interface GradeMyDeckCardBody {
+  /** How well you knew it: `again`, `hard`, `good` or `easy`. */
+  grade?: string;
+}
+
+export interface GradeMyDeckCardArgs {
+  /** The deck id. */
+  id: string;
+  /** The card id. */
+  cardId: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: GradeMyDeckCardBody;
+}
+
+export type GradeMyDeckCardResponse = { data: { dueAt: string; intervalDays: number; leech: boolean } };
+
+export interface ListMyCharactersArgs {
+  /** Page size, 1–50 (default 25). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMyCharactersResponse = { data: { id: string; system: string; name: string; level: number; summary: { system: string; name: string; level: number; ancestry: string | null; classes: { name: string; level: number }[]; ac: number; hp: { current: number; max: number; temp: number }; conditions: string[]; perception: number; speed: number; initiative: number }; updatedAt: string }[]; nextCursor: string | null };
+
+export interface GetMyCharacterArgs {
+  /** The character id. */
+  id: string;
+}
+
+export type GetMyCharacterResponse = { data: { id: string; system: string; name: string; level: number; summary: { system: string; name: string; level: number; ancestry: string | null; classes: { name: string; level: number }[]; ac: number; hp: { current: number; max: number; temp: number }; conditions: string[]; perception: number; speed: number; initiative: number }; updatedAt: string; portrait: boolean; sheet: { id: string; system: string; name: string; notes: string } } };
+
+export type ListMyPartiesResponse = { data: { id: string; name: string; system: string; role: string; gm: string; members: number }[] };
+
+export interface GetMyPartyArgs {
+  /** The party id. */
+  id: string;
+}
+
+export type GetMyPartyResponse = { data: { id: string; name: string; system: string; role: string; gm: string; members: { userId: string; name: string; joinedAt: string; isGm: boolean; summary: { system: string; name: string; level: number; ancestry: string | null; classes: { name: string; level: number }[]; ac: number; hp: { current: number; max: number; temp: number }; conditions: string[]; perception: number; speed: number; initiative: number } | null }[]; order: { id: string; kind: string; userId: string | null; name: string; value: number }[]; turnIndex: number } };
+
 export class RmhClient {
   private apiKey: string;
   private baseUrl: string;
@@ -1907,5 +1958,35 @@ export class RmhClient {
   /** Your RMHTube watch statistics (scope: read:rmhtube) */
   getMyRmhtubeStats(): Promise<GetMyRmhtubeStatsResponse> {
     return this.request<GetMyRmhtubeStatsResponse>("GET", { path: "/api/v1/me/rmhtube/stats" });
+  }
+
+  /** Get the cards due for review (scope: read:study) */
+  getMyDeckReview(args: GetMyDeckReviewArgs): Promise<GetMyDeckReviewResponse> {
+    return this.request<GetMyDeckReviewResponse>("GET", { path: "/api/v1/me/decks/{id}/review", pathParams: { id: args.id }, query: { limit: args.limit } });
+  }
+
+  /** Grade a card (scope: write:study-reviews) */
+  gradeMyDeckCard(args: GradeMyDeckCardArgs): Promise<GradeMyDeckCardResponse> {
+    return this.request<GradeMyDeckCardResponse>("POST", { path: "/api/v1/me/decks/{id}/cards/{cardId}/review", pathParams: { id: args.id, cardId: args.cardId }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** List your characters (scope: read:characters) */
+  listMyCharacters(args: ListMyCharactersArgs = {}): Promise<ListMyCharactersResponse> {
+    return this.request<ListMyCharactersResponse>("GET", { path: "/api/v1/me/characters", query: { limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Get one of your characters (scope: read:characters) */
+  getMyCharacter(args: GetMyCharacterArgs): Promise<GetMyCharacterResponse> {
+    return this.request<GetMyCharacterResponse>("GET", { path: "/api/v1/me/characters/{id}", pathParams: { id: args.id } });
+  }
+
+  /** List your parties (scope: read:characters) */
+  listMyParties(): Promise<ListMyPartiesResponse> {
+    return this.request<ListMyPartiesResponse>("GET", { path: "/api/v1/me/parties" });
+  }
+
+  /** Get one of your parties (scope: read:characters) */
+  getMyParty(args: GetMyPartyArgs): Promise<GetMyPartyResponse> {
+    return this.request<GetMyPartyResponse>("GET", { path: "/api/v1/me/parties/{id}", pathParams: { id: args.id } });
   }
 }

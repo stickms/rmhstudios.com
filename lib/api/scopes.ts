@@ -142,7 +142,7 @@ export const SCOPES: ScopeDetail[] = [
     group: 'Games',
     description: 'Read your game playtime and achievements, and the playtime other members share with you.',
   },
-  // Flashcards are the member's own study material; reviews are never writable through the API.
+  // Flashcards are the member's own study material; reviews are writable only with the explicit `write:study-reviews`.
   {
     id: 'read:study',
     action: 'read',
@@ -300,6 +300,25 @@ export const SCOPES: ScopeDetail[] = [
     action: 'write',
     group: 'RMHTube',
     description: 'Add to and remove from Watch later, and say whether you are going to a watch party.',
+  },
+
+  // Sprint 12
+  // s12-12 api-reviews
+  {
+    id: 'write:study-reviews',
+    action: 'write',
+    group: 'Study',
+    description:
+      'Grade your flashcard reviews from your own tools; they count on your schedule and statistics. Not included in `*` or `write:*`: a key must list it itself.',
+    explicit: true,
+  },
+
+  // s12-13 api-characters
+  {
+    id: 'read:characters',
+    action: 'read',
+    group: 'RMHCharacters',
+    description: 'Read your characters and the summaries of your parties.',
   },
 ];
 

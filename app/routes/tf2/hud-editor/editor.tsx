@@ -23,7 +23,7 @@ export const Route = createFileRoute('/tf2/hud-editor/editor')({
     hud: str(search.hud),
     fork: str(search.fork),
   }),
-  head: () => ({ meta: [{ name: 'robots', content: 'noindex' }] }),
+  head: () => ({ meta: [{ title: 'Edit a TF2 HUD | RMH Studios' }, { name: 'robots', content: 'noindex' }] }),
   component: EditorRoute,
 });
 

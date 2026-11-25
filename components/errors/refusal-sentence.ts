@@ -737,6 +737,111 @@ function sentence(t: Translate, code: ErrorCode, p: Record<string, string | numb
         defaultValue: 'The school names could not be read this time. Try again, or paste a shorter list',
         ...p,
       });
+
+    // Sprint 12
+    // s12-01 party-rolls
+    case 'PARTY_ROLL_NO_CHARACTER':
+      return t('partyRollNoCharacter', {
+        ns: 'errors',
+        defaultValue: 'Bring a character to this party to roll',
+        ...p,
+      });
+
+    // s12-03 friend-ghosts
+    case 'GHOST_FRIEND_UNAVAILABLE':
+      return t('ghostFriendUnavailable', {
+        ns: 'errors',
+        defaultValue: 'That ghost is not available',
+        ...p,
+      });
+
+    // s12-04 chart-history
+    case 'CHART_REVISION_GONE':
+      return t('chartRevisionGone', {
+        ns: 'errors',
+        defaultValue: 'That version is no longer kept',
+        ...p,
+      });
+
+    // s12-06 connections-maker
+    case 'CONNECTIONS_GRID_PLAYED':
+      return t('connectionsGridPlayed', {
+        ns: 'errors',
+        defaultValue: 'This grid has been played, so it can no longer be changed',
+        ...p,
+      });
+    case 'CONNECTIONS_GRID_INCOMPLETE':
+      return t('connectionsGridIncomplete', {
+        ns: 'errors',
+        defaultValue: 'Fill in all four groups before publishing',
+        ...p,
+      });
+
+    // s12-08 deck-ratings
+    case 'DECK_RATING_NOT_STUDIED':
+      return t('deckRatingNotStudied', {
+        ns: 'errors',
+        defaultValue: 'Study your copy of this deck a little more before rating it',
+        ...p,
+      });
+
+    // s12-10 homes-compare
+    case 'HOME_COMPARE_TOO_MANY':
+      return t('homeCompareTooMany', {
+        ns: 'errors',
+        defaultValue: 'Compare at most {{max}} homes at a time',
+        ...p,
+      });
+
+    // s12-14 admin-deletions
+    case 'ERASURE_NOT_OVERDUE':
+      return t('erasureNotOverdue', {
+        ns: 'errors',
+        defaultValue: 'This account is not overdue for deletion',
+        ...p,
+      });
+    case 'ERASURE_IN_PROGRESS':
+      return t('erasureInProgress', {
+        ns: 'errors',
+        defaultValue: "This account's deletion is already running",
+        ...p,
+      });
+
+    // s12-15 admin-homes
+    case 'HOME_SOURCE_URL_UNSAFE':
+      return t('homeSourceUrlUnsafe', {
+        ns: 'errors',
+        defaultValue: 'Use a public https address for the feed',
+        ...p,
+      });
+    case 'HOME_SOURCE_EXISTS':
+      return t('homeSourceExists', {
+        ns: 'errors',
+        defaultValue: 'That feed is already a source',
+        ...p,
+      });
+    case 'HOME_SCRAPE_QUEUED':
+      return t('homeScrapeQueued', {
+        ns: 'errors',
+        defaultValue: 'A scrape is already queued',
+        ...p,
+      });
+
+    // s12-16 member-reports
+    case 'CONTENT_REMOVED_BY_MODERATOR':
+      return t('contentRemovedByModerator', {
+        ns: 'errors',
+        defaultValue: 'A moderator removed this, so it cannot be made public again',
+        ...p,
+      });
+
+    // s12-20 s11-gaps
+    case 'API_KEY_REASON_RESERVED':
+      return t('apiKeyReasonReserved', {
+        ns: 'errors',
+        defaultValue: 'That reason is reserved; write another one',
+        ...p,
+      });
   }
 }
 

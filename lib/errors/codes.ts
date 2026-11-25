@@ -1211,6 +1211,97 @@ export const ERROR_CODES = {
     i18n: 'errors:medschoolsListImportUnreadable',
     text: 'The school names could not be read this time. Try again, or paste a shorter list',
   },
+
+  // Sprint 12
+  // s12-01 party-rolls
+  PARTY_ROLL_NO_CHARACTER: {
+    http: 409,
+    i18n: 'errors:partyRollNoCharacter',
+    text: 'Bring a character to this party to roll',
+  },
+
+  // s12-03 friend-ghosts
+  GHOST_FRIEND_UNAVAILABLE: {
+    http: 404,
+    i18n: 'errors:ghostFriendUnavailable',
+    text: 'That ghost is not available',
+  },
+
+  // s12-04 chart-history
+  CHART_REVISION_GONE: {
+    http: 404,
+    i18n: 'errors:chartRevisionGone',
+    text: 'That version is no longer kept',
+  },
+
+  // s12-06 connections-maker
+  CONNECTIONS_GRID_PLAYED: {
+    http: 409,
+    i18n: 'errors:connectionsGridPlayed',
+    text: 'This grid has been played, so it can no longer be changed',
+  },
+  CONNECTIONS_GRID_INCOMPLETE: {
+    http: 400,
+    i18n: 'errors:connectionsGridIncomplete',
+    text: 'Fill in all four groups before publishing',
+  },
+
+  // s12-08 deck-ratings
+  DECK_RATING_NOT_STUDIED: {
+    http: 403,
+    i18n: 'errors:deckRatingNotStudied',
+    text: 'Study your copy of this deck a little more before rating it',
+  },
+
+  // s12-10 homes-compare
+  HOME_COMPARE_TOO_MANY: {
+    http: 400,
+    i18n: 'errors:homeCompareTooMany',
+    text: 'Compare at most {{max}} homes at a time',
+  },
+
+  // s12-14 admin-deletions
+  ERASURE_NOT_OVERDUE: {
+    http: 409,
+    i18n: 'errors:erasureNotOverdue',
+    text: 'This account is not overdue for deletion',
+  },
+  ERASURE_IN_PROGRESS: {
+    http: 409,
+    i18n: 'errors:erasureInProgress',
+    text: "This account's deletion is already running",
+  },
+
+  // s12-15 admin-homes
+  HOME_SOURCE_URL_UNSAFE: {
+    http: 400,
+    i18n: 'errors:homeSourceUrlUnsafe',
+    text: 'Use a public https address for the feed',
+  },
+  HOME_SOURCE_EXISTS: {
+    http: 409,
+    i18n: 'errors:homeSourceExists',
+    text: 'That feed is already a source',
+  },
+  HOME_SCRAPE_QUEUED: {
+    http: 409,
+    i18n: 'errors:homeScrapeQueued',
+    text: 'A scrape is already queued',
+  },
+
+  // s12-16 member-reports
+  CONTENT_REMOVED_BY_MODERATOR: {
+    http: 409,
+    i18n: 'errors:contentRemovedByModerator',
+    text: 'A moderator removed this, so it cannot be made public again',
+  },
+
+  // s12-20 s11-gaps
+  API_KEY_REASON_RESERVED: {
+    http: 400,
+    i18n: 'errors:apiKeyReasonReserved',
+    text: 'That reason is reserved; write another one',
+  },
 } as const;
 
 export type ErrorCode = keyof typeof ERROR_CODES;

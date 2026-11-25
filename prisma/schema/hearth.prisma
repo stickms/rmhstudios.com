@@ -98,6 +98,9 @@ model HomeListing {
   /// When the price last dropped by at least 1% (s11 13); drives the "Reduced" line and filter.
   priceDroppedAt DateTime?
 
+  /// Set when a moderator took this listing down after a report (s12-16): its status is REMOVED and its author cannot reactivate it.
+  moderatedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -123,6 +126,8 @@ model HomeFavorite {
   priceAlerts   Boolean   @default(true)
   /// When this member was last told about a drop on this listing (one notice per 7 days).
   priceNoticeAt DateTime?
+  /// The member's private note on this saved listing (s12 10). Plain text, never in another member's read.
+  note          String?   @db.VarChar(1000)
 
   user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   listing HomeListing @relation(fields: [listingId], references: [id], onDelete: Cascade)

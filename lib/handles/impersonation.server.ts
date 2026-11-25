@@ -7,6 +7,7 @@
 
 import { prisma } from '@/lib/prisma.server';
 import { notifyAdminsOfReview } from '@/lib/admin-review.server';
+import { notice } from '@/lib/notifications/notice-keys';
 import { listProfileLinks } from '@/lib/profile-links/links.server';
 import { getPreviouslyKnownAs } from '@/lib/handles/history.server';
 import {
@@ -93,7 +94,7 @@ export async function fileImpersonationReport(
   });
 
   void notifyAdminsOfReview({
-    preview: 'New impersonation report needs review',
+    notice: notice('admin-review-impersonation', {}),
     kind: 'reports',
   });
 

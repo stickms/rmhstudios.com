@@ -12,9 +12,11 @@ Three wildcards are accepted and stored literally on the key:
 | `read:*` | Every read scope. |
 | `write:*` | Every write scope (likewise `manage:*`, except explicit scopes). |
 
-**Explicit scopes.** A scope marked explicit is granted only when a key lists it by name: `*` and `manage:*` do not include it. `manage:moderation` is the one explicit scope. It lets a key time out and ban members, so a key made before it existed, or made with "All" selected, never gains it; the key-creation page shows it unticked and says so.
+**Explicit scopes.** A scope marked explicit is granted only when a key lists it by name: `*` and `manage:*` do not include it. `manage:moderation` and `write:study-reviews` are the explicit scopes. The first lets a key time out and ban members; the second lets a key grade your flashcard reviews, which changes your review schedule and statistics, and is the one way a flashcard review is written through the API (`write:study` still cannot). A key made before they existed, or made with "All" selected, never gains either; the key-creation page shows them unticked and says so.
 
 Grant the least privilege an integration needs. A key that only reads the public feed should carry `read:feed` and nothing else — if it leaks, that is the whole blast radius.
+
+`read:characters` reads your RMHCharacters sheets and the summaries of your parties. It is read only: sheets are written on the site, and a party view never contains another player's sheet or notes.
 
 A request whose key lacks the required scope fails with `403 insufficient_scope`; the message names the scope that was missing.
 
@@ -62,6 +64,8 @@ A request whose key lacks the required scope fails with `403 insufficient_scope`
 | `manage:moderation` | Moderation | Moderate communities where you are a moderator: the mod queue and timeouts and bans. Not included in `*` or `manage:*`: a key must list it itself. |
 | `read:rmhtube` | RMHTube | Read your Watch later list and watch statistics, and upcoming watch parties. |
 | `write:rmhtube` | RMHTube | Add to and remove from Watch later, and say whether you are going to a watch party. |
+| `write:study-reviews` | Study | Grade your flashcard reviews from your own tools; they count on your schedule and statistics. Not included in `*` or `write:*`: a key must list it itself. |
+| `read:characters` | RMHCharacters | Read your characters and the summaries of your parties. |
 
 <!-- END GENERATED: scopes -->
 
