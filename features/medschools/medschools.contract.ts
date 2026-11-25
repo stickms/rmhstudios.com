@@ -5,7 +5,7 @@ import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { Prefs } from './engine/prefs';
 import type { MilestoneType } from './engine/tracker';
-import type { importSaveBody, importTextBody } from './api/import-schemas';
+import type { importSaveBody, importTextBody, listImportSaveBody } from './api/import-schemas';
 import type { askBody, followupsBody, limitDecisionBody, limitRequestBody } from './api/qa-schemas';
 import type {
   addApplicationBody,
@@ -593,6 +593,63 @@ export const parseMedImportTextApi = endpoint<{ body: z.infer<typeof importTextB
 export const saveMedImportApi = endpoint<{ body: z.infer<typeof importSaveBody>; res: MedImportSaveRes }>()({
   method: 'POST',
   path: '/api/medschools/me/tracker/import/save',
+});
+
+/* ------------------------- list import (me/lists/import, owner 2026-11-24) ------------------------- */
+/* The same reader as the tracker import, for school names only; the preview is returned, nothing is stored. */
+
+export interface MedListImportRowDto {
+  /** Stable within this preview: the matched slug or a row number, and the program. */
+  key: string;
+  /** The name as the file wrote it (always text the file holds). */
+  schoolName: string;
+  /** The one active school it resolved to, or null: "Unrecognised school" and the member picks. */
+  school: { slug: string; name: string; shortName: string; degree: MedDegreeId; state: string } | null;
+  /** `PHD` only when the file says so beside the name; `REG` when it writes just MD or DO; else `ANY`. */
+  program: MedListProgramId;
+}
+
+export interface MedListImportPreviewRes {
+  /** Rows or text were cut to fit the limits (a list holds 200 schools). */
+  truncated: boolean;
+  /** Names the model gave that the file does not hold. */
+  dropped: number;
+  rows: MedListImportRowDto[];
+  tier: 'free' | 'approved' | 'member' | 'admin';
+  remainingToday: number | null;
+  dailyCap: number | null;
+}
+
+export interface MedListImportSaveRes {
+  list: MedListDto;
+  added: number;
+  /** Already on the list with that program, or named twice in the body. */
+  alreadyThere: number;
+  /** Not an active school. */
+  invalid: number;
+}
+
+/** Multipart `file`, the tracker import's types and size. Pasted text uses `parseMedListImportTextApi`. */
+export const parseMedListImportFileApi = endpoint<{ body: FormData; res: MedListImportPreviewRes }>()({
+  method: 'POST',
+  path: '/api/medschools/me/lists/import/parse',
+});
+
+/** The same endpoint with a JSON body: pasted text. */
+export const parseMedListImportTextApi = endpoint<{
+  body: z.infer<typeof importTextBody>;
+  res: MedListImportPreviewRes;
+}>()({
+  method: 'POST',
+  path: '/api/medschools/me/lists/import/parse',
+});
+
+export const saveMedListImportApi = endpoint<{
+  body: z.infer<typeof listImportSaveBody>;
+  res: MedListImportSaveRes;
+}>()({
+  method: 'POST',
+  path: '/api/medschools/me/lists/import/save',
 });
 
 /* ------------------------- AI Q&A (phase 6, me/ask) ------------------------- */

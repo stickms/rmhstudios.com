@@ -314,3 +314,81 @@ export async function addListToTracker(
   if (outcome.cap) return { cap: outcome.cap };
   return { cycleYear: year, added: outcome.added, skipped: outcome.skipped };
 }
+
+export type ImportListTarget = { listId: string } | { newList: string };
+export type ImportListResult =
+  | { list: MedListDto; added: number; alreadyThere: number; invalid: number }
+  | null
+  | 'cap'
+  | 'list-cap'
+  | 'bad-name';
+
+/**
+ * The list import's save (owner 2026-11-24): the ticked preview rows into one of the caller's lists (`listId`; another
+ * member's list, or a missing one, is `null`) or a new list (`newList`, always created; refused at the list cap). A
+ * school that is not active is `invalid`; a school and program already on the list, or named twice in the body, is
+ * `alreadyThere`; the rest are appended in the order given. All or nothing against the 200-item cap: over it nothing is
+ * written, not even the new list. Under the list lock, like every list write.
+ */
+export async function importListItems(
+  userId: string,
+  target: ImportListTarget,
+  items: readonly { slug: string; program: MedListProgramId }[],
+): Promise<ImportListResult> {
+  const named = 'newList' in target ? cleanText(target.newList, LIMITS.listName) : undefined;
+  if (named === null) return 'bad-name';
+  return prisma.$transaction(async (tx) => {
+    await listLock(tx, userId);
+    const lists = await listRows(tx, userId);
+    if ('listId' in target && !lists.some((l) => l.id === target.listId)) return null;
+    if (named !== undefined && lists.length >= LIMITS.lists) return 'list-cap' as const;
+
+    const slugs = [...new Set(items.map((i) => i.slug))];
+    const schools = await tx.medSchool.findMany({
+      where: { slug: { in: slugs } },
+      select: { id: true, slug: true, active: true },
+    });
+    const bySlug = new Map(schools.filter((s) => s.active).map((s) => [s.slug, s.id]));
+    const here =
+      'listId' in target
+        ? await tx.medSchoolListItem.findMany({ where: { listId: target.listId }, select: { schoolId: true, program: true } })
+        : [];
+    const seen = new Set(here.map((h) => `${h.schoolId}|${h.program}`));
+    let invalid = 0;
+    let alreadyThere = 0;
+    const toAdd: { schoolId: string; program: MedListProgramId }[] = [];
+    for (const item of items) {
+      const schoolId = bySlug.get(item.slug);
+      if (!schoolId) {
+        invalid += 1;
+        continue;
+      }
+      const key = `${schoolId}|${item.program}`;
+      if (seen.has(key)) {
+        alreadyThere += 1;
+        continue;
+      }
+      seen.add(key);
+      toAdd.push({ schoolId, program: item.program });
+    }
+    if (here.length + toAdd.length > LIMITS.itemsPerList) return 'cap' as const;
+
+    const listId =
+      'listId' in target
+        ? target.listId
+        : (
+            await tx.medSchoolList.create({
+              data: { userId, name: named!, position: lists.length },
+              select: { id: true },
+            })
+          ).id;
+    for (const [i, a] of toAdd.entries()) {
+      await tx.medSchoolListItem.create({
+        data: { listId, schoolId: a.schoolId, program: a.program, position: here.length + i },
+      });
+    }
+    const list = await oneList(tx, userId, listId);
+    if (!list) return null;
+    return { list, added: toAdd.length, alreadyThere, invalid };
+  });
+}

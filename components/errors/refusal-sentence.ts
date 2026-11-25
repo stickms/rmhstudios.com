@@ -590,6 +590,12 @@ function sentence(t: Translate, code: ErrorCode, p: Record<string, string | numb
         defaultValue: 'No application dates were found in that file',
         ...p,
       });
+    case 'MEDSCHOOLS_LIST_IMPORT_EMPTY':
+      return t('medschoolsListImportEmpty', {
+        ns: 'errors',
+        defaultValue: 'No medical schools were found in that file',
+        ...p,
+      });
   }
 }
 

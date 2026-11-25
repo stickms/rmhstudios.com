@@ -91,6 +91,7 @@
   "medschoolsItemCap": "A list holds up to {{max}} schools",
   "medschoolsListCap": "You can keep up to {{max}} lists",
   "medschoolsListDuplicate": "That school is already on this list",
+  "medschoolsListImportEmpty": "No medical schools were found in that file",
   "medschoolsQaBusy": "Your last question is still being answered. Try again in a minute",
   "medschoolsQaDailyCap": "You have used today's questions. Try again tomorrow",
   "medschoolsQaLimitNotNeeded": "Your account already has a higher limit than a request can give",

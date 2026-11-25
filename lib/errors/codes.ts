@@ -1047,6 +1047,11 @@ export const ERROR_CODES = {
     i18n: 'errors:medschoolsImportEmpty',
     text: 'No application dates were found in that file',
   },
+  MEDSCHOOLS_LIST_IMPORT_EMPTY: {
+    http: 422,
+    i18n: 'errors:medschoolsListImportEmpty',
+    text: 'No medical schools were found in that file',
+  },
 } as const;
 
 export type ErrorCode = keyof typeof ERROR_CODES;

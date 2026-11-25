@@ -930,6 +930,48 @@ tracker dates; the member reviews a preview and presses "Add to my tracker". End
   Black box: `testing/integration/medschools-import.test.ts` (fake provider, needs `MEDSCHOOLS_DEDUPE_SECRET` for the
   sharing case). Visual: `visual-check.mjs --fake-ai --page import`.
 
+## List import (owner 2026-11-24)
+
+"I should be able to use file/text import for lists I want and not just cycles." The same machinery as the tracker
+import, not a second copy: on `/med/lists`, "Import a new list" (a secondary button beside the "New list" primary) and
+"Import into this list" (each list's "⋯") open `ui/lists/import/ListImport.tsx`, a `lazy` chunk that is the whole view
+while open, so "Add to list" is its one ink primary. Endpoints `POST me/lists/import/parse` (multipart `file` or JSON
+`{ text }`; `parseMedListImportFileApi` / `parseMedListImportTextApi`) and `POST me/lists/import/save`
+(`saveMedListImportApi`), both signed in.
+
+- **Shared, not copied.** `api/import/request.server.ts` (`readImportRequest`: suspension, `isAiConfigured`, the capped
+  body, JSON or multipart; the `IMPORT_PARSE_LIMIT` bucket, so both imports share 6 a minute) serves both parse
+  endpoints; `readUnderGates` in `parse.server.ts` is the extraction, the "anything to read" check, `admitQuestion`,
+  `runUnderLease`, the one model call and the unreadable-reply refund, once; `runner.server.ts` makes one runner per
+  prompt. The list import is `list-parse.server.ts` (prompt `MEDSCHOOLS_LIST_IMPORT`, the same `medschools-import` task,
+  flash, so it is one of the day's questions) plus `list-validate.ts`. The extractors, limits (2 MB, 40,000
+  characters), refusal sentences and privacy rules are the tracker import's; a text with no letters is
+  `MEDSCHOOLS_LIST_IMPORT_EMPTY` (422) before any gate, as is a reply with no school the text holds (after the call).
+- **Only names, and the server is the validator** (`list-validate.ts`, pure). A name is kept only when the member's
+  text holds it (folded for case and spacing; under three characters never), else it is dropped and counted (an
+  invented school never reaches the page). It resolves to a school only when it names exactly ONE active school: the
+  tracker matcher (`matchSchool`: name, short name, slug, aliases), else the index search's rule (`schoolMatches`: a
+  fragment of a name, short name or alias from the alias table, or exactly its initials, "UCSF"); none or several is
+  "Unrecognised school" with the tracker's `SchoolPicker`. A slug or id from the model is never read. Program: `PHD`
+  only when the model says so and a line holding the name says PhD or MSTP; `REG` when the model says MD or DO and that
+  line writes MD or DO in capitals ("do" is a word); else `ANY`. File order is kept, a school and program named twice
+  is one row, at most 200 rows (`LIST_IMPORT_LIMITS`, a list's cap; the model may return 400 before the cut).
+- **Save** (`importListItems` in `api/lists.server.ts`, under the list lock): `target` is `{ listId }` (the caller's;
+  anyone else's, or a missing one, is a 404) or `{ newList: name }` (always a new list; the 21st is
+  `MEDSCHOOLS_LIST_CAP`); `items` are slug and program (strict schema: no user, item or school id). A school and program
+  already on the list, or named twice, is `alreadyThere`; an inactive or unknown school is `invalid`; the rest are
+  appended in order. All or nothing at 200 schools (`MEDSCHOOLS_ITEM_CAP`): over it nothing is written, not even the new
+  list.
+- **Nothing kept.** No bytes, text or file name is stored, cached or logged; the log line is counts and a status
+  (`list-ok`, `list-empty`); the only trace is the text-free `AiUsage` row. `api/import/privacy.server.test.ts` pins the
+  list files with the tracker's, and the integration test scans every table for the file's words.
+- **UI.** `model.ts` (pure, tested) decides each row's fate (add, already on the list, named twice, unticked,
+  unmatched), the save body (only the rows that will be added) and the 200 cap; `ListImportPreview.tsx` is rows on rules
+  with crests, a tick, the program select (either, MD or MD-PhD, DO or DO-PhD) and the picker. A new list's name is
+  typed in the preview ("Imported schools" to start). Strings are `lists-import-*`.
+- **Tests.** Unit: `features/medschools/api/import/list-*.test.ts`, `api/lists-import*.test.ts`,
+  `ui/lists/import/*.test.*`. Black box: `testing/integration/medschools-list-import.test.ts` (fake provider).
+
 ## Testing and verification
 
 - Unit: colocated `*.test.ts(x)` (`pnpm exec vitest run features/medschools`); `ui/ui-rules.test.ts` holds the app-tier,
@@ -1025,7 +1067,8 @@ is a school slug). Endpoints, all signed in, `Cache-Control` never public, no DT
 `me/tracker` (GET), `me/tracker/cycle` (PUT, DELETE), `me/tracker/applications` (POST), `.../applications/$id` (PATCH,
 DELETE), `.../applications/$id/milestones/$type` (PUT, DELETE), `me/lists` (GET, POST), `me/lists/$id` (PATCH, DELETE),
 `me/list-order`, `me/list-items` (save a school, creating "My schools" on first use), `me/lists/$id/items/$itemId`,
-`me/lists/$id/item-order`, `me/lists/$id/add-to-tracker`, `me/prefs` (GET, PUT). Another member's id is a 404, never
+`me/lists/$id/item-order`, `me/lists/$id/add-to-tracker`, `me/lists/import/parse` and `me/lists/import/save` (see
+"List import"), `me/prefs` (GET, PUT). Another member's id is a 404, never
 a 403.
 
 - **One writer (D1).** `api/share-sync.server.ts` is the only module that writes the tracker rows or an RMH event or
