@@ -24,11 +24,12 @@ const phd = new Map<string, string | null>(
 );
 
 const siteOf = sites.sites as Record<string, string>;
+const extraPhd = sites.mdphd as Record<string, string>;
 
 export function programLinksOf(slug: string): ProgramLinks {
   return {
     websiteUrl: siteOf[slug] ?? null,
     admissionsUrl: admissions.get(slug) ?? null,
-    mdphdUrl: phd.get(slug) ?? null,
+    mdphdUrl: phd.get(slug) ?? extraPhd[slug] ?? null,
   };
 }

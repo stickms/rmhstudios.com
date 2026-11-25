@@ -1,12 +1,12 @@
 {
-  "about": "Each school's own MD or DO program homepage, for the school page's Website tile when the registry holds none (MedSchool.website wins). Checked 2026-11-25: most were loaded and the page title read; a few sites block automated fetches (Johns Hopkins, Michigan, Oklahoma State, UMass, Einstein, UCSF, GWU, SIU, WMU, MSU) and were taken from search results. A campus with no page of its own shares its parent's. SUNY Upstate has none yet.",
+  "about": "Each school's own MD or DO program homepage, for the school page's Website tile when the registry holds none (MedSchool.website wins). Checked 2026-11-25: most were loaded and the page title read; where a site blocks automated fetches (Johns Hopkins, Michigan, Oklahoma State, UMass, Einstein, UCSF, GWU, SIU, WMU, MSU) the address was matched against the program links CycleTrack lists for the school. A campus with no page of its own shares its parent's. `mdphd` holds MD-PhD program pages for schools mdphd-programs.json has no entry for.",
   "sites": {
     "a-t-still-arizona": "https://www.atsu.edu/school-of-osteopathic-medicine-arizona",
     "a-t-still-kirksville": "https://www.atsu.edu/kirksville-college-of-osteopathic-medicine",
     "alabama": "https://www.uab.edu/medicine/home/",
     "alabama-com": "https://www.acom.edu/",
     "albany": "https://www.amc.edu/",
-    "albert-einstein": "https://einsteinmed.edu/education/md-program",
+    "albert-einstein": "https://www.einsteinmed.edu/education/md-program/",
     "alice-walton": "https://www.alwmedschool.org/",
     "arizona-phoenix": "https://phoenixmed.arizona.edu/",
     "arizona-state": "https://medicine.asu.edu/",
@@ -112,9 +112,9 @@
     "meritus-som": "https://msom.org/",
     "methodist-university": "https://www.methodist.edu/medicine/",
     "miami": "https://med.miami.edu/",
-    "michigan": "https://medschool.umich.edu/",
+    "michigan": "https://medicine.umich.edu/medschool/",
     "michigan-state": "https://humanmedicine.msu.edu/",
-    "michigan-state-com": "https://osteopathicmedicine.msu.edu/",
+    "michigan-state-com": "https://com.msu.edu/",
     "midwestern-arizona": "https://www.midwestern.edu/azcom/",
     "midwestern-chicago": "https://www.midwestern.edu/academics/our-colleges/chicago-college-of-osteopathic-medicine",
     "minnesota": "https://med.umn.edu/",
@@ -145,7 +145,7 @@
     "ohio-state": "https://medicine.osu.edu/",
     "ohio-university": "https://www.ohio.edu/medicine/",
     "oklahoma": "https://medicine.ouhsc.edu/",
-    "oklahoma-state": "https://medicine.okstate.edu/",
+    "oklahoma-state": "https://medicine.okstate.edu/com/",
     "oregon-health-and-science": "https://www.ohsu.edu/school-of-medicine/",
     "orlando-com": "https://ocom.org/",
     "pacific-northwest": "https://www.pnwu.edu/admissions/doctor-of-osteopathic-medicine/",
@@ -177,6 +177,7 @@
     "stanford": "https://med.stanford.edu/",
     "stony-brook": "https://renaissance.stonybrookmedicine.edu/",
     "suny-downstate": "https://www.downstate.edu/education-training/college-of-medicine/",
+    "suny-upstate": "https://www.upstate.edu/",
     "temple": "https://medicine.temple.edu/",
     "tennessee": "https://www.uthsc.edu/medicine/",
     "texas-a-m": "https://medicine.tamu.edu/",
@@ -233,5 +234,8 @@
     "xavier-com": "https://www.xavier.edu/college-of-medicine/",
     "xavier-ochsner": "https://www.xula.edu/xocom/",
     "yale": "https://medicine.yale.edu/"
+  },
+  "mdphd": {
+    "suny-upstate": "https://www.upstate.edu/mdphd/"
   }
 }

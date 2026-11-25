@@ -9,6 +9,10 @@ describe('programLinksOf', () => {
     expect(l.mdphdUrl).toBe('https://www.uab.edu/medicine/home/mstp/curriculum');
   });
 
+  it('adds the MD-PhD page of a school the program file lacks', () => {
+    expect(programLinksOf('suny-upstate').mdphdUrl).toBe('https://www.upstate.edu/mdphd/');
+  });
+
   it('is null, not undefined, for a school with nothing read', () => {
     expect(programLinksOf('no-such-school')).toEqual({ websiteUrl: null, admissionsUrl: null, mdphdUrl: null });
   });
@@ -20,9 +24,9 @@ describe('programLinksOf', () => {
     }
     expect(all.filter((l) => l.admissionsUrl).length).toBeGreaterThan(100);
     expect(all.filter((l) => l.mdphdUrl).length).toBeGreaterThan(100);
-    // Every school but SUNY Upstate has a homepage, from the registry's own or `program-sites.json`.
+    // Every school has a homepage, from the registry's own or `program-sites.json`.
     const bare = schools.schools.filter((s) => !s.website && !programLinksOf(s.slug).websiteUrl).map((s) => s.slug);
-    expect(bare).toEqual(['suny-upstate']);
+    expect(bare).toEqual([]);
     for (const l of all) if (l.websiteUrl) expect(l.websiteUrl.startsWith('https://')).toBe(true);
   });
 });
