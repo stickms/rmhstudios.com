@@ -330,6 +330,18 @@ export const getAdminOncallApi = endpoint<{ res: OncallApiResponse }>()({
   path: '/api/admin/oncall',
 });
 
+/** Ack, escalate or resolve an alarm: the watchdog applies it and edits the Discord alert to match. */
+export const actOnAdminOncallAlarmApi = endpoint<{
+  body: { key: string; action: 'ack' | 'escalate' | 'resolve' };
+  res: { ok: true; message: string } | { ok: false; error: string };
+}>()({ method: 'POST', path: '/api/admin/oncall/alarm' });
+
+/** Run one of the remediations an alarm offers (lib/oncall/remediations.ts). */
+export const remediateAdminOncallApi = endpoint<{
+  body: { key: string; action: string };
+  res: { ok: true; message: string } | { ok: false; error: string };
+}>()({ method: 'POST', path: '/api/admin/oncall/remediate' });
+
 export interface AdminAlarmRuleView extends EffectiveRule {
   evaluations: { dim: string; current: number | null; samples: number; active: boolean }[];
 }

@@ -10,8 +10,8 @@ import { alertMessage, pageRoles, pages, replyMessage, type DiscordFile, type Me
 import type { DurableObjectStorageLike } from './env';
 
 export const REPAGE_MS = 10 * 60 * 1000;
-/** Resolved records are kept this long so a late button click gets a sensible answer. */
-export const RESOLVED_RETENTION_MS = 24 * 60 * 60 * 1000;
+/** Resolved records are kept this long: a late button click gets a sensible answer, and the admin panel shows history. */
+export const RESOLVED_RETENTION_MS = 14 * 24 * 60 * 60 * 1000;
 
 export interface AlarmInput {
   /** Catalog id, e.g. "A05". */
@@ -34,6 +34,26 @@ export const MAX_ATTACHMENT_CHARS = 40_000;
 export const RESOLVE_NOTE_MAX = 1500;
 const ATTACHMENT_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}\.txt$/;
 
+/** Who did something: a Discord user id, or (via the admin panel) a site admin's display name. */
+export interface Actor {
+  by: string;
+  at: number;
+  via?: 'web';
+  name?: string;
+}
+
+/** A person acting. `web` = the admin panel, where `by` is a site user id and `name` what to show. */
+export interface Who {
+  by: string;
+  via?: 'web';
+  name?: string;
+}
+
+/** Discord text for an actor: a mention for a Discord user, a bold name for the admin panel. */
+export function mention(a: { by: string; via?: 'web'; name?: string }): string {
+  return a.via === 'web' ? `**${(a.name ?? 'an admin').replace(/[*_`~|<>@\\]/g, '').slice(0, 40) || 'an admin'}** (admin panel)` : `<@${a.by}>`;
+}
+
 export interface AlarmRecord {
   key: string;
   id: string;
@@ -47,8 +67,8 @@ export interface AlarmRecord {
   updatedAt: number;
   resolvedAt?: number;
   messageId?: string;
-  acked?: { by: string; at: number };
-  escalated?: { by: string; at: number };
+  acked?: Actor;
+  escalated?: Actor;
   lastPageAt: number;
   pageCount: number;
 }
@@ -191,32 +211,35 @@ export class Engine {
   }
 
   /** A person resolving a ticket (or alarm) from its Resolve button. */
-  async resolveBy(key: string, userId: string, now: number): Promise<AlarmRecord | string> {
+  async resolveBy(key: string, who: string | Who, now: number): Promise<AlarmRecord | string> {
+    const w: Who = typeof who === 'string' ? { by: who } : who;
     const rec = await this.get(key);
     if (!rec) return 'That alarm no longer exists.';
     if (rec.state !== 'firing') return 'Already resolved.';
-    return (await this.resolve(key, now, `resolved by <@${userId}>`))!;
+    return (await this.resolve(key, now, `resolved by ${mention(w)}`))!;
   }
 
   /** Returns the updated record, or a reason the click was refused. */
-  async ack(key: string, userId: string, now: number): Promise<AlarmRecord | string> {
+  async ack(key: string, who: string | Who, now: number): Promise<AlarmRecord | string> {
+    const w: Who = typeof who === 'string' ? { by: who } : who;
     const rec = await this.get(key);
     if (!rec) return 'That alarm no longer exists.';
     if (rec.state !== 'firing') return 'Already resolved — nothing to acknowledge.';
-    if (rec.acked) return `Already acknowledged by <@${rec.acked.by}>.`;
-    rec.acked = { by: userId, at: now };
+    if (rec.acked) return `Already acknowledged by ${mention(rec.acked)}.`;
+    rec.acked = { ...w, at: now };
     rec.updatedAt = now;
     await this.save(rec);
     return rec;
   }
 
-  async escalate(key: string, userId: string, now: number): Promise<AlarmRecord | string> {
+  async escalate(key: string, who: string | Who, now: number): Promise<AlarmRecord | string> {
+    const w: Who = typeof who === 'string' ? { by: who } : who;
     const rec = await this.get(key);
     if (!rec) return 'That alarm no longer exists.';
     if (rec.state !== 'firing') return 'Already resolved — nothing to escalate.';
     if (rec.sev === 1) return 'Already Sev1.';
     rec.sev = 1;
-    rec.escalated = { by: userId, at: now };
+    rec.escalated = { ...w, at: now };
     // A Sev1 is a new, bigger incident: it pages again until someone acks it.
     rec.acked = undefined;
     rec.lastPageAt = now;
@@ -226,12 +249,33 @@ export class Engine {
     return rec;
   }
 
+  /** Rewrite the Discord alert from the record: what a button click gets for free as its response. */
+  async refresh(rec: AlarmRecord): Promise<void> {
+    if (rec.messageId) await this.notifier.edit(rec.messageId, alertMessage(rec, this.ctx));
+  }
+
+  /**
+   * An action from the admin panel. Same state changes as the Discord buttons, plus what a
+   * button's response would have done: the alert is edited and an escalation is announced.
+   */
+  async act(key: string, action: 'ack' | 'escalate' | 'resolve', who: Who, now: number): Promise<AlarmRecord | string> {
+    if (action === 'resolve') {
+      const res = await this.resolveBy(key, who, now);
+      return res; // resolve() already edited the message and replied
+    }
+    const res = action === 'ack' ? await this.ack(key, who, now) : await this.escalate(key, who, now);
+    if (typeof res === 'string') return res;
+    await this.refresh(res);
+    if (action === 'escalate') await this.announceEscalation(res);
+    return res;
+  }
+
   /** Post the reply that goes with an escalation (kept separate so the click response stays fast). */
   async announceEscalation(rec: AlarmRecord): Promise<void> {
     const roles = [this.ctx.roleId, ...(this.ctx.escalationRoleId ? [this.ctx.escalationRoleId] : [])];
     const mentions = roles.map((r) => `<@&${r}>`).join(' ');
     await this.notifier.post(
-      replyMessage(rec.messageId, `🔺 ${mentions} **Escalated to SEV1** by <@${rec.escalated?.by}> — all hands.`, roles),
+      replyMessage(rec.messageId, `🔺 ${mentions} **Escalated to SEV1** by ${rec.escalated ? mention(rec.escalated) : 'someone'} — all hands.`, roles),
     );
   }
 

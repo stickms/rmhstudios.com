@@ -123,6 +123,8 @@ import { route as r_lib_moderation_api_admin_moderation_content } from '@/lib/mo
 import { route as r_lib_admin_api_admin_oncall } from '@/lib/admin/api/admin.oncall.server';
 import { route as r_lib_admin_api_admin_oncall_rules } from '@/lib/admin/api/admin.oncall-rules.server';
 import { route as r_lib_admin_api_admin_oncall_series } from '@/lib/admin/api/admin.oncall-series.server';
+import { route as r_lib_admin_api_admin_oncall_alarm } from '@/lib/admin/api/admin.oncall.alarm.server';
+import { route as r_lib_admin_api_admin_oncall_remediate } from '@/lib/admin/api/admin.oncall.remediate.server';
 import { route as r_lib_admin_api_admin_outbox } from '@/lib/admin/api/admin.outbox.server';
 import { route as r_lib_admin_api_admin_outbox_actions } from '@/lib/admin/api/admin.outbox.actions.server';
 import { route as r_lib_admin_api_admin_outbox_events } from '@/lib/admin/api/admin.outbox.events.server';
@@ -1373,6 +1375,8 @@ const API_ROUTES_A: readonly ApiRoute[] = [
   r_lib_admin_api_admin_oncall, // /api/admin/oncall
   r_lib_admin_api_admin_oncall_rules, // /api/admin/oncall-rules
   r_lib_admin_api_admin_oncall_series, // /api/admin/oncall-series
+  r_lib_admin_api_admin_oncall_alarm, // /api/admin/oncall/alarm
+  r_lib_admin_api_admin_oncall_remediate, // /api/admin/oncall/remediate
   r_lib_admin_api_admin_outbox, // /api/admin/outbox
   r_lib_admin_api_admin_outbox_actions, // /api/admin/outbox/actions
   r_lib_admin_api_admin_outbox_events, // /api/admin/outbox/events

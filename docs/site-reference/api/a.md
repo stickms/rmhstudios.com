@@ -142,6 +142,8 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/admin/oncall` | `GET` | `lib/admin/api/admin.oncall.server.ts` |
 | `/api/admin/oncall-rules` | `GET` `PATCH` | `lib/admin/api/admin.oncall-rules.server.ts` |
 | `/api/admin/oncall-series` | `GET` | `lib/admin/api/admin.oncall-series.server.ts` |
+| `/api/admin/oncall/alarm` | `POST` | `lib/admin/api/admin.oncall.alarm.server.ts` |
+| `/api/admin/oncall/remediate` | `POST` | `lib/admin/api/admin.oncall.remediate.server.ts` |
 | `/api/admin/outbox` | `GET` | `lib/admin/api/admin.outbox.server.ts` |
 | `/api/admin/outbox/actions` | `POST` | `lib/admin/api/admin.outbox.actions.server.ts` |
 | `/api/admin/outbox/events` | `GET` | `lib/admin/api/admin.outbox.events.server.ts` |

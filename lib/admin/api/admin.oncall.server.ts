@@ -3,6 +3,7 @@ import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/admin/admin-ops.contract';
 import { cached } from '@/lib/cached.server';
 import { oncallClient } from '@/lib/oncall/client.server';
+import { availability } from '@/lib/oncall/remediate.server';
 import type { OncallApiResponse, WatchdogOverview } from '@/lib/oncall/dashboard';
 
 /**
@@ -33,6 +34,7 @@ export const route = apiRoute('/api/admin/oncall', {
         // `?? []`: a watchdog older than the heartbeats field answers without it.
         const body: OncallApiResponse = {
           ok: true,
+          remediations: availability(),
           now: overview.now ?? Date.now(),
           alarms: overview.alarms ?? [],
           heartbeats: overview.heartbeats ?? [],
