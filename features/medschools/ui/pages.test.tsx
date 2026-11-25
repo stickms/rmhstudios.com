@@ -37,6 +37,8 @@ vi.mock('@tanstack/react-router', () => ({
   ),
   useNavigate: () => () => undefined,
   useSearch: () => h.search,
+  // The header source choice (`useSourcePref`) asks which route is on screen.
+  useRouterState: ({ select }: { select: (s: unknown) => unknown }) => select({ matches: [] }),
 }));
 vi.mock('@/components/session/session-context', () => ({
   useSession: () => ({ data: h.session, isPending: false }),

@@ -25,6 +25,7 @@ import {
   type MedChartedTypeId,
   type MedDegreeId,
   type MedProgramFilter,
+  type MedSourcePrefId,
 } from './medschools.contract';
 import { programPair, programsQueryValue, type ProgramKey } from './engine/programs';
 import { applyPrefs, type Prefs } from './engine/prefs';
@@ -85,7 +86,10 @@ export const schoolQuery = (slug: string) => ({
   gcTime: SCHOOL_GC,
 });
 
-export const activityQuery = (slug: string, q: { program: MedProgramFilter; cycle?: number | undefined }) =>
+export const activityQuery = (
+  slug: string,
+  q: { program: MedProgramFilter; cycle?: number | undefined; source?: MedSourcePrefId | undefined },
+) =>
   schoolScoped(
     contractQuery(
       ['medschools', 'activity', slug, q],
@@ -231,9 +235,16 @@ export const askStatusQuery = () =>
 export const qaLimitRequestQuery = () =>
   contractQuery([...ME_KEY, 'qa-limit-request'] as const, getMedQaLimitRequestApi, {}, { staleTime: 0 });
 
+/**
+ * The public `source` value for the reader's choice (`engine/source-pref.ts`): only `admit` is sent, because CycleTrack
+ * is first in the primary order already, so one view is one cache key.
+ */
+export const sourceParamOf = (pref: MedSourcePrefId | undefined): { source?: 'admit' } =>
+  pref === 'admit' ? { source: pref } : {};
+
 /** The schools-list request for a parsed index search and its effective view. */
 export function indexQuery(
-  search: { q?: string | undefined; states?: readonly string[] | undefined },
+  search: { q?: string | undefined; states?: readonly string[] | undefined; source?: MedSourcePrefId | undefined },
   view: { programs: readonly ProgramKey[] },
 ): IndexQuery {
   const programs = programsQueryValue(view.programs);
@@ -242,6 +253,8 @@ export function indexQuery(
     // Canonical (sorted, deduped by the parser), so one choice is one cache key.
     ...(search.states?.length ? { state: search.states.join(',') } : {}),
     ...(programs ? { programs } : {}),
+    // Only `admit` is sent: CycleTrack is first in the primary order already, so it is the plain request.
+    ...sourceParamOf(search.source),
   };
 }
 
@@ -321,7 +334,14 @@ export interface SchoolHead {
 export async function loadSchoolHead(
   queryClient: QueryClient,
   slug: string,
-  deps: { tab: SchoolTab; program?: ProgramFilter | undefined; type: string; cycle?: number | undefined },
+  deps: {
+    tab: SchoolTab;
+    program?: ProgramFilter | undefined;
+    type: string;
+    cycle?: number | undefined;
+    /** The URL's source choice (`parseSourcePref` of the school's `source`); a device choice is applied by the page. */
+    source?: MedSourcePrefId | undefined;
+  },
   prefs: Prefs | null = null,
   cause?: 'enter' | 'stay' | 'preload',
 ): Promise<SchoolHead | null> {
@@ -339,7 +359,10 @@ export async function loadSchoolHead(
   // The tab's own query: awaited on a first visit (the chart is in the HTML), not on a change of tab or setting.
   let tab: Promise<unknown> = Promise.resolve();
   if (deps.tab === 'activity') {
-    tab = prefetchRouteQuery(queryClient, activityQuery(slug, { program, cycle: deps.cycle }));
+    tab = prefetchRouteQuery(
+      queryClient,
+      activityQuery(slug, { program, cycle: deps.cycle, ...sourceParamOf(deps.source) }),
+    );
   } else if (deps.tab === 'history') {
     tab = prefetchRouteQuery(queryClient, historyQuery(slug, { program, type: deps.type as MedChartedTypeId }));
   } else if (deps.tab === 'forecast') {

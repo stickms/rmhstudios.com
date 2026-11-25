@@ -56,13 +56,14 @@ longer govern this feature**; the admin page does not move with it (`components/
   rail), `MedTopBar` (over the main column only: 44px round back button, always present: one level up, never the browser
   history (owner 2026-11-24): `/` from the index and the index from everywhere else; the app's name; `HeaderActions`),
   `useMedMode` and `ThemeToggle`. **Header (owner 2026-11-24):** `HeaderActions` is one group at the bar's end, on the
-  title's row at every width (the title ends in an ellipsis on a narrow phone; the icons never wrap): Interview practice
-  (`Mic`), Live activity (`Activity`), the member's area (`UserRound`) and the light/dark toggle, each a 44px round link
-  or button with an accessible name and a `title`. A page never links to itself (no Live on `/med/live`, no practice on
-  `/med/practice`). The member's area, signed in, is an `AnchoredMenu` (keyboard, Escape, focus back): My cycle
-  (`/med/tracker`), My school lists, Preferences (`/med/lists#preferences`), Ask about schools; "My stats" joins it when
-  it exists. On those pages the button is the ink fill and the item is `aria-current`. Signed out it is a link to
-  `/login?callbackURL=<this page>`. The index's old link row (`Places`) is gone; the school page's member links moved
+  title's row at every width (the title ends in an ellipsis on a narrow phone; the icons never wrap): the source toggle
+  (CycleTrack / Admit.org, from 600px; in the member's menu below that, see "The reader's source choice"), Interview
+  practice (`Mic`), Live activity (`Activity`), the member's area (`UserRound`) and the light/dark toggle, each a 44px
+  round link or button with an accessible name and a `title`. A page never links to itself (no Live on `/med/live`, no
+  practice on `/med/practice`). The member's area, signed in, is an `AnchoredMenu` (keyboard, Escape, focus back): My
+  cycle (`/med/tracker`), My school lists, Preferences (`/med/lists#preferences`), Ask about schools; "My stats" joins
+  it when it exists. On those pages the button is the ink fill and the item is `aria-current`. Signed out it is a link
+  to `/login?callbackURL=<this page>`. The index's old link row (`Places`) is gone; the school page's member links moved
   into the same menu. **The rail** is in the server HTML at every width (frame, the open-live icon link
   `SquareArrowOutUpRight`, the search, the two filters and `RailSkeleton`'s eight static rows) and CSS shows the column
   from 1280px, so nothing shifts when it fills; it starts level with the top bar. Its list (`rail/RailFeed.tsx`) is a
@@ -280,6 +281,30 @@ few borders, no wall of identical cards, no pill soup, no panels in panels.
 - **Never sum sources (spec §10):** the primary series per school x program x cycle x event type is the first present
   source in `PRIMARY_ORDER` (CycleTrack, Admit, SDN, RMH, MDApplicants), after the floor. Others are comparison series.
   Every chart says "Reported events" and names its sources; reported events are never called applicants.
+- **The reader's source choice (owner 2026-11-24, `engine/source-pref.ts`, `ui/useSourcePref.ts`).** The header's
+  CycleTrack / Admit.org toggle only REORDERS: `primaryOrder(prefer)` puts the chosen source first, so it is primary
+  where it has data for that school, else the other one, then the rest of `PRIMARY_ORDER`; nothing is ever summed.
+  CycleTrack is the default (it is first already), so only `admit` is sent or stored. Public and user-independent: the
+  query param `source=cycletrack|admit` (lower case, zod enum, junk is a 400, part of the public cache key) on
+  `GET /schools` (`reported`) and `GET /schools/$slug/activity` (each type's `primary`, and the waves, read on the
+  interview primary); response key sets are unchanged. History needs no param (the response has every source; the tab's
+  automatic pick is `overlaySource(cycles, prefer)` and its own picker, the school's `source=`, still wins). The
+  Forecast is fitted per school on its primary source by the worker and is never fitted on request: when the choice
+  differs from the stored forecast's source the tab keeps it and says which source it is (`source-forecast-other`). The
+  live feed, the Today column and the link card are per event or fixed and do not follow it. Precedence: the URL
+  (`?source=admit` on the index; on a school page the existing `source`, where `ADMIT` / `CYCLETRACK` is the choice and
+  `SDN` is History's alone), else this device (`localStorage['rmh-medschool-source']`, registered in
+  `lib/device-data/registry.ts`, only `admit` stored), else CycleTrack. The server renders the URL's view; a device
+  choice applies after hydration through the in-place path (the previous answer dimmed, no skeleton, no scroll). A
+  choice writes `source=` into the URL on the index and a school page only when it is not the default, and the index's
+  school links hand on a choice that came from the URL.
+- **The toggle (`ui/shell/SourceToggle.tsx`, `ui/sources/SourceGlyph.tsx`).** In `HeaderActions`, first in the group: a
+  `role="radiogroup"` of two `role="radio"` buttons (roving tabindex, arrows wrap and follow the reading direction, Home
+  / End; names "CycleTrack" and "Admit.org"; `title` tooltips), each the source's favicon as one `currentColor` path
+  (CycleTrack's SVG redrawn on a 24 grid, Admit's touch icon traced), the checked one in `.medapp-chip`'s pressed style,
+  44px. It does not fit a phone's bar beside the four round buttons, so it shows from 600px (CSS); under that the same
+  choice is `SourceMenuRows` (two `menuitemradio` rows) in the member's menu, and signed out the sign-in link becomes a
+  menu button holding "Sign in" and those rows.
 - **Programs (O5):** `ProgramFilter` is `ALL | REG | PHD`; "All" sums REG + PHD **within one source** per day. A school
   shows only its own degree's options (an MD school never offers DO). Null-program events are in no series, total or
   chart: a muted line counts them, the live feed labels them "Program not reported".

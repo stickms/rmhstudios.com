@@ -33,6 +33,8 @@ const schools = z
   .string()
   .max(81 * MAX_SCHOOLS_FILTER)
   .regex(new RegExp(`^[a-z0-9-]{1,80}(,[a-z0-9-]{1,80}){0,${MAX_SCHOOLS_FILTER - 1}}$`));
+/** `source=cycletrack|admit`: which source the totals and primary series follow (`engine/source-pref.ts`). Lower case. */
+const sourcePref = z.enum(['cycletrack', 'admit']);
 const chartedType = z.enum(['INTERVIEW', 'SECONDARY', 'WAITLIST', 'REJECTION', 'ACCEPTANCE']);
 const anyType = z.enum(['SECONDARY', 'INTERVIEW', 'WAITLIST', 'REJECTION', 'ACCEPTANCE', 'WITHDRAWN', 'HOLD']);
 
@@ -42,11 +44,13 @@ export const listSchoolsQuery = z.object({
   state: state.optional(),
   program: program.optional(),
   programs: programsParam.optional(),
+  source: sourcePref.optional(),
 });
 
 export const activityQuery = z.object({
   program: program.optional(),
   cycle: z.coerce.number().int().min(2000).max(2100).optional(),
+  source: sourcePref.optional(),
 });
 
 export const historyQuery = z.object({

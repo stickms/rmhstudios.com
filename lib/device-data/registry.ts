@@ -231,6 +231,8 @@ export const DEVICE_STORES: readonly DeviceStore[] = [
       'rmh-medschool-mode',
       // RMH Med Schools: this device's remembered filters (programs, states, "My schools", the rail's own).
       'rmh-medschool-filters',
+      // RMH Med Schools: this device's CycleTrack / Admit.org choice for the totals (only `admit` is stored).
+      'rmh-medschool-source',
       'rmhtype-settings',
       'rmhmusic-practice-mode',
       'rmh-elections-split',

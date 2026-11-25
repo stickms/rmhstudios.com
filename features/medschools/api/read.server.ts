@@ -155,6 +155,10 @@ const setOf = (q: { programs?: string | undefined; degree?: MedDegreeId | undefi
   (q.programs ? parsePrograms(q.programs) : undefined) ??
   programsFromLegacy(q.degree, q.program === 'REG' || q.program === 'PHD' ? q.program : 'ALL');
 
+/** The reader's source choice as the source it puts first (`engine/source-pref.ts`); absent is the plain order. */
+const preferOf = (v: 'cycletrack' | 'admit' | undefined): MedSource | undefined =>
+  v === 'admit' ? 'ADMIT' : v === 'cycletrack' ? 'CYCLETRACK' : undefined;
+
 /** `CA,NY` -> the codes, deduped and sorted (the schema has checked each one). */
 const statesOf = (v: string | undefined): string[] | undefined => (v ? [...new Set(v.split(','))].sort() : undefined);
 
@@ -215,7 +219,8 @@ export async function listSchools(q: ListSchoolsQuery, now: Date = new Date()): 
     states: [...new Set(all.map((s) => s.state))].sort(),
     schools: filtered.map((s) => {
       const list = bySchool.get(s.id) ?? new Map<MedSource, number>();
-      const primary = pickPrimary(list.keys());
+      // The chosen source's sum where the school has one, else the primary order's first: one source, never a total.
+      const primary = pickPrimary(list.keys(), preferOf(q.source));
       return {
         slug: s.slug,
         name: s.name,
@@ -443,10 +448,11 @@ function wavesOf(interview: ActivityTypeDto | undefined, dayZeroOn: string): Wav
 }
 
 /** The INTERVIEW series of already floored and summed cells, in the Activity response's shape (waves read only this). */
-function interviewOf(cells: readonly RawCell[], today: string): ActivityTypeDto {
+function interviewOf(cells: readonly RawCell[], today: string, prefer?: MedSource): ActivityTypeDto {
   const s = buildTypeSeries(
     cells.filter((c) => c.eventType === 'INTERVIEW'),
     today,
+    prefer,
   );
   return { eventType: 'INTERVIEW', primary: s.primary, sources: s.sources };
 }
@@ -459,6 +465,7 @@ export async function getActivity(
   const school = await findSchool(slug);
   if (!school) return null;
   const program = q.program ?? 'ALL';
+  const prefer = preferOf(q.source);
   const cycleYear = await siteCycle(now, q.cycle);
   const [rows, cycle, unreported] = await Promise.all([
     prisma.medCycleCount.findMany({
@@ -507,6 +514,7 @@ export async function getActivity(
     const s = buildTypeSeries(
       cells.filter((c) => c.eventType === eventType),
       utcDayOf(now),
+      prefer,
     );
     return { eventType, primary: s.primary, sources: s.sources };
   });
@@ -520,7 +528,7 @@ export async function getActivity(
     otherTotals,
     unreportedProgram: unreported.count,
     unreportedProgramSource: unreported.source,
-    waves: wavesOf(program === 'ALL' ? types[0] : interviewOf(cellsOf(programsOf('ALL')), today), dayZeroOn),
+    waves: wavesOf(program === 'ALL' ? types[0] : interviewOf(cellsOf(programsOf('ALL')), today, prefer), dayZeroOn),
   };
 }
 

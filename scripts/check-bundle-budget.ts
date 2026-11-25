@@ -342,13 +342,21 @@ const BUDGETS = {
   // `first:-ms-4` class string every ghost text Button now carries. CI measured the entry at 700.3 KB against 700.0 KB
   // (+0.0%), about 300 B over; no library, page component or chart entered the entry. The void-breaker island CSS line
   // below goes 20,900 -> 21,000 B brotli for the same class (the island's Button carries it too).
-  entryRaw: 717_800,
+  // RMH Med Schools source toggle (2026-11-25): entry RAISED 717,800 -> 718,800 B (OPT-01, named in the commit). The
+  // feature that bought the bytes is the reader's CycleTrack / Admit.org choice: the `source=` URL parser the /med and
+  // /med/$slug routes' validateSearch and loaderDeps reach (features/medschools/engine/search.ts) and the one-line
+  // query helper the loaders call (medschools.queries.ts), so the server HTML of a shared `?source=admit` link already
+  // shows Admit.org's figures. The toggle, its store, the favicons and the reordering rules stay in page chunks.
+  // Measured on a plain `vite build`: parent 717,674 B -> 717,983 B (+309 B); the line keeps about 0.8 KB of headroom.
+  entryRaw: 718_800,
   // RMH Med Schools round 2 (2026-11-24): critical path RAISED 938,200 -> 939,000 B raw (OPT-01, named in the PR body).
   // The bytes are the /med URL parsers the routes' validateSearch reaches (features/medschools/engine/search.ts): a
   // states LIST (`state=CA,NY`, the owner's multi-state filter) and the by-day chart's category list (`daily=`), plus
   // the school queries' cache lifetimes in medschools.queries.ts. CI measured 916.4 KB against 916.2 KB (+0.0%), about
   // 200 B over; no state-name table, library, page component or chart entered the entry (those stay in page chunks).
-  criticalPathRaw: 940_000,
+  // RMH Med Schools source toggle (2026-11-25): RAISED 940,000 -> 941,000 B for the same bytes as the entry line above
+  // (OPT-01, named in the commit); measured 917.8 KB -> 918.1 KB on a plain `vite build`. Brotli stays under its line.
+  criticalPathRaw: 941_000,
   // Inbox icon toolbars (2026-11-25): critical path brotli RAISED 247,500 -> 248,000 B (OPT-01, named in the PR body). The
   // raw lines were raised for the same bytes in the previous change (the inbox icon buttons and the ghost-button bleed
   // class) but this one was left, and the deploy build measured 241.7 KB against 241.7 KB (+0.0%), about 100 B over,

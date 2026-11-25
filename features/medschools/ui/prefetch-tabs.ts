@@ -9,8 +9,10 @@ import {
   historyQuery,
   schoolFactsQuery,
   secondariesQuery,
+  sourceParamOf,
 } from '../medschools.queries';
 import type { SchoolSearch } from './school-search';
+import type { SourcePref } from '../engine/source-pref';
 
 /** The gap between two background requests, so they never queue ahead of what the reader just asked for. */
 const STAGGER_MS = 150;
@@ -30,17 +32,24 @@ const whenIdle = (fn: () => void) => {
  * Public, cacheable GETs only: no `me/**` (the private chance line is the reader's own and loads with its tab), and
  * nothing that costs a model call. Returns a cancel for the not-yet-started requests (the page unmounting).
  */
-export function prefetchSchoolTabs(qc: QueryClient, slug: string, search: SchoolSearch): () => void {
+export function prefetchSchoolTabs(
+  qc: QueryClient,
+  slug: string,
+  search: SchoolSearch,
+  /** The header's source choice, so the activity keys are the ones the tabs will ask for. */
+  pref?: SourcePref,
+): () => void {
   const link = connectionClass();
   if (prefersLessData() || link === 'slow' || link === 'offline') return () => undefined;
   const type: MedChartedTypeId = CHARTED_TYPES.includes(search.type) ? (search.type as MedChartedTypeId) : 'INTERVIEW';
   const program = search.program;
+  const source = sourceParamOf(pref);
   const jobs = [
-    () => qc.prefetchQuery(activityQuery(slug, { program, cycle: search.cycle })),
+    () => qc.prefetchQuery(activityQuery(slug, { program, cycle: search.cycle, ...source })),
     () => qc.prefetchQuery(historyQuery(slug, { program, type })),
     () => qc.prefetchQuery(forecastQuery(slug, { program: program === 'PHD' ? 'PHD' : 'REG', type })),
     // Interviews reads this cycle's activity; History draws when results arrive.
-    () => qc.prefetchQuery(activityQuery(slug, { program, cycle: undefined })),
+    () => qc.prefetchQuery(activityQuery(slug, { program, cycle: undefined, ...source })),
     () => qc.prefetchQuery(arrivalsQuery(slug, { program, type })),
     () => qc.prefetchQuery(secondariesQuery(slug, { program })),
     () => qc.prefetchQuery(schoolFactsQuery(slug)),

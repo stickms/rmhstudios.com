@@ -81,6 +81,8 @@ export const ignoreAliasMissApi = endpoint<{
 /* Anonymous, signed-out-readable. No DTO below carries a person identifier (spec §6). */
 
 export type MedSourceId = MedSource;
+/** The public `source` query value (owner 2026-11-24): which source the totals and primary series follow (`engine/source-pref.ts`). */
+export type MedSourcePrefId = 'cycletrack' | 'admit';
 export type MedProgramId = MedProgram;
 export type MedEventTypeId = MedEventType;
 /** The five types the charts offer (`CHARTED_TYPES`); WITHDRAWN and HOLD appear in the live feed only. */
@@ -330,6 +332,8 @@ export const listMedSchoolsApi = endpoint<{
     program?: MedProgramFilter | undefined;
     /** The program set as a comma list (`md,do-phd`, see `engine/programs.ts`); omitted when every program is on. */
     programs?: string | undefined;
+    /** `reported` follows this source where the school has its figure, else the primary order. Never a sum. */
+    source?: MedSourcePrefId | undefined;
   };
   res: ListMedSchoolsRes;
 }>()({ method: 'GET', path: '/api/medschools/schools' });
@@ -341,7 +345,12 @@ export const getMedSchoolApi = endpoint<{ res: MedSchoolDetailDto }>()({
 });
 
 export const getMedSchoolActivityApi = endpoint<{
-  query: { program?: MedProgramFilter | undefined; cycle?: number | undefined };
+  query: {
+    program?: MedProgramFilter | undefined;
+    cycle?: number | undefined;
+    /** Each type's `primary` (and the waves, read on the interview primary) prefer this source where it has data. */
+    source?: MedSourcePrefId | undefined;
+  };
   res: MedSchoolActivityRes;
 }>()({ method: 'GET', path: '/api/medschools/schools/$slug/activity' });
 

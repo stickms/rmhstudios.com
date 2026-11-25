@@ -401,6 +401,35 @@ describe('RMH Med Schools, public and anonymous', () => {
     expect((await row('?programs=md')).latest!.eventType).toBe('INTERVIEW');
   });
 
+  it('follows the public source= choice (owner 2026-11-24): one source, never a sum, unchanged keys, junk is a 400', async () => {
+    type Row = { slug: string; reported: { source: string; count: number } | null };
+    const list = async (query = '') => (await anon.get(`/api/medschools/schools${query}`)).body.schools as Row[];
+    const mine = (rows: Row[]) => rows.find((r) => r.slug === SLUG)!;
+    const plain = await list();
+    // CycleTrack is first in the primary order; Admit.org's own interview sum (3 + 5) when asked for.
+    expect(mine(plain).reported!.source).toBe('CYCLETRACK');
+    expect(mine(await list('?source=admit')).reported).toEqual({ source: 'ADMIT', count: 8 });
+    expect(mine(await list('?source=cycletrack')).reported).toEqual(mine(plain).reported);
+    expect(Object.keys(mine(await list('?source=admit'))).sort()).toEqual(Object.keys(mine(plain)).sort());
+
+    const activity = async (query = '') => (await anon.get(`/api/medschools/schools/${SLUG}/activity${query}`)).body;
+    type Ty = { eventType: string; primary: string | null; sources: unknown[] };
+    const a0 = await activity();
+    const a1 = await activity('?source=admit');
+    expect(Object.keys(a1).sort()).toEqual(Object.keys(a0).sort());
+    const type = (body: { types: Ty[] }, t: string) => body.types.find((x) => x.eventType === t)!;
+    expect(type(a0, 'INTERVIEW').primary).toBe('CYCLETRACK');
+    expect(type(a1, 'INTERVIEW').primary).toBe('ADMIT');
+    expect(type(a1, 'INTERVIEW').sources).toEqual(type(a0, 'INTERVIEW').sources);
+    // Admit has no acceptance here: the other source stays primary.
+    expect(type(a1, 'ACCEPTANCE').primary).toBe('CYCLETRACK');
+
+    for (const bad of ['sdn', 'ADMIT', 'junk', 'admit,cycletrack']) {
+      expect((await anon.get(`/api/medschools/schools?source=${bad}`)).status, bad).toBe(400);
+      expect((await anon.get(`/api/medschools/schools/${SLUG}/activity?source=${bad}`)).status, bad).toBe(400);
+    }
+  });
+
   it('answers hostile input with a 4xx or an empty list, never a 500', async () => {
     for (const path of [
       '/api/medschools/schools/NOPE%00',

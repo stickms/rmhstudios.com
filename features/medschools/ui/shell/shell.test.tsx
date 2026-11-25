@@ -17,8 +17,11 @@ vi.mock('@tanstack/react-router', () => ({
     </a>
   ),
   useRouterState: ({ select }: { select: (s: unknown) => unknown }) =>
-    select({ location: { pathname: route.pathname, href: route.pathname } }),
+    select({ location: { pathname: route.pathname, href: route.pathname }, matches: [] }),
   useRouter: () => ({ history: { back: () => undefined } }),
+  // The source toggle (`SourceToggle`) reads the URL's `source` and navigates in place.
+  useSearch: () => ({}),
+  useNavigate: () => () => Promise.resolve(),
 }));
 
 const read = (f: string) => readFileSync(f, 'utf8');
