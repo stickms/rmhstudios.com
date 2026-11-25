@@ -1,0 +1,4 @@
+{
+  "about": "CycleTrack keys of programmes that have shut down. CycleTrack still lists them, so scripts/medschools/build-registry.ts leaves them out of schools.json; the migration that retires the school sets MedSchool.active to false.",
+  "keys": ["Charles R. Drew-UCLA"]
+}

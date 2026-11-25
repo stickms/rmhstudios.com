@@ -15,16 +15,10 @@ const overrides = read<Record<string, SdnOverride>>('sdn-overrides.json');
 const registryKeys = new Set(schools.map(registryKeyOf));
 
 /**
- * Schools allowed to have no SDN thread stem: no current-cycle thread exists for them on SDN (Drew/UCLA shares the
- * Drew thread; CUNY and the two campuses that opened in 2026, LECOM Jacksonville and LMU-DCOM Orange Park, have a
+ * Schools allowed to have no SDN thread stem: no current-cycle thread exists for them on SDN (CUNY and the two campuses that opened in 2026, LECOM Jacksonville and LMU-DCOM Orange Park, have a
  * summary page only). This list may only shrink, except by a school that joins the registry without a thread.
  */
-const NO_THREAD_ALLOWED = [
-  'Charles R. Drew-UCLA',
-  'City University of New York',
-  'Lake Erie - Jacksonville',
-  'Lincoln Memorial - Orange Park',
-];
+const NO_THREAD_ALLOWED = ['City University of New York', 'Lake Erie - Jacksonville', 'Lincoln Memorial - Orange Park'];
 
 describe('sdn-aliases.json', () => {
   it('every cycletrackKey exists in schools.json', () => {
