@@ -21,7 +21,7 @@
     "cycletrackKey": "Arkansas COM"
   },
   "BYU School of Medicine": {
-    "ignore": true
+    "cycletrackKey": "Brigham Young"
   },
   "Baptist Health Sciences University College of Osteopathic Medicine (BUCOM)": {
     "cycletrackKey": "Baptist Health Sciences University COM"
@@ -33,7 +33,7 @@
     "cycletrackKey": "Burrell COM"
   },
   "Burrell College of Health Sciences School of Osteopathic Medicine - Melbourne (Burrell-COM-Melbourne)": {
-    "ignore": true
+    "cycletrackKey": "Burrell COM - Florida"
   },
   "California Health Sciences University College of Osteopathic Medicine (CHSU-COM)": {
     "cycletrackKey": "California Health Sciences"
@@ -54,7 +54,7 @@
     "cycletrackKey": "Cooper Rowan"
   },
   "D'Youville University College of Osteopathic Medicine": {
-    "ignore": true
+    "cycletrackKey": "D'Youville University COM"
   },
   "Dartmouth Geisel School of Medicine": {
     "cycletrackKey": "Dartmouth"
@@ -120,7 +120,7 @@
     "cycletrackKey": "Kansas City University COM"
   },
   "Kansas City University College of Osteopathic Medicine - Joplin (KCU-Joplin)": {
-    "ignore": true
+    "cycletrackKey": "Kansas City University COM - Joplin"
   },
   "Kansas Health Science University - Kansas College of Osteopathic Medicine (KansasCOM)": {
     "cycletrackKey": "Kansas COM"
@@ -129,10 +129,10 @@
     "cycletrackKey": "Lake Erie"
   },
   "Lake Erie College of Osteopathic Medicine - Elmira (LECOM-Elmira)": {
-    "ignore": true
+    "cycletrackKey": "Lake Erie - Elmira"
   },
   "Lake Erie College of Osteopathic Medicine - Seton Hill (LECOM-Seton-Hill)": {
-    "ignore": true
+    "cycletrackKey": "Lake Erie - Seton Hill"
   },
   "Lake Erie College of Osteopathic Medicine Bradenton Campus (LECOM-Bradenton)": {
     "cycletrackKey": "Lake Erie - Bradenton"
@@ -144,7 +144,7 @@
     "cycletrackKey": "Lincoln Memorial"
   },
   "Lincoln Memorial University - Debusk College of Osteopathic Medicine - Knoxville (LMU-DCOM-Knoxville)": {
-    "ignore": true
+    "cycletrackKey": "Lincoln Memorial - Knoxville"
   },
   "Loyola University Chicago Stritch School of Medicine": {
     "cycletrackKey": "Loyola"
@@ -189,7 +189,7 @@
     "cycletrackKey": "New York Institute of Technology"
   },
   "New York Institute of Technology College of Osteopathic Medicine at Arkansas State University (NYITCOM-at-Arkansas)": {
-    "ignore": true
+    "cycletrackKey": "New York Institute of Technology - Arkansas"
   },
   "Noorda College of Osteopathic Medicine (Noorda-COM)": {
     "cycletrackKey": "Noorda"
@@ -303,10 +303,10 @@
     "cycletrackKey": "Touro - New York"
   },
   "Touro College of Osteopathic Medicine - Middletown (TouroCOM-Middletown)": {
-    "ignore": true
+    "cycletrackKey": "Touro - Middletown"
   },
   "Touro College of Osteopathic Medicine - Montana (TouroCOM-Montana)": {
-    "ignore": true
+    "cycletrackKey": "Touro - Montana"
   },
   "Touro University College of Osteopathic Medicine - California (TUCOM-CA)": {
     "cycletrackKey": "Touro - California"
@@ -438,7 +438,7 @@
     "cycletrackKey": "Wright State"
   },
   "Xavier Oschner College of Medicine": {
-    "ignore": true
+    "cycletrackKey": "Xavier Ochsner"
   },
   "summary:ACOM/alabama-college-of-osteopathic-medicine": {
     "cycletrackKey": "Alabama COM"
@@ -459,13 +459,13 @@
     "cycletrackKey": "Baptist Health Sciences University COM"
   },
   "summary:BYUSOM/brigham-young-university-school-of-medicine": {
-    "ignore": true
+    "cycletrackKey": "Brigham Young"
   },
   "summary:Brown/brown-university-warren-alpert-medical-school": {
     "cycletrackKey": "Brown"
   },
   "summary:Burrell-BCSOM-Melbourne/burrell-college-of-health-professions-school-of-osteopathic-medicine-melbourne": {
-    "ignore": true
+    "cycletrackKey": "Burrell COM - Florida"
   },
   "summary:Burrell-BCSOM/burrell-college-of-health-professions-school-of-osteopathic-medicine": {
     "cycletrackKey": "Burrell COM"
@@ -495,7 +495,7 @@
     "cycletrackKey": "Duquesne University COM"
   },
   "summary:DYUCOM-DO/d-youville-university-college-of-osteopathic-medicine": {
-    "ignore": true
+    "cycletrackKey": "D'Youville University COM"
   },
   "summary:ECU/brody-school-of-medicine-at-east-carolina-university": {
     "cycletrackKey": "East Carolina"
@@ -531,7 +531,7 @@
     "cycletrackKey": "Jefferson"
   },
   "summary:KCU-Joplin/kansas-city-university-college-of-osteopathic-medicine-joplin": {
-    "ignore": true
+    "cycletrackKey": "Kansas City University COM - Joplin"
   },
   "summary:KUSOM/university-of-kansas-school-of-medicine": {
     "cycletrackKey": "Kansas"
@@ -546,19 +546,19 @@
     "cycletrackKey": "Lake Erie - Bradenton"
   },
   "summary:LECOM-Elmira/lake-erie-college-of-osteopathic-medicine-elmira": {
-    "ignore": true
+    "cycletrackKey": "Lake Erie - Elmira"
   },
   "summary:LECOM-Jacksonville/lake-erie-college-of-osteopathic-medicine-jacksonville": {
-    "ignore": true
+    "cycletrackKey": "Lake Erie - Jacksonville"
   },
   "summary:LECOM-Seton-Hill/lake-erie-college-of-osteopathic-medicine-seton-hill": {
-    "ignore": true
+    "cycletrackKey": "Lake Erie - Seton Hill"
   },
   "summary:LMU-DCOM-Knoxville/lincoln-memorial-university-debusk-college-of-osteopathic-medicine-knoxville": {
-    "ignore": true
+    "cycletrackKey": "Lincoln Memorial - Knoxville"
   },
   "summary:LMU-DCOM-Orange-Park/lincoln-memorial-university-debusk-college-of-osteopathic-medicine-orange-park": {
-    "ignore": true
+    "cycletrackKey": "Lincoln Memorial - Orange Park"
   },
   "summary:LMU-DCOM/lincoln-memorial-university-debusk-college-of-osteopathic-medicine": {
     "cycletrackKey": "Lincoln Memorial"
@@ -621,7 +621,7 @@
     "cycletrackKey": "New York Institute of Technology"
   },
   "summary:NYITCOM-at-Arkansas/new-york-institute-of-technology-college-of-osteopathic-medicine-at-arkansas-state-university": {
-    "ignore": true
+    "cycletrackKey": "New York Institute of Technology - Arkansas"
   },
   "summary:OAKLAND/oakland-university-william-beaumont-school-of-medicine": {
     "cycletrackKey": "Oakland"
@@ -711,10 +711,10 @@
     "cycletrackKey": "Touro - New York"
   },
   "summary:TouroCOM-Middletown/touro-college-of-osteopathic-medicine-middletown": {
-    "ignore": true
+    "cycletrackKey": "Touro - Middletown"
   },
   "summary:TouroCOM-Montana/touro-college-of-osteopathic-medicine-montana": {
-    "ignore": true
+    "cycletrackKey": "Touro - Montana"
   },
   "summary:U-of-C/university-of-chicago-pritzker-school-of-medicine": {
     "cycletrackKey": "Chicago"
@@ -873,6 +873,6 @@
     "cycletrackKey": "Western University - California"
   },
   "summary:XOCOM/xavier-ochsner-college-of-medicine": {
-    "ignore": true
+    "cycletrackKey": "Xavier Ochsner"
   }
 }

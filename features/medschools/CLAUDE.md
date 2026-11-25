@@ -357,6 +357,25 @@ only page components import `ui/charts`. Route files must not (`ui-rules.test.ts
 the lazy page chunk. `scripts/check-entry-composition.ts --strict` has tripwires for both; `validateSearch` is
 hand-rolled (`engine/search.ts`) because zod is forbidden in the entry.
 
+## The registry (`data/medschools/schools.json`)
+
+234 schools (167 MD, 67 DO), loaded by the medschools worker at start (`seedRegistryIfEmpty`, which creates what is
+missing and never overwrites an admin's edit). 221 come from CycleTrack (`scripts/medschools/build-registry.ts`, settled
+by `overrides.json`); the 13 CycleTrack does not list are hand-maintained in `registry-extra.json`, which the build
+carries into the output unchanged. Checked against the official lists on 2026-11-24 (`registry-extra.json`'s header):
+every programme in the LCME directory of accredited US MD programs (165 rows, Puerto Rico included; preliminary
+programmes count, they admit) is here, plus Cleveland Clinic Lerner and Charles R. Drew/UCLA, which admit separately but
+have no LCME row of their own; every COCA college is here except Niazee COM (no accreditation status in the September
+2026 directory), and a campus is its own entry when it admits its own class (PCOM, VCOM, LECOM, LMU-DCOM, KCU, Touro,
+Rocky Vista Montana, WesternU Northwest, NYITCOM Arkansas, Burrell Florida). Teaching sites of one programme are not
+schools (MSUCOM Detroit and Macomb, OU-HCOM Cleveland and Dublin, Rowan-Virtua Sewell, NSU-KPCOM Clearwater, RVUCOM
+Southern Utah, Mayo's Arizona and Florida campuses, UMN Duluth): their Admit and SDN keys stay in the ignored lists.
+Every school of one university that is separately accredited or admits separately is its own entry (Case Western and
+Cleveland Clinic Lerner, the two Rutgers schools, MSU's CHM and COM, Texas Tech Lubbock and El Paso, Nova's MD and DO
+colleges, the UC and UT schools). The alias files name a school by its registry key (`registryKeyOf`: the CycleTrack
+key, or an extra's shortName); a name that is not certain stays for the admin alias queue, never guessed. The curated
+files (school pages, class profiles, MD-PhD) predate the 13 extras and have no entry for them yet.
+
 ## School crests
 
 `public/images/medschools/crests/<slug>.webp` (96x96) are downloaded once from Admit's `crest_url` by

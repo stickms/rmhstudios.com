@@ -232,7 +232,7 @@ export function schoolPagesHash(raw: unknown): string {
  * The worker's bootstrap step for the curated school pages: imports `data/medschools/school-pages.json` once per
  * version of the file (a `MedSourceRun` with job `school-pages-import`, status OK and the file's hash is the done
  * flag). The import is idempotent and never rewinds a newer check, so a failed or repeated run is harmless; this only
- * keeps it from re-reading 221 schools on every restart. No operator step is needed after a deploy.
+ * keeps it from re-reading every school in the file on every restart. No operator step is needed after a deploy.
  */
 export async function ensureSchoolPagesImported(
   prisma: MedPrisma,

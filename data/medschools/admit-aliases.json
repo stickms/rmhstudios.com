@@ -78,6 +78,10 @@
       "admitSlug": "burrell-college-of-osteopathic-medicine"
     },
     {
+      "cycletrackKey": "Burrell COM - Florida",
+      "admitSlug": "burrell-college-of-osteopathic-medicine-florida"
+    },
+    {
       "cycletrackKey": "California Health Sciences",
       "admitSlug": "california-health-sciences-university-college-of-osteopathic-medicine"
     },
@@ -152,6 +156,10 @@
     {
       "cycletrackKey": "Creighton",
       "admitSlug": "creighton-university"
+    },
+    {
+      "cycletrackKey": "D'Youville University COM",
+      "admitSlug": "dyouville-university-college-of-osteopathic-medicine"
     },
     {
       "cycletrackKey": "Dartmouth",
@@ -306,6 +314,10 @@
       "admitSlug": "kansas-city-university-of-medicine-and-biosciences-kansas-city"
     },
     {
+      "cycletrackKey": "Kansas City University COM - Joplin",
+      "admitSlug": "kansas-city-university-of-medicine-and-biosciences-joplin"
+    },
+    {
       "cycletrackKey": "Kansas COM",
       "admitSlug": "kansas-health-science-center"
     },
@@ -326,12 +338,28 @@
       "admitSlug": "lecom-bradenton"
     },
     {
+      "cycletrackKey": "Lake Erie - Elmira",
+      "admitSlug": "lake-erie-college-of-osteopathic-medicine-elmira"
+    },
+    {
+      "cycletrackKey": "Lake Erie - Seton Hill",
+      "admitSlug": "lake-erie-college-of-osteopathic-medicine-seton-hill"
+    },
+    {
       "cycletrackKey": "Liberty",
       "admitSlug": "liberty-university-college-of-osteopathic-medicine"
     },
     {
       "cycletrackKey": "Lincoln Memorial",
       "admitSlug": "lincoln-memorial-university-debusk"
+    },
+    {
+      "cycletrackKey": "Lincoln Memorial - Knoxville",
+      "admitSlug": "lincoln-memorial-university-debusk-knoxville"
+    },
+    {
+      "cycletrackKey": "Lincoln Memorial - Orange Park",
+      "admitSlug": "lincoln-memorial-university-debusk-orange-park"
     },
     {
       "cycletrackKey": "Loma Linda",
@@ -468,6 +496,10 @@
     {
       "cycletrackKey": "New York Institute of Technology",
       "admitSlug": "new-york-institute-of-technology"
+    },
+    {
+      "cycletrackKey": "New York Institute of Technology - Arkansas",
+      "admitSlug": "new-york-institute-of-technology-arkansas-state"
     },
     {
       "cycletrackKey": "New York Medical College",
@@ -698,6 +730,14 @@
       "admitSlug": "touro-university-california"
     },
     {
+      "cycletrackKey": "Touro - Middletown",
+      "admitSlug": "touro-college-of-osteopathic-medicine-middletown"
+    },
+    {
+      "cycletrackKey": "Touro - Montana",
+      "admitSlug": "touro-college-of-osteopathic-medicine-great-falls"
+    },
+    {
       "cycletrackKey": "Touro - Nevada",
       "admitSlug": "touro-college-of-osteopathic-medicine-nevada"
     },
@@ -875,26 +915,16 @@
     }
   ],
   "ignoredSlugs": [
-    "burrell-college-of-osteopathic-medicine-florida",
-    "dyouville-university-college-of-osteopathic-medicine",
-    "kansas-city-university-of-medicine-and-biosciences-joplin",
-    "lake-erie-college-of-osteopathic-medicine-elmira",
-    "lake-erie-college-of-osteopathic-medicine-seton-hill",
-    "lincoln-memorial-university-debusk-knoxville",
-    "lincoln-memorial-university-debusk-orange-park",
     "mayo-clinic-school-of-medicine-arizona",
     "mayo-clinic-school-of-medicine-florida",
     "michigan-state-university-college-of-osteopathic-medicine-dmc",
     "michigan-state-university-college-of-osteopathic-medicine-muc",
-    "new-york-institute-of-technology-arkansas-state",
     "nova-southeastern-university-patel-clearwater",
     "ohio-university-heritage-cleveland",
     "ohio-university-heritage-dublin",
     "oklahoma-state-university-tahlequah",
     "ponce-health-sciences-university-st-louis",
     "rocky-vista-university-utah",
-    "rowan-university-school-of-osteopathic-medicine-sewell",
-    "touro-college-of-osteopathic-medicine-great-falls",
-    "touro-college-of-osteopathic-medicine-middletown"
+    "rowan-university-school-of-osteopathic-medicine-sewell"
   ]
 }
