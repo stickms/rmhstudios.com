@@ -187,6 +187,11 @@ describe.skipIf(!PORT)('medschools list builder: with the fake provider', () => 
     expect(by['it-builder-low']!.label).toBe('likely');
     expect(by['it-builder-none']!.label).toBe('not-enough-data');
     expect(by['it-builder-high']!.comparisons[0]).toMatchObject({ yours: '512', theirs: '522', stat: 'median' });
+    // MCAT is banded by AAMC percentile rank: 512 is 84, 522 is 99.
+    expect(by['it-builder-high']!.comparisons[0]).toMatchObject({
+      band: 'below',
+      mcat: { latest: 512, earlier: [], yoursPct: { rank: 84 }, theirsPct: { rank: 99 } },
+    });
     expect(by['it-builder-high']!.reason?.text).toContain('522');
     expect(by['it-builder-mid']!.reason).toBeNull();
     expect(by['it-builder-low']!.reason).toBeNull();

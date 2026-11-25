@@ -20,7 +20,7 @@ import { buildList } from './build.server';
 
 const REQUEST = 'zzzrequest 5 schools in the Northeast, research-heavy';
 const STATS = {
-  mcat: { total: 513, year: 2026, month: 4 },
+  mcat: { total: 513, year: 2026, month: 4, earlier: [] },
   gpaCumulative: 3.81,
   gpaScience: 3.7,
   homeState: 'NY',
@@ -85,18 +85,48 @@ describe('buildList', () => {
       ['delta', 'not-enough-data'],
     ]);
     const alpha = res.schools[0]!;
-    expect(alpha.comparisons[0]).toEqual({ metric: 'MCAT', yours: '513', theirs: '520', stat: 'median', band: 'below' });
+    expect(alpha.comparisons[0]).toEqual({
+      metric: 'MCAT',
+      yours: '513',
+      theirs: '520',
+      stat: 'median',
+      band: 'below', // percentile rank 86 vs 97
+      mcat: { latest: 513, earlier: [], yoursPct: { rank: 86, printed: '86' }, theirsPct: { rank: 97, printed: '97' } },
+    });
     expect(alpha.reason?.cites).toEqual(['m1', 'c1f1']);
     // The MD-PhD program and MSTP are cited figures, never repeated as notes.
     expect(alpha.notes).toEqual(['home-state']);
     expect(alpha.figures.map((f) => f.kind)).toEqual(expect.arrayContaining(['MDPHD_PROGRAM', 'MSTP_T32']));
     expect(alpha.city).toBe('Town');
     // The member's figures come back as data, never as a sentence built on the server.
-    expect(res.member[0]).toEqual({ ref: 'm1', kind: 'mcat', value: '513', year: 2026, month: 4, category: null, missions: [] });
+    expect(res.member[0]).toEqual({
+      ref: 'm1',
+      kind: 'mcat',
+      value: '513',
+      year: 2026,
+      month: 4,
+      category: null,
+      missions: [],
+      forLabels: { score: 513, earlier: [], percentile: { rank: 86, printed: '86' } },
+    });
     expect(JSON.stringify(res.member)).not.toMatch(/Your|"text"/);
     expect(res.schools.find((s) => s.slug === 'charlie')?.reason).toBeNull(); // "99" is in no fact
     expect(res.member.map((x) => x.ref)).toEqual(['m1', 'm2', 'm3', 'm4', 'm5', 'm6']);
     expect(res.filters.missions).toEqual(['research']);
+  });
+
+  it('labels use the latest MCAT weighted by earlier attempts; the model still sees the latest total only', async () => {
+    m.statsForBuilder.mockResolvedValue({ ...STATS, mcat: { ...STATS.mcat, earlier: [499] } });
+    const { runner: r, calls } = runner(route(), PICKS);
+    const res = await build(r);
+    // 0.8 x 513 + 0.2 x 499 = 510.2: 510 (rank 79) vs bravo's mean 512 (84) is near; vs alpha's 520 (97) below.
+    const bravo = res.schools.find((s) => s.slug === 'bravo')!;
+    expect(bravo.comparisons[0]).toMatchObject({ yours: '510', band: 'near', mcat: { latest: 513, earlier: [499] } });
+    expect(res.member[0]?.forLabels).toEqual({ score: 510, earlier: [499], percentile: { rank: 79, printed: '79' } });
+    const user = String(calls.answer[0]?.[1]);
+    expect(user).toContain('Your most recent MCAT total (April 2026): 513');
+    expect(user).not.toContain('499');
+    expect(user).not.toContain('510');
   });
 
   it('the model never sets a label: a label in its reply is ignored', async () => {

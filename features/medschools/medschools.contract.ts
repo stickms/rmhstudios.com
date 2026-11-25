@@ -1229,16 +1229,32 @@ export const putMedStatsOnboardingApi = endpoint<{ body: z.infer<typeof putOnboa
 /** Computed in code (`engine/builder/label.ts`), never by the model. `not-compared`: the member did not use their stats. */
 export type MedBuildLabel = 'likely' | 'target' | 'reach' | 'not-enough-data' | 'not-compared';
 
+/** An MCAT total's rank in AAMC's published percentile table (`engine/mcat-percentile.ts`). */
+export interface MedMcatPercentileDto {
+  /** For comparison: "<1" is 0. */
+  rank: number;
+  /** As AAMC prints it: "84", "<1". */
+  printed: string;
+}
+
 /** One comparison a label rests on: the member's figure against the class's published one. */
 export interface MedBuildComparisonDto {
   metric: 'MCAT' | 'GPA';
-  /** As the member entered it ("512", "3.81"). */
+  /** GPA as the member entered it ("3.81"); MCAT the weighted score used for labels ("512"). */
   yours: string;
   /** As the school publishes it. */
   theirs: string;
   /** Which statistic the school published: median, mean, or a figure whose statistic the page does not name. */
   stat: 'median' | 'mean' | 'unnamed';
-  band: 'above' | 'near' | 'below';
+  /** `not-compared`: an MCAT score with no percentile rank in the table; it does not count towards the label. */
+  band: 'above' | 'near' | 'below' | 'not-compared';
+  /** MCAT only: the attempts the score was weighted from, and both percentile ranks (null when not in the table). */
+  mcat: {
+    latest: number;
+    earlier: number[];
+    yoursPct: MedMcatPercentileDto | null;
+    theirsPct: MedMcatPercentileDto | null;
+  } | null;
 }
 
 /** A public figure a school's row used, with where it came from. */
@@ -1290,6 +1306,11 @@ export interface MedBuildMemberFactDto {
   category: HoursCategory | null;
   /** `missions` only. */
   missions: Mission[];
+  /**
+   * `mcat` only: the score labels use (`engine/builder/label.ts`, the latest weighted slightly by the earlier
+   * attempts' totals), those earlier totals, and the score's percentile rank (null outside the table).
+   */
+  forLabels: { score: number; earlier: number[]; percentile: MedMcatPercentileDto | null } | null;
 }
 
 export interface MedBuildRes {
