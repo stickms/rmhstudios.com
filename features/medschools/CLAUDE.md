@@ -704,12 +704,28 @@ owner's four decisions there are binding).
   (no row): "Add what you're comfortable sharing. It's private to you.", "Add my stats" (`/med/stats?welcome=1`, the
   four sections as steps) and "Skip for now" (remembered on the account by `onboardedAt`). It never blocks a list. "My
   stats" (`/med/stats`) is in the member menu.
-- **The label rule (`engine/builder/label.ts`, code, never the model).** The member's figures: the most recent MCAT
-  attempt's total and the cumulative GPA. The school's: the first class (Facts tab order) with a numeric MCAT or GPA
-  figure for the MD program, median over mean over the plain unnamed figure, never a range. Per figure MCAT `diff >= 3`
-  above, `<= -3` below; GPA `>= 0.10` above, `<= -0.10` below; else near. None compared: not enough published data; any
-  below: reach; both compared and both above: likely; else target. Without "Use my stats": `not-compared`. The page says
-  it is not a chance of admission.
+- **The label rule (`engine/builder/label.ts`, code, never the model; MCAT revised by the owner 2026-11-25).** The
+  member's figures: the MCAT for labels, `0.8 x latest + 0.2 x mean(earlier totals)` when earlier attempts have a total,
+  else the latest (`MCAT_WEIGHTS`), rounded to a whole score; and the cumulative GPA. The school's: the first class
+  (Facts tab order) with a numeric MCAT or GPA figure for the MD program, median over mean over the plain unnamed
+  figure, never a range. **MCAT is banded by AAMC percentile rank**: both scores looked up in
+  `data/medschools/mcat-percentiles.json` (`engine/mcat-percentile.ts`), more than 5 points above is above, more than 5
+  below is below, else near (exactly 5 is near, `MCAT_PERCENTILE_MARGIN`); a score with no rank (outside 472-528; a
+  school's decimal mean is looked up at its nearest whole score) is `not-compared` and does not count. **GPA keeps
+  `>= 0.10` above, `<= -0.10` below** (no official GPA percentile table is in scope). None compared: not enough
+  published data; any below: reach; both compared and both above: likely; else target. Without "Use my stats":
+  `not-compared`. The page says it is not a chance of admission. The row shows "Your MCAT 512 (latest 514, earlier 505)
+  · percentile rank 84 vs the class's median 517 · percentile rank 94" and "Your figures used" the score labels use,
+  each with a `SourceRef` citing "Source: AAMC, Percentile Ranks for MCAT Total and Section Scores, <period>" and AAMC's
+  page.
+- **The AAMC percentile table.** `data/medschools/mcat-percentiles.json` (the table in effect May 1, 2026 - April 30,
+  2027; header: title, page and PDF URL, period, basis, fetch date, method, attribution; the total table and the four
+  section tables, ranks as printed, "<1" included). Fetched once by hand; the PDF is never committed. A pure lookup, no
+  table in the database, imported only by the builder (its endpoint, and its page through `label.ts`; never a route file
+  or `medschools.queries.ts`). `engine/mcat-percentile.test.ts` holds coverage and monotonic ranks;
+  `pnpm exec tsx scripts/medschools/check-mcat-percentiles.ts <pdf>` re-reads the PDF by hand. AAMC replaces the table
+  each May 1: download it, update the file, run the checker. The earlier totals reach `statsForBuilder` for the
+  weighting only; the model's line stays the latest total and its month.
 - **The builder (`POST me/list-builder`, `api/builder/build.server.ts`).** The Ask's gates (`admitQuestion`,
   `runUnderLease`, tiers, the admin bypass, the shared pause, `qaDeadlineMs`, the thinking switch for the answer call);
   one build is one daily question. Route call (`MEDSCHOOLS_LIST_ROUTE`, `engine/builder/route.ts`: states, Census

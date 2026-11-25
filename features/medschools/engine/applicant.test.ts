@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { putStatsBody } from '../api/stats-schemas';
-import { EMPTY_STATS, attemptProblem, gpaOk, hasAnyStats, latestMcat, withTotal, type McatAttempt } from './applicant';
+import {
+  EMPTY_STATS,
+  attemptProblem,
+  earlierMcatTotals,
+  gpaOk,
+  hasAnyStats,
+  latestMcat,
+  withTotal,
+  type McatAttempt,
+} from './applicant';
 
 const a = (over: Partial<McatAttempt>): McatAttempt => ({
   year: 2026,
@@ -49,6 +58,20 @@ describe('MCAT attempts', () => {
     const list = [a({ year: 2026, month: 6, total: 515 }), a({ year: 2025, month: 9, total: 505 }), a({ year: 2027, month: 1 })];
     expect(latestMcat(list)?.total).toBe(515);
     expect(latestMcat([])).toBeNull();
+  });
+
+  it('the earlier totals are every other attempt with a total (for the labels’ weighting)', () => {
+    const list = [
+      a({ year: 2025, month: 9, total: 505 }),
+      a({ year: 2026, month: 6, total: 515 }),
+      a({ year: 2027, month: 1 }),
+      a({ year: 2024, month: 5, total: 498 }),
+    ];
+    expect(earlierMcatTotals(list)).toEqual([505, 498]);
+    expect(earlierMcatTotals([a({ total: 510 })])).toEqual([]);
+    expect(earlierMcatTotals([])).toEqual([]);
+    // Two attempts on one date: the later in the list is the latest, the other is earlier.
+    expect(earlierMcatTotals([a({ total: 500 }), a({ total: 510 })])).toEqual([500]);
   });
 });
 

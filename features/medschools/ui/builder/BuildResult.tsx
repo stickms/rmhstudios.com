@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { LABEL_ORDER } from '../../engine/builder/label';
+import { MCAT_PERCENTILE_SOURCE } from '../../engine/mcat-percentile';
 import { formatUtcDay } from '../../engine/public-read';
 import { SCHOOL_SEARCH_DEFAULTS } from '../../engine/search';
 import { isPdfUrl, textFragmentUrl } from '../../engine/text-fragment';
@@ -12,6 +13,7 @@ import type {
   MedBuildMemberFactDto,
   MedBuildRes,
   MedBuildSchoolDto,
+  MedMcatPercentileDto,
 } from '../../medschools.contract';
 import { useKindLabel } from '../facts/EnteringClass';
 import { SchoolCrest } from '../SchoolCrest';
@@ -61,19 +63,55 @@ export function useBuilderText() {
         : c.stat === 'mean'
           ? t('builder-stat-mean', { defaultValue: 'mean' })
           : t('builder-stat-unnamed', { defaultValue: 'published figure' });
-    return c.metric === 'MCAT'
-      ? t('builder-compare-mcat', {
-          defaultValue: 'Your MCAT {{yours}} vs the class’s {{stat}} {{theirs}}',
-          yours: c.yours,
-          stat,
-          theirs: c.theirs,
-        })
-      : t('builder-compare-gpa', {
-          defaultValue: 'Your GPA {{yours}} vs the class’s {{stat}} {{theirs}}',
-          yours: c.yours,
-          stat,
-          theirs: c.theirs,
-        });
+    if (c.metric === 'MCAT') {
+      const m = c.mcat;
+      const score = m && m.earlier.length ? weighted(c.yours, m.latest, m.earlier) : c.yours;
+      const line = t('builder-compare-mcat', {
+        defaultValue: 'Your MCAT {{yours}} vs the class’s {{stat}} {{theirs}}',
+        yours: withPct(score, m?.yoursPct ?? null),
+        stat,
+        theirs: withPct(c.theirs, m?.theirsPct ?? null),
+      });
+      return c.band === 'not-compared'
+        ? t('builder-compare-not-compared', {
+            defaultValue: '{{line}}: not compared, because the figure has no rank in AAMC’s percentile table',
+            line,
+          })
+        : line;
+    }
+    return t('builder-compare-gpa', {
+      defaultValue: 'Your GPA {{yours}} vs the class’s {{stat}} {{theirs}}',
+      yours: c.yours,
+      stat,
+      theirs: c.theirs,
+    });
+  };
+  /** "512 · percentile rank 84"; the score alone when the table has no rank for it. */
+  const withPct = (score: string, p: MedMcatPercentileDto | null): string => {
+    if (!p) return score;
+    const rank =
+      p.printed === '<1'
+        ? t('builder-pct-under-1', { defaultValue: 'percentile rank under 1' })
+        : t('builder-pct-rank', { defaultValue: 'percentile rank {{rank}}', rank: p.printed });
+    return t('builder-mcat-pct', { defaultValue: '{{score}} · {{rank}}', score, rank });
+  };
+  /** "512 (latest 514, earlier 505)": the score labels use and the attempts it was weighted from. */
+  const weighted = (score: string, latest: number, earlier: readonly number[]): string =>
+    t('builder-mcat-weighted', {
+      defaultValue: '{{score}} (latest {{latest}}, earlier {{earlier}})',
+      score,
+      latest: String(latest),
+      earlier: earlier.join(', '),
+    });
+  /** The "Your figures used" line for the MCAT labels use, under the most recent total. */
+  const mcatForLabels = (m: MedBuildMemberFactDto): string | null => {
+    const f = m.forLabels;
+    if (!f) return null;
+    const score = f.earlier.length ? weighted(String(f.score), Number(m.value), f.earlier) : String(f.score);
+    return t('builder-yours-mcat-labels', {
+      defaultValue: 'MCAT used for labels: {{score}}',
+      score: withPct(score, f.percentile),
+    });
   };
   const memberLine = (m: MedBuildMemberFactDto): string => {
     switch (m.kind) {
@@ -106,7 +144,24 @@ export function useBuilderText() {
         });
     }
   };
-  return { label, groupNote, comparison, memberLine };
+  return { label, groupNote, comparison, memberLine, mcatForLabels };
+}
+
+/** Where every MCAT percentile rank comes from: AAMC's published table, cited like the facts panels cite AAMC. */
+function PercentileSource() {
+  const { t } = useTranslation('medschools');
+  const { period, pageUrl } = MCAT_PERCENTILE_SOURCE;
+  return (
+    <SourceRef
+      name={t('builder-pct-source-name', { defaultValue: 'AAMC MCAT percentile ranks' })}
+      detail={t('builder-pct-source-detail', { defaultValue: 'In effect {{period}}', period })}
+      href={pageUrl}
+      attribution={t('builder-pct-source', {
+        defaultValue: 'Source: AAMC, Percentile Ranks for MCAT Total and Section Scores, {{period}}',
+        period,
+      })}
+    />
+  );
 }
 
 function FigureRow({ f, schoolName }: { f: MedBuildFigureDto; schoolName: string }) {
@@ -220,9 +275,16 @@ function SchoolRow({
       <div className="medapp-build__body">
         {s.comparisons.length ? (
           <ul className="medapp-build__compare">
-            {s.comparisons.map((c) => (
-              <li key={c.metric}>{comparison(c)}</li>
-            ))}
+            {s.comparisons.map((c) =>
+              c.mcat && (c.mcat.yoursPct || c.mcat.theirsPct) ? (
+                <li key={c.metric} className="medapp-srcrow">
+                  <span>{comparison(c)}</span>
+                  <PercentileSource />
+                </li>
+              ) : (
+                <li key={c.metric}>{comparison(c)}</li>
+              ),
+            )}
           </ul>
         ) : null}
         {s.reason ? (
@@ -267,7 +329,7 @@ export function BuildResult({
   onToggle: (slug: string, on: boolean) => void;
 }) {
   const { t } = useTranslation('medschools');
-  const { label, groupNote, memberLine } = useBuilderText();
+  const { label, groupNote, memberLine, mcatForLabels } = useBuilderText();
   const { missionLabel } = useStatsText();
   const groups = LABEL_ORDER.map((l) => [l, res.schools.filter((s) => s.label === l)] as const).filter(
     ([, list]) => list.length > 0,
@@ -326,11 +388,20 @@ export function BuildResult({
             {t('builder-yours', { defaultValue: 'Your figures used' })}
           </h2>
           <ul className="medapp-build__yours">
-            {res.member.map((m) => (
-              <li key={m.ref} className="medapp-meta">
-                {memberLine(m)}
-              </li>
-            ))}
+            {res.member.map((m) => {
+              const labels = mcatForLabels(m);
+              return (
+                <li key={m.ref} className="medapp-meta">
+                  {memberLine(m)}
+                  {labels ? (
+                    <span className="medapp-srcrow">
+                      <span>{labels}</span>
+                      {m.forLabels?.percentile ? <PercentileSource /> : null}
+                    </span>
+                  ) : null}
+                </li>
+              );
+            })}
           </ul>
         </section>
       ) : null}

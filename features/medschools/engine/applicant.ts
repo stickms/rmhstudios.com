@@ -147,6 +147,12 @@ export function latestMcat(attempts: readonly McatAttempt[]): McatAttempt | null
   return best;
 }
 
+/** The totals of every attempt with a total except the most recent one (`latestMcat`), in the list's order. */
+export function earlierMcatTotals(attempts: readonly McatAttempt[]): number[] {
+  const latest = latestMcat(attempts);
+  return attempts.flatMap((a) => (a !== latest && a.total !== null ? [a.total] : []));
+}
+
 /** A GPA is 0.00-4.00 with at most two decimals. */
 export function gpaOk(v: number): boolean {
   return Number.isFinite(v) && v >= 0 && v <= 4 && Math.abs(Math.round(v * 100) - v * 100) < 1e-6;
