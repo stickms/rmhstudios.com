@@ -20,17 +20,22 @@ visitor, I want to find a maker's other work from their profile.
     the layout editor (`lib/profile/api/profile.layout.server.ts`, schema in `lib/profile/modules-schema.ts`).
   - Member-made, public things and their "not shown" flags: `ConnectionsGrid` (`hidden`; `draft` from 06),
     `LightsOutBoard` (`hidden`, sprint 11 05), `FlashcardDeck` (`isPublic`; the moderator lock from 16), `Chart` (Slice
-    It, `status` `'public' | 'draft'`), `UserBuild` (`visibility` `PUBLIC | UNLISTED | PRIVATE`). Each has its own page
+    It, `status` `'draft' | 'public'`, with legacy rows still `'ranked'`, which every reader matches as
+    `status: { in: ['public', 'ranked'] }`; `@@index([authorId, updatedAt])`), `UserBuild` (`visibility`
+    `PUBLIC | UNLISTED | PRIVATE`, `publishedAt` set once published). Each has its own page
     (`/connections/u/$id`, `/lights-out/b/$id`, `/study/$deckId`, the Slice It song page, `/builds/$slug`) and none is
-    linked from the maker's profile, except builds in the profile's builds list where it exists.
+    linked from the maker's profile (the profile has a "Notify me about builds" toggle, `ProfileHero.tsx`, and no
+    list of the member's builds; the Slice It showcase module, `SliceItModule.tsx`, shows play stats, not charts the
+    member wrote).
 - **Decisions:**
   - **A module, opt-in:** "Made here" is a new `ModuleKind` (`made`) in the lazy plus bundle; it shows nothing until the
     member adds it, as every module.
   - **What it lists:** up to four of each kind, newest first: published grids not hidden and not drafts, boards not
-    hidden, public decks not locked by a moderator and with at least one card, public charts, PUBLIC builds (never
-    UNLISTED or PRIVATE). Each row: the title (member text, `dir="auto"`), the kind, one figure (plays, plays, cards,
-    difficulty, releases) in `t-meta`, and a link. "See all" links go to the existing lists where they exist (the
-    builds list); otherwise the module shows only the four.
+    hidden, public decks not locked by a moderator (`moderatedAt` null) and with at least one card, charts with
+    `status` in `public | ranked`, builds with `visibility = PUBLIC` and `publishedAt` set (never UNLISTED or
+    PRIVATE). Each row: the title (member text, `dir="auto"`), the kind, one figure (plays, plays, cards,
+    difficulty, releases) in `t-meta`, and a link. No "See all" link (no per-member list exists for any of the five
+    kinds; a full page is out of scope).
   - **The member chooses the kinds:** the module's settings let the member untick kinds (stored in the module's own
     config in the layout, as other modules store theirs), all ticked by default.
   - **Who sees it:** whoever can see the profile; a block either way hides the profile today, and the endpoint answers

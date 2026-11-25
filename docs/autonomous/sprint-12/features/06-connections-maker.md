@@ -28,19 +28,28 @@ grids I am proud of and know which ones people enjoyed.
 - **Decisions:**
   - **Drafts:** a new column `draft Boolean @default(false)`. "Save draft" stores the grid unpublished; drafts are in no
     list, no daily, no link for anyone but the author (`getGrid` answers 404 to anyone else), and count toward
-    `MAX_GRIDS_PER_MEMBER`. "Publish" turns a complete draft into a grid (the same validation as today) and stamps
+    `MAX_GRIDS_PER_MEMBER`. The cap is checked and the row created in one transaction under
+    `lockKey(tx, 'connections-grids:<authorId>')` (today `createGrid` counts and then creates with no lock, so two
+    quick saves could pass a cap of one; drafts make saving frequent). "Publish" turns a complete draft into a grid (the same validation as today) and stamps
     `publishedAt`; existing rows are published (the migration sets `publishedAt = "createdAt"`).
   - **Try it:** the author plays their draft or grid in a practice mode on the client: the four groups are shuffled
     with the same `stableOrder` rule, guesses are checked in the browser against the author's own groups (the author
     already sees the solution), and nothing is written.
   - **Edit:** the author may change the title, labels and items while the grid has no play by another member
     (`playCount = 0` and no `ConnectionsPlay` rows); after that it is locked, and the page says why. The edit runs as a
-    compare-and-set (`updateMany` where `playCount = 0`) so a play that lands first wins.
+    compare-and-set (`updateMany` where `playCount = 0`) so a play that lands first wins. Today `submitGuess` reads
+    the grid's `groups` **before** its transaction and creates the first `ConnectionsPlay` inside it, so an edit landing
+    between the two would let a guess be judged against the old groups. So the edit and the first play serialise:
+    `updateGrid` takes `lockKey(tx, 'connections-grid:<id>')` before its CAS, and `submitGuess` takes the same lock and
+    re-reads `groups` (and `draft`, `hidden`) inside its transaction before judging.
   - **Your grids** (`/connections/mine`, personal): drafts first, then published grids with plays, solve rate, average
     rating (shown once there are 3 ratings), whether it was a daily, and "Hidden by a moderator" for a hidden one. Rows
     on rules, figures in `t-meta`.
   - **Erasure:** drafts are erased with the account (they were never published); published grids stay under "Deleted
-    user" as today. The registry entry's reason is updated, its decision stays `keep`.
+    user" as today. The registry entry becomes `ConnectionsGrid: { decision: 'erase', scope: 'draft rows only
+    (draft = true); published grids stay under "Deleted user" (rule 3)', reason: … }`: the erasure coverage test
+    fails any `keep` model that `anonymizeAccount` touches ("touches no keep, todo or cascade model"), and an `erase`
+    entry with a `scope` is how the registry states a partial erasure (`CardTrade`, `CommunityHandover`).
 
 ## Functional requirements
 
@@ -49,7 +58,7 @@ grids I am proud of and know which ones people enjoyed.
    `connections_grid_authorId_draft_idx` is **not** added (the existing `[authorId, createdAt]` serves the list).
 2. FR-2 `lib/party/connections.server.ts`: `createGrid({ draft })`, `updateGrid` (CAS on no plays), `publishGrid`,
    `listMyGrids`; every public read adds `draft: false` (`listGrids`, `getGrid` for non-authors, `submitGuess`,
-   `rateGrid`, `scheduleGrid` refuses a draft).
+   `rateGrid`, `scheduleGrid` refuses a draft); the cap under its lock; the edit/first-play lock above.
 3. FR-3 Endpoints: `PATCH /api/connections/grids/$id` (edit), `POST /api/connections/grids/$id/publish`,
    `GET /api/connections/mine`, as registered modules with contracts; writes `rateLimit: 'write'`.
 4. FR-4 `lib/party/connections-practice.ts` (pure): the practice checker used by the try-it mode.
@@ -58,7 +67,8 @@ grids I am proud of and know which ones people enjoyed.
    personal, under the Wave 0 sitemap anchor); one ink primary per view (R4: "Publish" on the form).
 6. FR-6 Refusals: `CONNECTIONS_GRID_PLAYED` ("This grid has been played, so it can no longer be changed"),
    `CONNECTIONS_GRID_INCOMPLETE` ("Fill in all four groups before publishing").
-7. FR-7 Erasure op (drafts) under the Wave 0 anchor; the registry reason updated; `pnpm docs:deletion`.
+7. FR-7 Erasure op (`connectionsGrid.deleteMany({ where: { authorId, draft: true } })`) under the Wave 0 anchor; the
+   registry entry changed to a scoped `erase` as above; `pnpm docs:deletion`.
 
 ## Non-functional requirements
 
@@ -76,7 +86,8 @@ ratingCount, dailyDate, hidden }] }`.
 
 - Main suite `lib/party/__tests__/connections-maker.test.ts`: a draft is 404 to others, absent from `listGrids` and the
   daily, cannot be guessed, rated or scheduled; an edit after another member's play is refused, and the CAS loses to a
-  concurrent first play; publish validates; the cap counts drafts.
+  concurrent first play (and a guess after a concurrent edit is judged against the new groups); publish validates;
+  the cap counts drafts and holds under two concurrent saves.
 - Product suite `lib/party/__tests__/connections-practice.product.test.ts`.
 - Main suite `lib/account/__tests__/connections-drafts-erasure.test.ts`: drafts go, published grids stay.
 - Gates: route table, sitemap coverage, OG coverage, design consistency and Steel flat, arrival coverage, user-text

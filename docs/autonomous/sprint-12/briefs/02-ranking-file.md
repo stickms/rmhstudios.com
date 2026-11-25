@@ -355,7 +355,8 @@ Modify:
 - `components/rmhbox/minigame-icons.ts`
 - `lib/rmhbox/history-display-registrations.ts`
 - `server/rmhbox/game-coordinator.ts`
-- `server/rmhbox/rate-limit.ts` (the two input actions, if it lists actions)
+- nothing in `server/rmhbox/rate-limit.ts` or `config.ts`: actions travel as `rmhbox:game:input`, which is already
+  limited (`SOCKET_RATE_LIMITS`)
 
 ## Patterns to copy
 

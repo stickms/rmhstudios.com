@@ -348,7 +348,7 @@ Modify:
 - `lib/rmhladder/alerts/dispatch.server.ts`
 - `lib/admin/api-keys.server.ts`
 - `lib/moderation/triage.server.ts` (the decision message only)
-- `lib/admin-review.server.ts` and its eight callers
+- `lib/admin-review.server.ts` and its seven callers (listed in the specification)
 - `lib/developer/recipes.server.ts`
 - `lib/__tests__/notice-preview-ratchet.test.ts` (`PASSED_THROUGH_HELPERS` emptied)
 - `locales/en/notice-language.json`, `locales/en/feed.json`

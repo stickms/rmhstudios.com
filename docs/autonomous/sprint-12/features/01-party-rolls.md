@@ -36,6 +36,11 @@ want to roll in secret and to see a player's secret roll, so that hidden checks 
   - **Who sees a roll:** `table` (every current member, the default), `gm` (a player's roll only the roller and the game
     master see), `secret` (the game master's own roll that only the game master sees). PF2e degrees of success appear
     only when the game master sets a DC on a `gm` or `secret` roll; a player never sets one.
+  - **The game master has no character.** The party's game master is its `ownerId` and has no
+    `RmhCharacterPartyMember` row (`getParty` matches `ownerId` or a member row), so the game master rolls `free`
+    notation only, `table` or `secret`, with `characterId` null and the label "Game master"; every sheet-based kind
+    needs the caller's own member row and character, and a player without one is refused with
+    `PARTY_ROLL_NO_CHARACTER`. `gm` visibility is a player's choice only.
   - **The log:** the newest 200 rolls per party are kept (older ones are trimmed in the same transaction as the
     insert); the view shows the newest 50 the viewer may see, and asks for new ones every 5 seconds while the party view
     is visible (`refetchIntervalInBackground: false`), with "Show earlier".

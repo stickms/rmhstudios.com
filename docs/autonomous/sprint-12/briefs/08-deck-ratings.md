@@ -348,7 +348,9 @@ Create:
 Modify:
 
 - `prisma/schema/rmhstudy.prisma`
-- `lib/study.server.ts` (`listMarketplaceDecks` with `sort`, `cloneDeck`, the deck delete)
+- `lib/study.server.ts` (`listMarketplaceDecks` with `sort`, `cloneDeck`)
+- `lib/study/deck-editor.server.ts` (`deleteDeck`: both branches decrement the source's `copyCount`; 16 edited
+  `updateDeck` in the same file in wave 4)
 - `lib/study/api/study.marketplace.server.ts`
 - `app/routes/_site/study/browse.tsx` (`?sort=`)
 - `components/feed/DeckMarketplaceColumn.tsx`
@@ -384,6 +386,9 @@ the merges clean). If your anchor is missing, stop and report it — do not inve
   (`FlashcardReviewLog` by `[userId, deckId]`).
 - Counters change in the same transaction as the row, under `lockKey(tx, 'deck-ratings:<deckId>')`.
 - The `copyCount` backfill is one `UPDATE … FROM (SELECT …)` in the migration.
+- Decks stay at erasure (`FlashcardDeck: owner`): the erasure corrects rating sums only, never `copyCount`.
+- `cloneDeck`'s "already owned" check runs before its transaction: repeat it inside, under the deck lock, before
+  incrementing.
 - A moderated deck (16) is not public: it is not rateable and not listed.
 
 ## Tests to write

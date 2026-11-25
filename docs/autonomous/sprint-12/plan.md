@@ -10,7 +10,9 @@ implementers and integration learned folded into the briefs.
 `claude/autonomous-sprint-12` is cut from the sprint 11 branch tip (`claude/autonomous-sprint-11`, which holds sprints
 1–11) once sprint 11 has finished integrating, or from `origin/main` if sprint 11 has landed there by then (then
 `git merge origin/main` again when it lands; the content is identical). This design was checked against the sprint 11
-tip `83d19d02b` (all twenty sprint 11 features merged, wave 7's `s11-field-names` last). Wave 0 is committed on top of
+tip `83d19d02b` (all twenty sprint 11 features merged, wave 7's `s11-field-names` last) and re-validated on
+`5714f0006` (25 commits later: a merge of `main`, and fixes that closed part of 17 — `13e809261` — and all of 20 (d) —
+`3e40f4280`; both specifications say so). Wave 0 is committed on top of
 that. Wave 1 does not start before, because:
 
 - the Wave 0 anchors go **after** sprint 11's anchor blocks in `lib/account/deletion.server.ts`,
@@ -21,7 +23,7 @@ that. Wave 1 does not start before, because:
 - features build on sprint 11 code: 01 on the party (s11-03) and the sheet rolls (s11-02); 06 and 07 on Lights Out
   boards' report and visibility pattern (s11-05); 08, 09, 12, 16 and 20 on deck editors and `DECK_ACCESS_PATHS`
   (s11-10); 10 on price changes (s11-13); 13 on parties (s11-03); 17 on `evaluateFinish` (s11-12); 20 on the Studio's
-  recorder and shares (s11-07, s11-08), the public mod log (s11-19) and the field-names gate (s11-20);
+  shares (s11-07), the public mod log (s11-19) and the field-names gate (s11-20);
 - the migration timestamps below sort after sprint 11's last, `20261201060200_s11_card_listen`;
 - **the refusal switch moved:** sprint 11's codes are rendered by `components/errors/refusal-sentence.ts` (the
   exhaustive `switch` over `ErrorCode`, last `case` `LISTING_PHOTO_NOT_SITE`); `components/errors/useRefusalText.ts` is
@@ -114,7 +116,7 @@ implementers run at once. **jsdom is not installed:** component tests render wit
      `{/* s12-14 admin-deletions */}`, `{/* s12-15 admin-homes */}`.
    - **Developer API** (12 and 13, waves 2 and 4): `lib/api/registry.ts` at the end of `ENDPOINTS`, `lib/api/scopes.ts`
      at the end of the scope list, `scripts/generate-sdk.ts` at the end of `NULLABLE`: `// Sprint 12` then
-     `// s12-12 api-reviews`, `// s12-13 api-characters` (13 alone adds a scope); `docs/developer-api/changelog.md` at
+     `// s12-12 api-reviews`, `// s12-13 api-characters` (each adds one scope: 12 `write:study-reviews`, explicit; 13 `read:characters`); `docs/developer-api/changelog.md` at
      the top of its list: `<!-- s12-12 api-reviews -->`, `<!-- s12-13 api-characters -->`.
 4. **No new shared helper.** `lockKey` serves every cap and claim; `useConfirm` and `usePrompt` every confirmation;
    `components/ui/tabs.tsx` every tab strip; `lib/calendar/tz.ts` every time-zone computation; the site's locale
@@ -141,7 +143,7 @@ implementers run at once. **jsdom is not installed:** component tests render wit
 The rule the waves keep: **no two features of one wave edit the same file unless that file is anchored** (each feature
 under its own Wave 0 line) or generated (integration regenerates it). The erasure registry
 (`lib/account/erasure-registry.ts`) is alphabetical, not anchored: 01 (`RmhCharacterPartyRoll`, w1), 06
-(`ConnectionsGrid`'s reason, w2) and 08 (`DeckRating`, w6) sit in different waves. `TODO_CEILING` stays 4.
+(`ConnectionsGrid` becomes a scoped `erase` of drafts, w2) and 08 (`DeckRating`, w6) sit in different waves. `TODO_CEILING` stays 4.
 
 Dependencies that fix the order:
 
@@ -172,8 +174,9 @@ Dependencies that fix the order:
 - **RMHType:** 17 (w5) alone edits `server/socket-server/handlers/rmhtype.ts`, `lib/rmhtype/challenges.ts` and the two
   RMHType pages.
 - **The sweeps last:** 20 (w7) touches small parts of many features' files (study fragments, the admin keys table, the
-  mod log, the Studio, community events, admin users, two forms) and 11 (w7) mounts in `app/routes/__root.tsx` and may
-  retitle routes; nothing else runs beside them.
+  mod log, Studio shares, community events, admin users, two forms) and 11 (w7) mounts in `app/routes/__root.tsx` and may
+  retitle routes, except the two route files 20 edits (`admin/users.tsx`, `rideshare/drive.tsx`), whose duplicates stay
+  in the baseline; nothing else runs beside them.
 
 ## Shared files and who touches them
 
@@ -204,14 +207,17 @@ Dependencies that fix the order:
 | `lib/game/leaderboard-privacy.ts` (`BOARD_PRIVACY_READ_PATHS`)                                                  | source, **anchored**              | 03                                                                                            |
 | `lib/study/deck-access.ts` (`DECK_ACCESS_PATHS`)                                                                | source, **anchored**              | 12 (w2), 09 (w3), 16 (w4), 08 (w6)                                                            |
 | `lib/study/deck-access.server.ts`                                                                               | source                            | 20                                                                                            |
-| `lib/study.server.ts`                                                                                           | source                            | 08 (`listMarketplaceDecks`, `cloneDeck`, the deck delete); 16 (marketplace filter, w4)        |
+| `lib/study.server.ts`                                                                                           | source                            | 16 (marketplace filter, `getDeck`, w4); 08 (`listMarketplaceDecks`, `cloneDeck`, w6)          |
+| `lib/study/deck-editor.server.ts`                                                                               | source                            | 16 (`updateDeck`, w4), 08 (`deleteDeck`, w6)                                                  |
+| `lib/study/queue.server.ts`                                                                                     | source                            | 12 (`reviewQueue`'s optional `deckId`, w2)                                                    |
 | `components/feed/DeckStudyColumn.tsx`                                                                           | source                            | 16 (w4), 08 (w6)                                                                              |
 | `components/study/ReviewAll.tsx`, `lib/study/api/study.cards.$id.review.server.ts`                              | source                            | 12 (w2, the route), 09 (w3, the screen)                                                       |
 | `app/routes/_site/admin/index.tsx`                                                                              | source, **anchored**              | 15 (w3), 14 (w5)                                                                              |
 | report files (`report-constants.ts`, the report route, `triage.server.ts`, `my-reports.server.ts`, `MyReportsPanel.tsx`) | source                     | 16 (w4); 19 (w6) the decision message in `triage.server.ts` only                              |
 | `lib/party/connections.server.ts`, `components/party/ConnectionsPages.tsx`                                      | source                            | 06 (w2), 16 (w4)                                                                              |
 | `lib/homes/listings.server.ts`, `components/homes/ListingDetailView.tsx`                                        | source                            | 10 (w1), 16 (w4)                                                                              |
-| `lib/homes/scrape/**`, `server/homes-worker/index.ts`                                                           | source                            | 15                                                                                            |
+| `lib/homes/scrape/**` (incl. `process-source.ts`), `server/homes-worker/index.ts`                               | source                            | 15                                                                                            |
+| `docs/developer-api/scopes.md`                                                                                  | source                            | 12 (w2), 13 (w4)                                                                              |
 | `features/rmhcharacters/**`                                                                                     | source                            | 01 (w1); 13 (w4) reads only                                                                   |
 | `features/slice-it/**`                                                                                          | source                            | 04                                                                                            |
 | `lib/rmhmusic/learn/**`, `components/rmhmusic/learn/**`                                                         | source                            | 05                                                                                            |
@@ -221,7 +227,7 @@ Dependencies that fix the order:
 | `server/socket-server/handlers/rmhtype.ts`, `lib/rmhtype/**`, `components/rmhtype/**`                           | source                            | 17                                                                                            |
 | `lib/auth.ts` (the Stripe client moves out)                                                                     | source                            | 18                                                                                            |
 | `lib/rmhladder/alerts/dispatch.server.ts`, `lib/admin/api-keys.server.ts`, `lib/admin-review.server.ts` and its callers, `lib/developer/recipes.server.ts`, `lib/__tests__/notice-preview-ratchet.test.ts` | source | 19 |
-| `lib/admin/api-keys-schema.ts`, `components/admin/api-keys/ApiKeysTable.tsx`, `lib/communities/modlog.server.ts`, `lib/studio/**`, `components/communities/CommunityEventsPanel.tsx`, `app/routes/_site/admin/users.tsx`, `app/routes/_site/rideshare/drive.tsx`, `components/tf2-hud/ui.tsx` | source | 20 |
+| `lib/admin/api-keys-schema.ts`, `components/admin/api-keys/ApiKeysTable.tsx`, `lib/communities/modlog.server.ts`, `lib/studio/share.ts`, `components/communities/CommunityEventsPanel.tsx`, `app/routes/_site/admin/users.tsx`, `app/routes/_site/rideshare/drive.tsx`, `components/tf2-hud/ui.tsx` | source | 20 |
 | `app/routes/__root.tsx`, `components/shell/**`, `lib/router/**`                                                 | source                            | 11                                                                                            |
 | `lib/api/registry.ts`, `lib/api/scopes.ts`, `scripts/generate-sdk.ts`, `docs/developer-api/changelog.md`        | source, **anchored**              | 12 (w2), 13 (w4)                                                                              |
 | `packages/sdk/**`, `docs/developer-api/endpoints/**`                                                            | generated (`pnpm sdk:generate`, `pnpm docs:api`) | 12, 13; **integration regenerates on every merge**                             |
@@ -247,7 +253,8 @@ All additive; `.github/scripts/check-migrations-additive.mjs` must pass. Every t
 | 08      | `20261202060100_s12_deck_ratings`                                                                                           |
 
 02, 03, 04, 05, 07, 11, 12, 13, 15, 17, 19 and 20 have no schema change. **Every migration contains real SQL.** New
-tables get plain indexes in their own migration; new columns on existing tables are nullable or carry a constant default
+tables get plain indexes in the migration that creates them (the safety script allows a non-`CONCURRENTLY` index only on
+a table created in the same file); new columns on existing tables are nullable or carry a constant default
 (06's three, 08's three, 09's one, 10's one, 16's three, 18's one). 06 and 08 backfill with one `UPDATE` each (06's
 `publishedAt` from `createdAt`; 08's `copyCount` from the copies that exist) — data, not structure, and each is one
 statement. **One index on an existing table is planned** (09's, on `flashcard_review_log`): `CREATE INDEX CONCURRENTLY`
@@ -309,7 +316,7 @@ For each finished feature branch of the wave, in slot order:
    (eligibility; counters equal rows), 09 (own rows only), 10 (notes in no other member's read), 12 (no sound field;
    idempotency), 13 (no other sheet; `portrait` removed), 14 (no e-mail or message), 15 (SSRF guard), 16 (each takedown
    sticks; every reader excludes moderated items), 17 (no forged figure reaches a board), 18 (Stripe faked: stop,
-   resume, cancel), 19 (old rows render), 20 (each item).
+   resume, cancel, and a request withdrawn before, during and after the sync job's stop), 19 (old rows render), 20 (each item).
 7. Commit the regenerated files (`pnpm check:consistency` runs as the hook).
 
 After wave 7:
@@ -356,11 +363,11 @@ sprint met (refunds beside 18, written reviews beside 08, the deletion grace per
   see no change.
 - **Developer API twice (12, 13).** Generated SDK conflicts are expected and resolved by regeneration; `NULLABLE`
   applies by field name across the whole SDK, so each new nullable name is checked.
-- **Scope creep in 20.** Eight small items invite more; anything not listed is reported, not fixed.
+- **Scope creep in 20.** Seven small items invite more; anything not listed is reported, not fixed.
 
 ## Validation
 
-The design pass checked each specification against the sprint 11 tip (`83d19d02b`) in a read-only worktree:
+The design pass checked each specification against the sprint 11 tip (`83d19d02b`, then `5714f0006` by the validation pass) in a read-only worktree:
 
 - **Paths:** every file path cited in `features/` and `briefs/` that is said to exist was checked to exist; paths of
   files a feature creates are named as new. A scripted pass listed every backticked path in the twenty specifications
@@ -379,6 +386,14 @@ The design pass checked each specification against the sprint 11 tip (`83d19d02b
   (20 (a) names them); Slice It's chart PATCH already lints a published chart (04 restores through it rather than adding
   a server write); the Connections export and erasure keep published grids (06 erases drafts only); `HomeFavorite` is
   not in the data export today (10 exports it).
+- **Validation pass (2026-11-25, tip `5714f0006`):** 06's erasure entry (a `keep` model may not be touched by
+  `anonymizeAccount`: now a scoped `erase`), its edit/first-play race and cap lock; 08's deck delete is
+  `deleteDeck` in `lib/study/deck-editor.server.ts` and decks stay at erasure; 12's new explicit scope, no quest
+  rewards and `reviewQueue`'s missing deck filter; 14's claim (an advisory lock cannot span `anonymizeAccount`); 15's
+  pause overwritten by a run in flight; 16's re-publish through `/api/v1`, single-item reads, no appeal or restore
+  path; 17 narrowed to what `13e809261` left open; 18 one reconciling job so a withdrawn request cannot leave a
+  membership cancelled; 19's seven callers; 20 (d) dropped (fixed by `3e40f4280`); smaller corrections in 02, 03,
+  04, 05, 07, 09, 11.
 - **Not repeated:** no feature duplicates sprints 1–11. 01 is sprint 11's recorded "Shared roll log in a party"; 10 is
   its recorded "Saved notes and side-by-side comparison"; 16 includes its recorded "report path for Connections grids";
   17 is sprint 11 12's recorded follow-up; 18, 19 and 20 are follow-up list items; the rejected ideas are in the

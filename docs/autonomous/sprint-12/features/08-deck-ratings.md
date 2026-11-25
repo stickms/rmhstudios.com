@@ -28,14 +28,17 @@ the next learner benefits.
     decision).
   - **What is shown:** the average to one decimal and the number of ratings once there are at least 3; below that, "Not
     enough ratings yet". The copies count (`copyCount`) is the number of current copies, counted when a clone is made
-    and when a copy is deleted.
+    and when a copy is deleted. `cloneDeck` is idempotent per member today (an existing copy is returned), but its
+    existence check runs before its transaction; the increment happens only when a copy row is created, after the
+    existence check is repeated inside the transaction under the deck's lock, so two concurrent clicks count once.
   - **Ordering:** "Most cards" (today's order, the default), "Best rated" (a Bayesian average with a prior of 3.5 over
     5 ratings, so one 5-star rating does not top the list), "Most copied". The order is a `tabs.tsx` strip (never
     hand-rolled), remembered in the URL (`?sort=`).
   - **Counters:** `ratingSum`, `ratingCount` and `copyCount` on `FlashcardDeck`, written in the same transaction as the
     rating or the clone, under `lockKey(tx, 'deck-ratings:<deckId>')`.
   - **Erasure:** the member's ratings are erased and each rated deck's sum and count corrected in the same transaction;
-    the member's copies are erased by the existing deck rules and `copyCount` of each source corrected. **Export:** the
+    the member's decks, copies included, **stay** at erasure (`FlashcardDeck: owner`, an open owner decision), so
+    erasure does not change any `copyCount`. **Export:** the
     member's ratings (deck title, stars, date).
 
 ## Functional requirements
@@ -45,8 +48,11 @@ the next learner benefits.
 2. FR-2 `lib/study/deck-ratings.ts` (pure: eligibility from counts, the Bayesian score, display rules),
    `deck-ratings-schema.ts`, `deck-ratings.contract.ts`, `deck-ratings.server.ts` (`rateDeck`, `myRating`,
    `deckRatingErasureOps`, `exportDeckRatings`), classified in `DECK_ACCESS_PATHS` under the Wave 0 anchor.
-3. FR-3 `cloneDeck` and the deck delete in `lib/study.server.ts` keep `copyCount` right (a copy deleted by its owner
-   decrements the source, floored at zero).
+3. FR-3 `cloneDeck` (`lib/study.server.ts`) and `deleteDeck` (`lib/study/deck-editor.server.ts`, the one delete the
+   site route and `/api/v1` `deleteMyDeck` share) keep `copyCount` right: a copy deleted by its owner decrements its
+   source (floored at zero, a no-op when the source is gone) in both of `deleteDeck`'s branches — the plain
+   `deleteMany` without a transaction and the transaction for decks with pictures or sounds — so the plain branch
+   becomes a transaction too.
 4. FR-4 `listMarketplaceDecks` takes `sort` (`cards | rated | copied`); the endpoint `study.marketplace.server.ts` and
    the route loader pass it.
 5. FR-5 Endpoints: `PUT /api/study/decks/$id/rating`, `DELETE` the same (registered module
@@ -76,8 +82,9 @@ the next learner benefits.
 - Main suite `lib/study/__tests__/deck-ratings.test.ts`: eligibility (owner, editor, no copy, 19 versus 20 reviews,
   block either way); change and remove keep the counters; the three sorts; the display threshold.
 - Product suite `lib/study/__tests__/deck-ratings.product.test.ts`: the Bayesian score ordering.
-- Main suite `lib/account/__tests__/deck-ratings-erasure.test.ts`: ratings erased, sums and counts corrected, copy
-  counts corrected.
+- Main suite `lib/account/__tests__/deck-ratings-erasure.test.ts`: ratings erased, sums and counts corrected,
+  `copyCount` untouched (decks stay at erasure). Main suite `deck-ratings.test.ts` also: deleting a copy (either
+  `deleteDeck` branch) decrements its source; two concurrent clones of one source count once.
 - Gates: `DECK_ACCESS_PATHS` registry test, route table, migration safety, erasure coverage, export test, design
   consistency, Steel flat, the tab-strip rule.
 

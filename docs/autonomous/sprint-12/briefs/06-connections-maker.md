@@ -354,7 +354,8 @@ Modify:
 - `lib/party/connections.server.ts` (drafts excluded from every public read; `updateGrid`, `publishGrid`, `listMyGrids`)
 - `lib/party/connections.contract.ts`
 - `components/party/ConnectionsPages.tsx` (Save draft, Try it, Edit)
-- `lib/account/erasure-registry.ts` (`ConnectionsGrid`'s reason)
+- `lib/account/erasure-registry.ts` (`ConnectionsGrid` becomes `erase` with `scope` "draft rows only": the coverage
+  test fails a `keep` model that `anonymizeAccount` touches)
 
 ## Anchored shared files
 
@@ -380,7 +381,9 @@ the merges clean). If your anchor is missing, stop and report it — do not inve
 ## Gotchas
 
 - `listGrids` is cached (`connections:list`, 30 s): invalidate on publish and on an edit.
-- The edit CAS is one `updateMany` whose `where` includes `playCount: 0`.
+- The edit CAS is one `updateMany` whose `where` includes `playCount: 0`, under `lockKey(tx, 'connections-grid:<id>')`;
+  `submitGuess` takes the same lock and re-reads `groups` inside its transaction (today it reads them before).
+- The grid cap (`MAX_GRIDS_PER_MEMBER`) is counted and the row created under `lockKey(tx, 'connections-grids:<authorId>')`.
 - A draft is 404 to everyone but its author, including admins scheduling a daily.
 - `/connections/mine` is `personal` in `EXCLUDED_ROUTES` (param-less).
 

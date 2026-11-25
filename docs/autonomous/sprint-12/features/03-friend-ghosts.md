@@ -59,7 +59,9 @@ to drive, so that I chase a time I care about instead of only my own or a strang
 
 - **Privacy:** the list never names a member who does not qualify; a test covers each rule (one-way follow, block
   either way, hidden from boards, banned, no validated entry, ghost above the board score).
-- **Performance:** one board read and one replay query per request; `Cache-Control: private, max-age=60` on the list.
+- **Performance:** one board read and one replay query per request; `Cache-Control: private, max-age=60` on the list and on a `vs=friend` trace (the existing route sends `max-age=300`
+  for `pb` and `top`; a friend who unfollows or hides must drop out within a minute). An anonymous `vs=friend` is 401
+  although the route stays `auth: 'optional'` for `pb` and `top`.
 - **Accessibility:** the picker is a dialog with labelled rows; the ghost's lead is already read as text by the HUD.
 
 ## Data model and API

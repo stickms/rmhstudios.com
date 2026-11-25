@@ -53,7 +53,9 @@ any page that reloads.
    in `ROUTE_TITLE_DUPLICATES` (each with its two paths), which only shrinks; the announcer is mounted once in
    `__root.tsx` and the files of FR-1 to FR-3 contain no `MutationObserver` or `requestAnimationFrame`.
 5. FR-5 Fix the duplicate titles the gate finds where the fix is a title change only (a new literal through `buildMeta`;
-   no wording of a shipped interface string changes), and leave the rest in the baseline with their paths.
+   no wording of a shipped interface string changes), and leave the rest in the baseline with their paths. 11 runs
+   beside 20 in wave 7, so it never retitles a file 20 edits (`app/routes/_site/admin/users.tsx`,
+   `app/routes/_site/rideshare/drive.tsx`): a duplicate there stays in the baseline.
 
 ## Non-functional requirements
 

@@ -27,7 +27,14 @@ English mid-list.
       is the key's name.
     - `lib/moderation/triage.server.ts` — the decision message to the reported author is `decision.message` (a
       moderator's macro-filled text).
-    - `lib/admin-review.server.ts` — `notifyAdminsOfReview({ preview })`, eight callers passing a bare sentence.
+    - `lib/admin-review.server.ts` — `notifyAdminsOfReview({ preview })`, which the ratchet's comment calls "eight callers"; the tip
+      has **seven**: `lib/handles/impersonation.server.ts` ("New impersonation report needs review"),
+      `lib/moderation/api/moderation.report.server.ts` ("New ${entityType} report needs review"),
+      `lib/moderation/auto-moderate.server.ts` ("Automated screening flagged a …"),
+      `lib/account/api/account.strikes.$id.appeal.server.ts` ("A user has appealed a moderation strike."),
+      `lib/creator/earnings.server.ts` ("New … redemption for N coins"), `lib/rmhmusic/learn/sprint/review.server.ts`
+      ("A Daily board score asks for a look"), `lib/listings/cosmetic.server.ts` ("Marketplace listing held for
+      review: …").
     - `lib/developer/recipes.server.ts` — a recipe's message, the recipe author's text.
 - **Decisions:**
   - **Ladder:** seven keys, one per alert kind (`ladder-match`, `ladder-matches`, `ladder-search-match`,
@@ -40,8 +47,11 @@ English mid-list.
     ("Your API key {{name}} works again"); the reason stays the admin's text, as a param.
   - **Report decisions:** `report-decision` ("A moderator reviewed a report about your content: {{message}}"), the
     message a param; the frame is translated, the moderator's words are not (as quoted text never is).
-  - **Admin review:** the eight callers pass a key from a small set (`admin-review-reports`, `-redemptions`,
-    `-appeals`, `-emoji-packs`, `-market`, and the others the callers show), with a count where they have one.
+  - **Admin review:** the seven callers pass one key each: `admin-review-impersonation`, `admin-review-report`
+    (param `kind`, the entity type as a key into the existing report kind labels), `admin-review-automod` (`kind`,
+    `category`), `admin-review-appeal`, `admin-review-redemption` (`kind`, `count` = the coins),
+    `admin-review-music-score`, `admin-review-market` (`count` = the price). The grouping `kind` argument and
+    `entityType: 'admin-review'` are unchanged.
   - **Recipes:** the message is the recipe author's text, which is quoted member text, not a notice: the file leaves the
     list with that reason written in the ratchet's header comment's rule (quoted member text is not listed), and the
     emitter wraps it in a `recipe-message` frame ("{{recipe}}: {{message}}") so its preview is still a key.
@@ -57,7 +67,7 @@ English mid-list.
    to their stored `text` (old rows drain).
 3. FR-3 API keys: both emitters in `api-keys.server.ts` use `notice()`.
 4. FR-4 Triage: the decision message through `report-decision`.
-5. FR-5 Admin review: `notifyAdminsOfReview({ notice })` replaces `preview`; the eight callers converted.
+5. FR-5 Admin review: `notifyAdminsOfReview({ notice })` replaces `preview`; the seven callers converted (the ratchet's "eight callers" note is corrected).
 6. FR-6 Recipes: the frame key; the file removed from `PASSED_THROUGH_HELPERS`.
 7. FR-7 English templates added to `locales/en/notice-language.json` (and labels to `feed.json`); no other catalogue.
 

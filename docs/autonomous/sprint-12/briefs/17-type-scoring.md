@@ -349,7 +349,8 @@ Modify:
 
 - `server/socket-server/handlers/rmhtype.ts` (solo finish, room progress and finish, `persistSoloResult`,
   `persistMatchResults`)
-- `lib/rmhtype/challenges.ts` (imports the moved function)
+- `lib/rmhtype/challenges.ts` (imports the moved `evaluateFinish` and `clampRunCounts`; commit `13e809261` already
+  routes solo finish and room progress through `clampRunCounts` and gates solo bests on `MAX_WPM`: build on it)
 - `lib/rmhtype/events.ts`
 - `components/rmhtype/RmhTypeSoloPage.tsx`, `RmhTypeRoomPage.tsx` (samples at finish; the reason line)
 

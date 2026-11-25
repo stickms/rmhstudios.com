@@ -30,7 +30,9 @@ removed.
     - `AiPersona` with `isPublic` (`prisma/schema/moderation.prisma`: `name`, `tagline`, `systemPrompt`, `greeting`,
       `avatarUrl`; listed by `lib/personas/api/personas.server.ts`, chatted with at `/personas/$id`). Personas have no
       update route (`lib/personas/api/personas.$id.server.ts` is GET and DELETE; create is `POST /api/personas`), so a
-      public persona stays public until deleted.
+      public persona stays public until deleted. Admins already have a direct persona tool
+      (`lib/moderation/content.server.ts`, `POST /api/admin/moderation/content`: `remove` deletes the persona, `edit`
+      changes name and tagline); members have no way to flag one, which is the gap. That tool is left unchanged.
     - `HomeListing` with `source = COMMUNITY` (`prisma/schema/hearth.prisma`; `/homes/listing/$id`). The author sets the
       status with `setListingStatus` (`lib/homes/listings.server.ts`), `REMOVED` included, and back again.
 - **Decisions:**
@@ -38,9 +40,12 @@ removed.
   - **Takedown that sticks:** grids: `hidden = true` (as today's admin hide). Decks, personas and listings gain a
     nullable `moderatedAt` column: takedown sets it and sets `isPublic = false` (decks, personas) or `status = REMOVED`
     (listings); while `moderatedAt` is set, the owner's toggle back to public or active is refused with
-    `CONTENT_REMOVED_BY_MODERATOR` ("A moderator removed this; you can appeal from Your reports' outcome notice"), and
+    `CONTENT_REMOVED_BY_MODERATOR` ("A moderator removed this, so it cannot be made public again") (there is no appeal
+    for a content takedown today: appeals exist for strikes only, and "Your reports" is the reporter's view), and
     the owner still sees and keeps their own copy (a removed deck stays studiable by its owner and editors; a removed
-    persona stays chat-able by its owner). Restoring is an admin action on the report (clearing `moderatedAt`), audited.
+    persona stays chat-able by its owner). **No restore path is added:** no existing report type can be reversed from
+    the queue either, and a restore surface would be a new admin endpoint; it is out of scope and recorded as a
+    follow-up.
   - **Report button:** each page's overflow menu, signed-in members only, never on one's own item. External (scraped)
     listings are not reportable (they have no member author; 15 lets admins pause their feed).
   - **Admin snippets:** the reported item's title (grid title, deck title, persona name, listing title), member text,
@@ -62,12 +67,17 @@ removed.
 2. FR-2 The four types in both lists, `resolveTargetUser` cases, takedown branches and admin snippets, my-reports
    targets and both label maps — each under its file's place for sprint 12 (one feature edits them this sprint, so no
    anchor is needed; keep each block together with a `// s12-16 member-reports` comment).
-3. FR-3 Takedown and restore helpers in each domain: `hideGridForReport` in `lib/party/connections.server.ts`,
+3. FR-3 Takedown helpers in each domain: `hideGridForReport` in `lib/party/connections.server.ts`,
    `moderateDeck` in `lib/study/deck-moderation.server.ts` (new, classified in `DECK_ACCESS_PATHS` under the Wave 0
    anchor), `moderatePersona` in `lib/personas/moderation.server.ts` (new), `moderateListing` in
    `lib/homes/listings.server.ts`.
-4. FR-4 The owner's toggles refuse while moderated: the deck PATCH (`lib/study/api/study.decks.$id.server.ts`, its
-   `public` field) and `setListingStatus`; personas have no update route, so a moderated persona stays non-public.
+4. FR-4 The owner's toggles refuse while moderated: `updateDeck` in `lib/study/deck-editor.server.ts` (the one write
+   that the site PATCH `lib/study/api/study.decks.$id.server.ts` and `/api/v1` `patchMyDeck` both call, so the API
+   cannot re-publish either; v1 answers `conflict`) refuses `isPublic: true`; `setListingStatus` refuses any status but
+   `REMOVED`; personas have no update route, so a moderated persona stays non-public. Others' single-item reads answer
+   404 while moderated: `getDeck` (`lib/study.server.ts`) for anyone but the owner and editors, `getListing`
+   (`lib/homes/listings.server.ts`, which today returns a listing of any status) for anyone but its author, and the
+   persona chat route for anyone but its owner.
 5. FR-5 UI: `ReportDialog` opened from `ConnectionsPages.tsx` (play page), `DeckStudyColumn.tsx`,
    `PersonaChatColumn.tsx`, `ListingDetailView.tsx`; "Removed by a moderator" on the owner's view of each.
 6. FR-6 Refusal `CONTENT_REMOVED_BY_MODERATOR` under the Wave 0 anchor.
@@ -86,10 +96,10 @@ the existing report and triage routes.
 ## Testing requirements
 
 - Main suite `lib/moderation/__tests__/member-reports.test.ts`: each type resolves its author; each takedown hides and
-  sets the flag; own items cannot be reported; external listings refused; restore clears the flag (audited).
+  sets the flag; own items cannot be reported; external listings refused; a moderated item cannot be re-reported into a second takedown error.
 - Main suite `lib/study/__tests__/deck-moderation.test.ts`, `lib/personas/__tests__/persona-moderation.test.ts`,
-  `lib/homes/__tests__/listing-moderation.test.ts`: the owner's toggle is refused while moderated; others' reads (list,
-  page, chat, browse) exclude the item; the owner keeps their copy.
+  `lib/homes/__tests__/listing-moderation.test.ts`: the owner's toggle is refused while moderated (site PATCH and `/api/v1` `patchMyDeck`); others' reads (list,
+  page, chat, browse, `getListing`, `getDeck`) exclude the item; the owner keeps their copy.
 - Existing tests that must stay green: `lib/moderation/__tests__/music-reports.test.ts` (extend its removable list).
 - Gates: `DECK_ACCESS_PATHS`, error-code catalogue, migration safety, design consistency.
 

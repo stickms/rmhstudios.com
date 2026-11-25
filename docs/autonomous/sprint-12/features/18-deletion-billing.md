@@ -31,18 +31,39 @@ to start renewing again only if I come back, so that I am never charged for an a
   - **At the request:** every subscription of the member with `status` in `active | trialing | past_due` and
     `cancelAtPeriodEnd` not already true is set to cancel at the period's end in Stripe
     (`subscriptions.update(id, { cancel_at_period_end: true })`). The member keeps what they paid for until then (no
-    refund, no proration: the decision taken by default, recorded in the README). The ids changed are recorded on the
-    hold (`subscriptionIds`), so a subscription the member had already set to cancel is never resumed on restore.
-  - **On restore (signing back in):** each recorded subscription that is still `cancelAtPeriodEnd` and not ended is
-    resumed (`cancel_at_period_end: false`).
-  - **At the erasure:** any subscription still active is cancelled immediately (`subscriptions.cancel`), so a
+    refund, no proration: the decision taken by default, recorded in the README). Only ids **this request changed**
+    are recorded on the hold (`subscriptionIds`): the job reads each subscription from Stripe (never trusting the
+    webhook-written row, which can lag) and records it only after its own `update` call flipped
+    `cancel_at_period_end` from false to true, so a subscription the member had already set to cancel is never resumed.
+  - **On restore (signing back in):** each recorded subscription that Stripe still shows `cancel_at_period_end: true`
+    and not ended is resumed (`cancel_at_period_end: false`); one the member cancelled themselves since (Stripe shows
+    `canceled`, or `cancel_at` set by the portal) is left alone.
+  - **At the erasure:** any subscription still active is cancelled immediately (`subscriptions.cancel(id,
+    { prorate: false, invoice_now: false })`: no refund, no final invoice), listed from Stripe by the member's
+    `stripeCustomerId` as well as from `Subscription.referenceId` rows, so a
     subscription created during the grace period, or one Stripe could not update earlier, does not survive the account.
-  - **Calls leave the transaction:** Stripe is called outside every database transaction, by a pg-boss job
-    `account.billing-stop` (and `account.billing-resume`) queued after the pause commits, retried with backoff (5
-    attempts); the erasure's immediate cancel is a pre-step before `anonymizeAccount`'s transaction (the Wave 0 pre-step
+  - **One reconciling job, never two opposite commands.** A withdrawn request is the dangerous case: with a separate
+    "stop" and "resume" job, a stop still retrying after the member signed back in (or a resume that runs before the
+    stop) would leave a returning member's membership set to end, or resume one for an account being deleted. So there
+    is one job, `account.billing-sync`, payload `{ userId }` only, sent with `singletonKey: userId` (one queued per
+    member), retried with backoff (5 attempts). It decides from the database **when it runs**, not from what queued it:
+    if `User.deletionScheduledAt` is set, it stops (above) and appends the ids it changed to the hold under
+    `lockKey(tx, 'deletion-hold:<userId>')`; if not, it resumes the hold's `subscriptionIds` and only then deletes the
+    hold. After its Stripe calls it re-reads `deletionScheduledAt`; if the state flipped while it was calling, it
+    queues itself again, so the last word is always the member's latest choice. `pauseForDeletion` and
+    `restoreAfterCancel` only queue the job after their own transactions commit.
+  - **The hold outlives the restore while billing is pending:** `restoreAfterCancel` today deletes the
+    `DeletionHold` row in its transaction; it now deletes it only when `subscriptionIds` is empty, and otherwise clears
+    `keyIds` and `webhookIds` (already restored) and leaves the row for the sync job, which deletes it after resuming.
+    A second deletion request before that finds the row and merges into it (`mergeIds`, as for keys).
+  - **Calls leave the transaction:** Stripe is called outside every database transaction (from the sync job and the
+    erasure pre-step only); the erasure's immediate cancel is a pre-step before `anonymizeAccount`'s transaction (the Wave 0 pre-step
     anchor), and a failure there fails the attempt (the next run, or 14's "Try again now", retries) rather than erasing
     an account that is still billed.
   - **Unconfigured Stripe** (`sk_unconfigured`, local and test): the job logs and does nothing.
+  - **Tests never reach Stripe.** Every test injects a fake client through `lib/billing/stripe-client.server.ts`'s
+    getter (`vi.mock`), and the getter throws when `process.env.VITEST` is set and the key is not `sk_unconfigured` or
+    `sk_test_…`, so a test run with production secrets in its environment fails instead of calling live Stripe.
   - **The preview** gains `subscriptions: { plan, periodEnd }[]` and the panel's line in the member's locale.
   - **The webhooks keep the rows right:** Stripe's events update `Subscription` through the plugin as for any cancel.
 
@@ -50,13 +71,14 @@ to start renewing again only if I come back, so that I am never charged for an a
 
 1. FR-1 `lib/billing/stripe-client.server.ts`: the client construction moved out of `lib/auth.ts` (which imports it), so
    server code can call Stripe without importing auth.
-2. FR-2 `lib/account/deletion-billing.server.ts`: `subscriptionsToStop(userId)`, `stopBilling(userId, ids)`,
-   `resumeBilling(userId, ids)`, `cancelRemainingBilling(userId)` (each idempotent: Stripe's state is read first).
+2. FR-2 `lib/account/deletion-billing.server.ts`: `syncBilling(userId)` (the reconcile above, built on
+   `stopBilling(userId)` and `resumeBilling(userId, ids)`, each idempotent because Stripe's state is read first) and
+   `cancelRemainingBilling(userId)`; the Stripe client is a parameter (or the module getter) so tests pass a fake.
 3. FR-3 `DeletionHold.subscriptionIds String[] @default([])` (migration `20261202020200_s12_deletion_billing`);
-   `pauseForDeletion` records the ids and queues the stop job; `restoreAfterCancel` queues the resume job for the
-   recorded ids; `planRestore` gains the subscription rule.
-4. FR-4 Jobs `account.billing-stop` and `account.billing-resume` registered under the Wave 0 jobs anchor
-   (`lib/account/deletion-billing-jobs.server.ts`).
+   `pauseForDeletion` and `restoreAfterCancel` queue the sync job after their transactions commit; `restoreAfterCancel`
+   keeps the hold while `subscriptionIds` is non-empty; `planRestore` gains the subscription rule.
+4. FR-4 Job `account.billing-sync` (`singletonKey` per member, 5 retries with backoff) registered under the Wave 0 jobs
+   anchor (`lib/account/deletion-billing-jobs.server.ts`); the web tier sends it through `getBoss()`.
 5. FR-5 `anonymizeAccount`'s pre-step under the anchor `// s12-18 deletion-billing (billing stop before the
    transaction)`: `cancelRemainingBilling`, throwing on a Stripe error so the account stays scheduled.
 6. FR-6 Preview and panel: `DeletionPausePreview.subscriptions`, the panel's line through `deletion-billing` keys.
@@ -74,8 +96,12 @@ to start renewing again only if I come back, so that I am never charged for an a
 ## Testing requirements
 
 - Main suite `lib/account/__tests__/deletion-billing.test.ts` (Stripe faked): the request stops only active,
-  not-already-cancelling subscriptions and records them; restore resumes only recorded ones still cancelling; erasure
-  cancels what remains and throws on a Stripe error; unconfigured Stripe is a no-op; the jobs are idempotent.
+  not-already-cancelling subscriptions (as Stripe reports them, with a stale DB row in the fixture) and records only
+  those it changed; restore resumes only recorded ones still cancelling; **a request withdrawn before the job runs
+  changes nothing in Stripe; one withdrawn while the job's stop call is in flight ends resumed; a stop retry after the
+  withdrawal does nothing; a second request before the resume ran keeps the subscription cancelling**; erasure cancels
+  what remains with `prorate: false` and throws on a Stripe error; unconfigured Stripe is a no-op; the fake's call log
+  shows no call when nothing needs changing; the client getter throws on a live key under vitest.
 - Existing tests that must stay green: `lib/account/__tests__/` deletion-hold and erasure tests (the pre-step is a
   read-then-call, guarded for the recording Proxy: `Array.isArray(rows) ? rows : []`).
 - Gates: migration safety, jobs registrations, erasure coverage.

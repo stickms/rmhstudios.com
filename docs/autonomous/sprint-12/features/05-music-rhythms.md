@@ -24,7 +24,7 @@ dotted note, a tie — and tap it in time, so that I can play what is on the pag
   - Lesson ids are stored with progress (`lib/rmhmusic/learn/progress.server.ts`, `getLesson` in `path.ts`); the path
     comment says "add new ones, never rename".
 - **Decisions:**
-  - **A fifth rhythm lesson mode, `rhythm-reading`,** in a new unit `read-rhythms` placed directly after
+  - **A new lesson mode, `rhythm-reading`,** in a new unit `read-rhythms` placed directly after
     `rhythm-basics` on all three paths (rhythm needs no instrument and no voice range, so `needsVoiceRange` stays false
     for it, as for the rhythm unit).
   - **Five lessons**, each eight one-bar patterns in 4/4 (the last in 3/4) at 72 BPM:
@@ -33,8 +33,9 @@ dotted note, a tie — and tap it in time, so that I can play what is on the pag
     `rhythm-read-ties-34` (ties across the beat, and bars of 3/4).
   - **How a pattern is played:** the bar is drawn on a one-line percussion staff; "Listen" plays it on the metronome's
     click sound once (it must be heard once, as the ear lessons require); then a count-in of one bar and the learner
-    taps each note's start (a key, a pointer press, a MIDI note or the microphone, through the lesson's existing input
-    modes). Rests are silence: a tap in a rest counts as an extra tap.
+    taps each note's start (the on-screen pad, a computer key or a MIDI note-on, exactly the inputs
+    `TapBeatLesson.tsx` accepts; the microphone is not used for rhythm, as that lesson already says, because the pitch
+    detector reports notes, not onsets). Rests are silence: a tap in a rest counts as an extra tap.
   - **Scoring:** onsets are matched to the nearest written onset within `ZERO_MS`; each matched onset scores as a beat
     tap does today; an unmatched written note scores 0; an extra tap costs `EXTRA_TAP_COST`. A pattern passes at 70%;
     stars per lesson as the other lessons (`scoring/stars`). Learning mode repeats a missed pattern; Test mode does not.

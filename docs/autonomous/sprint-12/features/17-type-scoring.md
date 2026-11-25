@@ -12,14 +12,18 @@ number that later disappears.
 ## Requirements elicitation
 
 - **What exists (verified):**
-  - `rmhtype:solo:finish` in `server/socket-server/handlers/rmhtype.ts` times the run on the server
-    (`Date.now() - room.roundStartTime`) but takes `position` and `errors` from the payload with only a lower bound
-    (`Math.max(0, payload.position)`), computes WPM from them, emits the result, and calls `persistSoloResult`, which
-    writes an `RmhTypeMatch` and upserts the `RmhTypeProfile` bests (`bestWpm`, `bestWpmAccuracy`) whenever accuracy is
-    at least `MIN_LEADERBOARD_ACCURACY = 90`. A client can send a finished position one second after the start.
-  - Multiplayer is the same: `rmhtype:game:progress` stores the client's `position` and `errors` unbounded
-    (`player.currentPosition = position`), `rmhtype:game:finish` takes no payload and scores the last progress, and
-    `persistMatchResults` upserts the profiles from those figures.
+  - **Part of the gap closed after this design was first drafted** (sprint 11 branch commit `13e809261`, "RMHType:
+    clamp ordinary solo runs as the challenge path does"): `clampRunCounts(position, errors, passageLength)` in
+    `lib/rmhtype/challenges.ts` now bounds the position to the passage and the errors to the position for the solo
+    finish, `rmhtype:game:progress` and challenge settlement; a solo run posts to the board and the profile bests only
+    through `soloQualifies(wpm, accuracy)` (accuracy ≥ `MIN_LEADERBOARD_ACCURACY = 90` **and** `wpm ≤ MAX_WPM`).
+  - **What is still open (verified on the tip):** the solo finish still writes an `RmhTypeMatch` for a run that does
+    not qualify, never checks that the clamped position is the passage's end, and never checks the curve
+    (`samples` reach only `saveGhostIfBest`), so a client can claim the whole passage at any time that computes to at
+    most 250 WPM without typing it; the result carries `scorePosted` but no reason. In rooms, progress is clamped to
+    the passage but may jump backwards or forwards by any amount, `rmhtype:game:finish` takes no payload (the room
+    client sends `{ position, errors }`, which the server ignores) and scores the last progress, and
+    `persistMatchResults` upserts `bestWpm` from `avgWpm` with accuracy as its only bar — **no `MAX_WPM` ceiling**.
   - Sprint 11 12 wrote the check a race needs and recorded this gap for later: `evaluateFinish` in
     `lib/rmhtype/challenges.ts` clamps the position to the passage, requires it to equal the passage length, requires
     WPM ≤ `MAX_WPM` (`lib/rmhtype/typing-run.ts`, 250) and a curve that passes `isPlausibleGhost`
@@ -48,9 +52,12 @@ number that later disappears.
 1. FR-1 `lib/rmhtype/run-check.ts`: `evaluateFinish` with `reason`,
    `clampProgress(prev, next, passageLength, elapsedMs)`; `challenges.ts` re-exports or imports it (sprint 11's tests
    stay green).
-2. FR-2 Solo finish: clamped figures, `ranked` and `reason` in the result payload, persistence and ghost save only when
-   ranked.
-3. FR-3 Rooms: clamped progress, `samples` accepted on `GAME_FINISH` (zod-checked, bounded length), the round result's
+2. FR-2 Solo finish: `clampRunCounts` stays (it moves to `run-check.ts` beside `evaluateFinish`, re-exported from
+   `challenges.ts`); `soloQualifies` additionally requires `evaluateFinish`'s verdict (end reached, plausible curve);
+   `ranked` and `reason` in the result payload (beside the existing `scorePosted`, kept for old clients and equal to
+   `ranked`); no `RmhTypeMatch`, best or ghost when unranked.
+3. FR-3 Rooms: monotone, step-capped progress on top of `clampRunCounts`; `MAX_WPM` added to `persistMatchResults`'
+   qualification; `samples` accepted on `GAME_FINISH` (zod-checked, bounded length), the round result's
    "did not finish" for a failed check, `persistMatchResults` skipping unranked players.
 4. FR-4 `lib/rmhtype/events.ts` payload types; `RmhTypeRoomPage.tsx` sends `samples`; both result screens show the
    reason through `type-scoring` keys (`reason-short`, `reason-too-fast`, `reason-implausible`).
@@ -81,8 +88,12 @@ No schema change. Socket payloads: `SOLO_RESULT` gains `ranked: boolean` and `re
 
 ## Acceptance criteria
 
-- [ ] A forged solo finish (full position after one second) shows "Not ranked: too fast" and changes no best.
-- [ ] A forged room progress beyond the passage never wins a round.
+- [ ] A forged solo finish (full position after one second) shows "Not ranked: too fast", writes no `RmhTypeMatch`
+      and changes no best.
+- [ ] A forged solo finish claiming the whole passage at a believable 120 WPM with no curve (or a flat one) shows
+      "Not ranked" with the curve reason.
+- [ ] A forged room progress jump (a whole passage in one step) never wins a round, and no room run above `MAX_WPM`
+      sets a best.
 - [ ] An honest 80 WPM run ranks as before.
 
 ## Out of scope

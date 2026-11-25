@@ -351,6 +351,8 @@ Modify:
 
 - `lib/study/api/study.cards.$id.review.server.ts` (calls `reviewCard`)
 - `lib/api/v1/study.server.ts`, `lib/api/v1/study-schema.ts`
+- `lib/study/queue.server.ts` (`reviewQueue` gains an optional `deckId`; no other change)
+- `docs/developer-api/scopes.md` (the new scope)
 - the SDK output and API docs (generated)
 
 ## Anchored shared files
@@ -360,6 +362,7 @@ Wave 0 put one comment line per feature in these files:
 - `lib/api/registry.ts` (`ENDPOINTS`), `scripts/generate-sdk.ts` (`NULLABLE`), `docs/developer-api/changelog.md` (your
   bullet under `<!-- s12-NN … -->`)
 - `lib/study/deck-access.ts` (`DECK_ACCESS_PATHS`)
+- `lib/api/scopes.ts` (your scope `write:study-reviews`, `explicit: true`, under the `s12-12` line)
 
 In each, find the line that starts with `s12-12 api-reviews` (as `// s12-12 api-reviews`, `{/* s12-12 api-reviews */}`
 or `<!-- … -->`), keep it, and add your code directly below it, before the blank line that separates it from the
@@ -377,6 +380,9 @@ the merges clean). If your anchor is missing, stop and report it — do not inve
 - Never select or return card sound columns (`CARD_SOUND_READ_PATHS` must not gain the API).
 - A card of another deck in the path is `not_found`; a suspended card is `conflict`.
 - Grades are names (`again | hard | good | easy`) mapped to `Grade` 0-3.
+- The grade endpoint's scope is the new explicit `write:study-reviews`, never `write:study` (whose description
+  promises "Reviews cannot be written").
+- `recordStudyReview` (quest progress, XP) runs for site grades only; an API grade earns nothing.
 - Keep the site route's behaviour byte-for-byte: run its existing tests.
 
 ## Tests to write

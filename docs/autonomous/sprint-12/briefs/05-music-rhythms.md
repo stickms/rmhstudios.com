@@ -461,4 +461,5 @@ edit `lib/account/api/account.export.server.ts` or `lib/i18n/config.ts`.
 - Your final report lists: commits (hash and subject), files added and changed, tests added and their results, code
   lines added (TS/TSX/SQL/CSS) separately from docs, anything not done or uncertain, and anything integration must do.
 
-- For integration: a browser pass of one lesson with a keyboard and one with the microphone.
+- For integration: a browser pass of one lesson with a keyboard and one with a MIDI controller (the microphone is
+  not a rhythm input).

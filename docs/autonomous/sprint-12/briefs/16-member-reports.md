@@ -353,7 +353,9 @@ Modify:
   (each block marked `// s12-16 member-reports`, after sprint 11's)
 - `lib/party/connections.server.ts` (`hideGridForReport`)
 - `lib/homes/listings.server.ts` (`moderateListing`, `setListingStatus` refuses)
-- `lib/study/api/study.decks.$id.server.ts` (the PATCH refuses `public` while moderated; personas have no update route)
+- `lib/study/deck-editor.server.ts` (`updateDeck` refuses `isPublic: true` while moderated; the site PATCH in
+  `lib/study/api/study.decks.$id.server.ts` and `/api/v1` `patchMyDeck` both go through it); `lib/study.server.ts`
+  (`getDeck` 404 to others, the marketplace filter); personas have no update route
 - `components/party/ConnectionsPages.tsx`, `components/feed/DeckStudyColumn.tsx`,
   `components/feed/PersonaChatColumn.tsx`, `components/homes/ListingDetailView.tsx` (the Report item; "Removed by a
   moderator" for the owner)
@@ -384,7 +386,9 @@ the merges clean). If your anchor is missing, stop and report it — do not inve
 - A deck stays studiable by its owner and editors when moderated; a persona stays chat-able by its owner.
 - External (scraped) listings have no member author and are not reportable.
 - The persona's system prompt is shown to admins only.
-- Restoring clears `moderatedAt` from the admin side only, audited.
+- No restore path: no report type is reversible from the queue today; record it as a follow-up.
+- The owner's re-publish is refused in `updateDeck` (`lib/study/deck-editor.server.ts`), which both the site PATCH and
+  `/api/v1` `patchMyDeck` call; `getDeck` and `getListing` answer 404 to others while moderated.
 
 ## Tests to write
 

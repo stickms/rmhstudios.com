@@ -58,8 +58,10 @@ roughly how things compare rather than one exact fact.
 4. FR-4 Client `components/rmhbox/minigames/ranking-file/` (`RankingFileGame.tsx`, `OrderList.tsx` with keyboard
    reordering: focus an item, `Alt+ArrowUp` / `Alt+ArrowDown` or the buttons, announced politely; `RoundReveal.tsx`,
    `RankingFileHistoryDetail.tsx` registered in `history-display-registrations.ts`).
-5. FR-5 Rate limit for the two input actions in RMHBox's own limiter (`server/rmhbox/rate-limit.ts`), as the other
-   minigames' inputs are.
+5. FR-5 No new rate-limit entry: every minigame action arrives as the one socket event `rmhbox:game:input`, already
+   limited to 100 per 10 seconds per socket (`SOCKET_RATE_LIMITS` in `server/rmhbox/config.ts`, read by
+   `server/rmhbox/rate-limit.ts`); the handler additionally ignores a `reorder` that does not change the order, so a
+   flood of no-op moves costs nothing. (Validated: the limiter keys on event names, not on minigame actions.)
 
 ## Non-functional requirements
 

@@ -35,6 +35,11 @@ real, current listings and I do not have to read container logs to know why a ci
   - **Pause / resume:** `ACTIVE`, `ERROR` or `BLOCKED` to `DISABLED`, and `DISABLED` back to `ACTIVE` (clearing
     `lastError`), each a compare-and-set on the status the admin saw, audited (`homes.source.pause`,
     `homes.source.resume`). Pausing does not remove listings; the scraper's own expiry still applies to them.
+    **A pause must survive a run in flight:** `processSource` (`lib/homes/scrape/process-source.ts`) writes
+    `status: 'ACTIVE'` (and `ERROR`, `BLOCKED`) with an unconditional `update({ where: { id } })` at the end of each
+    source, so a source paused while a scrape is fetching it would be set back to `ACTIVE`. Those status writes become
+    `updateMany({ where: { id, status: { not: 'DISABLED' } } })` (the counters and `lastRunAt` may still be written),
+    and `runHomesScrape`'s source list (`status in ACTIVE, ERROR`) is unchanged.
   - **Add an RSS feed:** label, URL, listing type, default city, state and coordinates (through the existing geocode
     endpoint). The URL must be `https:` and pass `lib/ssrf-guard.server` the way the adapters' fetches do; the key is
     `rss:<host><path>` and must be new. Craigslist sources are added by `seed.ts` only (their region list is code).
@@ -45,7 +50,9 @@ real, current listings and I do not have to read container logs to know why a ci
 
 ## Functional requirements
 
-1. FR-1 `server/homes-worker/index.ts`: `tick` reads `data.trigger` (`'MANUAL'` or default `'CRON'`) and passes it on.
+1. FR-1 `server/homes-worker/index.ts`: `tick(data)` (the consumer already passes the job's `data`, `{}` for a cron
+   fire) reads `data.trigger` (`'MANUAL'` or default `'CRON'`; anything else is `'CRON'`) and passes it on;
+   `process-source.ts`'s status writes never overwrite `DISABLED` (above).
 2. FR-2 `lib/admin/homes.ts` (pure: row shapes, the key builder, status transitions), `homes-schema.ts`,
    `homes.contract.ts`, `homes.server.ts` (`listSources`, `listRuns`, `setSourceStatus`, `addRssSource`, `queueScrape`).
 3. FR-3 Registered endpoints in `lib/admin/api/`: `admin.homes.server.ts` (GET sources and runs, POST add RSS),
@@ -78,7 +85,8 @@ No schema change. `GET /api/admin/homes` → `{ sources: AdminHomeSource[], runs
 
 ## Acceptance criteria
 
-- [ ] A source in `ERROR` shows first with its error; pausing it stops it being fetched on the next run.
+- [ ] A source in `ERROR` shows first with its error; pausing it stops it being fetched on the next run, and a pause
+      made while a scrape is running is still in force when that scrape ends.
 - [ ] An admin adds a city's RSS feed and runs a scrape; the run appears with trigger "Manual" and the feed's listings
       arrive.
 - [ ] A feed URL on a private address is refused.

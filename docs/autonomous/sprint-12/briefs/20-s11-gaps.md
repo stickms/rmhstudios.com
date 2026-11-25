@@ -1,7 +1,7 @@
 # Brief 20 — Close the gaps sprints 10 and 11 left open
 
 You are a fresh implementer with no other context. This brief and the files it names are everything you need. Build the
-feature completely — the eight fixes, each in its own commit, and their tests as specified — commit it on your feature
+feature completely — the seven fixes, each in its own commit, and their tests as specified — commit it on your feature
 branch, and report back.
 
 |                |                                                                |
@@ -333,8 +333,8 @@ call starts in a fresh shell: use absolute paths or `cd /home/user/wt/s12-s11-ga
 
 ## What you are building
 
-Fix eight recorded gaps: (a) the deck access fragments' editor branch ignores bans; (b) the reserved API-key reason
-toast; (c) short public mod-log pages; (d) three Studio recorder faults; (e) audio track names in shared Studio
+Fix seven recorded gaps: (a) the deck access fragments' editor branch ignores bans; (b) the reserved API-key reason
+toast; (c) short public mod-log pages; (d is dropped: fixed by `3e40f4280`); (e) audio track names in shared Studio
 snapshots; (f) a stale community Events list after a refused RSVP; (g) the grant button on a deleted account; (h)
 duplicate or misplaced field labels in two forms.
 
@@ -349,7 +349,6 @@ Modify:
 - `lib/study/deck-access.server.ts` (`studiedDeckWhere`, `readableDeckWhere`)
 - `lib/admin/api-keys-schema.ts`, `components/admin/api-keys/ApiKeysTable.tsx`
 - `lib/communities/modlog.server.ts` (`listPublicModLog`)
-- `lib/studio/hooks/useRecording.ts`, `lib/studio/record.ts`, `components/studio/RecordingPopover.tsx`
 - `lib/studio/share.ts` (`sanitizeForShare`)
 - `components/communities/CommunityEventsPanel.tsx`
 - `app/routes/_site/admin/users.tsx` and the grant endpoint
@@ -385,7 +384,6 @@ the merges clean). If your anchor is missing, stop and report it — do not inve
 - `lib/study/__tests__/banned-editor.test.ts`
 - `lib/admin/__tests__/api-key-reason.test.ts`
 - `lib/communities/__tests__/modlog-pages.test.ts`
-- `lib/studio/__tests__/record-guards.product.test.ts`
 - `lib/studio/__tests__/share-track-names.test.ts`
 
 What each must cover is in the specification's "Testing requirements". Main-suite tests never touch a real database
@@ -403,7 +401,7 @@ started: reformatting unrelated lines causes merge conflicts. New files may be f
 cd /home/user/wt/s12-s11-gaps
 # your tests
 pnpm -s exec vitest run lib/study/__tests__/banned-editor.test.ts lib/admin/__tests__/api-key-reason.test.ts lib/communities/__tests__/modlog-pages.test.ts lib/studio/__tests__/share-track-names.test.ts
-pnpm -s exec vitest run -c vitest.product.config.ts lib/studio/__tests__/record-guards.product.test.ts
+pnpm -s exec vitest run -c vitest.product.config.ts lib/studio/__tests__/record-reaction.product.test.ts
 # the gate tests that cover what you touched
 pnpm -s exec vitest run lib/api/__tests__/route-table.test.ts lib/__tests__/api-handler-adoption.test.ts \
   lib/__tests__/raw-api-fetch-ratchet.test.ts lib/__tests__/useeffect-fetch-ratchet.test.ts lib/__tests__/zod-off-hot-routes.test.ts \

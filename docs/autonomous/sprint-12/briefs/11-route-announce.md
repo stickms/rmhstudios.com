@@ -349,7 +349,8 @@ Modify:
 
 - `app/routes/__root.tsx` (mount once)
 - `app/router.tsx` (install the announcer beside `installHistoryTrail`)
-- route files whose duplicate title is fixed by a title change only
+- route files whose duplicate title is fixed by a title change only, never `app/routes/_site/admin/users.tsx` or
+  `app/routes/_site/rideshare/drive.tsx` (20 edits them in the same wave)
 
 ## Patterns to copy
 

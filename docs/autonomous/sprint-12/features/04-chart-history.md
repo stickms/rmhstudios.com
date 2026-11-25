@@ -38,7 +38,9 @@ bring an earlier one back when an edit went wrong, so that an hour of charting i
     gains an optional `label` (only with `manual`).
   - **Retention:** a nightly job keeps every `manual` and `publish` revision, the newest 30 autosaves per chart, and one
     autosave per day for the last 30 days; the rest are deleted in batches of 1,000 (`slice-it.revision-prune`).
-  - **Who:** the chart's author only (as the list today); a revision of another member's chart is 404.
+  - **Who:** the chart's author only, answered exactly as the list answers today: an unknown chart is 404 and another
+    member's chart is 403 (`Not yours`, `slice-it.charts.$id.revisions.server.ts`); a revision id that does not
+    belong to this chart is 404.
 
 ## Functional requirements
 
@@ -69,8 +71,9 @@ No schema change (`label` and `kind` exist). `GET /api/slice-it/charts/$id/revis
 
 ## Testing requirements
 
-- Main suite `features/slice-it/api/__tests__/chart-revisions.server.test.ts`: another member's chart or revision is
-  404; a revision of a different chart under this chart's path is 404; the label rules.
+- Main suite `features/slice-it/api/__tests__/chart-revisions.server.test.ts`: an unknown chart is 404, another
+  member's chart is 403 (as the list), a revision of a different chart under this chart's path is 404; the label
+  rules.
 - Product suite `features/slice-it/engine/editor/__tests__/restore.product.test.ts`: apply then undo returns the exact
   previous notes; restoring the current notes is a no-op command.
 - Main suite `features/slice-it/engine/__tests__/revision-prune.test.ts`: what is kept (manual, publish, newest 30, one

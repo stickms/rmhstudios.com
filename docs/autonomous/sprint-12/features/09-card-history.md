@@ -55,7 +55,7 @@ back and can reset it without deleting it.
 3. FR-3 Schema: `FlashcardReview.resetAt DateTime?` (migration `20261202030200_s12_card_history`), and the index
    migrations above (three migrations in all, in timestamp order).
 4. FR-4 UI: `components/study/CardHistoryDialog.tsx` (rows on rules, `t-meta` dates and figures), opened from
-   `ReviewAll.tsx` ("Card info", key `i`) and from the deck editor's card rows; the card's text in the dialog title is
+   `ReviewAll.tsx` ("Card info", key `i`) and from the deck editor's card rows (`CardRow.tsx`); the card's text in the dialog title is
    member text (`dir="auto"`).
 5. FR-5 After a start-over the review queue and due counts refresh (React Query invalidation of the existing keys).
 

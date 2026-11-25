@@ -11,8 +11,8 @@ give admins pages they have had to do without: account deletions in progress and
 RMHHomes (15). One is access: every page change announced to a screen reader (11). Five are hardening, from the
 follow-up lists: a report path for four kinds of member-made content with takedowns that stick (16), RMHType results
 checked by the server (17), a deletion request that stops the membership's billing (18), the last English notices in
-the reader's language (19) and eight small gaps sprints 10 and 11 recorded (20). Each was checked against the sprint 11
-branch tip (`83d19d02b`, sprints 1–11, sprint 11 not yet on `main`) so it repeats nothing that exists. Specifications
+the reader's language (19) and seven small gaps sprints 10 and 11 recorded (20). Each was checked against the sprint 11
+branch tip (designed on `83d19d02b`, re-validated on `5714f0006`, sprints 1–11, sprint 11 not yet on `main`) so it repeats nothing that exists. Specifications
 are in [`features/`](features/), the build order in [`plan.md`](plan.md), implementer briefs in [`briefs/`](briefs/).
 
 Every feature follows the Steel design language (`design.md`, `docs/plans/2026-11-11-steel-design-implementation.md`)
@@ -56,8 +56,9 @@ The owner's standing rule is to take the most reasonable decision and record it.
   the device; saved homes join the data export.
 - **11** announce the new title on a pathname change only, politely; move focus to the content only after a
   keyboard-started navigation on the site tier; a title gate with a shrinking duplicate baseline.
-- **12** one grading path for the site and the API; grade names, not numbers; idempotent grading; no card sound in any
-  response.
+- **12** one grading path for the site and the API; grading needs a new explicit scope `write:study-reviews` (sprint 06
+  13 kept reviews out of the API and `write:study` promises "Reviews cannot be written"); an API grade earns no quest
+  progress or XP; grade names, not numbers; idempotent grading; no card sound in any response.
 - **13** read-only (`read:characters`); summaries computed by the site's functions; never another player's sheet;
   `portrait` removed from sheets.
 - **14** attempts recorded with the error's name only; "Try again now" only for an overdue erasure, audited and claimed;
@@ -65,14 +66,16 @@ The owner's standing rule is to take the most reasonable decision and record it.
 - **15** pause and resume as compare-and-set; RSS feeds added by admins through the SSRF guard (Craigslist regions stay
   in code); "Run now" queues one `MANUAL` scrape.
 - **16** four new report types, all removable; takedowns set a `moderatedAt` that the owner's own toggle cannot undo;
-  the owner keeps their copy; external listings are not reportable.
+  the owner keeps their copy; external listings are not reportable; no restore path (none exists for any report type).
 - **17** one check (`evaluateFinish`, moved to `run-check.ts`) for solo and room runs; a failed check is shown "Not
   ranked" with its reason; historic bests are not rewritten.
 - **18** cancel at the period's end on request (no refund, no proration), resume on restore what the request changed,
-  cancel immediately at erasure; Stripe outside transactions, retried; the erasure waits for billing to stop.
+  cancel immediately at erasure; one reconciling job decides from the member's state when it runs, so a withdrawn
+  request always ends renewing; Stripe outside transactions, retried, faked in every test; the erasure waits for
+  billing to stop.
 - **19** frames are translated, quoted words (a moderator's message, an admin's reason, a recipe's text, a job title)
   are params; e-mail and Discord alerts stay English.
-- **20** eight items, each re-checked at wave start; an item already fixed is reported, not redone.
+- **20** seven items (an eighth, the Studio recorder faults, was fixed on the sprint 11 branch and dropped), each re-checked at wave start; an item already fixed is reported, not redone.
 
 ## Features
 
@@ -124,8 +127,8 @@ The owner's standing rule is to take the most reasonable decision and record it.
 - **17** Solo and room runs take the client's position unbounded (sprint 11 12's recorded follow-up).
 - **18** No step cancels a Stripe subscription at a deletion request or at erasure.
 - **19** Five helpers still pass English to `createNotification` (`PASSED_THROUGH_HELPERS`).
-- **20** Eight recorded bugs: a banned editor's deck reads, a reserved reason's toast, short mod-log pages, three
-  recorder faults, audio track names in shares, a stale events list, a grant on a tombstone, two forms' field names.
+- **20** Seven recorded bugs: a banned editor's deck reads, a reserved reason's toast, short mod-log pages, audio
+  track names in shares, a stale events list, a grant on a tombstone, two forms' field names.
 
 ## Rejected ideas
 

@@ -375,7 +375,9 @@ the merges clean). If your anchor is missing, stop and report it — do not inve
 
 - Never store or show an error message or stack: the error's `name` or Prisma `code` only.
 - No e-mail address anywhere in the response.
-- The claim is `lockKey(tx, 'erasure:<userId>')` around one erasure; the job and the button both take it.
+- The claim is an attempt row inserted under `lockKey(tx, 'erasure:<userId>')` when no unfinished attempt younger than
+  15 minutes exists; the lock cannot wrap the erasure itself (`anonymizeAccount` runs its own batch transaction).
+  The job and the button both claim; a held claim is `ERASURE_IN_PROGRESS` for the button.
 - There is no "delete now": a retry on a not-overdue account is refused.
 - 18 (merged before you) added `DeletionHold.subscriptionIds`: show its count.
 

@@ -350,7 +350,8 @@ Modify:
 
 - `prisma/schema/rmhstudy.prisma`
 - `components/study/ReviewAll.tsx` ("Card info", key `i`)
-- the deck editor's card rows (the component `app/routes/_site/study/$deckId_.edit.tsx` renders)
+- the deck editor's card rows (`components/study/CardRow.tsx`, rendered by `components/study/DeckEditor.tsx` on
+  `app/routes/_site/study/$deckId_.edit.tsx`)
 - `lib/shortcuts/registry.ts` only if the key must be registered there for `findShortcutConflicts()`
 
 ## Anchored shared files

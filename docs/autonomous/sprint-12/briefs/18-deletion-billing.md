@@ -334,7 +334,8 @@ call starts in a fresh shell: use absolute paths or `cd /home/user/wt/s12-deleti
 
 Stop a member's Stripe membership when they request deletion (cancel at the period's end, recorded on the hold), resume
 exactly what the request changed if they come back, and cancel anything still active before the erasure (a pre-step that
-fails the attempt on a Stripe error); Stripe is called outside transactions by retried jobs; the delete panel says when
+fails the attempt on a Stripe error); Stripe is called outside transactions by one retried, reconciling job
+(`account.billing-sync`) that acts on the member's state when it runs; the delete panel says when
 the membership ends.
 
 ## Files
@@ -376,7 +377,17 @@ the merges clean). If your anchor is missing, stop and report it — do not inve
 
 - Never call Stripe inside a transaction.
 - With `STRIPE_SECRET_KEY` unset (`sk_unconfigured`) every step logs and returns.
-- A subscription already set to cancel is not recorded, so restore never resumes it.
+- A subscription already set to cancel is not recorded, so restore never resumes it; record only ids your own Stripe
+  call flipped, read from Stripe, not from the `Subscription` row.
+- One job, `account.billing-sync` (`singletonKey: userId`), never a stop job and a resume job: it reads
+  `deletionScheduledAt` when it runs, stops or resumes accordingly, re-reads after its calls and re-queues itself if
+  the state flipped. A withdrawn request must end with the membership renewing.
+- `restoreAfterCancel` keeps the `DeletionHold` row while `subscriptionIds` is non-empty (today it deletes it); the
+  sync job deletes it after resuming.
+- Tests fake Stripe through the client getter in `lib/billing/stripe-client.server.ts`; the getter throws under vitest
+  for any key other than `sk_unconfigured` or `sk_test_…`.
+- Erasure cancels with `{ prorate: false, invoice_now: false }` and lists subscriptions from Stripe by
+  `User.stripeCustomerId` as well as from `Subscription` rows.
 - The erasure pre-step runs before the transaction; the recording Proxy in erasure tests returns a Proxy for reads:
   guard with `Array.isArray(rows) ? rows : []`.
 - No Stripe id or key in logs; only the plan name and date reach the client.

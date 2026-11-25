@@ -34,8 +34,16 @@ to ask.
     webhooks, subscriptions); **Overdue** — due more than 24 hours ago and not finished, with the last attempt's error
     name and the attempt count; **Finished** — the last 30 days' count per day.
   - **"Try again now":** on an overdue row only; runs `anonymizeAccount` for that one account with `trigger: 'admin'`,
-    audited (`account.erasure.retry`) in the attempt's own transaction, behind a confirmation. A claim
-    (`lockKey(tx, 'erasure:<userId>')`) keeps the job and the button from running the same erasure at once. Nothing on
+    audited (`account.erasure.retry`) in the attempt's own transaction, behind a confirmation.
+  - **The claim is the attempt row.** `lockKey` is `pg_advisory_xact_lock`, held only for one interactive
+    transaction, and `anonymizeAccount` runs its own batch `$transaction([...])` plus pre-steps outside it, so no lock
+    can span the erasure. Instead `claimErasure(userId, trigger)` runs one short transaction under
+    `lockKey(tx, 'erasure:<userId>')` that refuses when an attempt for that account has `finishedAt` null and
+    `startedAt` within the last 15 minutes (a crashed attempt stops blocking after that), and otherwise inserts the
+    attempt row; the erasure then runs outside any transaction, and `finishErasureAttempt` stamps `finishedAt`, `ok`
+    and `errorName`. The job and the button both claim first; the loser skips (the job) or is refused with
+    `ERASURE_IN_PROGRESS` (the button). (`anonymizeAccount` is re-run safe either way; the claim keeps two
+    attempt rows and two Stripe pre-steps from racing.) Nothing on
     the page erases an account whose grace period has not ended; there is no "delete now".
   - **Who:** admins only (`auth: 'admin'`); the page is `admin` in `EXCLUDED_ROUTES`.
 
@@ -44,14 +52,15 @@ to ask.
 1. FR-1 Model `AccountErasureAttempt` in `prisma/schema/deletion.prisma` (migration
    `20261202050200_s12_admin_deletions`), `@@index([userId, startedAt])`, `@@index([startedAt])`.
 2. FR-2 `lib/account/deletion.server.ts`: `finalizeDueDeletions` records attempts (start row, then `ok` or the error
-   name) and takes the claim; the retention delete. The change stays outside `anonymizeAccount`'s transaction.
+   name) through the claim above; the 90-day retention delete. The change stays outside `anonymizeAccount`'s transaction.
 3. FR-3 `lib/admin/deletions.ts` (pure: row shapes, overdue rule), `deletions-schema.ts`, `deletions.contract.ts`,
    `deletions.server.ts` (`listDeletions`, `retryErasure`).
 4. FR-4 Registered endpoints `lib/admin/api/admin.deletions.server.ts` (GET) and
    `admin.deletions.$userId.retry.server.ts` (POST), `auth: 'admin'`.
 5. FR-5 UI: `components/admin/DeletionsAdmin.tsx` on `app/routes/_site/admin/deletions.tsx`; the hub card under the
    Wave 0 admin-hub anchor; the sitemap entry under its anchor.
-6. FR-6 Refusal: `ERASURE_NOT_OVERDUE` ("This account is not overdue for deletion") for a retry on a row that is not.
+6. FR-6 Refusals: `ERASURE_NOT_OVERDUE` ("This account is not overdue for deletion") for a retry on a row that is not;
+   `ERASURE_IN_PROGRESS` ("This account's deletion is already running") when the claim is held.
 
 ## Non-functional requirements
 

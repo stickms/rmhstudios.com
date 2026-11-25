@@ -349,6 +349,8 @@ Create:
 Modify:
 
 - `server/homes-worker/index.ts` (`tick` reads `data.trigger`)
+- `lib/homes/scrape/process-source.ts` (status writes conditional on `status <> DISABLED`, so a pause made mid-run
+  sticks); extend `lib/homes/scrape/process-source.test.ts`
 
 ## Anchored shared files
 

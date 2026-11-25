@@ -1,14 +1,14 @@
 # 20 — Close the gaps sprints 10 and 11 left open
 
-Surface: flashcard queue and statistics, the admin API keys page, the public community mod log, the Studio's recorder
-and shared projects, a community's Events tab, `/admin/users`, two forms. Wave 7. No namespace of its own (refusal
+Surface: flashcard queue and statistics, the admin API keys page, the public community mod log, the Studio's shared
+projects, a community's Events tab, `/admin/users`, two forms. Wave 7. No namespace of its own (refusal
 codes in `errors`; any other string in the file's existing namespace). Both tiers. Hardening.
 
 ## User story
 
 As a member and as an admin, I want the small faults sprints 10 and 11 found and wrote down to be fixed, so that what
 those features promise is true in every corner: a banned editor really loses a shared deck, a refusal says why, a page
-of the mod log is a full page, a recording is what was played, a shared project names no file, a list shows what the
+of the mod log is a full page, a shared project names no file, a list shows what the
 server decided, and a deleted account cannot be granted a membership.
 
 ## Requirements elicitation
@@ -32,11 +32,12 @@ sprint 11 follow-up list) and is re-checked open at wave start; an item found al
   page and then drops rows about private events, so a page can hold fewer rows than its size while more exist.
   **Fix:** the exclusion moves into the query (the action and the event's visibility), so a page is full whenever more
   rows exist; the cursor is unchanged.
-- **(d) The Studio's recorder (S11-08):** recording with loop on wraps the transport clock into the take; a start
-  failure after `transport.start()` leaves the transport running; `Space` during the count-in marks the take as "was
-  playing". **Fix:** refuse to arm a take while looping, with one line ("Turn off loop to record"); stop the transport
-  on a start failure; ignore `Space` during the count-in (`lib/studio/hooks/useRecording.ts`, `lib/studio/record.ts`,
-  `components/studio/RecordingPopover.tsx`).
+- **(d) Dropped at validation: already fixed.** The three Studio recorder faults (S11-08: loop wrapping the take, a
+  failed start leaving the transport running, `Space` in the count-in) were fixed on the sprint 11 branch by
+  `3e40f4280` ("Studio record: refuse a take under the loop, and Space in the count-in cancels it":
+  `recordReaction`/`recordRefusal` in `lib/studio/record.ts`, tested by
+  `lib/studio/__tests__/record-reaction.product.test.ts`). The letter is kept so the other items keep their names;
+  20 has seven items, and does not touch the Studio recorder files.
 - **(e) Shared Studio projects keep audio track names (S11-07).** `sanitizeForShare` (`lib/studio/share.ts`) empties
   each audio clip's `bufferId` and `name`, but an audio **track's** name (often the sample's file name) stays. **Fix:**
   an audio track's name becomes empty in the snapshot, and the opener's copy labels it "Audio track N" (the existing
@@ -74,8 +75,7 @@ No schema change.
 - (b) `lib/admin/__tests__/api-key-reason.test.ts`: the code and its English.
 - (c) `lib/communities/__tests__/modlog-pages.test.ts`: a page is full while more rows exist with private events mixed
   in.
-- (d) `lib/studio/__tests__/record-guards.product.test.ts`: arm refused while looping; transport stopped on a failed
-  start; `Space` in the count-in ignored.
+- (d) none (dropped; `record-reaction.product.test.ts` must stay green).
 - (e) `lib/studio/__tests__/share-track-names.test.ts`.
 - (f) and (g): the smallest render or handler tests the files allow (`renderToStaticMarkup`); (g) the endpoint test.
 - (h) the field-names gate.
