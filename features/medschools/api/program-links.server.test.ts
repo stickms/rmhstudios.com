@@ -10,7 +10,7 @@ describe('programLinksOf', () => {
   });
 
   it('is null, not undefined, for a school with nothing read', () => {
-    expect(programLinksOf('no-such-school')).toEqual({ admissionsUrl: null, mdphdUrl: null });
+    expect(programLinksOf('no-such-school')).toEqual({ websiteUrl: null, admissionsUrl: null, mdphdUrl: null });
   });
 
   it('every link is https and the registry has some of each', () => {
@@ -20,5 +20,9 @@ describe('programLinksOf', () => {
     }
     expect(all.filter((l) => l.admissionsUrl).length).toBeGreaterThan(100);
     expect(all.filter((l) => l.mdphdUrl).length).toBeGreaterThan(100);
+    // Every school but SUNY Upstate has a homepage, from the registry's own or `program-sites.json`.
+    const bare = schools.schools.filter((s) => !s.website && !programLinksOf(s.slug).websiteUrl).map((s) => s.slug);
+    expect(bare).toEqual(['suny-upstate']);
+    for (const l of all) if (l.websiteUrl) expect(l.websiteUrl.startsWith('https://')).toBe(true);
   });
 });

@@ -60,6 +60,8 @@ const detail = (o: Partial<MedSchoolDetailDto> = {}): MedSchoolDetailDto => ({
     city: 'Durham',
     state: 'NC',
     website: null,
+    admissionsUrl: null,
+    mdphdUrl: null,
     interviewFormat: 'MMI',
     interviewType: null,
   },

@@ -419,6 +419,7 @@ export async function getSchool(slug: string, now: Date = new Date()): Promise<M
     const guarded = s.residence !== 'GLOBAL' || s.source === 'RMH';
     return !guarded || (s.contributors !== null && s.contributors >= K_FLOOR);
   });
+  const links = programLinksOf(school.slug);
   return {
     school: {
       slug: school.slug,
@@ -427,8 +428,9 @@ export async function getSchool(slug: string, now: Date = new Date()): Promise<M
       degree: school.degree,
       city: school.city,
       state: school.state,
-      website: school.website,
-      ...programLinksOf(school.slug),
+      website: school.website ?? links.websiteUrl,
+      admissionsUrl: links.admissionsUrl,
+      mdphdUrl: links.mdphdUrl,
       interviewFormat: school.interviewFormat,
       interviewType: school.interviewType,
     },
