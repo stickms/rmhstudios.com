@@ -34,7 +34,7 @@ export const CATEGORY_STYLE: Record<MedChartedTypeId, { color: string; width: nu
   ACCEPTANCE: { color: CATEGORY_COLOR.ACCEPTANCE, width: 2, dash: '8 3 2 3' },
   SECONDARY: { color: CATEGORY_COLOR.SECONDARY, width: 2, dash: '2 3' },
   WAITLIST: { color: CATEGORY_COLOR.WAITLIST, width: 2, dash: '6 3' },
-  REJECTION: { color: CATEGORY_COLOR.REJECTION, width: 2, dash: '3 3' },
+  REJECTION: { color: CATEGORY_COLOR.REJECTION, width: 2, dash: '10 4' },
 };
 
 /** One colour per source, in the order a school's primary is chosen (CycleTrack first). */
