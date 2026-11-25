@@ -94,6 +94,9 @@ a section score, another member's data, a tracker row, a list or a user id.
 
 ## The label rule (exact, `engine/builder/label.ts`)
 
+> Revised 2026-11-25 (owner): the member's MCAT is now weighted by earlier attempts and MCAT is banded by AAMC
+> percentile rank. The rule below is the original; "As built: weighted MCAT and percentile bands" at the end is current.
+
 - **The member's figures.** MCAT: the total of the most recent attempt that has one (by year, month, day). GPA: the
   cumulative GPA. Nothing else.
 - **The school's figures.** From the class profiles (source `SCHOOL_PROFILE`, program `REG`), in the order the Facts
@@ -148,3 +151,44 @@ a section score, another member's data, a tracker row, a list or a user id.
   of text); `api/stats.server.test.ts` (round trip, replace, onboarding, delete, foreign isolation); the erasure test;
   `api/builder/privacy.server.test.ts`, `boundary.test.ts`; UI tests for the label groups and the stats form.
 - Integration: `testing/integration/medschools-builder.test.ts` (fake DeepSeek).
+
+## As built: weighted MCAT and percentile bands (owner 2026-11-25)
+
+The owner's words: "Most recent but maybe weigh it by past attempts slightly" and "Target band should use percentiles
+… there are published MCAT percentiles online." This replaces the MCAT parts of "The label rule" above; the rest of
+the rule is unchanged, and the model still never sets a label.
+
+- **The table.** `data/medschools/mcat-percentiles.json`: AAMC, "Percentile Ranks for MCAT Total and Section Scores",
+  the table in effect May 1, 2026 - April 30, 2027 (`https://www.aamc.org/media/89826/download`, linked as "Current
+  Percentile Ranks for the MCAT Exam" from AAMC's page
+  `https://www.aamc.org/services/mcat-admissions-officers/resources/percentile-ranks`; based on the 2023-2025 testing
+  years, N = 305,494). Fetched once on 2026-11-25 (robots.txt allows `/media/`, the honest user agent), read with
+  `pdftotext -layout`: the total table (472-528, 57 rows) and the four section tables (118-132, 15 rows each), every
+  rank stored as printed ("<1" or a whole number). The PDF is not committed. `engine/mcat-percentile.test.ts` holds the
+  header, coverage with no gaps and ranks that never fall; `pnpm exec tsx scripts/medschools/check-mcat-percentiles.ts
+  <pdf>` re-reads the PDF by hand and fails on any difference. AAMC updates the table each May 1: download the new PDF,
+  update the file (period, URL, rows), run the checker. No table in the database: `engine/mcat-percentile.ts` is a
+  pure, client-safe lookup of the small file, imported only by the builder (its endpoint, and its page through
+  `engine/builder/label.ts`); no route file and not `medschools.queries.ts`.
+- **The member's MCAT for labels.** `0.8 x latest + 0.2 x mean(earlier totals)` when earlier attempts have a total,
+  else the latest (`MCAT_WEIGHTS`), rounded to the nearest whole score (half up) for the lookup. "Latest" is
+  `latestMcat` (by date, the later in the list on a tie); "earlier" every other attempt with a total
+  (`earlierMcatTotals`). `statsForBuilder` carries the earlier totals for this only: the model's line is still the
+  latest total and its month, so it never sees an earlier attempt or the weighted score.
+- **MCAT band by percentile rank.** The member's score and the school's figure (median, else mean, else the plain
+  figure, as before; a school's decimal mean is rounded to its nearest whole score for the lookup) are each looked up;
+  `diff = yours - theirs` in percentile points: `> 5` above, `< -5` below, otherwise near, so exactly 5 either way is
+  near (`MCAT_PERCENTILE_MARGIN`). "<1" counts as 0. A score with no rank in the table is `not-compared` and does not
+  count towards the label (a range never reaches the comparison: it has no number).
+- **GPA keeps its points band** (`>= 0.10` above, `<= -0.10` below): no official GPA percentile table is in scope.
+- **What the page says.** The comparison line: "Your MCAT 512 (latest 514, earlier 505) · percentile rank 84 vs the
+  class's median 517 · percentile rank 94" (the parenthesis only when there were earlier attempts); "... : not compared,
+  because the figure has no rank in AAMC's percentile table" when not compared. "Your figures used" adds "MCAT used for
+  labels: ...". Wherever a percentile appears, a `SourceRef` cites "Source: AAMC, Percentile Ranks for MCAT Total and
+  Section Scores, May 1, 2026 – April 30, 2027" and links AAMC's page. The server returns structured data
+  (`MedBuildComparisonDto.mcat`, `MedBuildMemberFactDto.forLabels`); the words are `builder-*` keys.
+- **Tests.** `engine/builder/label.test.ts` (the weights, rounding at .5, band edges at exactly 5 and 6 points, "<1",
+  out-of-table and decimal school figures, ranges, the weighted score being what is compared),
+  `engine/mcat-percentile.test.ts`, `engine/applicant.test.ts` (`earlierMcatTotals`), `api/builder/build.server.test.ts`
+  (the model never sees the earlier totals), `api/stats.server.test.ts`, `ui/builder/builder-ui.test.tsx` (the lines
+  and the attribution).

@@ -27,7 +27,7 @@ import {
   type BuilderMemberStats,
   type ModelCandidate,
 } from '../../engine/builder/facts';
-import { LABEL_ORDER, labelFor } from '../../engine/builder/label';
+import { LABEL_ORDER, labelFor, type MemberFigures } from '../../engine/builder/label';
 import { parseBuilderRoute, type BuilderRoute } from '../../engine/builder/route';
 import { cleanForPrompt } from '../../engine/qa/sanitize';
 import type { Mission } from '../../engine/applicant';
@@ -132,8 +132,13 @@ async function run(
           missions: stored?.missions ?? [],
         }
       : null;
-  const compare =
-    i.useStats === true ? { mcat: stats?.mcat?.total ?? null, gpa: stats?.gpaCumulative ?? null } : null;
+  const compare: MemberFigures | null =
+    i.useStats === true
+      ? {
+          mcat: stats?.mcat ? { latest: stats.mcat.total, earlier: stats.mcat.earlier } : null,
+          gpa: stats?.gpaCumulative ?? null,
+        }
+      : null;
   const usedStats = compare !== null && (compare.mcat !== null || compare.gpa !== null);
   const statsMissing = i.useStats === true && !usedStats;
   // The request's missions, and the member's chips when their stats are used.

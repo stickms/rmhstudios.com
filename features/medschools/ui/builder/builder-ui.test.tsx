@@ -17,7 +17,7 @@ vi.mock('@tanstack/react-router', () => ({
   ),
 }));
 
-import type { MedBuildRes, MedBuildSchoolDto } from '../../medschools.contract';
+import type { MedBuildComparisonDto, MedBuildRes, MedBuildSchoolDto } from '../../medschools.contract';
 import { bodyOf, draftOf } from '../stats/draft';
 import { BuildResult } from './BuildResult';
 import { defaultListName } from './BuilderPage';
@@ -43,8 +43,26 @@ const res = (schools: MedBuildSchoolDto[], over: Partial<MedBuildRes> = {}): Med
   statsMissing: false,
   schools,
   member: [
-    { ref: 'm1', kind: 'mcat', value: '513', year: 2026, month: 4, category: null, missions: [] },
-    { ref: 'm2', kind: 'hours', value: '1200', year: null, month: null, category: 'RESEARCH', missions: [] },
+    {
+      ref: 'm1',
+      kind: 'mcat',
+      value: '513',
+      year: 2026,
+      month: 4,
+      category: null,
+      missions: [],
+      forLabels: { score: 513, earlier: [], percentile: { rank: 86, printed: '86' } },
+    },
+    {
+      ref: 'm2',
+      kind: 'hours',
+      value: '1200',
+      year: null,
+      month: null,
+      category: 'RESEARCH',
+      missions: [],
+      forLabels: null,
+    },
   ],
   filters: { states: [], degree: null, mdphd: false, size: null, missions: [], unused: [], count: 15 },
   notice: null,
@@ -63,7 +81,16 @@ describe('BuildResult', () => {
       res([
         school('likely1', 'likely'),
         school('reach1', 'reach', {
-          comparisons: [{ metric: 'MCAT', yours: '513', theirs: '520', stat: 'median', band: 'below' }],
+          comparisons: [
+            {
+              metric: 'MCAT',
+              yours: '513',
+              theirs: '520',
+              stat: 'median',
+              band: 'below',
+              mcat: { latest: 513, earlier: [], yoursPct: { rank: 86, printed: '86' }, theirsPct: { rank: 97, printed: '97' } },
+            },
+          ],
           reason: { text: 'Your MCAT of 513 is below the class median of 520.', cites: ['m1', 'c1f1'] },
           figures: [
             {
@@ -85,7 +112,8 @@ describe('BuildResult', () => {
     expect(at('Reach (1)')).toBeGreaterThan(-1);
     expect(at('Reach (1)')).toBeLessThan(at('Likely (1)'));
     expect(at('Likely (1)')).toBeLessThan(at('Not enough published data (1)'));
-    expect(out).toContain('Your MCAT 513 vs the class’s median 520');
+    expect(out).toContain('Your MCAT 513 · percentile rank 86 vs the class’s median 520 · percentile rank 97');
+    expect(out).toContain('MCAT used for labels: 513 · percentile rank 86');
     expect(out).toContain('Median MCAT');
     expect(out).toContain('https://med.example.edu/profile#:~:text=');
     expect(out).toContain('[yours, 1]');
@@ -96,6 +124,55 @@ describe('BuildResult', () => {
     expect(out).toContain('MD · Albany, NY');
     expect(out).not.toMatch(/MD · MD|NIH MSTP</);
     expect(out.replace(/href="[^"]*"/g, '')).not.toMatch(/\d\s?%|chance of/i);
+  });
+
+  it('says how the MCAT was weighted, cites AAMC for every percentile, and says when a figure is not compared', () => {
+    const mcat = (yours: string, theirs: string, band: MedBuildComparisonDto['band'], m: MedBuildComparisonDto['mcat']) =>
+      ({ metric: 'MCAT', yours, theirs, stat: 'median', band, mcat: m }) as MedBuildComparisonDto;
+    const out = html(
+      res(
+        [
+          school('weighted', 'target', {
+            comparisons: [
+              mcat('512', '517', 'near', {
+                latest: 514,
+                earlier: [505],
+                yoursPct: { rank: 84, printed: '84' },
+                theirsPct: { rank: 94, printed: '94' },
+              }),
+            ],
+          }),
+          school('odd', 'not-enough-data', {
+            comparisons: [mcat('472', '530', 'not-compared', { latest: 472, earlier: [], yoursPct: { rank: 0, printed: '<1' }, theirsPct: null })],
+          }),
+        ],
+        {
+          member: [
+            {
+              ref: 'm1',
+              kind: 'mcat',
+              value: '514',
+              year: 2026,
+              month: 4,
+              category: null,
+              missions: [],
+              forLabels: { score: 512, earlier: [505], percentile: { rank: 84, printed: '84' } },
+            },
+          ],
+        },
+      ),
+    );
+    expect(out).toContain(
+      'Your MCAT 512 (latest 514, earlier 505) · percentile rank 84 vs the class’s median 517 · percentile rank 94',
+    );
+    expect(out).toContain('MCAT used for labels: 512 (latest 514, earlier 505) · percentile rank 84');
+    expect(out).toContain(
+      'Your MCAT 472 · percentile rank under 1 vs the class’s median 530: not compared, because the figure has no rank in AAMC’s percentile table',
+    );
+    const cite = 'Source: AAMC, Percentile Ranks for MCAT Total and Section Scores, May 1, 2026 – April 30, 2027';
+    // Two rows and the "Your figures used" line each carry the attribution, with the AAMC page as the link.
+    expect(out.split(cite).length - 1).toBeGreaterThanOrEqual(3);
+    expect(out).toContain('https://www.aamc.org/services/mcat-admissions-officers/resources/percentile-ranks');
   });
 
   it('says what was not used and when no stats were there to compare', () => {

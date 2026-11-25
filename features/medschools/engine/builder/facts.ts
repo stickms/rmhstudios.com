@@ -17,9 +17,11 @@ import type { HoursCategory, Mission } from '../applicant';
 import { groundAnswer, type GroundFact } from '../qa/ground';
 import { PROFILE_KINDS, type ProfileKindId } from '../school-facts';
 import type { Candidate } from './candidates';
+import { percentileDto, weightedMcat } from './label';
 
 export interface BuilderMemberStats {
-  mcat: { total: number; year: number; month: number } | null;
+  /** The most recent attempt with a total, and the other attempts' totals (`earlier`, for the labels' weighting only). */
+  mcat: { total: number; year: number; month: number; earlier: number[] } | null;
   gpaCumulative: number | null;
   gpaScience: number | null;
   homeState: string | null;
@@ -61,15 +63,18 @@ export type MemberFact = MedBuildMemberFactDto & { text: string };
 /** The member's own figures as citeable facts, refs `m1`, `m2`, ... */
 export function memberFacts(s: BuilderMemberStats | null): MemberFact[] {
   if (!s) return [];
-  const base = { year: null, month: null, category: null, missions: [] as Mission[] };
+  const base = { year: null, month: null, category: null, missions: [] as Mission[], forLabels: null };
   const out: Omit<MemberFact, 'ref'>[] = [];
   if (s.mcat) {
+    const score = weightedMcat(s.mcat.total, s.mcat.earlier);
     out.push({
       ...base,
       kind: 'mcat',
       value: String(s.mcat.total),
       year: s.mcat.year,
       month: s.mcat.month,
+      // The page shows the weighted score and its percentile; the model's line stays the latest total only.
+      forLabels: { score, earlier: [...s.mcat.earlier], percentile: percentileDto(score) },
       text: `Your most recent MCAT total (${MONTHS[s.mcat.month - 1] ?? ''} ${s.mcat.year}): ${s.mcat.total}`,
     });
   }

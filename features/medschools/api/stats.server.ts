@@ -12,6 +12,7 @@ import { prisma } from '@/lib/prisma.server';
 import {
   HOURS_CATEGORIES,
   MISSIONS,
+  earlierMcatTotals,
   latestMcat,
   type ApplicantStats,
   type GraduateType,
@@ -208,7 +209,8 @@ export async function skipOnboarding(userId: string, now: Date = new Date()): Pr
 
 /** What the builder may send: the figures it needs, never a note or an activity title. */
 export interface BuilderStats {
-  mcat: { total: number; year: number; month: number } | null;
+  /** The most recent attempt with a total; `earlier` the other totals, for the labels' weighting only (never the model). */
+  mcat: { total: number; year: number; month: number; earlier: number[] } | null;
   gpaCumulative: number | null;
   gpaScience: number | null;
   homeState: string | null;
@@ -224,7 +226,10 @@ export async function statsForBuilder(userId: string): Promise<BuilderStats | nu
   }
   const m = latestMcat(stats.mcat);
   return {
-    mcat: m && m.total !== null ? { total: m.total, year: m.year, month: m.month } : null,
+    mcat:
+      m && m.total !== null
+        ? { total: m.total, year: m.year, month: m.month, earlier: earlierMcatTotals(stats.mcat) }
+        : null,
     gpaCumulative: stats.gpa.cumulative,
     gpaScience: stats.gpa.science,
     homeState,

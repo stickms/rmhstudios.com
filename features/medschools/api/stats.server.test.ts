@@ -90,11 +90,11 @@ describe('stats (private)', () => {
     expect(f.lockLog.at(-1)).toEqual(['med-stats:a']);
   });
 
-  it('the builder gets figures only: the latest MCAT total, GPAs, home state, hour totals, missions; no note or title', async () => {
+  it('the builder gets figures only: the latest MCAT total (and earlier totals for the labels), GPAs, home state, hour totals, missions; no note or title', async () => {
     await putStats('a', FULL);
     const s = await statsForBuilder('a');
     expect(s).toEqual({
-      mcat: { total: 512, year: 2026, month: 4 },
+      mcat: { total: 512, year: 2026, month: 4, earlier: [505] },
       gpaCumulative: 3.81,
       gpaScience: 3.72,
       homeState: 'TX',

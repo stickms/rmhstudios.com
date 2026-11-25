@@ -4,7 +4,7 @@ import { candidateFigures, groundPicks, memberFacts, type ModelCandidate } from 
 import { SCHOOLS } from './fixtures';
 
 const MEMBER = memberFacts({
-  mcat: { total: 512, year: 2026, month: 4 },
+  mcat: { total: 512, year: 2026, month: 4, earlier: [] },
   gpaCumulative: 3.81,
   gpaScience: null,
   homeState: 'TX',
