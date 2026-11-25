@@ -1,7 +1,6 @@
 import { createFileRoute, stripSearchParams } from '@tanstack/react-router';
 import { definePage } from '@/lib/route/define-page';
 import { breadcrumbSchema } from '@/lib/schema';
-import { schoolDescription, schoolTitle } from '@features/medschools/engine/headline-figures';
 import { SCHOOL_SEARCH_DEFAULTS, validateSchoolSearch } from '@features/medschools/engine/search';
 import { loadPrefs, loadSchoolHead, type SchoolHead } from '@features/medschools/medschools.queries';
 import { SchoolPage } from '@features/medschools/ui/SchoolPage';
@@ -29,9 +28,11 @@ export const Route = createFileRoute('/med/$slug')({
   },
   head: definePage<SchoolHeadData, SchoolParams>({
     path: ({ params }) => `/med/${params.slug}`,
-    title: ({ loaderData }) => schoolTitle(loaderData?.name),
-    // The class MCAT and GPA are the Facts tab's own public figures; the rest says what the page holds.
-    description: ({ loaderData }) => schoolDescription(loaderData?.name, loaderData?.figures),
+    // Built in the loader (`loadSchoolHead`): the class MCAT and GPA are the Facts tab's own public figures.
+    title: ({ loaderData }) => loaderData?.title ?? 'Med school | RMH Med Schools',
+    description: ({ loaderData }) =>
+      loaderData?.description ??
+      'Reported interview invites and decisions at this school by day, with secondaries and interview questions. Reported events, not applicants.',
     ogCard: ({ params }) => ({ kind: 'med-school', id: params.slug }),
     jsonLd: ({ loaderData, params }) =>
       loaderData
