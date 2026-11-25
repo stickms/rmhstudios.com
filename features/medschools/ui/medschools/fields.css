@@ -259,10 +259,6 @@ a.medapp-name:hover {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.medapp-crest-cell {
-  flex: none;
-  padding-block-start: 2px;
-}
 /* A pick-list row that is one button (the school search). */
 .medapp-list > .medapp-list__pick {
   padding-block: 0;

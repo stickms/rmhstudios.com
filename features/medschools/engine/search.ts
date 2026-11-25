@@ -63,11 +63,13 @@ function programSetOf(raw: Record<string, unknown>): ProgramKey[] | undefined {
   return programsFromLegacy(d === 'MD' || d === 'DO' ? d : undefined, p);
 }
 
-/** A saved-list filter on the index: one list id, or `all` (every list of the signed-in viewer). */
+/** A saved-list filter (index and live): one list id, or `all` (every list of the signed-in viewer). */
 const listParam = (v: unknown): string | undefined => {
   const s = str(v)?.trim();
   return s && /^[a-z0-9]{1,40}$/.test(s) ? s : undefined;
 };
+/** `mine=cycle`: the schools of the signed-in viewer's current tracker cycle (`engine/mine.ts`). */
+const mineParam = (v: unknown): 'cycle' | undefined => (str(v)?.trim().toLowerCase() === 'cycle' ? 'cycle' : undefined);
 
 /** The most states one filter names (the API's cap too). */
 export const MAX_STATES = 10;
@@ -97,16 +99,19 @@ export function parseIndexSearch(raw: Record<string, unknown>): {
   states?: string[];
   programs?: ProgramKey[];
   list?: string;
+  mine?: 'cycle';
 } {
   const q = str(raw.q)?.trim().slice(0, Q_MAX);
   const states = parseStates(raw.state);
   const programs = programSetOf(raw);
   const list = listParam(raw.list);
+  const mine = mineParam(raw.mine);
   return {
     ...(q ? { q } : {}),
     ...(states.length ? { states } : {}),
     ...(programs ? { programs } : {}),
     ...(list ? { list } : {}),
+    ...(mine ? { mine } : {}),
   };
 }
 
@@ -134,16 +139,22 @@ export function parseLiveSearch(raw: Record<string, unknown>): {
   school?: string;
   states?: string[];
   programs?: ProgramKey[];
+  list?: string;
+  mine?: 'cycle';
 } {
   const type = pick(raw.type, ALL_TYPES);
   const school = str(raw.school);
   const states = parseStates(raw.state);
   const programs = programSetOf(raw);
+  const list = listParam(raw.list);
+  const mine = mineParam(raw.mine);
   return {
     ...(type ? { type } : {}),
     ...(school && /^[a-z0-9-]{1,80}$/.test(school) ? { school } : {}),
     ...(states.length ? { states } : {}),
     ...(programs ? { programs } : {}),
+    ...(list ? { list } : {}),
+    ...(mine ? { mine } : {}),
   };
 }
 

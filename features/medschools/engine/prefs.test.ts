@@ -17,6 +17,7 @@ const view = (o: Partial<EffectiveView> = {}): EffectiveView => ({
   program: 'ALL',
   show: [...CHARTED_TYPES],
   fromPrefs: false,
+  fromDevice: false,
   ...o,
 });
 

@@ -4,14 +4,17 @@ import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { MedSearch } from './controls/MedSearch';
-import { MedSelect } from './controls/MedSelect';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
+import { mineOfSearch, mineToSearch, type MineChoice } from '../engine/mine';
 import { schoolProgramOf } from '../engine/programs';
+import { pickFilter } from '../engine/saved-filters';
 import { Q_MAX, SCHOOL_SEARCH_DEFAULTS, parseIndexSearch } from '../engine/search';
-import { indexQuery, listsQuery, schoolsQuery } from '../medschools.queries';
-import { useSession } from '@/components/session/session-context';
+import { indexQuery, schoolsQuery } from '../medschools.queries';
+import { MineSelect, MineSignedOutNote, useMineEmptyText } from './MineSelect';
 import { PrefsNote } from './PrefsNote';
+import { clearSavedFilters, saveFilters, useSavedFilters } from './useSavedFilters';
+import { useMineFilter } from './useMineFilter';
 import { useEffectiveView } from './useEffectiveView';
 import { ProgramMultiSelect, StateMultiSelect } from './ProgramMultiSelect';
 import { SaveToList } from './SaveToList';
@@ -35,44 +38,50 @@ export function IndexPage() {
   const nf = new Intl.NumberFormat(locale);
   const [text, setText] = useState(search.q ?? '');
 
-  // The URL where it speaks, the viewer's preferences where it is silent (D13/D14).
+  // The URL where it speaks, then this device's saved filters, then the viewer's preferences (D13/D14).
   const { view, setSearch: setView } = useEffectiveView('index', search);
-  const schools = useQuery(schoolsQuery(indexQuery(search, view)));
+  const saved = useSavedFilters().page;
+  const states = pickFilter(search.states, saved?.states, undefined, [] as string[]);
+  const mine = useMineFilter(mineOfSearch(search), saved?.mine);
+  const schools = useQuery(schoolsQuery(indexQuery({ q: search.q, states: states.value }, view)));
   // The live signal refetches the list in place (each row's newest status), at every width; the rail is separate.
   useLiveSignal();
-  const { data: session } = useSession();
-  const signedIn = !!session;
-  const lists = useQuery({ ...listsQuery(), enabled: signedIn });
-  const myLists = signedIn ? (lists.data?.lists ?? []) : [];
+  const mineEmpty = useMineEmptyText();
 
-  const setSearch = (next: { q?: string | undefined; states?: string[] | undefined; list?: string | undefined }) => {
-    const merged = { ...search, ...next };
+  const setSearch = (next: { q?: string | undefined; states?: string[] | undefined; mine?: MineChoice | null }) => {
     holdScroll();
     void navigate({
       to: '/med',
-      // The preference key (`programs`) stays as the URL had it; only the page's own keys are rebuilt.
-      search: ((prev: Record<string, unknown>) => ({
-        ...prev,
-        q: merged.q || undefined,
+      // The preference key (`programs`) stays as the URL had it, and so does every key this change does not name: a
+      // filter that came from this device is not frozen into the address by a search.
+      search: ((prev: Record<string, unknown>) => {
+        const out: Record<string, unknown> = { ...prev };
+        if ('q' in next) out.q = next.q || undefined;
         // A comma list of sorted codes (`state=CA,NY`); none is every state.
-        state: merged.states?.length ? merged.states.join(',') : undefined,
-        list: merged.list || undefined,
-      })) as never,
+        if ('states' in next) out.state = next.states?.length ? next.states.join(',') : undefined;
+        if ('mine' in next) Object.assign(out, mineToSearch(next.mine ?? null));
+        return out;
+      }) as never,
       replace: true,
       resetScroll: false,
     });
   };
   const pushQuery = useDebouncedCallback((q: string) => setSearch({ q: q.trim() || undefined }), 250);
+  // Changing a filter remembers it on this device; "all" forgets it.
+  const setStates = (next: string[]) => {
+    saveFilters('page', { states: next });
+    setSearch({ states: next });
+  };
+  const setMine = (next: MineChoice | null) => {
+    saveFilters('page', { mine: next });
+    setSearch({ mine: next });
+  };
 
-  // "Show my lists only" (D15): a client filter over the schools the public endpoint already returned, so the public
-  // cache key does not change. A signed-out viewer of a `?list=` link sees the unfiltered index and is told why.
-  const listSlugs = (() => {
-    if (!search.list || !signedIn || myLists.length === 0) return null;
-    const chosen = search.list === 'all' ? myLists : myLists.filter((l) => l.id === search.list);
-    if (chosen.length === 0 && search.list !== 'all') return null;
-    return new Set(chosen.flatMap((l) => l.items.map((i) => i.school.slug)));
-  })();
+  // "My schools" (D15, owner 2026-11-24): a client filter over the schools the public endpoint already returned, so
+  // the public cache key never carries a user. A signed-out viewer of a `?list=` link sees every school and is told why.
+  const listSlugs = mine.slugs;
   const rows = (schools.data?.schools ?? []).filter((s) => !listSlugs || listSlugs.has(s.slug));
+  const fromDevice = view.fromDevice || states.from === 'device' || mine.fromDevice;
 
   return (
     <div className="medapp-index medapp-fill">
@@ -89,36 +98,12 @@ export function IndexPage() {
               pushQuery(v);
             }}
           />
-          <StateMultiSelect
-            states={schools.data?.states ?? []}
-            value={search.states ?? []}
-            onChange={(states) => setSearch({ states })}
-          />
+          <StateMultiSelect states={schools.data?.states ?? []} value={states.value} onChange={setStates} />
           <ProgramMultiSelect value={view.programs} onChange={(programs) => setView({ programs })} />
-          {myLists.length > 0 ? (
-            <MedSelect
-              aria-label={t('index-list-label', { defaultValue: 'My lists' })}
-              value={listSlugs || search.list === 'all' ? (search.list ?? '') : ''}
-              onChange={(e) => setSearch({ list: e.target.value || undefined })}
-            >
-              <option value="">{t('index-list-none', { defaultValue: 'All schools' })}</option>
-              <option value="all">{t('index-list-all', { defaultValue: 'All my lists' })}</option>
-              {myLists.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.name}
-                </option>
-              ))}
-            </MedSelect>
-          ) : null}
+          {mine.signedIn ? <MineSelect value={mine.choice} lists={mine.lists} onChange={setMine} /> : null}
         </div>
-        {search.list && !signedIn ? (
-          <p className="medapp-note">
-            {t('index-list-signed-out', {
-              defaultValue: 'This link filters to a saved list. Sign in to see your lists; all schools are shown.',
-            })}
-          </p>
-        ) : null}
-        <PrefsNote fromPrefs={view.fromPrefs} />
+        {mine.signedIn ? null : <MineSignedOutNote search={search} />}
+        <PrefsNote fromPrefs={view.fromPrefs} fromDevice={fromDevice} onClearSaved={() => clearSavedFilters('page')} />
       </div>
 
       <div className="medapp-fill">
@@ -130,7 +115,13 @@ export function IndexPage() {
         ) : (
           <SkeletonSwap ready={!!schools.data} stale={schools.isPlaceholderData}>
             {schools.data && rows.length === 0 ? (
-              <MedEmpty title={t('index-empty', { defaultValue: 'No schools match.' })} />
+              <MedEmpty
+                title={
+                  mine.choice && listSlugs?.size === 0
+                    ? mineEmpty(mine.choice)
+                    : t('index-empty', { defaultValue: 'No schools match.' })
+                }
+              />
             ) : (
               <ul className="medapp-panel medapp-rows">
                 {rows.map((s) => (

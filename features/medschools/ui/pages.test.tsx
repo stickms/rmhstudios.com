@@ -63,7 +63,16 @@ vi.mock('@/components/ui/select', () => ({
 
 import { IndexPage } from './IndexPage';
 import { LivePage } from './LivePage';
-import { liveQuery, listsQuery, loadPrefs, prefsQuery, resolveLiveFilters, schoolsQuery } from '../medschools.queries';
+import {
+  liveQuery,
+  listsQuery,
+  loadMine,
+  loadPrefs,
+  prefsQuery,
+  resolveLiveFilters,
+  schoolsQuery,
+  trackerQuery,
+} from '../medschools.queries';
 import type { LiveEventDto, MedListDto, MedSchoolListItemDto } from '../medschools.contract';
 import type { Prefs } from '../engine/prefs';
 import { programsQueryValue } from '../engine/programs';
@@ -249,6 +258,133 @@ describe('IndexPage', () => {
     const out = withClient(seedIndex([school('duke'), school('unc')]), <IndexPage />);
     expect(out).not.toContain('to a list');
     expect(out).not.toContain('href="/med/live"');
+  });
+});
+
+const trackerOf = (slugs: string[] | null) => ({
+  sharingAvailable: true,
+  cycles: slugs ? [2027] : [],
+  cycle: slugs
+    ? {
+        cycleYear: 2027,
+        homeState: null,
+        shareAnonymously: false,
+        applications: slugs.map((slug, i) => ({
+          id: `a${i}`,
+          school: { slug, name: slug, shortName: slug, degree: 'MD' as const, state: 'NC', active: true },
+          program: 'REG' as const,
+          notes: null,
+          milestones: [],
+        })),
+      }
+    : null,
+});
+
+describe('My schools (owner 2026-11-24): My cycle, All my lists, one list', () => {
+  it('signed in, the select is there even before the member has a list; signed out it is absent', () => {
+    h.search = {};
+    h.session = { user: { id: 'u1' } };
+    const signedIn = withClient(seedIndex([school('duke')]), <IndexPage />);
+    expect(signedIn).toContain('aria-label="My schools"');
+    for (const o of ['>All schools<', '>My cycle<', '>All my lists<']) expect(signedIn).toContain(o);
+    h.session = null;
+    expect(withClient(seedIndex([school('duke')]), <IndexPage />)).not.toContain('aria-label="My schools"');
+  });
+
+  it('the list names are options, and ?list=<id> keeps that list only', () => {
+    h.search = { list: 'l2' };
+    h.session = { user: { id: 'u1' } };
+    const html = withClient(
+      (qc) => {
+        seedIndex([school('duke'), school('wake'), school('unc')])(qc);
+        qc.setQueryData(listsQuery().queryKey, {
+          lists: [list('l1', 'Reach', ['duke']), list('l2', 'Safety', ['wake'])],
+        });
+      },
+      <IndexPage />,
+    );
+    expect(html).toMatch(/<option value="list:l2"[^>]*>Safety<\/option>/);
+    expect(html).toContain('href="/med/wake"');
+    expect(html).not.toContain('href="/med/duke"');
+    h.session = null;
+  });
+
+  it('?mine=cycle keeps the tracker cycle schools, a client filter that changes no public key', () => {
+    h.search = { mine: 'cycle' };
+    h.session = { user: { id: 'u1' } };
+    const qc = new QueryClient();
+    seedIndex([school('duke'), school('wake'), school('unc')])(qc);
+    qc.setQueryData(trackerQuery().queryKey, trackerOf(['unc', 'duke']) as never);
+    const html = renderToString(
+      <QueryClientProvider client={qc}>
+        <IndexPage />
+      </QueryClientProvider>,
+    );
+    expect(html).toContain('href="/med/duke"');
+    expect(html).toContain('href="/med/unc"');
+    expect(html).not.toContain('href="/med/wake"');
+    expect(qc.getQueryCache().findAll({ queryKey: ['medschools', 'schools'] })).toHaveLength(1);
+    h.session = null;
+  });
+
+  it('an empty cycle says so instead of "No schools match"', () => {
+    h.search = { mine: 'cycle' };
+    h.session = { user: { id: 'u1' } };
+    const html = withClient(
+      (qc) => {
+        seedIndex([school('duke')])(qc);
+        qc.setQueryData(trackerQuery().queryKey, trackerOf(null) as never);
+      },
+      <IndexPage />,
+    );
+    expect(html).toContain('Your tracker has no schools in this cycle yet.');
+    h.session = null;
+  });
+
+  it('signed out, a ?mine=cycle link shows every school and says why', () => {
+    h.search = { mine: 'cycle' };
+    h.session = null;
+    const html = withClient(seedIndex([school('duke'), school('unc')]), <IndexPage />);
+    expect(html).toContain('href="/med/unc"');
+    expect(html).toContain('This link filters to your tracker&#x27;s schools.');
+  });
+
+  it('the live feed asks for the chosen schools as the public, sorted schools= list', () => {
+    h.search = { mine: 'cycle' };
+    h.session = { user: { id: 'u1' } };
+    const html = withClient(
+      (qc) => {
+        qc.setQueryData(schoolsQuery({}).queryKey, {
+          cycleYear: 2026,
+          program: 'ALL',
+          schools: [school('duke')],
+          states: [],
+        });
+        qc.setQueryData(trackerQuery().queryKey, trackerOf(['wake', 'duke']) as never);
+        // Only the key with `schools=duke,wake` is seeded: the page reads exactly that one.
+        qc.setQueryData(liveQuery({ schools: 'duke,wake' }).queryKey, {
+          events: [ev('e1')],
+          nextCursor: null,
+          asOf: '2026-11-20T15:05:00.000Z',
+        });
+      },
+      <LivePage />,
+    );
+    expect(html).toContain('href="/med/duke"');
+    expect(html).toContain('aria-label="My schools"');
+    h.session = null;
+  });
+
+  it('loadMine asks for nothing signed out or without a choice; a same-page change reads the cache', async () => {
+    const qc = new QueryClient();
+    expect(await loadMine(qc, { kind: 'cycle' }, false)).toBeNull();
+    expect(await loadMine(qc, undefined, true)).toBeNull();
+    expect(qc.getQueryCache().findAll({ queryKey: ['medschools', 'me'] })).toHaveLength(0);
+    qc.setQueryData(trackerQuery().queryKey, trackerOf(['duke']) as never);
+    expect([...(await loadMine(qc, { kind: 'cycle' }, true, 'stay'))!]).toEqual(['duke']);
+    // A gone list is no filter, never a false empty list.
+    qc.setQueryData(listsQuery().queryKey, { lists: [list('l1', 'Reach', ['duke'])] });
+    expect(await loadMine(qc, { kind: 'list', id: 'deleted' }, true, 'stay')).toBeNull();
   });
 });
 

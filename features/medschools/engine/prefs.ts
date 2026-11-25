@@ -8,6 +8,7 @@ import {
   schoolProgramOf,
   type ProgramKey,
 } from './programs';
+import { pickFilter } from './saved-filters';
 import { showParam, type ProgramFilter } from './search';
 import type { MedEventType } from './types';
 
@@ -60,6 +61,13 @@ export interface EffectiveView {
   show: MedEventType[];
   /** True while any default came from a preference, so the page can say its view is not the URL's alone. */
   fromPrefs: boolean;
+  /** True while the program set came from this device's saved filters (`saved-filters.ts`), not the URL. */
+  fromDevice: boolean;
+}
+
+/** What this device remembers that the view reads (index and live; the school page has its own degree). */
+export interface DeviceView {
+  programs?: readonly ProgramKey[] | undefined;
 }
 
 interface Clean {
@@ -88,9 +96,11 @@ export function applyPrefs(
   search: PrefsSearch,
   prefs: Prefs | null | undefined,
   ctx: { schoolDegree?: 'MD' | 'DO' } = {},
+  device: DeviceView = {},
 ): EffectiveView {
   const p = clean(prefs);
   let fromPrefs = false;
+  let fromDevice = false;
 
   let programs: ProgramKey[] = [...ALL_PROGRAMS];
   let program: ProgramFilter = 'ALL';
@@ -100,10 +110,16 @@ export function applyPrefs(
       program = schoolProgramOf(p.programs, ctx.schoolDegree);
       if (program !== 'ALL') fromPrefs = true;
     }
-  } else if (search.programs !== undefined && search.programs.length > 0) programs = normalizePrograms(search.programs);
-  else {
-    programs = p.programs;
-    if (!isAllPrograms(programs)) fromPrefs = true;
+  } else {
+    // URL > this device > preferences > every program (owner 2026-11-24). All four is never stored, so a device value
+    // is always a real narrowing; a preference of all four is "no preference".
+    const url = search.programs && search.programs.length > 0 ? normalizePrograms(search.programs) : undefined;
+    const saved = device.programs && device.programs.length > 0 ? normalizePrograms(device.programs) : undefined;
+    const pref = isAllPrograms(p.programs) ? undefined : p.programs;
+    const picked = pickFilter(url, saved, pref, [...ALL_PROGRAMS]);
+    programs = picked.value;
+    fromDevice = picked.from === 'device';
+    fromPrefs = picked.from === 'prefs';
   }
 
   let show: MedEventType[] = [...CHARTED_TYPES];
@@ -115,7 +131,7 @@ export function applyPrefs(
     }
   }
 
-  return { programs, program, show, fromPrefs };
+  return { programs, program, show, fromPrefs, fromDevice };
 }
 
 /** The view a page reads. Kept as the one name the pages and loaders call; the program set needs no second pass. */
@@ -173,6 +189,7 @@ export function patchSearch(
     program: patch.program ?? view.program,
     show: patch.show ? [...patch.show] : view.show,
     fromPrefs: false,
+    fromDevice: false,
   };
   const written = writeSearch(kind, merged, prefs);
   const out: Record<string, unknown> = { ...prev };
