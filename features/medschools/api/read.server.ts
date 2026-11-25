@@ -18,6 +18,7 @@ import {
   type CountCell,
 } from '../engine/public-read';
 import { floorWhere, publicSum } from '../engine/floor';
+import { slugsOf } from '../engine/mine';
 import { ARRIVAL_CYCLE_MIN, ARRIVAL_ZONE, enoughArrivals, shapeArrivals } from '../engine/arrivals';
 import { cycleEndOn, cycleYearOf, defaultDayZero } from '../engine/cycle';
 import { addDays } from '../engine/stats/days';
@@ -896,7 +897,9 @@ export async function getLive(q: LiveQuery, now: Date = new Date()): Promise<Med
         },
       ]
     : [];
-  const and = [...programWhere, ...textWhere];
+  // "My cycle" / "My lists": an explicit slug list (user-independent); with `school` too, the two intersect.
+  const schoolsWhere = q.schools ? [{ school: { slug: { in: slugsOf(q.schools) } } }] : [];
+  const and = [...programWhere, ...textWhere, ...schoolsWhere];
   const rows = await prisma.medCycleEvent.findMany({
     where: {
       // RMH events are never public one by one (D5); they reach the public only as floored counts.

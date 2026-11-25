@@ -970,6 +970,24 @@ tracker dates; the member reviews a preview and presses "Add to my tracker". End
   prefetches the public queries with explicit parameters, so the public cache keys never carry a list, user or
   preference. `?list=<id>|all` on the index is a client filter over the returned schools. `/med/lists` holds the lists
   and the preferences (`#preferences`).
+- **Saved filters (owner 2026-11-24, `engine/saved-filters.ts`, `ui/useSavedFilters.ts`).** The program set, the states
+  and "My schools" are remembered on this device (`localStorage['rmh-medschool-filters']`, never the account; every
+  access through `lib/core/persist`). One precedence, `pickFilter`: an explicit URL value wins, else this device's
+  value, else the member's preferences (programs only, D13/D14), else the default. Two scopes: the index and the live
+  page share `page` (a state picked on one applies on the other); the rail keeps `rail` (programs, event types, "My
+  schools") so a change beside the page never moves it. A change saves; choosing "all" forgets that filter. The server
+  cannot read it, so the server HTML is the URL's view and the page moves to the saved filters right after hydration
+  through the in-place path (previous answer dimmed, no scroll change); the public cache keys stay user-free.
+  `PrefsNote` says "Showing your saved filters." with a Clear button while one is in effect (index and live).
+- **My schools (owner 2026-11-24, `engine/mine.ts`, `ui/MineSelect.tsx`, `ui/useMineFilter.ts`).** Signed in, the index,
+  the live page and the rail have one select: All schools, My cycle (the newest tracker cycle, `me/tracker`), All my
+  lists, or one list (`me/lists`). URL: `?mine=cycle`, `?list=all|<id>`; remembered like the other filters. The index
+  filters the public school list in the browser (as `?list=` always did); the live feed and the Today column pass the
+  slugs as the public `schools=` parameter (`GET /live`, `GET /live/summary`: 1 to 300 slugs, validated, deduped and
+  sorted by the reader, intersected with `school`; anyone can type it, so it is user-independent). An empty set asks for
+  nothing and says so. The loaders fetch the private answer only when the URL names a choice and the viewer is signed
+  in; the rail's private reads run only from 1280px. The old `?list=` select rendered only for a member who already had
+  a list and never on the live page or the rail, and there was no cycle choice.
 - **Activity rail.** `ui/shell/MedApp.tsx` mounts the lazy rail beside the page (>= 1280px only; neither rendered nor
   fetched below; it used to be the Steel shell's margin takeover). `ui/rail/ActivityRail.tsx` uses `useLiveFeed` (60 s
   head refetch, M9 fade) and one `IntersectionObserver` on the sentinel through `useSentinel` to load older pages: data

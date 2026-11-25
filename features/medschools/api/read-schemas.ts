@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAX_SCHOOLS_FILTER } from '../engine/mine';
 import { decodeLiveCursor } from '../engine/public-read';
 import { MAX_STATES } from '../engine/search';
 import { HOME_STATE_CODES } from '../engine/tracker';
@@ -23,6 +24,15 @@ const state = z
   .max(3 * MAX_STATES)
   .regex(new RegExp(`^[A-Z]{2}(,[A-Z]{2}){0,${MAX_STATES - 1}}$`))
   .refine((v) => v.split(',').every((c) => KNOWN_STATES.has(c)), 'unknown state');
+/**
+ * `schools=a,b,c` (owner 2026-11-24, "My cycle" / "My lists"): one to `MAX_SCHOOLS_FILTER` school slugs, comma
+ * separated. The browser decides WHICH schools from the member's private tracker or lists; the endpoint sees only a
+ * list anyone could type, so it stays user-independent. The readers dedupe and sort; an unknown slug matches nothing.
+ */
+const schools = z
+  .string()
+  .max(81 * MAX_SCHOOLS_FILTER)
+  .regex(new RegExp(`^[a-z0-9-]{1,80}(,[a-z0-9-]{1,80}){0,${MAX_SCHOOLS_FILTER - 1}}$`));
 const chartedType = z.enum(['INTERVIEW', 'SECONDARY', 'WAITLIST', 'REJECTION', 'ACCEPTANCE']);
 const anyType = z.enum(['SECONDARY', 'INTERVIEW', 'WAITLIST', 'REJECTION', 'ACCEPTANCE', 'WITHDRAWN', 'HOLD']);
 
@@ -60,6 +70,7 @@ export const liveQuery = z.object({
   /** The activity rail's search: school name or short name, or a state code. */
   q: z.string().trim().min(1).max(80).optional(),
   state: state.optional(),
+  schools: schools.optional(),
   /** Several event types at once (`types=acceptance,rejection`), upper or lower case. */
   types: z
     .string()
@@ -76,7 +87,11 @@ export const liveQuery = z.object({
 });
 
 /** The live page's "Today" column: the live feed's program set and states (no type: the column counts every type). */
-export const liveSummaryQuery = z.object({ programs: programsParam.optional(), state: state.optional() });
+export const liveSummaryQuery = z.object({
+  programs: programsParam.optional(),
+  state: state.optional(),
+  schools: schools.optional(),
+});
 
 export const todayQuery = z.object({ program: program.optional(), degree: degree.optional() });
 

@@ -12,9 +12,11 @@ import {
   type ViewPatch,
 } from '../engine/prefs';
 import { prefsQuery } from '../medschools.queries';
+import { saveFilters, useSavedFilters } from './useSavedFilters';
 
 /**
- * The view a public page shows: the URL where it speaks, the viewer's preferences where it is silent (plan D13/D14).
+ * The view a public page shows: the URL where it speaks, then this device's saved filters (index and live, owner
+ * 2026-11-24; `useSavedFilters`, after hydration), then the viewer's preferences (plan D13/D14), then the default.
  * Signed out, or before the preferences arrive, it is exactly phase 3's view. The preferences are one private query
  * (`['medschools','me','prefs']`) that only runs for a signed-in viewer, so a signed-out request is unchanged.
  *
@@ -29,10 +31,13 @@ export function useEffectiveView(
   const signedIn = !!session;
   const { data } = useQuery({ ...prefsQuery(), enabled: signedIn });
   const prefs = signedIn ? (data ?? null) : null;
-  const view = resolveView(kind, search, prefs, ctx);
+  const saved = useSavedFilters();
+  const view = resolveView(kind, search, prefs, ctx, kind === 'school' ? {} : { programs: saved.page?.programs });
   const navigate = useNavigate();
 
   const setSearch = (patch: ViewPatch) => {
+    // The index and the live page remember the program set on this device; all four clears it.
+    if (kind !== 'school' && patch.programs) saveFilters('page', { programs: patch.programs });
     holdScroll();
     void navigate({
       to: '.',

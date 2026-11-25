@@ -73,6 +73,8 @@ describe('useEffectiveView', () => {
       program: 'ALL',
       show: expect.any(Array),
       fromPrefs: false,
+      // The server render and the hydrating render read no device filters (`useSavedFilters` answers {} there).
+      fromDevice: false,
     });
     expect(view('index', { programs: ['do-phd'] }, null).view).toMatchObject({
       programs: ['do-phd'],

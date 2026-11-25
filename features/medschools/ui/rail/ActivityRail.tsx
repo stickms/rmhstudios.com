@@ -7,11 +7,15 @@ import { MedSearch } from '../controls/MedSearch';
 import { ArrivalSuspense } from '@/components/ui/arrive';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { schoolsParam, type MineChoice } from '../../engine/mine';
 import { parsePrograms, programsQueryValue, type ProgramKey } from '../../engine/programs';
 import { Q_MAX } from '../../engine/search';
 import type { LiveFilters } from '../../medschools.queries';
 import { EventTypeMultiSelect, LIVE_EVENT_TYPES, ProgramMultiSelect } from '../ProgramMultiSelect';
+import { MineSelect } from '../MineSelect';
 import { useEffectiveView } from '../useEffectiveView';
+import { useMineFilter } from '../useMineFilter';
+import { saveFilters, useSavedFilters } from '../useSavedFilters';
 import { RailSkeleton } from './RailSkeleton';
 
 // The list and its live query are their own chunk, fetched only where the rail is displayed (>= 1280px).
@@ -34,22 +38,33 @@ export default function ActivityRail() {
   const { t } = useTranslation('medschools');
   const raw = useSearch({ strict: false }) as Record<string, unknown>;
   const { view } = useEffectiveView('live', { programs: parsePrograms(raw.programs) });
+  // The rail's own filters (owner 2026-11-24): this visit's pick, else what this device saved for the rail, else the
+  // page's program set (its URL, saved filters or preferences) and every event type. A pick is saved at once; "all"
+  // forgets it. The rail keeps a scope of its own, so a change here never moves the page beside it.
+  const saved = useSavedFilters().rail;
   const [programs, setPrograms] = useState<ProgramKey[] | null>(null);
-  const [types, setTypes] = useState<MedEventTypeId[]>([...LIVE_EVENT_TYPES]);
+  const [picked, setPicked] = useState<MedEventTypeId[] | null>(null);
+  const [mineChoice, setMineChoice] = useState<MineChoice | null | undefined>(undefined);
   const [text, setText] = useState('');
   const [q, setQ] = useState('');
   const shown = useMediaQuery('(min-width: 1280px)');
   const push = useDebouncedCallback((v: string) => setQ(v.trim()), 250);
+  // The private reads behind "My schools" run only where the rail shows (>= 1280px), signed in.
+  const mine = useMineFilter(mineChoice, saved?.mine, { enabled: shown });
 
-  const set = programs ?? view.programs;
+  const set = programs ?? saved?.programs ?? view.programs;
+  const types = picked ?? saved?.types ?? [...LIVE_EVENT_TYPES];
   const qp = programsQueryValue(set);
   const allTypes = types.length === LIVE_EVENT_TYPES.length;
+  const schools = mine.slugs ? schoolsParam(mine.slugs) : undefined;
   const filters: LiveFilters = {
     limit: PAGE,
     ...(q ? { q } : {}),
     ...(allTypes ? {} : { types: types.map((ty) => ty.toLowerCase()).join(',') }),
     ...(qp ? { programs: qp } : {}),
+    ...(schools ? { schools } : {}),
   };
+  const noSchools = !!mine.choice && mine.slugs?.size === 0;
 
   return (
     <section aria-labelledby="medschools-rail-heading" className="medapp-panel medapp-panel--rail">
@@ -79,11 +94,39 @@ export default function ActivityRail() {
           }}
         />
         <div className="medapp-rail-filters">
-          <EventTypeMultiSelect compact value={types} onChange={setTypes} />
-          <ProgramMultiSelect compact value={set} onChange={setPrograms} />
+          <EventTypeMultiSelect
+            compact
+            value={types}
+            onChange={(next) => {
+              setPicked(next);
+              saveFilters('rail', { types: next });
+            }}
+          />
+          <ProgramMultiSelect
+            compact
+            value={set}
+            onChange={(next) => {
+              setPrograms(next);
+              saveFilters('rail', { programs: next });
+            }}
+          />
+          {mine.signedIn ? (
+            <MineSelect
+              compact
+              containerClassName="medapp-rail-filters__wide"
+              value={mine.choice}
+              lists={mine.lists}
+              onChange={(next) => {
+                setMineChoice(next);
+                saveFilters('rail', { mine: next });
+              }}
+            />
+          ) : null}
         </div>
       </div>
-      {shown ? (
+      {shown && noSchools ? (
+        <p className="medapp-sub">{t('rail-empty', { defaultValue: 'Nothing matches yet.' })}</p>
+      ) : shown ? (
         <ArrivalSuspense fallback={<RailSkeleton />} wrap={false}>
           <RailFeed filters={filters} />
         </ArrivalSuspense>

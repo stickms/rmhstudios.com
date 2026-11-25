@@ -371,6 +371,8 @@ export const getMedLiveApi = endpoint<{
     /** The activity rail's search: school name or short name, or a state code. */
     q?: string | undefined;
     state?: string | undefined;
+    /** Several schools as a sorted comma list of slugs (at most 300): "My cycle" and "My lists", chosen in the browser. */
+    schools?: string | undefined;
     /** Several event types as a comma list (`acceptance,rejection`); `type` names one. */
     types?: string | undefined;
     cursor?: string | undefined;
@@ -385,6 +387,8 @@ export const getMedLiveSummaryApi = endpoint<{
     programs?: string | undefined;
     /** One or more state codes, comma separated. */
     state?: string | undefined;
+    /** School slugs, comma separated (see `getMedLiveApi`). */
+    schools?: string | undefined;
   };
   res: MedLiveSummaryRes;
 }>()({ method: 'GET', path: '/api/medschools/live/summary' });
