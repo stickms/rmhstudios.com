@@ -118,7 +118,9 @@ export function DeckSuggestions({
           : t('decide-failed', { defaultValue: 'Could not save your decision' }),
       );
       if (reason === 'already-decided') await refresh();
-      return false;
+      // A "Decline and block" that lost the race still declined the member's other open suggestions (the refusal
+      // carries the count), so the caller goes on to block them.
+      return reason === 'already-decided' && typeof errorField<number>(error, 'declined') === 'number';
     } finally {
       setBusy(null);
     }

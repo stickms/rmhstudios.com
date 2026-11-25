@@ -104,11 +104,34 @@ model RmhTubeQueueItem {
   playedAt     DateTime?
   createdAt    DateTime  @default(now())
 
-  room    RmhTubeRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  addedBy User        @relation(fields: [addedById], references: [id])
+  room      RmhTubeRoom       @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  addedBy   User              @relation(fields: [addedById], references: [id])
+  subtitles RmhTubeSubtitle[]
 
   @@index([roomId, position])
   @@map("rmhtube_queue_item")
+}
+
+/// A subtitle track a member attached to a queue item (sprint 11 16). Only the parsed, normalised cues are kept
+/// (`[{ start, end, text }]`, milliseconds, plain text); the uploaded file itself is never stored. At most three per
+/// item (one per label), enforced in a transaction under an advisory lock.
+model RmhTubeSubtitle {
+  id          String   @id @default(cuid())
+  queueItemId String
+  roomId      String
+  addedById   String
+  label       String   @db.VarChar(40)
+  lang        String?  @db.VarChar(16)
+  cues        Json
+  cueCount    Int
+  createdAt   DateTime @default(now())
+
+  queueItem RmhTubeQueueItem @relation(fields: [queueItemId], references: [id], onDelete: Cascade)
+  addedBy   User             @relation("RmhTubeSubtitles", fields: [addedById], references: [id])
+
+  @@unique([queueItemId, label])
+  @@index([addedById])
+  @@map("rmhtube_subtitle")
 }
 
 /// Channel subscription — subscribe to another user's RMHTube activity (#32).

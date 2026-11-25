@@ -90,7 +90,7 @@ function LobbyBrowser({ connectionStatus, onCreateLobby, onJoinLobby }: LobbyBro
                     onSubmit={(e) => { e.preventDefault(); onJoinLobby(joinCode); }}
                     className="flex gap-2"
                 >
-                    <input
+                    <input aria-label={t('field-join-code', { defaultValue: 'Join code' })}
                         type="text"
                         maxLength={6}
                         value={joinCode}

@@ -17,6 +17,14 @@ import { saveGhostIfBest, type GhostDb } from '../../../lib/rmhtype/ghost-save.s
 import { PASSAGES, type Passage } from '../../../lib/rmhtype/passages';
 import { generateTypingPassage } from '../../../lib/ai/text.server';
 import { parseSoloSource, pickCodeSnippet, extractLorePassage } from '../../../lib/rmhtype/sources';
+import { challengePassage, clampRunCounts, evaluateFinish } from '../../../lib/rmhtype/challenges';
+import { MAX_WPM } from '../../../lib/rmhtype/typing-run';
+import {
+  claimChallengeRace,
+  settleAndNotify,
+  type ChallengeDb,
+  type Settlement,
+} from '../../../lib/rmhtype/challenges-settle.server';
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -100,6 +108,12 @@ interface TypeRoom {
    * ranked against a WPM set on `hard-10` without making the board meaningless.
    */
   aiPassage?: boolean;
+  /**
+   * A solo run that is a challenge race (s11-12). `done` is set the moment the run is settled by its finish, so the
+   * room being removed afterwards (the usual end of a solo run) does not also settle it as "Did not finish". A room
+   * removed before that (leave, disconnect, the solo timeout, a new start) settles it that way: a race is one attempt.
+   */
+  challenge?: { id: string; done: boolean };
 }
 
 // ─── Module State ───────────────────────────────────────────
@@ -333,12 +347,23 @@ function clearRoundTimeout(room: TypeRoom): void {
   }
 }
 
+/** The challenge race a removed room was running, if it never finished: settled as "Did not finish". */
+function settleLeftChallenge(room: TypeRoom): void {
+  const challenge = room.challenge;
+  if (!challenge || challenge.done) return;
+  challenge.done = true;
+  settleAndNotify(getPrismaClient() as unknown as ChallengeDb, challenge.id, null).catch((err) => {
+    logger.error({ event: 'rmhtype_challenge_settle_error', roomId: room.roomId, error: String(err) });
+  });
+}
+
 function removeRoom(roomId: string): void {
   presence.clearRoom(roomId);
   const room = rooms.get(roomId);
   if (!room) return;
   cleanupRoomTimers(room);
   rooms.delete(roomId);
+  settleLeftChallenge(room);
   logger.info({
     event: 'rmhtype_room_removed',
     roomId,
@@ -830,6 +855,15 @@ async function persistMatchResults(room: TypeRoom, finalResults: any): Promise<v
 
 const MIN_LEADERBOARD_ACCURACY = 90;
 
+/**
+ * Whether a solo run posts to the leaderboard: accurate enough, and no faster than {@link MAX_WPM}, the ceiling every
+ * other RMHType score (challenges, the daily, ghosts) already holds. The hub's own clock times the run, so a finish
+ * sent early with the whole passage claimed scores above the ceiling and is kept as a match but not posted.
+ */
+function soloQualifies(wpm: number, accuracy: number): boolean {
+  return accuracy >= MIN_LEADERBOARD_ACCURACY && Number.isFinite(wpm) && wpm <= MAX_WPM;
+}
+
 async function persistSoloResult(
   userId: string,
   userName: string,
@@ -843,7 +877,7 @@ async function persistSoloResult(
 ): Promise<boolean> {
   try {
     const prisma = getPrismaClient();
-    const qualifies = accuracy >= MIN_LEADERBOARD_ACCURACY;
+    const qualifies = soloQualifies(wpm, accuracy);
 
     // Create solo match record
     const match = await (prisma as any).rmhTypeMatch.create({
@@ -1560,8 +1594,8 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
     const player = room.players.get(userId);
     if (!player || player.finished) return;
 
-    const position = typeof payload?.position === 'number' ? Math.max(0, payload.position) : 0;
-    const errors = typeof payload?.errors === 'number' ? Math.max(0, payload.errors) : 0;
+    // Clamped to the passage: live progress feeds the timeout result and the race standings.
+    const { position, errors } = clampRunCounts(payload?.position, payload?.errors, room.passage?.length ?? 0);
 
     player.currentPosition = position;
     player.errors = errors;
@@ -1615,13 +1649,52 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
 
   socket.on(
     'rmhtype:solo:start',
-    async (payload?: { difficulty?: string; passageLength?: string; topic?: string; source?: string }) => {
+    async (payload?: {
+      difficulty?: string;
+      passageLength?: string;
+      topic?: string;
+      source?: string;
+      challengeId?: string;
+    }) => {
       if (!checkRateLimit(socket.id, 'rmhtype:solo:start')) {
         socket.emit('rmhtype:error', {
           message: 'Rate limit exceeded',
         });
         return;
       }
+
+      // Starting anything else abandons a challenge race this socket is still in: one attempt.
+      const previousRoomId = socketRoomMap.get(socket.id);
+      if (previousRoomId?.startsWith('solo-') && rooms.get(previousRoomId)?.challenge) {
+        socket.leave(`rmhtype:${previousRoomId}`);
+        socketRoomMap.delete(socket.id);
+        removeRoom(previousRoomId);
+      }
+
+      // A challenge race (s11-12): the passage and the ghost come from the challenge, never from the client. The
+      // claim is the one compare-and-set `pending` -> `racing`, so a second start (another tab, a reload) is refused.
+      let race: Awaited<ReturnType<typeof claimChallengeRace>> | null = null;
+      if (payload?.challengeId !== undefined) {
+        const challengeId = typeof payload.challengeId === 'string' ? payload.challengeId.slice(0, 40) : '';
+        try {
+          race = await claimChallengeRace(getPrismaClient() as unknown as ChallengeDb, userId, challengeId);
+        } catch (err) {
+          logger.error({ event: 'rmhtype_challenge_claim_error', userId, error: String(err) });
+          socket.emit('rmhtype:error', { message: 'Could not start the challenge' });
+          return;
+        }
+        if (!race.ok) {
+          socket.emit('rmhtype:error', { message: race.error, code: race.code });
+          return;
+        }
+        if (!socket.connected) {
+          // Gone while the claim ran: the race was claimed, so it is the one attempt, left.
+          settleAndNotify(getPrismaClient() as unknown as ChallengeDb, race.race.id, null).catch(() => undefined);
+          return;
+        }
+      }
+      const claimed = race && race.ok ? race.race : null;
+      const challengeText = claimed ? challengePassage(claimed.passageId) : null;
 
       const difficulty =
         payload?.difficulty && ['easy', 'medium', 'hard'].includes(payload.difficulty)
@@ -1643,11 +1716,24 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
       // A topic asks for a passage written to order. The text is produced HERE,
       // never accepted from the client: the passage is what scoring is measured
       // against, so a client-supplied one would be a client-supplied WPM.
-      const source = parseSoloSource(payload?.source);
+      const source = claimed ? 'standard' : parseSoloSource(payload?.source);
       const topic =
-        source === 'standard' && typeof payload?.topic === 'string' ? sanitizeString(payload.topic, 80) : '';
+        !claimed && source === 'standard' && typeof payload?.topic === 'string'
+          ? sanitizeString(payload.topic, 80)
+          : '';
       let passage = selectPassage(soloSettings);
       let aiPassage = false;
+      if (claimed && challengeText) {
+        passage = {
+          id: challengeText.id,
+          text: challengeText.text,
+          difficulty: challengeText.difficulty,
+          wordCount: challengeText.text.split(/\s+/).length,
+        };
+        soloSettings.difficulty = challengeText.difficulty;
+        // A code snippet is practice on the boards, as on any solo run.
+        aiPassage = challengeText.code;
+      }
 
       // Code and lore passages are practice-only, like a written-to-order one.
       if (source === 'code') {
@@ -1770,6 +1856,7 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
         roundResults: [],
         bannedUsers: [],
         aiPassage,
+        challenge: claimed ? { id: claimed.id, done: false } : undefined,
       };
 
       rooms.set(soloRoomId, soloRoom);
@@ -1804,6 +1891,21 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
         socket.emit('rmhtype:solo:started', {
           passage: passage.text,
           passageId: passage.id,
+          // The challenger's snapshot is the ghost, drawn as their caret.
+          ...(claimed
+            ? {
+                challenge: {
+                  id: claimed.id,
+                  challengerName: claimed.challengerName,
+                  ghost: {
+                    passageId: passage.id,
+                    wpm: claimed.snapshot.wpm,
+                    timeMs: claimed.snapshot.timeMs,
+                    samples: claimed.snapshot.samples,
+                  },
+                },
+              }
+            : {}),
         });
 
         // Solo round timeout
@@ -1821,7 +1923,7 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
                 accuracy: Math.round(soloPlayer.accuracy * 100) / 100,
                 timeMs: ROUND_TIMEOUT_MS,
                 timedOut: true,
-                scorePosted: !aiPassage && soloPlayer.accuracy >= MIN_LEADERBOARD_ACCURACY,
+                scorePosted: !aiPassage && soloQualifies(soloPlayer.wpm, soloPlayer.accuracy),
                 practice: aiPassage,
               });
               cleanupSoloRoom(soloRoomId, socket);
@@ -1849,8 +1951,13 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
     const player = room.players.get(userId);
     if (!player || player.finished) return;
 
-    const position = typeof payload?.position === 'number' ? Math.max(0, payload.position) : player.currentPosition;
-    const errors = typeof payload?.errors === 'number' ? Math.max(0, payload.errors) : player.errors;
+    // The client's figures are clamped as a challenge's are (`clampRunCounts`): an inflated position cannot raise
+    // the stored speed past the passage, and accuracy stays within 0 to 100.
+    const { position, errors } = clampRunCounts(
+      typeof payload?.position === 'number' ? payload.position : player.currentPosition,
+      typeof payload?.errors === 'number' ? payload.errors : player.errors,
+      room.passage?.length ?? 0,
+    );
 
     player.currentPosition = position;
     player.errors = errors;
@@ -1872,7 +1979,7 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
       accuracy: Math.round(player.accuracy * 100) / 100,
       timeMs: player.finishTime,
       timedOut: false,
-      scorePosted: !room.aiPassage && player.accuracy >= MIN_LEADERBOARD_ACCURACY,
+      scorePosted: !room.aiPassage && soloQualifies(player.wpm, player.accuracy),
       practice: Boolean(room.aiPassage),
     };
 
@@ -1898,6 +2005,27 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
           error: String(err),
         });
       });
+    }
+
+    // A challenge race settles once, from the server's own checked figures (clamped position, the server's clock,
+    // MAX_WPM, a plausible curve); anything that fails a check is "Did not finish". The run above is scored as any
+    // solo run is. `done` first, so the room's removal below does not also settle it as left.
+    if (room.challenge && !room.challenge.done) {
+      room.challenge.done = true;
+      const figures = evaluateFinish({
+        passageLength: room.passage?.length ?? 0,
+        position: payload?.position,
+        errors: payload?.errors,
+        timeMs: player.finishTime,
+        samples: payload?.samples,
+      });
+      settleAndNotify(getPrismaClient() as unknown as ChallengeDb, room.challenge.id, figures, userId)
+        .then((settled) => {
+          if (settled) socket.emit(S2C.SOLO_CHALLENGE_RESULT, challengeResultPayload(settled));
+        })
+        .catch((err) => {
+          logger.error({ event: 'rmhtype_challenge_settle_error', userId, error: String(err) });
+        });
     }
 
     // Keep the run's progress curve as the member's ghost on a new passage best.
@@ -1948,6 +2076,17 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
       });
     }
   });
+}
+
+/** What the opponent's client is told when their race is settled. */
+function challengeResultPayload(s: Settlement) {
+  return {
+    id: s.id,
+    outcome: s.outcome,
+    finished: s.finished,
+    challengerWpm: s.challengerWpm,
+    opponentWpm: s.opponentWpm,
+  };
 }
 
 // ─── Helper: Leave Room ─────────────────────────────────────

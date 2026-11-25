@@ -81,7 +81,7 @@ export function AvatarField({
           ) : null}
         </div>
       </div>
-      <input
+      <input aria-label={t('field-avatar-file', { defaultValue: 'Choose an avatar picture' })}
         ref={inputRef}
         type="file"
         accept="image/png,image/jpeg,image/gif,image/webp"

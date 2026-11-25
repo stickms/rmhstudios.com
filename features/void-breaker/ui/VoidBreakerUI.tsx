@@ -152,7 +152,7 @@ export function VoidBreakerUI({
                 <label className="text-sm text-zinc-400">{t("music-volume", { defaultValue: "Music Volume" })}</label>
                 <span className="text-xs text-[#d4af37] font-mono tabular-nums">{musicVolume}%</span>
               </div>
-              <Slider
+              <Slider aria-label={t('music-volume', { defaultValue: 'Music Volume' })}
                 value={[musicVolume]}
                 onValueChange={([v]) => onMusicVolumeChange(v)}
                 min={0}
@@ -167,7 +167,7 @@ export function VoidBreakerUI({
                 <label className="text-sm text-zinc-400">{t("sfx-volume", { defaultValue: "Sound Effects" })}</label>
                 <span className="text-xs text-[#d4af37] font-mono tabular-nums">{sfxVolume}%</span>
               </div>
-              <Slider
+              <Slider aria-label={t('sfx-volume', { defaultValue: 'Sound Effects' })}
                 value={[sfxVolume]}
                 onValueChange={([v]) => onSfxVolumeChange(v)}
                 min={0}

@@ -331,6 +331,20 @@ export function actionSentence(t: TFunction, e: ModLogEntryDTO): string {
         actor,
         defaultValue: '{{actor}} cancelled an event',
       });
+    case 'read_along_started':
+      return t('modlog-started', {
+        ns: 'read-alongs',
+        actor,
+        name: named,
+        defaultValue: '{{actor}} started the read-along {{name}}',
+      });
+    case 'read_along_cancelled':
+      return t('modlog-cancelled', {
+        ns: 'read-alongs',
+        actor,
+        name: named,
+        defaultValue: '{{actor}} cancelled the read-along {{name}}',
+      });
   }
 }
 

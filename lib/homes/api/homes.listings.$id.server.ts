@@ -12,12 +12,15 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import {
   getListing,
+  listingAuthorId,
   updateListing,
   deleteListing,
   setListingStatus,
 } from '@/lib/homes/listings.server';
 import { resolveCenter } from '@/lib/homes/geo.server';
 import { PROPERTY_TYPES } from '@/lib/homes/types';
+import { imageAltsRefusal } from '@/lib/homes/photos';
+import { listingPhotoOriginRefusal } from '@/lib/homes/photo-origin';
 import type { ListingInput } from '@/lib/homes/types';
 
 const listingInputSchema = z.object({
@@ -40,6 +43,8 @@ const listingInputSchema = z.object({
   availableFrom: z.string().max(40).nullish(),
   images: z.array(z.string().max(1000)).max(12).default([]),
   aiImages: z.array(z.string().max(1000)).max(12).default([]),
+  // Longer than the limit still parses: the handler answers it with its own refusal code (`imageAltsRefusal`).
+  imageAlts: z.array(z.string().max(4000)).max(12).optional(),
 });
 
 const statusSchema = z.object({
@@ -79,6 +84,14 @@ export const route = apiRoute('/api/homes/listings/$id', {
       if (!parsed.success) {
         return Response.json({ error: 'Please check the listing details.' }, { status: 400 });
       }
+      const altsRefusal = imageAltsRefusal(parsed.data.imageAlts);
+      if (altsRefusal) return Response.json(altsRefusal, { status: 400 });
+      // Community listings name their author's own site photos only. The check is against the listing's author (a
+      // scraped listing has none, and an edit by anyone else finds nothing), never the caller's id.
+      const authorId = await listingAuthorId(params.id);
+      if (!authorId || authorId !== session.user.id) return Response.json({ error: 'Not found' }, { status: 404 });
+      const photoRefusal = listingPhotoOriginRefusal(parsed.data.images, authorId);
+      if (photoRefusal) return Response.json(photoRefusal, { status: 400 });
       let lat = parsed.data.lat;
       let lng = parsed.data.lng;
       if (lat == null || lng == null) {

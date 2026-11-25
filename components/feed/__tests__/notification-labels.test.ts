@@ -157,6 +157,19 @@ describe('system notification labels', () => {
       // s10-17 admin-communities
       'community-delisted': 'Out of discovery',
 
+      // Sprint 11 system labels (docs/autonomous/sprint-11/plan.md §Anchors)
+      // s11-09 read-alongs
+      'read-along': 'Read-alongs',
+
+      // s11-10 deck-coeditors
+      'deck-editor': 'Deck editors',
+
+      // s11-12 type-challenges
+      'type-challenge': 'Typing challenge',
+
+      // s11-13 listing-prices
+      home_price_drop: 'Price drop',
+
       default: 'RMH Studios',
     });
   });

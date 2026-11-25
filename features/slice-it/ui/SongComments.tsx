@@ -159,6 +159,7 @@ export function SongComments({ songId }: SongCommentsProps) {
         {session.data ? (
           <div className="flex gap-2">
             <Textarea
+              aria-label={t('field-comment', { defaultValue: 'Write a comment' })}
               placeholder={t('write-a-comment', {
                 defaultValue: 'Write a comment...',
               })}

@@ -11,6 +11,10 @@ import { prisma } from '@/lib/prisma.server';
 import { resolveCenter } from './geo.server';
 import { haversineKm } from './distance';
 import { notifyWatchersOfNewListing } from './watches.server';
+import { lockKey } from '@/lib/db/advisory-lock.server';
+import { reducedSince } from './prices';
+import { normalizeAlts } from './photos';
+import { notifyFavouritersOfDrop, recordPriceChange, reductionsFor } from './prices.server';
 import type {
   Listing,
   ListingInput,
@@ -36,7 +40,7 @@ type ListingRow = Prisma.HomeListingGetPayload<{
 }>;
 
 /** Map a DB row (+ viewer context) to the client Listing DTO. */
-function toDTO(row: ListingRow, viewerId: string | null): Listing {
+function toDTO(row: ListingRow, viewerId: string | null, reducedBy: number | null = null): Listing {
   return {
     id: row.id,
     source: row.source,
@@ -60,6 +64,7 @@ function toDTO(row: ListingRow, viewerId: string | null): Listing {
     availableFrom: row.availableFrom ? row.availableFrom.toISOString() : null,
     images: row.images,
     aiImages: row.aiImages,
+    imageAlts: normalizeAlts(row.images, row.imageAlts),
     viewsCount: row.viewsCount,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -75,7 +80,15 @@ function toDTO(row: ListingRow, viewerId: string | null): Listing {
     sourceName: row.sourceName,
     favorited: viewerId ? row.favorites.some((f) => f.userId === viewerId) : false,
     isOwner: viewerId != null && viewerId === row.authorId,
+    ...(reducedBy != null ? { reducedByCents: reducedBy } : {}),
+    ...(viewerId ? { priceAlerts: row.favorites.find((f) => f.userId === viewerId)?.priceAlerts ?? true } : {}),
   };
+}
+
+/** Map rows to DTOs, adding "Reduced" for the page with one read (`reductionsFor`). */
+async function toDTOs(rows: ListingRow[], viewerId: string | null): Promise<Listing[]> {
+  const reductions = await reductionsFor(rows);
+  return rows.map((r) => toDTO(r, viewerId, reductions.get(r.id) ?? null));
 }
 
 function includeFor(viewerId: string | null) {
@@ -126,6 +139,7 @@ export async function browseListings(
   if (filters.minBeds != null) where.beds = { gte: filters.minBeds };
   if (filters.minBaths != null) where.baths = { gte: filters.minBaths };
   if (filters.petsAllowed) where.petsAllowed = true;
+  if (filters.reduced) where.priceDroppedAt = { gte: reducedSince(new Date()) };
 
   if (center) {
     const box = boundingBox(center, filters.radiusKm);
@@ -158,7 +172,7 @@ export async function browseListings(
   const pageSize = Math.min(Math.max(filters.pageSize, 1), 60);
   const page = Math.max(1, filters.page);
   const start = (page - 1) * pageSize;
-  const listings = matched.slice(start, start + pageSize).map((r) => toDTO(r, viewerId));
+  const listings = await toDTOs(matched.slice(start, start + pageSize), viewerId);
 
   return { listings, total, page, pageSize, center };
 }
@@ -181,10 +195,11 @@ export async function getListing(
       .update({ where: { id }, data: { viewsCount: { increment: 1 } } })
       .catch(() => {});
   }
-  return toDTO(row, viewerId);
+  return (await toDTOs([row], viewerId))[0] ?? null;
 }
 
-function toCreateData(input: ListingInput): Prisma.HomeListingUncheckedCreateInput {
+export function toCreateData(input: ListingInput): Prisma.HomeListingUncheckedCreateInput {
+  const images = input.images.slice(0, 12);
   return {
     authorId: '', // set by caller
     listingType: input.listingType,
@@ -204,9 +219,11 @@ function toCreateData(input: ListingInput): Prisma.HomeListingUncheckedCreateInp
     amenities: input.amenities.slice(0, 40).map((a) => a.slice(0, 60)),
     petsAllowed: Boolean(input.petsAllowed),
     availableFrom: input.availableFrom ? new Date(input.availableFrom) : null,
-    images: input.images.slice(0, 12),
+    images,
+    // One description per stored photo, whatever length the caller sent.
+    imageAlts: normalizeAlts(images, input.imageAlts),
     // Only flag AI images that are actually among the stored photos.
-    aiImages: input.aiImages.filter((u) => input.images.includes(u)).slice(0, 12),
+    aiImages: input.aiImages.filter((u) => images.includes(u)).slice(0, 12),
   };
 }
 
@@ -223,6 +240,26 @@ export async function createListing(
 }
 
 /** Update a listing the caller owns. Returns false if not found/owned. */
+/** Descriptions for `images` taken from the same URLs in the stored photos (a repeated URL uses each stored one once). */
+export function carryAlts(images: readonly string[], oldImages: readonly string[], oldAlts: readonly string[]): string[] {
+  const used = new Set<number>();
+  return normalizeAlts(
+    images,
+    images.map((url) => {
+      const at = oldImages.findIndex((u, i) => u === url && !used.has(i));
+      if (at < 0) return '';
+      used.add(at);
+      return oldAlts[at] ?? '';
+    }),
+  );
+}
+
+/** The author of a listing, or `null` for a missing one or a scraped listing (no author). */
+export async function listingAuthorId(id: string): Promise<string | null> {
+  const row = await prisma.homeListing.findUnique({ where: { id }, select: { authorId: true } });
+  return row?.authorId ?? null;
+}
+
 export async function updateListing(
   id: string,
   authorId: string,
@@ -231,11 +268,43 @@ export async function updateListing(
   const data = toCreateData(input);
   const { authorId: _drop, ...rest } = data;
   void _drop;
-  const res = await prisma.homeListing.updateMany({
-    where: { id, authorId },
-    data: rest,
+  // Read the old price, write the edit and record the change in one transaction (under a per-listing lock, so
+  // two edits cannot both compare against the same old price). Notices go out after it commits.
+  const outcome = await prisma.$transaction(async (tx) => {
+    await lockKey(tx, `home-price:${id}`);
+    const before = await tx.homeListing.findFirst({
+      where: { id, authorId },
+      select: { priceCents: true, images: true, imageAlts: true },
+    });
+    if (!before) return null;
+    // An edit that sends photos without descriptions (an older client) keeps each photo's own description, matched by
+    // URL, instead of blanking them or sliding them onto the wrong photo.
+    const data =
+      input.imageAlts === undefined
+        ? { ...rest, imageAlts: carryAlts(rest.images as string[], before.images, before.imageAlts) }
+        : rest;
+    await tx.homeListing.updateMany({ where: { id, authorId }, data });
+    const change = await recordPriceChange(tx, {
+      listingId: id,
+      oldCents: before.priceCents,
+      newCents: rest.priceCents,
+      source: 'author',
+    });
+    return { dropped: change.dropped, oldCents: before.priceCents, newCents: rest.priceCents };
   });
-  return res.count > 0;
+  if (!outcome) return false;
+  if (outcome.dropped) {
+    void notifyFavouritersOfDrop({
+      listingId: id,
+      authorId,
+      title: rest.title,
+      city: rest.city,
+      state: rest.state,
+      oldCents: outcome.oldCents,
+      newCents: outcome.newCents,
+    });
+  }
+  return true;
 }
 
 export async function setListingStatus(
@@ -260,7 +329,7 @@ export async function listMine(authorId: string): Promise<Listing[]> {
     take: 200,
     include: includeFor(authorId),
   });
-  return rows.map((r) => toDTO(r, authorId));
+  return toDTOs(rows, authorId);
 }
 
 // ─── Favorites ───────────────────────────────────────────────────────────────
@@ -272,7 +341,10 @@ export async function listFavorites(userId: string): Promise<Listing[]> {
     take: 500,
     include: { listing: { include: includeFor(userId) } },
   });
-  return favs.filter((f) => f.listing).map((f) => toDTO(f.listing as ListingRow, userId));
+  return toDTOs(
+    favs.filter((f) => f.listing).map((f) => f.listing as ListingRow),
+    userId,
+  );
 }
 
 export async function favorite(userId: string, listingId: string): Promise<boolean> {

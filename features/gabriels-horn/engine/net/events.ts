@@ -23,7 +23,7 @@
  * else's as a count, plus whatever one Amber card bought you.
  */
 
-import type { Card, CardColor, CardEffect, Phase } from '../constants';
+import type { BotLevel, Card, CardColor, CardEffect, Phase } from '../constants';
 import type { HouseRules, RuleChange } from '../house-rules';
 
 import type { TableReadRow } from '../table-read';
@@ -41,6 +41,10 @@ export const C2S = {
   SETTINGS: 'gh:settings',
   START: 'gh:start',
   KICK: 'gh:kick',
+  /** Host only, waiting lobby only: seat a computer player at a level. */
+  ADD_BOT: 'gh:add-bot',
+  /** Host only, waiting lobby only: take a computer player's seat away. */
+  REMOVE_BOT: 'gh:remove-bot',
   /** Spend a card from your hand. */
   PLAY: 'gh:play',
   /** Commit to the roll you cannot see. */
@@ -82,10 +86,22 @@ export const S2C = {
 
 export type LobbyState = 'waiting' | 'countdown' | 'playing' | 'results';
 
+/**
+ * A computer player. The server never sends an English name for one: the client
+ * builds "Bot 2 · Steady" from this through `t()`.
+ */
+export interface BotInfo {
+  n: number;
+  level: BotLevel;
+}
+
 export interface LobbyPlayer {
   socketId: string;
   userId: string;
+  /** Empty for a bot — name it from {@link LobbyPlayer.bot}. */
   name: string;
+  /** Set for a computer player. */
+  bot: BotInfo | null;
   avatarUrl: string | null;
   ready: boolean;
   isHost: boolean;
@@ -103,12 +119,17 @@ export interface LobbySnapshot extends LobbySettings {
   state: LobbyState;
   players: LobbyPlayer[];
   maxPlayers: number;
+  /** A bot holds a seat: this table is a practice table and writes no board row. */
+  practice: boolean;
 }
 
 export interface PublicLobbyInfo {
   code: string;
   hostName: string;
+  /** Every seat, bots included. */
   playerCount: number;
+  /** How many of those seats are computer players. */
+  bots: number;
   maxPlayers: number;
 }
 
@@ -116,8 +137,12 @@ export interface PublicLobbyInfo {
 
 export interface TablePlayer {
   socketId: string;
+  /** Public, stable seat number; log entries refer to seats by it. */
+  seatNo: number;
   userId: string;
+  /** Empty for a bot — name it from {@link TablePlayer.bot}. */
   name: string;
+  bot: BotInfo | null;
   avatarUrl: string | null;
   /** Hand SIZE is public — it is the score, and hiding it would hide the race. */
   handCount: number;
@@ -201,6 +226,11 @@ export interface LogEntry {
   changes?: RuleChange[];
   actorName?: string;
   targetName?: string;
+  /** Who acted and who was aimed at, by public seat number (never a socket id): a bot has no name to put in `actorName`. */
+  actorSeat?: number;
+  targetSeat?: number;
+  actorBot?: BotInfo;
+  targetBot?: BotInfo;
   amount?: number;
   total?: number;
   color?: CardColor;
@@ -234,8 +264,11 @@ export interface GameView {
   scry: {
     socketId: string;
     name: string;
+    bot: BotInfo | null;
     cards: Card[];
   } | null;
+  /** A bot held a seat when the game started: nothing from it is written to a board. */
+  practice: boolean;
   /** The rules in force. The table plays by these, not by the shipped defaults. */
   rules: HouseRules;
   log: LogEntry[];
@@ -247,6 +280,7 @@ export interface FinalStanding {
   socketId: string;
   userId: string;
   name: string;
+  bot: BotInfo | null;
   avatarUrl: string | null;
   handCount: number;
   /** 1-based. Ties share a place. */
@@ -266,6 +300,8 @@ export interface GameResults {
   rounds: number;
   /** The table emptied out mid-game rather than reaching a called End. */
   abandoned: boolean;
+  /** A bot sat at this table: it was a practice game and wrote no board or table-read row. */
+  practice: boolean;
   /** R11: what each seat did this game, for the post-game table read. */
   tableRead?: TableReadRow[];
 }
@@ -296,4 +332,12 @@ export interface ClaimPayload {
 export interface CallPayload {
   targetSocketId: string;
   verdict: 'truth' | 'lie';
+}
+
+export interface AddBotPayload {
+  level: BotLevel;
+}
+
+export interface RemoveBotPayload {
+  seatId: string;
 }

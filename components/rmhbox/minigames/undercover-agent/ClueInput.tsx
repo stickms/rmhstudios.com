@@ -66,7 +66,7 @@ export default function ClueInput({ gridWords, onSubmit, timeRemaining }: ClueIn
       </p>
 
       {/* Word input */}
-      <input
+      <input aria-label={t('field-clue-word', { defaultValue: 'Your one-word clue' })}
         ref={inputRef}
         type="text"
         value={word}

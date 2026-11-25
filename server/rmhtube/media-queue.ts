@@ -28,6 +28,7 @@ import { QueueSkipSchema } from '../../lib/rmhtube/schemas';
 import { probeMediaUrl } from '../../lib/rmhtube/probe.server';
 import { planPlaylistQueue, playlistFetchLimit, remainingCapacity, toResult } from '../../lib/rmhtube/playlist-queue';
 import type { RoomManager } from './room-manager';
+import { registerSubtitleHandlers } from './subtitle-handler';
 import type { SyncEngine } from './sync-engine';
 import type { QueueItem, RmhTubeRoom } from './types';
 import { z } from 'zod';
@@ -89,6 +90,7 @@ export class MediaQueue {
       C2S.QUEUE_SHUFFLE,
       validated(socket, C2S.QUEUE_SHUFFLE, EmptySchema, (s) => this.shuffleQueue(s)),
     );
+    registerSubtitleHandlers(socket, this.roomManager);
   }
 
   // ─── Helpers ─────────────────────────────────────────────────

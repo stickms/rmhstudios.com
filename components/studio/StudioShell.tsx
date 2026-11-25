@@ -8,7 +8,6 @@ import {
   Play,
   Pause,
   Square,
-  Circle,
   Repeat,
   Music4,
   Piano,
@@ -46,6 +45,7 @@ import { SampleBrowser } from '@/components/studio/SampleBrowser';
 import { KeybindSettings } from '@/components/studio/KeybindSettings';
 import { ProjectsMenu } from '@/components/studio/ProjectsMenu';
 import { OpenProjectDialog } from '@/components/studio/OpenProjectDialog';
+import { OpenSharedDialog, useSharedLink } from '@/components/studio/OpenSharedDialog';
 import { ExportMixDialog } from '@/components/studio/ExportMixDialog';
 import { ImportMidiDialog } from '@/components/studio/ImportMidiDialog';
 import { useExportUi } from '@/lib/studio/export/ui-store';
@@ -54,6 +54,9 @@ import {
   useProjectSession,
   type ProjectSession,
 } from '@/components/studio/useProjectSession';
+import { RecordControls } from '@/components/studio/RecordingPopover';
+import { toast } from '@/lib/toast';
+import { useRecording, type RecordNotice } from '@/lib/studio/hooks/useRecording';
 import { StudioCreativeButtons } from '@/components/studio/creative/StudioCreativeButtons';
 import {
   MIN_BPM,
@@ -78,7 +81,6 @@ function TransportBar({
 }) {
   const {
     isPlaying,
-    isRecording,
     bpm,
     timeSignature,
     currentBeat,
@@ -163,6 +165,9 @@ function TransportBar({
       <div className="flex items-center gap-1">
         <button
           onClick={() => {
+            setIsRecording(
+              false,
+            );
             setIsPlaying(
               false,
             );
@@ -199,30 +204,7 @@ function TransportBar({
             <Play className="h-4 w-4" />
           )}
         </button>
-        <button
-          onClick={() =>
-            setIsRecording(
-              !isRecording,
-            )
-          }
-          className={`rounded-app-sm p-1.5 ${isRecording ? 'bg-app-danger/15 text-app-danger' : 'text-app-text-muted hover:bg-app-surface-hover hover:text-app-text'}`}
-          title={t(
-            'record',
-            {
-              defaultValue:
-                'Record',
-            },
-          )}
-        >
-          <Circle
-            className="h-4 w-4"
-            fill={
-              isRecording
-                ? 'currentColor'
-                : 'none'
-            }
-          />
-        </button>
+        <RecordControls />
       </div>
     );
 
@@ -246,7 +228,7 @@ function TransportBar({
             <span className="text-xs text-app-text-muted">
               BPM
             </span>
-            <input
+            <input aria-label={t('field-bpm', { defaultValue: 'Tempo in BPM' })}
               type="number"
               inputMode="numeric"
               value={
@@ -371,7 +353,7 @@ function TransportBar({
         <span className="text-xs text-app-text-muted">
           BPM
         </span>
-        <input
+        <input aria-label={t('field-bpm', { defaultValue: 'Tempo in BPM' })}
           type="number"
           inputMode="numeric"
           value={
@@ -1116,13 +1098,38 @@ export default function StudioShell() {
   // Initialize keybinds and transport bridge; Ctrl/Cmd+S and Ctrl+Shift+S are the project session's
   const session =
     useProjectSession();
+  // `/studio?share=<token>`: the open-a-copy dialog (the token is read once and removed from the address bar)
+  const sharedLink = useSharedLink();
+  const { t: tr } = useTranslation('studio-record');
+  const notifyRecord = useCallback(
+    (notice: RecordNotice) => {
+      switch (notice) {
+        case 'no-armed-track':
+          toast.error(tr('record-needs-arm', { defaultValue: 'Arm a MIDI track to record' }));
+          break;
+        case 'loop-on':
+          toast.error(tr('record-needs-loop-off', { defaultValue: 'Turn off the loop to record' }));
+          break;
+        case 'engine-failed':
+          toast.error(tr('engine-failed', { defaultValue: 'The audio engine could not start. Nothing was recorded.' }));
+          break;
+        case 'empty-take':
+          toast.info(tr('empty-take', { defaultValue: 'No notes were played, so no clip was made.' }));
+          break;
+        case 'take-saved':
+          toast.success(tr('take-saved', { defaultValue: 'Take recorded. Undo removes it.' }));
+          break;
+      }
+    },
+    [tr],
+  );
+  const recordClipName = tr('clip-name', { defaultValue: 'Take' });
+  const recorder = useRecording({ notify: notifyRecord, clipName: recordClipName });
   useKeybinds(
-    undefined,
-    undefined,
+    recorder.noteOn,
+    recorder.noteOff,
     session.onProjectAction,
   );
-  useTransport();
-
   // Initialize audio engine on first user interaction
   const [
     engineReady,
@@ -1153,6 +1160,8 @@ export default function StudioShell() {
     }, [
       engineReady,
     ]);
+
+  useTransport(engineReady);
 
   // Auto-init on first click/tap
   useEffect(() => {
@@ -1231,6 +1240,13 @@ export default function StudioShell() {
             tab={
               session.openDialog
             }
+          />
+        ) : null}
+        {sharedLink.token ? (
+          <OpenSharedDialog
+            token={sharedLink.token}
+            session={session}
+            onClose={sharedLink.dismiss}
           />
         ) : null}
         {session.conflict ? (

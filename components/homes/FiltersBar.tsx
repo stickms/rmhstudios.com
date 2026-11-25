@@ -73,7 +73,8 @@ export function FiltersBar({ filters, onChange, search }: FiltersBarProps) {
     (filters.maxPrice != null ? 1 : 0) +
     (filters.minBaths != null ? 1 : 0) +
     filters.propertyTypes.length +
-    (filters.petsAllowed ? 1 : 0);
+    (filters.petsAllowed ? 1 : 0) +
+    (filters.reduced ? 1 : 0);
 
   return (
     <div data-slot="homes-filters">
@@ -264,6 +265,16 @@ export function FiltersBar({ filters, onChange, search }: FiltersBarProps) {
               className="h-4 w-4 accent-site-accent"
             />
             {t('homes-pets-only', { defaultValue: 'Pet-friendly only' })}
+          </label>
+
+          <label className="t-body flex min-h-11 cursor-pointer items-center gap-2 sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={Boolean(filters.reduced)}
+              onChange={(e) => onChange({ reduced: e.target.checked ? true : undefined })}
+              className="h-4 w-4 accent-site-accent"
+            />
+            {t('filter-reduced', { ns: 'listing-prices', defaultValue: 'Reduced in the last 30 days' })}
           </label>
         </div>
       )}

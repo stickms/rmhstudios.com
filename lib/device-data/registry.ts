@@ -269,6 +269,36 @@ export const DEVICE_STORES: readonly DeviceStore[] = [
     ],
     personal: false,
   },
+
+  // Sprint 11
+  // s11-02 character-rolls
+  {
+    id: 'character-rolls',
+    kind: 'localstorage-prefix',
+    names: ['rmhcharacters:rolls:'],
+    personal: true,
+  },
+  // s11-11 type-layouts
+  {
+    id: 'rmhtype-layout',
+    kind: 'localstorage-prefix',
+    names: ['rmh:rmhtype:layout'],
+    personal: false,
+  },
+  // s11-16 rmhtube-subtitles
+  {
+    id: 'rmhtube-subtitles',
+    kind: 'localstorage-prefix',
+    names: ['rmh:rmhtube:subtitles'],
+    personal: false,
+  },
+  // s11-17 card-listen
+  {
+    id: 'card-listen',
+    kind: 'localstorage-prefix',
+    names: ['rmh:study:listen'],
+    personal: false,
+  },
 ];
 
 /** The Web Storage key every sign-out path reads: "clear this device when I sign out". A per-device choice. */

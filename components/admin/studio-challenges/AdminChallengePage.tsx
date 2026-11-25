@@ -103,6 +103,7 @@ export function AdminChallengePage() {
       <AdminBody width="narrow">
         <div className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0">
           <Input
+            aria-label={t('field-challenge-title', { defaultValue: 'Challenge title' })}
             placeholder={t('admin-title', {
               defaultValue: 'Challenge title',
             })}
@@ -111,6 +112,7 @@ export function AdminChallengePage() {
             onChange={(e) => setTitle(e.target.value)}
           />
           <Textarea
+            aria-label={t('field-challenge-brief', { defaultValue: 'Brief and rules' })}
             placeholder={t('admin-brief', {
               defaultValue: 'Brief and rules',
             })}

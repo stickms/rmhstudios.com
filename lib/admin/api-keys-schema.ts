@@ -1,5 +1,6 @@
 /** Zod for /api/admin/api-keys (server side; the client sees only the types, by `import type`). */
 import { z } from 'zod';
+import { DELETION_REQUESTED } from '@/lib/account/deletion-hold';
 import {
   ADMIN_CAP_MAX,
   ADMIN_CAP_MIN,
@@ -29,7 +30,16 @@ export const apiKeyPatchBody = z
     suspend: z
       .union([
         z.object({
-          reason: z.string().trim().min(SUSPEND_REASON_MIN).max(SUSPEND_REASON_MAX),
+          reason: z
+            .string()
+            .trim()
+            .min(SUSPEND_REASON_MIN)
+            .max(SUSPEND_REASON_MAX)
+            // The deletion hold's own text: restoring a cancelled deletion lifts keys suspended with it, so an
+            // admin's suspension must never carry it.
+            .refine((r) => r.toLowerCase() !== DELETION_REQUESTED.toLowerCase(), {
+              message: 'That reason text is reserved for account deletion.',
+            }),
         }),
         z.null(),
       ])

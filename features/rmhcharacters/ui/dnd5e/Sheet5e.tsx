@@ -5,29 +5,38 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import * as R from '@features/rmhcharacters/engine/dnd5e/rules';
 import { ABILITIES, ABILITY_NAMES, type Dnd5eCharacter, type Dnd5eData } from '@features/rmhcharacters/engine/types';
+import { DND5E_CONDITIONS } from '@features/rmhcharacters/engine/conditions';
 import { Chip, Issues, Muted, Section, StatRow, Stepper } from '../controls';
-
-/** SRD 5.2 conditions. */
-export const DND5E_CONDITIONS = [
-  'Blinded',
-  'Charmed',
-  'Deafened',
-  'Frightened',
-  'Grappled',
-  'Incapacitated',
-  'Invisible',
-  'Paralyzed',
-  'Petrified',
-  'Poisoned',
-  'Prone',
-  'Restrained',
-  'Stunned',
-  'Unconscious',
-];
+import { RollButton } from '../RollButton';
+import { RollsContext } from '../useRolls';
 
 type Set5e = (fn: (c: Dnd5eCharacter) => Dnd5eCharacter) => void;
 
-export function Sheet5e({ c, d, set }: { c: Dnd5eCharacter; d: Dnd5eData; set: Set5e }) {
+/**
+ * `readOnly` is the game master's view of a player's shared sheet: no tracker, no condition toggles, no rules check and
+ * no roll buttons (an empty roll context makes each one show its value only). `set` is then never called.
+ */
+export function Sheet5e(props: { c: Dnd5eCharacter; d: Dnd5eData; set: Set5e; readOnly?: boolean }) {
+  return props.readOnly ? (
+    <RollsContext.Provider value={null}>
+      <Sheet5eBody {...props} />
+    </RollsContext.Provider>
+  ) : (
+    <Sheet5eBody {...props} />
+  );
+}
+
+function Sheet5eBody({
+  c,
+  d,
+  set,
+  readOnly = false,
+}: {
+  c: Dnd5eCharacter;
+  d: Dnd5eData;
+  set: Set5e;
+  readOnly?: boolean;
+}) {
   const { t } = useTranslation('c-rmhcharacters');
   const [amount, setAmount] = useState('');
   const scores = R.abilityScores(c, d);
@@ -65,10 +74,17 @@ export function Sheet5e({ c, d, set }: { c: Dnd5eCharacter; d: Dnd5eData; set: S
           return (
             <div key={a} className="rmhc-stat">
               <div className="text-xs font-medium text-app-text-muted">{ABILITY_NAMES[a]}</div>
-              <div className="font-mono text-2xl tabular-nums text-app-text">{R.signed(mod)}</div>
+              <div className="font-mono text-2xl tabular-nums text-app-text">
+                <RollButton kind="check" name={ABILITY_NAMES[a]} bonus={mod}>
+                  {R.signed(mod)}
+                </RollButton>
+              </div>
               <div className="font-mono text-xs text-app-text-muted">{scores[a]}</div>
               <div className="mt-1 border-t border-app-border pt-1 font-mono text-xs text-app-text-muted">
-                {t('s5.save', { defaultValue: 'Save' })} {R.signed(mod + (saves.includes(a) ? pb : 0))}
+                {t('s5.save', { defaultValue: 'Save' })}{' '}
+                <RollButton kind="save" name={ABILITY_NAMES[a]} bonus={mod + (saves.includes(a) ? pb : 0)}>
+                  {R.signed(mod + (saves.includes(a) ? pb : 0))}
+                </RollButton>
                 {saves.includes(a) ? ' ●' : ''}
               </div>
             </div>
@@ -84,7 +100,14 @@ export function Sheet5e({ c, d, set }: { c: Dnd5eCharacter; d: Dnd5eData; set: S
               label={t('s5.hp', { defaultValue: 'Hit Points' })}
               value={`${c.hp.current} / ${maxHp}${c.hp.temp ? ` (+${c.hp.temp})` : ''}`}
             />
-            <StatRow label={t('s5.init', { defaultValue: 'Initiative' })} value={R.signed(R.initiative(c, d))} />
+            <StatRow
+              label={t('s5.init', { defaultValue: 'Initiative' })}
+              value={
+                <RollButton kind="initiative" bonus={R.initiative(c, d)}>
+                  {R.signed(R.initiative(c, d))}
+                </RollButton>
+              }
+            />
             <StatRow label={t('s5.speed', { defaultValue: 'Speed' })} value={`${R.speed(c, d)} ft`} />
             <StatRow label={t('s5.pb', { defaultValue: 'Proficiency Bonus' })} value={R.signed(pb)} />
             <StatRow label={t('s5.passive', { defaultValue: 'Passive Perception' })} value={10 + perception} />
@@ -95,147 +118,169 @@ export function Sheet5e({ c, d, set }: { c: Dnd5eCharacter; d: Dnd5eData; set: S
             />
           </Section>
 
-          <Section title={t('s5.tracker', { defaultValue: 'Hit point tracker' })} className="rmhc-noprint">
-            <div className="flex flex-wrap items-end gap-2">
-              <Input
-                type="number"
-                min={0}
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                aria-label={t('s5.amount', { defaultValue: 'Amount' })}
-                className="w-24"
-              />
-              <Button type="button" onClick={() => applyHp(-1)}>
-                {t('s5.damage', { defaultValue: 'Damage' })}
-              </Button>
-              <Button type="button" onClick={() => applyHp(1)}>
-                {t('s5.heal', { defaultValue: 'Heal' })}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => set((x) => ({ ...x, hp: { current: maxHp, temp: x.hp.temp } }))}
-              >
-                {t('s5.full', { defaultValue: 'Full' })}
-              </Button>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-4">
-              <div className="flex items-center gap-2 text-sm text-app-text-muted">
-                {t('s5.temp', { defaultValue: 'Temporary HP' })}
-                <Stepper
-                  label={t('s5.temp', { defaultValue: 'Temporary HP' })}
-                  value={c.hp.temp}
-                  max={999}
-                  onChange={(n) => set((x) => ({ ...x, hp: { ...x.hp, temp: n } }))}
+          {readOnly ? null : (
+            <Section title={t('s5.tracker', { defaultValue: 'Hit point tracker' })} className="rmhc-noprint">
+              <div className="flex flex-wrap items-end gap-2">
+                <Input
+                  type="number"
+                  min={0}
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  aria-label={t('s5.amount', { defaultValue: 'Amount' })}
+                  className="w-24"
                 />
+                <Button type="button" onClick={() => applyHp(-1)}>
+                  {t('s5.damage', { defaultValue: 'Damage' })}
+                </Button>
+                <Button type="button" onClick={() => applyHp(1)}>
+                  {t('s5.heal', { defaultValue: 'Heal' })}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => set((x) => ({ ...x, hp: { current: maxHp, temp: x.hp.temp } }))}
+                >
+                  {t('s5.full', { defaultValue: 'Full' })}
+                </Button>
               </div>
-              <div className="flex items-center gap-2 text-sm text-app-text-muted">
-                {t('s5.hitDiceUsed', { defaultValue: 'Hit Dice spent' })}
-                <Stepper
-                  label={t('s5.hitDiceUsed', { defaultValue: 'Hit Dice spent' })}
-                  value={c.hitDiceUsed}
-                  max={totalDice}
-                  onChange={(n) => set((x) => ({ ...x, hitDiceUsed: n }))}
-                />
-              </div>
-            </div>
-            {c.hp.current === 0 ? (
               <div className="mt-3 flex flex-wrap gap-4">
                 <div className="flex items-center gap-2 text-sm text-app-text-muted">
-                  {t('s5.successes', { defaultValue: 'Death save successes' })}
+                  {t('s5.temp', { defaultValue: 'Temporary HP' })}
                   <Stepper
-                    label={t('s5.successes', { defaultValue: 'Death save successes' })}
-                    value={c.deathSaves.successes}
-                    max={3}
-                    onChange={(n) => set((x) => ({ ...x, deathSaves: { ...x.deathSaves, successes: n } }))}
+                    label={t('s5.temp', { defaultValue: 'Temporary HP' })}
+                    value={c.hp.temp}
+                    max={999}
+                    onChange={(n) => set((x) => ({ ...x, hp: { ...x.hp, temp: n } }))}
                   />
                 </div>
                 <div className="flex items-center gap-2 text-sm text-app-text-muted">
-                  {t('s5.failures', { defaultValue: 'Failures' })}
+                  {t('s5.hitDiceUsed', { defaultValue: 'Hit Dice spent' })}
                   <Stepper
-                    label={t('s5.failures', { defaultValue: 'Failures' })}
-                    value={c.deathSaves.failures}
-                    max={3}
-                    onChange={(n) => set((x) => ({ ...x, deathSaves: { ...x.deathSaves, failures: n } }))}
+                    label={t('s5.hitDiceUsed', { defaultValue: 'Hit Dice spent' })}
+                    value={c.hitDiceUsed}
+                    max={totalDice}
+                    onChange={(n) => set((x) => ({ ...x, hitDiceUsed: n }))}
                   />
                 </div>
               </div>
-            ) : null}
-            <div className="mt-3 flex flex-wrap items-center gap-4">
-              <Chip
-                on={c.heroicInspiration}
-                onToggle={() => set((x) => ({ ...x, heroicInspiration: !x.heroicInspiration }))}
-              >
-                {t('s5.inspiration', { defaultValue: 'Heroic Inspiration' })}
-              </Chip>
-              <div className="flex items-center gap-2 text-sm text-app-text-muted">
-                {t('s5.exhaustion', { defaultValue: 'Exhaustion' })}
-                <Stepper
-                  label={t('s5.exhaustion', { defaultValue: 'Exhaustion' })}
-                  value={c.exhaustion}
-                  max={6}
-                  onChange={(n) => set((x) => ({ ...x, exhaustion: n }))}
-                />
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() =>
-                  set((x) => ({
-                    ...x,
-                    hp: { current: maxHp, temp: 0 },
-                    hitDiceUsed: Math.max(0, x.hitDiceUsed - Math.max(1, Math.floor(totalDice / 2))),
-                    spells: { ...x.spells, slotsUsed: x.spells.slotsUsed.map(() => 0), pactSlotsUsed: 0 },
-                    exhaustion: Math.max(0, x.exhaustion - 1),
-                    deathSaves: { successes: 0, failures: 0 },
-                  }))
-                }
-              >
-                {t('s5.longRest', { defaultValue: 'Long Rest' })}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => set((x) => ({ ...x, spells: { ...x.spells, pactSlotsUsed: 0 } }))}
-              >
-                {t('s5.shortRest', { defaultValue: 'Short Rest' })}
-              </Button>
-            </div>
-            {c.exhaustion ? (
-              <Muted className="mt-2">
-                {t('s5.exhaustionRule', {
-                  defaultValue: 'Exhaustion: −{{n}} to every d20 test and −{{speed}} ft speed.',
-                  n: c.exhaustion * 2,
-                  speed: c.exhaustion * 5,
-                })}
-              </Muted>
-            ) : null}
-          </Section>
-
-          <Section title={t('s5.conditions', { defaultValue: 'Conditions' })}>
-            <div className="flex flex-wrap gap-2">
-              {DND5E_CONDITIONS.map((cond) => (
+              {c.hp.current === 0 ? (
+                <div className="mt-3 flex flex-wrap gap-4">
+                  <div className="flex items-center gap-2 text-sm text-app-text-muted">
+                    {t('s5.successes', { defaultValue: 'Death save successes' })}
+                    <Stepper
+                      label={t('s5.successes', { defaultValue: 'Death save successes' })}
+                      value={c.deathSaves.successes}
+                      max={3}
+                      onChange={(n) => set((x) => ({ ...x, deathSaves: { ...x.deathSaves, successes: n } }))}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-app-text-muted">
+                    {t('s5.failures', { defaultValue: 'Failures' })}
+                    <Stepper
+                      label={t('s5.failures', { defaultValue: 'Failures' })}
+                      value={c.deathSaves.failures}
+                      max={3}
+                      onChange={(n) => set((x) => ({ ...x, deathSaves: { ...x.deathSaves, failures: n } }))}
+                    />
+                  </div>
+                </div>
+              ) : null}
+              <div className="mt-3 flex flex-wrap items-center gap-4">
                 <Chip
-                  key={cond}
-                  on={c.conditions.includes(cond)}
-                  onToggle={() =>
+                  on={c.heroicInspiration}
+                  onToggle={() => set((x) => ({ ...x, heroicInspiration: !x.heroicInspiration }))}
+                >
+                  {t('s5.inspiration', { defaultValue: 'Heroic Inspiration' })}
+                </Chip>
+                <div className="flex items-center gap-2 text-sm text-app-text-muted">
+                  {t('s5.exhaustion', { defaultValue: 'Exhaustion' })}
+                  <Stepper
+                    label={t('s5.exhaustion', { defaultValue: 'Exhaustion' })}
+                    value={c.exhaustion}
+                    max={6}
+                    onChange={(n) => set((x) => ({ ...x, exhaustion: n }))}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() =>
                     set((x) => ({
                       ...x,
-                      conditions: x.conditions.includes(cond)
-                        ? x.conditions.filter((y) => y !== cond)
-                        : [...x.conditions, cond],
+                      hp: { current: maxHp, temp: 0 },
+                      hitDiceUsed: Math.max(0, x.hitDiceUsed - Math.max(1, Math.floor(totalDice / 2))),
+                      spells: { ...x.spells, slotsUsed: x.spells.slotsUsed.map(() => 0), pactSlotsUsed: 0 },
+                      exhaustion: Math.max(0, x.exhaustion - 1),
+                      deathSaves: { successes: 0, failures: 0 },
                     }))
                   }
                 >
-                  {cond}
-                </Chip>
-              ))}
-            </div>
+                  {t('s5.longRest', { defaultValue: 'Long Rest' })}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => set((x) => ({ ...x, spells: { ...x.spells, pactSlotsUsed: 0 } }))}
+                >
+                  {t('s5.shortRest', { defaultValue: 'Short Rest' })}
+                </Button>
+              </div>
+              {c.exhaustion ? (
+                <Muted className="mt-2">
+                  {t('s5.exhaustionRule', {
+                    defaultValue: 'Exhaustion: −{{n}} to every d20 test and −{{speed}} ft speed.',
+                    n: c.exhaustion * 2,
+                    speed: c.exhaustion * 5,
+                  })}
+                </Muted>
+              ) : null}
+            </Section>
+          )}
+
+          <Section title={t('s5.conditions', { defaultValue: 'Conditions' })}>
+            {readOnly ? (
+              <Muted>
+                {c.conditions.filter((x) => (DND5E_CONDITIONS as readonly string[]).includes(x)).join(', ') || '—'}
+              </Muted>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {DND5E_CONDITIONS.map((cond) => (
+                  <Chip
+                    key={cond}
+                    on={c.conditions.includes(cond)}
+                    onToggle={() =>
+                      set((x) => ({
+                        ...x,
+                        conditions: x.conditions.includes(cond)
+                          ? x.conditions.filter((y) => y !== cond)
+                          : [...x.conditions, cond],
+                      }))
+                    }
+                  >
+                    {cond}
+                  </Chip>
+                ))}
+              </div>
+            )}
           </Section>
 
           <Section title={t('s5.attacks', { defaultValue: 'Attacks' })}>
             {R.attacks(c, d).map((a) => (
-              <StatRow key={a.name} label={a.name} value={`${R.signed(a.toHit)} · ${a.damage}`} note={a.notes} />
+              <StatRow
+                key={a.name}
+                label={a.name}
+                value={
+                  <span className="inline-flex flex-wrap items-center justify-end gap-2">
+                    <RollButton kind="attack" name={a.name} bonus={a.toHit} damage={a.damage}>
+                      {R.signed(a.toHit)}
+                    </RollButton>
+                    <RollButton kind="damage" name={a.name} damage={a.damage}>
+                      {a.damage}
+                    </RollButton>
+                  </span>
+                }
+                note={a.notes}
+              />
             ))}
           </Section>
 
@@ -254,13 +299,19 @@ export function Sheet5e({ c, d, set }: { c: Dnd5eCharacter; d: Dnd5eData; set: S
               <StatRow
                 key={s.id}
                 label={`${s.proficient ? (s.expertise ? '◆ ' : '● ') : ''}${s.name} (${s.ability.toUpperCase()})`}
-                value={R.signed(s.bonus)}
+                value={
+                  <RollButton kind="skill" name={s.name} bonus={s.bonus}>
+                    {R.signed(s.bonus)}
+                  </RollButton>
+                }
               />
             ))}
           </Section>
-          <Section title={t('s5.check', { defaultValue: 'Rules check' })} className="rmhc-noprint">
-            <Issues issues={R.validate(c, d)} />
-          </Section>
+          {readOnly ? null : (
+            <Section title={t('s5.check', { defaultValue: 'Rules check' })} className="rmhc-noprint">
+              <Issues issues={R.validate(c, d)} />
+            </Section>
+          )}
           <Section title={t('s5.features', { defaultValue: 'Features and traits' })}>
             <ul className="flex flex-col">
               {R.features(c, d).map((f, i) => (

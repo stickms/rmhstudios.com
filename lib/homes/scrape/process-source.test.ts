@@ -31,6 +31,7 @@ interface Row {
   externalId: string;
   source: string;
   status: string;
+  priceCents: number;
   lastSeenAt: Date;
 }
 
@@ -38,23 +39,25 @@ function makePrisma() {
   const listings = new Map<string, Row>();
   const sourceUpdates: Record<string, unknown>[] = [];
   const key = (s: string, e: string) => `${s}::${e}`;
+  const calls = { findMany: 0 };
+  const priceChanges: Record<string, unknown>[] = [];
+  const dropStamps: Array<Record<string, unknown>> = [];
 
   const prisma: ProcessPrisma = {
     homeListing: {
-      async findUnique({ where }) {
-        const r = listings.get(key(where.sourceRefId_externalId.sourceRefId, where.sourceRefId_externalId.externalId));
-        return r
-          ? {
-              id: r.id,
-              status: r.status,
-            }
-          : null;
+      async findMany({ where }) {
+        calls.findMany++;
+        const wanted = new Set(where.externalId.in);
+        return [...listings.values()]
+          .filter((r) => r.sourceRefId === where.sourceRefId && wanted.has(r.externalId))
+          .map((r) => ({ id: r.id, externalId: r.externalId, status: r.status, priceCents: r.priceCents }));
       },
       async upsert({ where, create, update }) {
         const k = key(where.sourceRefId_externalId.sourceRefId, where.sourceRefId_externalId.externalId);
         const existing = listings.get(k);
         if (existing) {
           existing.status = String(update.status);
+          existing.priceCents = update.priceCents as number;
           existing.lastSeenAt = update.lastSeenAt as Date;
           return {
             id: existing.id,
@@ -66,6 +69,7 @@ function makePrisma() {
           externalId: where.sourceRefId_externalId.externalId,
           source: String(create.source),
           status: String(create.status),
+          priceCents: create.priceCents as number,
           lastSeenAt: create.lastSeenAt as Date,
         };
         listings.set(k, row);
@@ -74,6 +78,10 @@ function makePrisma() {
         };
       },
       async updateMany({ where, data }) {
+        if (where.id) {
+          dropStamps.push({ where, data });
+          return { count: 1 };
+        }
         let count = 0;
         const before = (
           where.lastSeenAt as {
@@ -96,6 +104,12 @@ function makePrisma() {
         };
       },
     },
+    homeListingPriceChange: {
+      async createMany({ data }) {
+        priceChanges.push(...data);
+        return { count: data.length };
+      },
+    },
     homeSource: {
       async update({ data }) {
         sourceUpdates.push(data);
@@ -110,6 +124,9 @@ function makePrisma() {
     prisma,
     listings,
     sourceUpdates,
+    calls,
+    priceChanges,
+    dropStamps,
   };
 }
 
@@ -288,6 +305,57 @@ describe('processSource', () => {
     expect(listings.size).toBe(0);
     expect(sourceUpdates.at(-1)).toMatchObject({
       status: 'BLOCKED',
+    });
+  });
+
+  describe('price changes', () => {
+    const run = (prisma: ProcessPrisma, feedBody: string, day: string) =>
+      processSource({ prisma, fetchImpl: makeFetch({ feedBody }), now: new Date(`2026-07-${day}T00:00:00Z`) }, SOURCE);
+
+    it('reads the stored rows once per batch and records nothing on the first run or an unchanged re-run', async () => {
+      const { prisma, calls, priceChanges, dropStamps } = makePrisma();
+      await run(prisma, FIXTURE, '10');
+      expect(calls.findMany).toBe(1);
+      const stats = await run(prisma, FIXTURE, '11');
+      expect(calls.findMany).toBe(2);
+      expect(priceChanges).toEqual([]);
+      expect(dropStamps).toEqual([]);
+      expect(stats.priceDrops).toEqual([]);
+    });
+
+    it('records a drop for the changed listing only, stamps it and reports it', async () => {
+      const { prisma, priceChanges, dropStamps } = makePrisma();
+      await run(prisma, FIXTURE, '10');
+      const stats = await run(prisma, FIXTURE.replace('$1,850', '$1,700'), '11');
+      expect(priceChanges).toEqual([
+        {
+          listingId: 'L-1001',
+          oldCents: 185000,
+          newCents: 170000,
+          source: 'feed',
+          changedAt: new Date('2026-07-11T00:00:00Z'),
+        },
+      ]);
+      expect(dropStamps).toHaveLength(1);
+      expect(dropStamps[0]).toMatchObject({
+        where: { id: { in: ['L-1001'] } },
+        data: { priceDroppedAt: new Date('2026-07-11T00:00:00Z') },
+      });
+      expect(stats.priceDrops).toMatchObject([{ listingId: 'L-1001', oldCents: 185000, newCents: 170000 }]);
+    });
+
+    it('records a rise but neither stamps nor reports it, and ignores a drop under 1%', async () => {
+      const { prisma, priceChanges, dropStamps } = makePrisma();
+      await run(prisma, FIXTURE, '10');
+      const rise = await run(prisma, FIXTURE.replace('$1,850', '$1,900'), '11');
+      expect(priceChanges).toHaveLength(1);
+      expect(dropStamps).toEqual([]);
+      expect(rise.priceDrops).toEqual([]);
+      // 1,900 to 1,890 is a 0.5% drop: recorded, not a drop.
+      const small = await run(prisma, FIXTURE.replace('$1,850', '$1,890'), '12');
+      expect(priceChanges).toHaveLength(2);
+      expect(dropStamps).toEqual([]);
+      expect(small.priceDrops).toEqual([]);
     });
   });
 });

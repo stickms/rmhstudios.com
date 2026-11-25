@@ -325,7 +325,7 @@ export function BlackjackControls({
             {/* Bet input + quick amounts — stacked on mobile */}
             <div className="flex flex-col gap-2">
               <div className="relative">
-                <input
+                <input aria-label={t('field-bet-amount', { defaultValue: 'Bet amount' })}
                   type="number"
                   min={
                     1

@@ -25,6 +25,9 @@ export const C2S = {
   TASK_TOGGLE: 'rmhstudy:task:toggle',
   TASK_DELETE: 'rmhstudy:task:delete',
   CHAT_REACT: 'rmhstudy:chat:react',
+  QUIZ_START: 'rmhstudy:quiz:start',
+  QUIZ_ANSWER: 'rmhstudy:quiz:answer',
+  QUIZ_STOP: 'rmhstudy:quiz:stop',
 } as const;
 
 // ─── Server → Client Events ─────────────────────────────────────
@@ -42,4 +45,8 @@ export const S2C = {
   TASK_LIST: 'rmhstudy:task:list',
   PEERS_WAITING: 'rmhstudy:peers:waiting',
   ERROR: 'rmhstudy:error',
+  QUIZ_QUESTION: 'rmhstudy:quiz:question',
+  QUIZ_REVEAL: 'rmhstudy:quiz:reveal',
+  QUIZ_END: 'rmhstudy:quiz:end',
+  QUIZ_STATE: 'rmhstudy:quiz:state',
 } as const;

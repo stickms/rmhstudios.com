@@ -27,6 +27,7 @@ interface Row {
   externalId: string;
   source: string;
   status: string;
+  priceCents: number;
   lastSeenAt: Date;
 }
 
@@ -37,23 +38,24 @@ function makeRunPrisma() {
     data: Record<string, unknown>;
   }[] = [];
   const key = (s: string, e: string) => `${s}::${e}`;
+  const calls = { findMany: 0 };
+  const priceChanges: Record<string, unknown>[] = [];
 
   const prisma: RunPrisma = {
     homeListing: {
-      async findUnique({ where }) {
-        const r = listings.get(key(where.sourceRefId_externalId.sourceRefId, where.sourceRefId_externalId.externalId));
-        return r
-          ? {
-              id: r.id,
-              status: r.status,
-            }
-          : null;
+      async findMany({ where }) {
+        calls.findMany++;
+        const wanted = new Set(where.externalId.in);
+        return [...listings.values()]
+          .filter((r) => r.sourceRefId === where.sourceRefId && wanted.has(r.externalId))
+          .map((r) => ({ id: r.id, externalId: r.externalId, status: r.status, priceCents: r.priceCents }));
       },
       async upsert({ where, create, update }) {
         const k = key(where.sourceRefId_externalId.sourceRefId, where.sourceRefId_externalId.externalId);
         const existing = listings.get(k);
         if (existing) {
           existing.status = String(update.status);
+          existing.priceCents = update.priceCents as number;
           existing.lastSeenAt = update.lastSeenAt as Date;
           return {
             id: existing.id,
@@ -65,6 +67,7 @@ function makeRunPrisma() {
           externalId: where.sourceRefId_externalId.externalId,
           source: String(create.source),
           status: String(create.status),
+          priceCents: create.priceCents as number,
           lastSeenAt: create.lastSeenAt as Date,
         };
         listings.set(k, row);
@@ -76,6 +79,12 @@ function makeRunPrisma() {
         return {
           count: 0,
         };
+      },
+    },
+    homeListingPriceChange: {
+      async createMany({ data }) {
+        priceChanges.push(...data);
+        return { count: data.length };
       },
     },
     homeSource: {

@@ -10,7 +10,7 @@ import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { lazy } from 'react';
 import { getBook } from '@/lib/library/library.server';
-import { parsePassageSearch } from '@/lib/library/passage-search';
+import { parsePassageSearch, parseStartPage } from '@/lib/library/passage-search';
 import { buildCanonical } from '@/lib/seo';
 import { bookSchema, jsonLdScript } from '@/lib/schema';
 import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
@@ -41,9 +41,11 @@ const fetchBook = createServerFn({ method: 'GET' })
 
 export const Route = createFileRoute('/library/$slug')({
   // `p` is a passage link: the reader opens that page or chapter's text view at it. The canonical URL stays the book's.
+  // `page` opens the book at that page (a read-along's part opens at its first page); a bad value is dropped.
   validateSearch: (search: Record<string, unknown>) => {
     const p = parsePassageSearch(search.p);
-    return p ? { p } : {};
+    const page = parseStartPage(search.page);
+    return { ...(p ? { p } : {}), ...(page ? { page } : {}) };
   },
   loader: async ({ params }) => {
     const { book } = await fetchBook({ data: params.slug });
@@ -90,12 +92,17 @@ function ReaderFallback() {
 
 function Reader() {
   const { book } = Route.useLoaderData();
+  const { page } = Route.useSearch();
   return (
     <>
       <VibeStyles />
       <LibraryStyles />
       <ArrivalSuspense fallback={<ReaderFallback />}>
-        {book.format === 'epub' ? <EpubReader book={book} /> : <BookReader book={book} />}
+        {book.format === 'epub' ? (
+          <EpubReader book={book} startPage={page} />
+        ) : (
+          <BookReader book={book} startPage={page} />
+        )}
       </ArrivalSuspense>
     </>
   );

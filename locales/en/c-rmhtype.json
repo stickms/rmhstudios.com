@@ -128,5 +128,9 @@
   "copy-result": "Copy result",
   "result-copied": "Result copied",
   "result-copy-failed": "Could not copy the result",
-  "kbd-hint-retry": "Press Enter to try again"
+  "kbd-hint-retry": "Press Enter to try again",
+  "field-rounds": "Rounds",
+  "field-room-code": "Room code",
+  "field-typing": "Type the passage",
+  "field-ban-reason": "Reason for removing this player"
 }

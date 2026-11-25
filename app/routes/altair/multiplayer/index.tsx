@@ -272,7 +272,7 @@ function AltairMultiplayerLanding() {
                 {t("join-by-code-hint", { defaultValue: "Enter a 6-character room code to join a friend's lobby." })}
               </p>
               <form onSubmit={(e) => { e.preventDefault(); handleJoinLobby() }} className="flex gap-2">
-                <input
+                <input aria-label={t('field-lobby-code', { defaultValue: 'Lobby code' })}
                   type="text"
                   maxLength={6}
                   value={joinCode}

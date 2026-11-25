@@ -14,6 +14,7 @@ import { usePf2eData } from '../useData';
 import { BuildPf2e } from './BuildPf2e';
 import { LevelUpPf2e } from './LevelUpPf2e';
 import { SheetPf2e } from './SheetPf2e';
+import { RollsProvider } from '../useRolls';
 import { SpellsPf2e } from './SpellsPf2e';
 
 const bulkLabel = (b: number) => (b === 0 ? '—' : b < 1 ? 'L' : String(b));
@@ -103,7 +104,11 @@ export function EditorPf2e({ c, onBack }: { c: Pf2eCharacter; onBack: () => void
         pending={pending(c, d)}
         panels={{
           build: <BuildPf2e c={c} d={d} set={set} />,
-          sheet: <SheetPf2e c={c} d={d} set={set} />,
+          sheet: (
+            <RollsProvider characterId={c.id} system="pf2e" exhaustion={0}>
+              <SheetPf2e c={c} d={d} set={set} />
+            </RollsProvider>
+          ),
           spells: <SpellsPf2e c={c} d={d} set={set} />,
           inventory: (
             <Inventory

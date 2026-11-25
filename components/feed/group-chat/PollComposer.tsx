@@ -30,7 +30,7 @@ export function PollComposer({
           <X className="h-4 w-4" />
         </button>
       </div>
-      <input
+      <input aria-label={t('field-poll-question', { defaultValue: 'Poll question' })}
         value={draft.question}
         onChange={(e) => onChange({ ...draft, question: e.target.value })}
         maxLength={300}
@@ -39,7 +39,7 @@ export function PollComposer({
       />
       <div className="flex flex-col gap-1.5">
         {draft.options.map((o, i) => (
-          <input
+          <input aria-label={t('field-poll-option', { defaultValue: 'Poll option {{index}}', index: i + 1 })}
             key={i}
             value={o}
             onChange={(e) => setOption(i, e.target.value)}

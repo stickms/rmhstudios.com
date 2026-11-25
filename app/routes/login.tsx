@@ -632,7 +632,7 @@ function LoginPage() {
                 <Camera className="size-3.5" aria-hidden />
               </span>
             </button>
-            <input
+            <input aria-label={t('field-avatar-file', { defaultValue: 'Choose an avatar picture' })}
               ref={fileInputRef}
               type="file"
               accept="image/png,image/jpeg,image/gif,image/webp"
@@ -646,7 +646,7 @@ function LoginPage() {
 
           <div className="relative">
             <User className={fieldIcon} aria-hidden />
-            <Input
+            <Input aria-label={t('display-name-placeholder', { defaultValue: 'Display name' })}
               type="text"
               placeholder={t('display-name-placeholder', { defaultValue: 'Display name' })}
               value={displayName}
@@ -661,7 +661,7 @@ function LoginPage() {
 
       <div className="relative">
         <Mail className={fieldIcon} aria-hidden />
-        <Input
+        <Input aria-label={t('email-placeholder', { defaultValue: 'Email address' })}
           type="email"
           placeholder={t('email-placeholder', { defaultValue: 'Email address' })}
           value={email}
@@ -678,7 +678,7 @@ function LoginPage() {
 
       <div className="relative">
         <Lock className={fieldIcon} aria-hidden />
-        <Input
+        <Input aria-label={t('password-placeholder', { defaultValue: 'Password' })}
           type="password"
           placeholder={t('password-placeholder', { defaultValue: 'Password' })}
           value={password}
@@ -941,7 +941,7 @@ function LoginPage() {
               </p>
               <div className="relative">
                 <Mail className={fieldIcon} aria-hidden />
-                <Input
+                <Input aria-label={t('email-placeholder', { defaultValue: 'Email address' })}
                   type="email"
                   placeholder={t('email-placeholder', { defaultValue: 'Email address' })}
                   value={email}

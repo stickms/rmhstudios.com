@@ -252,6 +252,8 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/studio/projects/:id/versions` | `GET` | `lib/studio/api/studio.projects.$id.versions.server.ts` |
 | `/api/studio/projects/:id/versions/:versionId` | `GET` | `lib/studio/api/studio.projects.$id.versions.$versionId.server.ts` |
 | `/api/studio/projects/:id/versions/:versionId/restore` | `POST` | `lib/studio/api/studio.projects.$id.versions.$versionId.restore.server.ts` |
+| `/api/studio/shares` | `GET` `POST` | `lib/studio/api/studio.shares.server.ts` |
+| `/api/studio/shares/:token` | `DELETE` `GET` | `lib/studio/api/studio.shares.$token.server.ts` |
 | `/api/studio/tiers` | `GET` `PUT` | `lib/studio/api/studio.tiers.server.ts` |
 
 ## `/api/study`
@@ -268,7 +270,11 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/study/decks/:id` | `DELETE` `GET` `PATCH` `POST` | `lib/study/api/study.decks.$id.server.ts` |
 | `/api/study/decks/:id/cards` | `POST` | `lib/study/api/study.decks.$id.cards.server.ts` |
 | `/api/study/decks/:id/clone` | `POST` | `lib/study/api/study.decks.$id.clone.server.ts` |
+| `/api/study/decks/:id/editors` | `GET` `POST` | `lib/study/api/study.decks.$id.editors.server.ts` |
+| `/api/study/decks/:id/editors/:userId` | `DELETE` | `lib/study/api/study.decks.$id.editors.$userId.server.ts` |
 | `/api/study/decks/:id/folder` | `PUT` | `lib/study/api/study.decks.$id.folder.server.ts` |
+| `/api/study/decks/:id/invitation` | `POST` | `lib/study/api/study.decks.$id.invitation.server.ts` |
+| `/api/study/decks/:id/leave` | `POST` | `lib/study/api/study.decks.$id.leave.server.ts` |
 | `/api/study/decks/:id/link-original` | `POST` | `lib/study/api/study.decks.$id.link-original.server.ts` |
 | `/api/study/decks/:id/order` | `PUT` | `lib/study/api/study.decks.$id.order.server.ts` |
 | `/api/study/decks/:id/pace` | `GET` `PATCH` | `lib/study/api/study.decks.$id.pace.server.ts` |

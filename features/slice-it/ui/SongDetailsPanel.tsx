@@ -394,7 +394,7 @@ export function SongDetailsPanel({
                 <label className="text-xs font-bold text-slice-text-light uppercase tracking-wider">
                   {t('title-label', { defaultValue: 'Title' })}
                 </label>
-                <Input
+                <Input aria-label={t('title-label', { defaultValue: 'Title' })}
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
                   className="bg-(--slice-input-bg) text-slice-text border-(--slice-input-border) border border-slice-border"
@@ -404,7 +404,7 @@ export function SongDetailsPanel({
                 <label className="text-xs font-bold text-slice-text-light uppercase tracking-wider">
                   {t('artist-label', { defaultValue: 'Artist' })}
                 </label>
-                <Input
+                <Input aria-label={t('artist-label', { defaultValue: 'Artist' })}
                   value={editArtist}
                   onChange={(e) => setEditArtist(e.target.value)}
                   className="bg-(--slice-input-bg) text-slice-text border-(--slice-input-border) border border-slice-border"
@@ -414,7 +414,7 @@ export function SongDetailsPanel({
                 <label className="text-xs font-bold text-slice-text-light uppercase tracking-wider">
                   {t('bpm-label', { defaultValue: 'BPM' })}
                 </label>
-                <Input
+                <Input aria-label={t('bpm-label', { defaultValue: 'BPM' })}
                   type="number"
                   value={editBpm}
                   onChange={(e) => setEditBpm(e.target.value)}
@@ -426,7 +426,7 @@ export function SongDetailsPanel({
                 <label className="text-xs font-bold text-slice-text-light uppercase tracking-wider">
                   {t('description-label', { defaultValue: 'Description' })}
                 </label>
-                <Input
+                <Input aria-label={t('description-label', { defaultValue: 'Description' })}
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
                   className="bg-(--slice-input-bg) text-slice-text border-(--slice-input-border) border border-slice-border"
@@ -766,7 +766,7 @@ export function SongDetailsPanel({
               </div>
             </div>
             <div className="bg-slice-shadow-dark/50 p-3 rounded-lg border border-slice-shadow-dark/50">
-              <Slider
+              <Slider aria-label={t('field-playback-speed', { defaultValue: 'Playback speed' })}
                 value={[modifiers.speed]}
                 min={0.5}
                 max={2.0}

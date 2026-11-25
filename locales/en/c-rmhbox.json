@@ -518,5 +518,14 @@
   "your-prompts": "Your Prompts",
   "your-rank": "Your Rank:",
   "youre-the-producer": "You're the Producer!",
-  "yours-label": "(yours)"
+  "yours-label": "(yours)",
+  "field-chat-message": "Chat message",
+  "field-join-code": "Join code",
+  "field-answer": "Your answer",
+  "field-edit-word": "Replacement word",
+  "field-story-sentence": "Your sentence",
+  "field-clue-word": "Your one-word clue",
+  "field-rhyme": "Your rhyme",
+  "field-guess": "Your guess",
+  "field-category-answer": "Your answer"
 }

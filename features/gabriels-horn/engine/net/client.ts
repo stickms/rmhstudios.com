@@ -25,6 +25,7 @@ import { useHornStore } from '../store';
 import { C2S, S2C } from './events';
 import type { ChatMessage, GameResults, GameView, LobbySnapshot, PublicLobbyInfo } from './events';
 import type { HouseRules } from '../house-rules';
+import type { BotLevel } from '../constants';
 
 let client: RealtimeClient | null = null;
 /** Room to re-join after a drop — the server keys seats by socket id. */
@@ -245,6 +246,8 @@ export const hornNet = {
   settings: (settings: { isPublic?: boolean }) => emit(C2S.SETTINGS, settings, true),
   start: () => emit(C2S.START, {}, true),
   kick: (socketId: string) => emit(C2S.KICK, { socketId }, true),
+  addBot: (level: BotLevel) => emit(C2S.ADD_BOT, { level }),
+  removeBot: (seatId: string) => emit(C2S.REMOVE_BOT, { seatId }),
   rematch: () => emit(C2S.REMATCH, {}, true),
   houseRules: (rules: HouseRules) => emit(C2S.HOUSE_RULES, { rules }, true),
   chat: (text: string) => emit(C2S.CHAT, { text }, true),

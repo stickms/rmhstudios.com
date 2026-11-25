@@ -37,6 +37,13 @@ export const REPORT_ENTITY_TYPES = [
   'build-comment',
   // s10-09: a bug report on a User Build (the `BuildIssue` id).
   'build-issue',
+  // Sprint 11 (docs/autonomous/sprint-11/plan.md §Anchors)
+  // s11-05 lights-out-maker
+  // A member-made Lights Out board (the `LightsOutBoard` id); the title is member text.
+  'lights-out-board',
+  // s11-07 studio-share
+  // s11-07: a shared Studio project; the entity id is its share token (the name is member text).
+  'studio-share',
 ] as const;
 export type ReportEntityType = (typeof REPORT_ENTITY_TYPES)[number];
 
@@ -57,6 +64,11 @@ export const REMOVABLE_REPORT_ENTITY_TYPES: readonly ReportEntityType[] = [
   'jam-feedback',
   'build-comment',
   'build-issue',
+  // Sprint 11 (docs/autonomous/sprint-11/plan.md §Anchors)
+  // s11-05 lights-out-maker
+  'lights-out-board',
+  // s11-07 studio-share
+  'studio-share',
 ];
 
 /**

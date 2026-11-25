@@ -219,7 +219,7 @@ export default function CategoryInput({ letter, categories, myAnswers, isLocked,
                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold text-app-accent/40">
                   {letter.toUpperCase()}
                 </span>
-                <input
+                <input aria-label={t('field-category-answer', { defaultValue: 'Your answer' })}
                   ref={(el) => {
                     inputRefs.current[i] = el;
                   }}

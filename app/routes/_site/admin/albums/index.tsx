@@ -101,7 +101,7 @@ function AdminAlbumsPage() {
       <AdminBody>
         {/* Create — a singular action panel gets the L2 glass pane. */}
         <form onSubmit={createAlbum} className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <Input
+          <Input aria-label={t('field-new-album-title', { defaultValue: 'New album title' })}
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}

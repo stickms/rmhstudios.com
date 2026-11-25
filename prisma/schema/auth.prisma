@@ -612,6 +612,7 @@ model User {
 
   // s03-09 watch-parties
   rmhTubeRoomRsvps RmhTubeRoomRsvp[] @relation("RmhTubeRoomRsvps")
+  rmhTubeSubtitles RmhTubeSubtitle[] @relation("RmhTubeSubtitles")
 
   // s03-10 game-updates
   gameFollows GameFollow[]
@@ -728,6 +729,27 @@ model User {
   // s10-09 build-issues
   buildIssuesReported BuildIssue[]     @relation("BuildIssuesReported")
   buildIssueVotes     BuildIssueVote[] @relation("BuildIssueVotes")
+
+  // Sprint 11 back-relations (one block per feature, docs/autonomous/sprint-11/plan.md)
+  // s11-03 character-party
+  rmhCharacterPartiesRun       RmhCharacterParty[]       @relation("RmhCharacterPartiesRun")
+  rmhCharacterPartyMemberships RmhCharacterPartyMember[] @relation("RmhCharacterPartyMemberships")
+  // s11-05 lights-out-maker
+  lightsOutBoards     LightsOutBoard[]     @relation("LightsOutBoards")
+  lightsOutBoardPlays LightsOutBoardPlay[] @relation("LightsOutBoardPlays")
+  // s11-07 studio-share
+  studioProjectShares StudioProjectShare[] @relation("StudioProjectShares")
+  // s11-09 read-alongs
+  readAlongsStarted ReadAlong[] @relation("ReadAlongsStarted")
+  readAlongReaders ReadAlongReader[] @relation("ReadAlongReaders")
+  // s11-10 deck-coeditors
+  deckEditorOf       DeckEditor[] @relation("DeckEditorOf")
+  deckEditorInvites  DeckEditor[] @relation("DeckEditorInvites")
+  // s11-12 type-challenges
+  rmhTypeChallengesSent     RmhTypeChallenge[]      @relation("RmhTypeChallengesSent")
+  rmhTypeChallengesReceived RmhTypeChallenge[]      @relation("RmhTypeChallengesReceived")
+  rmhTypeChallengeOptOut    RmhTypeChallengeOptOut? @relation("RmhTypeChallengeOptOut")
+  // s11-16 rmhtube-subtitles
 
   @@index([isBot])
   @@index([followerCount])

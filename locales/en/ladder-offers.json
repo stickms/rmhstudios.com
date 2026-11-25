@@ -107,5 +107,9 @@
   "pipeline.viewOffer": "View the offer",
   "remote.hybrid": "Hybrid",
   "remote.onsite": "On-site",
-  "remote.remote": "Remote"
+  "remote.remote": "Remote",
+  "field-base-pay": "Base salary",
+  "field-bonus-value": "Bonus per year",
+  "field-sign-on": "Sign-on bonus",
+  "field-equity-grant": "Equity grant value"
 }

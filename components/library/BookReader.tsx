@@ -156,7 +156,7 @@ async function buildChapters(pdf: PdfDoc): Promise<Chapter[]> {
   return out;
 }
 
-export function BookReader({ book }: { book: LibraryBook }) {
+export function BookReader({ book, startPage }: { book: LibraryBook; startPage?: number | undefined }) {
   const { t } = useTranslation("c-library");
   const { t: ts } = useTranslation('find-in-book');
   const readerRef = useRef<HTMLElement>(null);
@@ -303,9 +303,10 @@ export function BookReader({ book }: { book: LibraryBook }) {
   useEffect(() => {
     if (resumed.current || status !== 'ready' || !marks.ready) return;
     resumed.current = true;
-    const p = marks.state.page;
-    if (p > 1 && p <= numPages) requestAnimationFrame(() => goToPage(p));
-  }, [status, marks.ready, marks.state.page, numPages, goToPage]);
+    // A link that names a page (a read-along's part) wins over the saved place.
+    const p = startPage ?? marks.state.page;
+    if ((startPage !== undefined ? p >= 1 : p > 1) && p <= numPages) requestAnimationFrame(() => goToPage(p));
+  }, [status, marks.ready, marks.state.page, numPages, goToPage, startPage]);
 
   const onPageChange = useCallback(
     ({ label, page }: { label: string; page: number; k: number }) => {
@@ -1018,7 +1019,7 @@ export function MarksMenu({
                 setDraft('');
               }}
             >
-              <textarea
+              <textarea aria-label={t('field-page-note', { defaultValue: 'Note for this page' })}
                 className="lib-marks__textarea"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}

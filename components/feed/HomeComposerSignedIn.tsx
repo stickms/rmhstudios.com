@@ -270,6 +270,7 @@ export default function HomeComposerSignedIn({ arrival }: { arrival?: string }) 
             tools={
               <>
                 <input
+                  aria-label={t('field-attach-images', { defaultValue: 'Attach images' })}
                   ref={fileRef}
                   type="file"
                   accept="image/png,image/jpeg,image/gif,image/webp"

@@ -14,6 +14,7 @@ import { useDnd5eData } from '../useData';
 import { Build5e } from './Build5e';
 import { LevelUp5e } from './LevelUp5e';
 import { Sheet5e } from './Sheet5e';
+import { RollsProvider } from '../useRolls';
 import { Spells5e } from './Spells5e';
 
 export function Editor5e({ c, onBack }: { c: Dnd5eCharacter; onBack: () => void }) {
@@ -103,7 +104,11 @@ export function Editor5e({ c, onBack }: { c: Dnd5eCharacter; onBack: () => void 
         pending={pending(c, d)}
         panels={{
           build: <Build5e c={c} d={d} set={set} />,
-          sheet: <Sheet5e c={c} d={d} set={set} />,
+          sheet: (
+            <RollsProvider characterId={c.id} system="5e" exhaustion={c.exhaustion}>
+              <Sheet5e c={c} d={d} set={set} />
+            </RollsProvider>
+          ),
           spells: <Spells5e c={c} d={d} set={set} />,
           inventory: (
             <Inventory

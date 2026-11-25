@@ -209,5 +209,10 @@
   "outside-high": "19-36",
   "outside-low": "1-18",
   "outside-odd": "Odd",
-  "outside-red": "Red"
+  "outside-red": "Red",
+  "field-join-code": "Join code",
+  "field-room-name": "Room name",
+  "field-bet-amount": "Bet amount",
+  "field-raise-amount": "Raise amount",
+  "field-table-name": "Table name"
 }

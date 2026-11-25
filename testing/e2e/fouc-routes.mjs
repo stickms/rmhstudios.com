@@ -153,6 +153,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'Not-found branch of a community wiki page.',
   },
+  '/c/$slug/read/$id': {
+    path: '/c/fouc-audit-no-such-community/read/fouc-audit',
+    fidelity: 'shell',
+    why: 'Not-found branch of a community read-along (Sprint 11 feature 05): the loader 404s for an unknown id.',
+  },
   '/deeplink/$page': {
     path: null,
     fidelity: 'shell',
@@ -167,6 +172,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     path: '/embed/replay/fouc-audit',
     fidelity: 'shell',
     why: 'As above, for a replay embed.',
+  },
+  '/lights-out/b/$id': {
+    path: '/lights-out/b/fouc-audit-no-such-board',
+    fidelity: 'shell',
+    why: 'Unknown member-made board (Sprint 11): the page shell with the board-not-found state, fetched client-side.',
   },
   '/games/$gameId': {
     path: '/games/hearthworks',

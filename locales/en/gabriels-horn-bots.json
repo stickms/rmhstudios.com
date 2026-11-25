@@ -1,0 +1,18 @@
+{
+  "add-bot": "Add a bot",
+  "bot-name": "Bot {{n}} · {{level}}",
+  "bots-empty": "No computer players. Add one to play without waiting for anyone.",
+  "bots-heading": "Computer players",
+  "level-easy": "Easy",
+  "level-legend": "Level",
+  "level-sharp": "Sharp",
+  "level-steady": "Steady",
+  "lobby-bots_one": "{{count}} bot",
+  "lobby-bots_other": "{{count}} bots",
+  "lobby-people_one": "{{count}} person",
+  "lobby-people_other": "{{count}} people",
+  "practice-line": "Practice table: not on the board",
+  "remove-bot": "Remove",
+  "remove-bot-label": "Remove {{name}}",
+  "table-full": "The table is full. Remove a bot to seat a person."
+}

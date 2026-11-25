@@ -76,7 +76,7 @@ export function SampleBrowser() {
         >
           <Upload className="h-3.5 w-3.5" />
         </button>
-        <input
+        <input aria-label={t('field-upload-samples', { defaultValue: 'Upload samples' })}
           ref={fileInputRef}
           type="file"
           accept="audio/*"
@@ -90,7 +90,7 @@ export function SampleBrowser() {
       <div className="border-b border-app-border px-2 py-1.5">
         <div className="flex items-center gap-1.5 rounded-app-sm bg-app-bg-subtle px-2 py-1">
           <Search className="h-3 w-3 text-app-text-muted" />
-          <input
+          <input aria-label={t('field-search-samples', { defaultValue: 'Search samples' })}
             type="text"
             placeholder={t("search-placeholder", { defaultValue: "Search..." })}
             value={searchQuery}

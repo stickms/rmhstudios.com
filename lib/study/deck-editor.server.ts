@@ -23,6 +23,7 @@ import {
   type CardKind,
 } from '@/lib/study/card-types';
 import { MAX_DECK_CARDS, MAX_DECKS_PER_MEMBER, MAX_IMPORT_CARDS } from '@/lib/study/limits';
+import { isDeckLanguageTag } from '@/lib/study/listen';
 import { readOcclusion, sameOcclusion, type Occlusion } from '@/lib/study/occlusion';
 import {
   CARD_IMAGE_SELECT,
@@ -46,9 +47,12 @@ import {
   type CardSounds,
 } from '@/lib/study/card-sound';
 import { attachCardSounds, releaseCardSounds } from '@/lib/study/card-sound.server';
+import { deckRole, requireDeckRole } from '@/lib/study/deck-access.server';
+import type { DeckRole } from '@/lib/study/deck-access';
 
 export type EditResult<T = object> = ({ ok: true } & T) | { ok: false; status: 400 | 404 | 409; error: string };
 
+const INVALID_LANGUAGE = { ok: false, status: 400, ...refusalBody('INVALID_INPUT') } as const;
 const NOT_FOUND = { ok: false, status: 404, error: 'Not found' } as const;
 const DECK_FULL = { ok: false, status: 400, ...refusalBody('STUDY_DECK_FULL') } as const;
 const INVALID_CARD = { ok: false, status: 400, ...refusalBody('STUDY_CARD_INVALID') } as const;
@@ -70,6 +74,17 @@ const occlusionForCreate = (occlusion: Occlusion | null | undefined) =>
 /** The same for an update, where no masks clears the column. */
 const occlusionForUpdate = (occlusion: Occlusion | null | undefined) =>
   occlusion ? (occlusion as unknown as Prisma.InputJsonValue) : Prisma.DbNull;
+
+/**
+ * What an editor may not write (s11-10): a sound is heard by its recorder only, so a card an editor adds carries none
+ * and a card an editor saves keeps the sounds it has. The fields are dropped, not refused, so the editor's form need
+ * not know; the owner's draft passes through untouched.
+ */
+function withoutSoundsFor<T extends CardSounds>(role: DeckRole, card: T): T {
+  if (role === 'owner') return card;
+  const { frontSound: _front, backSound: _back, ...rest } = card;
+  return rest as T;
+}
 
 /** The per-deck lock every write to a deck's rows takes; one definition, shared with `highlight-cards.server.ts`. */
 export const lockDeckCards = (tx: Prisma.TransactionClient, deckId: string) => lockKey(tx, `deck-cards:${deckId}`);
@@ -193,6 +208,8 @@ export async function updateDeck(
     isPublic?: boolean;
     notifyUpdates?: boolean;
     acceptsSuggestions?: boolean;
+    frontLang?: string | null;
+    backLang?: string | null;
   },
 ): Promise<EditResult> {
   const data: {
@@ -201,6 +218,8 @@ export async function updateDeck(
     isPublic?: boolean;
     notifyUpdates?: boolean;
     acceptsSuggestions?: boolean;
+    frontLang?: string | null;
+    backLang?: string | null;
   } = {};
   if (patch.title !== undefined) data.title = patch.title;
   // A blank description clears it.
@@ -208,6 +227,12 @@ export async function updateDeck(
   if (patch.isPublic !== undefined) data.isPublic = patch.isPublic;
   if (patch.notifyUpdates !== undefined) data.notifyUpdates = patch.notifyUpdates;
   if (patch.acceptsSuggestions !== undefined) data.acceptsSuggestions = patch.acceptsSuggestions;
+  // Checked again here, so no caller (only the route does today) can store a tag Listen cannot read.
+  for (const lang of [patch.frontLang, patch.backLang]) {
+    if (lang !== undefined && lang !== null && !isDeckLanguageTag(lang)) return INVALID_LANGUAGE;
+  }
+  if (patch.frontLang !== undefined) data.frontLang = patch.frontLang;
+  if (patch.backLang !== undefined) data.backLang = patch.backLang;
   const { count } = await prisma.flashcardDeck.updateMany({ where: { id: deckId, userId }, data });
   return count === 0 ? NOT_FOUND : { ok: true };
 }
@@ -360,9 +385,12 @@ export async function updateCardIn(
   options: UpdateOptions = {},
 ): Promise<EditResult<{ released: string[] }>> {
   {
-    const owned = { id: cardId, sourceId: null, deck: { userId } };
+    const owned = { id: cardId, sourceId: null };
     const found = await tx.flashcard.findFirst({ where: owned, select: { deckId: true } });
     if (!found) return NOT_FOUND;
+    // The owner and an accepted editor may edit a card; anyone else finds nothing (s11-10).
+    const role = await deckRole(userId, found.deckId, tx);
+    if (!role) return NOT_FOUND;
     await lockDeckCards(tx, found.deckId);
     const current = await tx.flashcard.findFirst({
       where: owned,
@@ -415,13 +443,18 @@ export async function updateCardIn(
 
     // Sounds (s10-02): the stored ones with the patch laid over them, the same rules as a new card. A patch with no
     // sound field (every copy and deck-sync edit) leaves the six columns alone, and writes nothing to them.
-    const soundsTouched = patch.frontSound !== undefined || patch.backSound !== undefined;
+    const soundsTouched = role === 'owner' && (patch.frontSound !== undefined || patch.backSound !== undefined);
     const hadSounds = fromSoundColumns(current);
-    const sounds = {
-      frontSound: patch.frontSound === undefined ? hadSounds.frontSound : patch.frontSound,
-      backSound: patch.backSound === undefined ? hadSounds.backSound : patch.backSound,
-    };
-    if (cardSoundProblem(next.kind, sounds)) return INVALID_SOUND;
+    // An editor's sound fields are ignored outright: the card keeps what it has, so nothing is attached or released.
+    const sounds =
+      role === 'owner'
+        ? {
+            frontSound: patch.frontSound === undefined ? hadSounds.frontSound : patch.frontSound,
+            backSound: patch.backSound === undefined ? hadSounds.backSound : patch.backSound,
+          }
+        : hadSounds;
+    // An editor never touches a card's sounds (they are the owner's), so what the card already holds is not theirs to judge.
+    if (role === 'owner' && cardSoundProblem(next.kind, sounds)) return INVALID_SOUND;
     const nextSoundColumns = toSoundColumns(sounds);
     const soundsBefore = soundUrls(current);
     const soundsAfter = soundUrls(nextSoundColumns);
@@ -490,22 +523,25 @@ export async function updateCardIn(
 export async function deleteCard(userId: string, cardId: string): Promise<EditResult> {
   const outcome = await prisma.$transaction(async (tx) => {
     const card = await tx.flashcard.findFirst({
-      where: { id: cardId, sourceId: null, deck: { userId } },
-      select: { deckId: true, ...CARD_IMAGE_SELECT, ...CARD_SOUND_SELECT },
+      where: { id: cardId, sourceId: null },
+      select: { deckId: true, deck: { select: { userId: true } }, ...CARD_IMAGE_SELECT, ...CARD_SOUND_SELECT },
     });
     if (!card) return NOT_FOUND;
+    if (!(await deckRole(userId, card.deckId, tx))) return NOT_FOUND;
     // deleteMany: a concurrent second delete finds nothing and answers 404, not a 500. The siblings
     // go with the card through the foreign key's cascade.
     const { count } = await tx.flashcard.deleteMany({ where: { id: cardId, sourceId: null } });
     if (count === 0) return NOT_FOUND;
-    await recordTombstone(tx, userId, 'card', cardId);
+    // The tombstone is the deck owner's (their sync reads it), whoever deleted the card.
+    await recordTombstone(tx, card.deck.userId, 'card', cardId);
     await tx.flashcardDeck.update({
       where: { id: card.deckId },
       data: { cardCount: { decrement: 1 }, cardsChangedAt: new Date() },
     });
     const released = await releaseCardImages(tx, pictureUrls(card));
     // The card's own sounds go with it (s10-02).
-    released.push(...(await releaseCardSounds(tx, userId, soundUrls(card))));
+    // The recordings are the deck owner's, whoever deletes the card.
+    released.push(...(await releaseCardSounds(tx, card.deck.userId, soundUrls(card))));
     return { ok: true, released } as const;
   });
   await deleteCardImageObjects(outcome.ok ? outcome.released : []);
@@ -538,11 +574,11 @@ export async function addCard(
 ): Promise<EditResult<{ card: AddedCard }>> {
   const checkedCards = checkDrafts([draft]);
   if (!checkedCards.ok) return checkedCards.error;
-  const cards = checkedCards.cards;
   return prisma.$transaction(async (tx) => {
     await lockDeckCards(tx, deckId);
-    const deck = await tx.flashcardDeck.findFirst({ where: { id: deckId, userId }, select: { id: true } });
-    if (!deck) return NOT_FOUND;
+    const role = await deckRole(userId, deckId, tx);
+    if (!role) return NOT_FOUND;
+    const cards = checkedCards.cards.map((c) => withoutSoundsFor(role, c));
     const rows = await tx.flashcard.count({ where: { deckId } });
     if (rows + rowsFor(cards[0] as CardInput) > MAX_DECK_CARDS) return DECK_FULL;
     const attached = await attachCardImages(tx, userId, picturePlan(cards));
@@ -589,13 +625,17 @@ export async function importCardsDetailed(
   }
   const checked = checkDrafts(drafts);
   if (!checked.ok) return { ok: false, status: 400, ...refusalBody('STUDY_IMPORT_INVALID') };
-  const cards = checked.cards.map((card, i) => ({ ...card, externalId: drafts[i]?.externalId }));
-  const keys = cards.flatMap((c) => (c.externalId === undefined ? [] : [c.externalId]));
-  if (new Set(keys).size !== keys.length) return CONFLICT;
   return prisma.$transaction(async (tx) => {
     await lockDeckCards(tx, deckId);
-    const deck = await tx.flashcardDeck.findFirst({ where: { id: deckId, userId }, select: { id: true } });
-    if (!deck) return NOT_FOUND;
+    const role = await deckRole(userId, deckId, tx);
+    if (!role) return NOT_FOUND;
+    // An editor's cards carry no sound and no key of their own (`externalId` is the owner's script's).
+    const cards = checked.cards.map((card, i) => ({
+      ...withoutSoundsFor(role, card),
+      externalId: role === 'owner' ? drafts[i]?.externalId : undefined,
+    }));
+    const keys = cards.flatMap((c) => (c.externalId === undefined ? [] : [c.externalId]));
+    if (new Set(keys).size !== keys.length) return CONFLICT;
     if (keys.length > 0) {
       const taken = await tx.flashcard.count({ where: { deckId, externalId: { in: keys } } });
       if (taken > 0) return CONFLICT;
@@ -645,8 +685,8 @@ export async function upsertCardByExternalId(
   const released: string[] = [];
   const outcome = await prisma.$transaction(async (tx) => {
     await lockDeckCards(tx, deckId);
-    const deck = await tx.flashcardDeck.findFirst({ where: { id: deckId, userId }, select: { id: true } });
-    if (!deck) return NOT_FOUND;
+    // Keyed upserts are the developer API's, which is the owner's alone.
+    if (!(await requireDeckRole(userId, deckId, ['owner'], tx))) return NOT_FOUND;
     const existing = await tx.flashcard.findFirst({
       where: { deckId, externalId, sourceId: null },
       select: { id: true, kind: true, front: true, back: true, occlusion: true, ...CARD_IMAGE_SELECT },
@@ -700,8 +740,9 @@ export async function upsertCardByExternalId(
 export async function reorderCards(userId: string, deckId: string, cardIds: string[]): Promise<EditResult> {
   return prisma.$transaction(
     async (tx) => {
+      if (!(await deckRole(userId, deckId, tx))) return NOT_FOUND;
       const deck = await tx.flashcardDeck.findFirst({
-        where: { id: deckId, userId },
+        where: { id: deckId },
         select: { cards: { where: { sourceId: null }, select: { id: true, position: true } } },
       });
       if (!deck) return NOT_FOUND;

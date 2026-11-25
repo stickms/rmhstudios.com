@@ -18,6 +18,7 @@ import { ingest, IngestError, POLICIES } from '@/lib/media/ingest.server';
 import { prisma } from '@/lib/prisma.server';
 import { deleteObject, getObjectRange } from '@/lib/storage/s3.server';
 import { MAX_CARD_IMAGES, fromColumns, isAnimatedWebp, type CardImageColumns } from '@/lib/study/card-images';
+import { studiedDeckWhere } from '@/lib/study/deck-access.server';
 
 type Tx = Prisma.TransactionClient;
 
@@ -50,10 +51,14 @@ const HAS_PICTURE = {
   OR: [{ frontImageUrl: { not: null } }, { backImageUrl: { not: null } }],
 } satisfies Prisma.FlashcardWhereInput;
 
-/** Authored cards the member wrote (not copies) that carry a picture: the number the cap bounds. */
+/**
+ * Authored cards (not copies) that carry a picture, in the decks the member owns or edits: the number the cap bounds.
+ * A card an editor added sits in the owner's deck and is counted there, so editing a shared deck never gets round the
+ * storage bound (s11-10).
+ */
 export async function countUploadedPictureCards(tx: Tx, userId: string): Promise<number> {
   return tx.flashcard.count({
-    where: { sourceId: null, originCardId: null, deck: { userId }, ...HAS_PICTURE },
+    where: { sourceId: null, originCardId: null, deck: studiedDeckWhere(userId), ...HAS_PICTURE },
   });
 }
 
@@ -95,9 +100,9 @@ export async function attachCardImages(
       data: { status: 'ATTACHED' },
     });
     if (claimed.count > 0) continue;
-    // Already attached: fine only when one of the member's own cards shows it (an import reusing a picture).
+    // Already attached: fine only when a card of a deck the member owns or edits shows it (an import reusing a picture).
     const reused = await tx.flashcard.count({
-      where: { deck: { userId }, OR: [{ frontImageUrl: url }, { backImageUrl: url }] },
+      where: { deck: studiedDeckWhere(userId), OR: [{ frontImageUrl: url }, { backImageUrl: url }] },
     });
     if (reused === 0)
       return { ok: false, status: 400, code: 'MEDIA_NOT_FOUND', ...refusalBeside('STUDY_PICTURE_REUPLOAD') };

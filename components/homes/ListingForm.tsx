@@ -1,11 +1,19 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
+import { useSession } from '@/components/Providers';
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs } from '@/components/ui/tabs';
 import { Select } from '@/components/ui/select';
+import { useConfirm } from '@/components/ui/confirm-dialog';
+import { altTextSettingQuery } from '@/lib/settings/prefs.queries';
+import { normalizeAlts, undescribedCount } from '@/lib/homes/photos';
+import { foreignListingPhotoIndexes, listingPhotoOriginRefusal } from '@/lib/homes/photo-origin';
 import { AMENITY_OPTIONS, propertyTypeLabel } from '@/lib/homes/format';
 import { PROPERTY_TYPES, type Listing, type ListingType, type PropertyType } from '@/lib/homes/types';
 import { LocationSearch, type HomesPlace } from './LocationSearch';
@@ -42,6 +50,13 @@ function parseCityState(label: string): {
 
 export function ListingForm({ listing }: ListingFormProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation('listing-photo-alt');
+  const confirm = useConfirm();
+  const refusalText = useRefusalText();
+  const { data: session } = useSession();
+  const memberId = session?.user?.id ?? null;
+  // The member's Settings > Content switch: when on, saving with undescribed photos asks once (nothing is required).
+  const { data: altSetting } = useQuery(altTextSettingQuery());
   const isEditing = Boolean(listing);
 
   const [listingType, setListingType] = useState<ListingType>(listing?.listingType ?? 'RENT');
@@ -74,9 +89,14 @@ export function ListingForm({ listing }: ListingFormProps) {
   const [availableFrom, setAvailableFrom] = useState(listing?.availableFrom ? listing.availableFrom.slice(0, 10) : '');
   const [images, setImages] = useState<string[]>(listing?.images ?? []);
   const [aiImages, setAiImages] = useState<string[]>(listing?.aiImages ?? []);
+  const [imageAlts, setImageAlts] = useState<string[]>(normalizeAlts(listing?.images ?? [], listing?.imageAlts));
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // A community listing names its author's own site photos only (the server refuses any other, `lib/homes/photo-origin.ts`);
+  // an older listing that still holds an outside photo marks it here until it is replaced.
+  const foreignPhotos = memberId ? new Set(foreignListingPhotoIndexes(images, memberId)) : new Set<number>();
 
   function onPickPlace(place: HomesPlace) {
     setAddressQuery(place.label);
@@ -104,6 +124,28 @@ export function ListingForm({ listing }: ListingFormProps) {
     if (!city.trim() || !state.trim()) return setError('City and state are required.');
     if (images.length === 0) return setError('Add at least one photo.');
 
+    const photoRefusal = memberId ? listingPhotoOriginRefusal(images, memberId) : null;
+    if (photoRefusal) return setError(refusalText(photoRefusal));
+
+    const alts = normalizeAlts(images, imageAlts);
+    const missing = undescribedCount(images, alts);
+    if (altSetting?.requireAltText && missing > 0) {
+      const go = await confirm({
+        title: t('save-reminder', {
+          defaultValue_one: '{{count}} photo has no description. Save anyway?',
+          defaultValue: '{{count}} photos have no description. Save anyway?',
+          count: missing,
+        }),
+        description: t('save-reminder-hint', {
+          defaultValue:
+            'You asked to be reminded to describe images. People who use a screen reader will hear a generic label.',
+        }),
+        confirmLabel: t('save-anyway', { defaultValue: 'Save anyway' }),
+        cancelLabel: t('keep-editing', { defaultValue: 'Keep editing' }),
+      });
+      if (!go) return;
+    }
+
     const body = {
       listingType,
       propertyType,
@@ -124,6 +166,7 @@ export function ListingForm({ listing }: ListingFormProps) {
       availableFrom: availableFrom ? new Date(availableFrom).toISOString() : null,
       images,
       aiImages,
+      imageAlts: alts,
     };
 
     setSubmitting(true);
@@ -136,7 +179,7 @@ export function ListingForm({ listing }: ListingFormProps) {
         body: JSON.stringify(body),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Could not save listing');
+      if (!res.ok) throw new Error(refusalText.maybe(data) || 'Could not save listing');
       toast.success(isEditing ? 'Listing updated' : 'Listing posted');
       const id = isEditing ? listing!.id : data.id;
       navigate({
@@ -185,9 +228,9 @@ export function ListingForm({ listing }: ListingFormProps) {
           onChange={(e) => setPropertyType(e.target.value as PropertyType)}
           containerClassName="sm:w-56"
         >
-          {PROPERTY_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {propertyTypeLabel(t)}
+          {PROPERTY_TYPES.map((pt) => (
+            <option key={pt} value={pt}>
+              {propertyTypeLabel(pt)}
             </option>
           ))}
         </Select>
@@ -297,9 +340,12 @@ export function ListingForm({ listing }: ListingFormProps) {
         <ImageUploader
           value={images}
           aiImages={aiImages}
-          onChange={(imgs, ai) => {
+          alts={imageAlts}
+          foreign={foreignPhotos}
+          onChange={(imgs, ai, alts) => {
             setImages(imgs);
             setAiImages(ai);
+            setImageAlts(alts);
           }}
           max={8}
         />

@@ -17,6 +17,8 @@ export function TrackLane({ track, width, isSelected }: TrackLaneProps) {
     useStudioStore();
 
   const trackClips = track.clipIds.map((id) => clips[id]).filter(Boolean);
+  // A clip from a shared copy keeps its place but not its sample (feature 07): it is labelled, not blank.
+  const notIncluded = t('sample-not-included', { ns: 'studio-share', defaultValue: 'Sample not included' });
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -59,7 +61,7 @@ export function TrackLane({ track, width, isSelected }: TrackLaneProps) {
 
     // Draw clips
     for (const clip of trackClips) {
-      drawClip(ctx, clip, ppb, scrollX, h);
+      drawClip(ctx, clip, ppb, scrollX, h, notIncluded);
     }
 
     // Bottom border
@@ -69,7 +71,7 @@ export function TrackLane({ track, width, isSelected }: TrackLaneProps) {
     ctx.moveTo(0, h - 0.5);
     ctx.lineTo(safeWidth, h - 0.5);
     ctx.stroke();
-  }, [width, track.height, trackClips, zoomX, scrollX, timeSignature, isSelected]);
+  }, [width, track.height, trackClips, zoomX, scrollX, timeSignature, isSelected, notIncluded]);
 
   useEffect(() => {
     draw();
@@ -168,7 +170,14 @@ export function TrackLane({ track, width, isSelected }: TrackLaneProps) {
 
 // ─── Clip Rendering ─────────────────────────────────────────────────────────
 
-function drawClip(ctx: CanvasRenderingContext2D, clip: Clip, ppb: number, scrollX: number, trackHeight: number) {
+function drawClip(
+  ctx: CanvasRenderingContext2D,
+  clip: Clip,
+  ppb: number,
+  scrollX: number,
+  trackHeight: number,
+  notIncluded: string,
+) {
   const x = clip.startBeat * ppb - scrollX;
   const w = clip.durationBeats * ppb;
   const padding = 2;
@@ -202,7 +211,8 @@ function drawClip(ctx: CanvasRenderingContext2D, clip: Clip, ppb: number, scroll
   // Clip name
   ctx.fillStyle = 'rgba(255,255,255,0.8)';
   ctx.font = '9px system-ui, sans-serif';
-  ctx.fillText(clip.name, x + 4, y + 10, w - 8);
+  const unnamedSample = clip.type === 'audio' && clip.bufferId === '' && clip.name === '';
+  ctx.fillText(unnamedSample ? notIncluded : clip.name, x + 4, y + 10, w - 8);
 
   // MIDI preview (simplified)
   if (clip.type === 'midi' && (clip as MidiClipData).notes.length > 0) {

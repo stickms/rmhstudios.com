@@ -58,7 +58,7 @@ function loadTheme(): EpubTheme {
   return 'dark';
 }
 
-export function EpubReader({ book }: { book: LibraryBook }) {
+export function EpubReader({ book, startPage }: { book: LibraryBook; startPage?: number | undefined }) {
   const { t } = useTranslation('c-library');
   const { t: ts } = useTranslation('find-in-book');
   const readerRef = useRef<HTMLElement>(null);
@@ -159,9 +159,10 @@ export function EpubReader({ book }: { book: LibraryBook }) {
   useEffect(() => {
     if (resumed.current || status !== 'ready' || !marks.ready) return;
     resumed.current = true;
-    const p = marks.state.page;
-    if (p > 1 && p <= numPages) requestAnimationFrame(() => goToPage(p));
-  }, [status, marks.ready, marks.state.page, numPages, goToPage]);
+    // A link that names a page (a read-along's part) wins over the saved place.
+    const p = startPage ?? marks.state.page;
+    if ((startPage !== undefined ? p >= 1 : p > 1) && p <= numPages) requestAnimationFrame(() => goToPage(p));
+  }, [status, marks.ready, marks.state.page, numPages, goToPage, startPage]);
 
   const onPageChange = useCallback(
     ({ label, page }: { label: string; page: number; k: number }) => {

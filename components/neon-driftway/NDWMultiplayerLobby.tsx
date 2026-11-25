@@ -156,7 +156,7 @@ export function NDWMultiplayerLobby({ onBack, onGameStart }: NDWMultiplayerLobby
                         <div className="text-center text-zinc-500 text-xs">{t("or-divider", { defaultValue: "— or —" })}</div>
 
                         <div className="flex gap-2">
-                            <Input
+                            <Input aria-label={t('field-lobby-code', { defaultValue: 'Lobby code' })}
                                 placeholder={t("enter-lobby-code", { defaultValue: "Enter lobby code..." })}
                                 value={joinCode}
                                 onChange={e => setJoinCode(e.target.value)}

@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma.server';
 import { REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
 import { TEST_KINDS, type TestKind } from '@/lib/study/practice-test';
+import { canReadDeck } from '@/lib/study/deck-access.server';
 import type { TestResultRow } from '@/lib/study/tests.contract';
 import { MAX_TEST_DURATION_MS, TEST_HISTORY_LIMIT, type recordTestBody } from '@/lib/study/tests-schema';
 import type { z } from 'zod';
@@ -11,13 +12,13 @@ export type TestStoreResult<T> = { ok: true; value: T } | { ok: false; status: n
 
 const NOT_FOUND = { ok: false, status: 404, error: 'Not found' } as const;
 
-/** A deck the viewer may test: their own, or any public deck. Anything else reads as missing. */
+/** A deck the viewer may test: their own, one they edit, or any public deck. Anything else reads as missing. */
 async function canTestDeck(userId: string, deckId: string): Promise<boolean> {
   const deck = await prisma.flashcardDeck.findUnique({
     where: { id: deckId },
-    select: { userId: true, isPublic: true },
+    select: { id: true, userId: true, isPublic: true },
   });
-  return !!deck && (deck.isPublic || deck.userId === userId);
+  return !!deck && (await canReadDeck(userId, deck));
 }
 
 function knownKinds(kinds: string[]): TestKind[] {

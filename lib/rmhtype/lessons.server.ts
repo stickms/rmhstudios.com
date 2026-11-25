@@ -5,7 +5,14 @@
  * client. A run only ever raises a best: a bad day cannot take a star away.
  */
 import { prisma } from '@/lib/prisma.server';
-import { lessonById, recommendedNext, starsFor, type LessonProgressRow, type RecordedRun } from '@/lib/rmhtype/lessons';
+import {
+  layoutOfLessonId,
+  lessonById,
+  recommendedNext,
+  starsFor,
+  type LessonProgressRow,
+  type RecordedRun,
+} from '@/lib/rmhtype/lessons';
 
 interface StoredRow {
   lessonId: string;
@@ -40,8 +47,10 @@ export async function getLessonProgress(userId: string): Promise<LessonProgressR
 }
 
 /**
- * Fold one finished run into the member's row. Returns `null` for a lesson id the
- * curriculum does not have (the caller answers 400).
+ * Fold one finished run into the member's row. Returns `null` for a lesson id no layout's
+ * course has (validated by `lessonById`, which knows `dv-l01`, `cm-l01` and `az-l01`). Only
+ * that lesson's own row is written, so saving `dv-l01` never touches `l01`. The next lesson
+ * is the recommendation in the same layout's course. (The caller answers 400 for `null`.)
  */
 export async function recordLessonRun(
   userId: string,
@@ -92,7 +101,7 @@ export async function recordLessonRun(
         stars: true,
       },
     });
-    const next = recommendedNext(new Map(all.map((row) => [row.lessonId, row])));
+    const next = recommendedNext(new Map(all.map((row) => [row.lessonId, row])), layoutOfLessonId(lesson.id));
     return {
       progress: toRow(saved),
       runStars,

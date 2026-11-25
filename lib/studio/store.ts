@@ -28,6 +28,8 @@ export interface StudioStore {
   // === Transport ===
   isPlaying: boolean;
   isRecording: boolean;
+  /** Where a take is: the count-in bar, capturing, or nothing. Not saved, not history. */
+  recordPhase: 'idle' | 'count-in' | 'recording';
   bpm: number;
   timeSignature: [number, number];
   currentBeat: number;
@@ -76,6 +78,7 @@ export interface StudioStore {
   // === Actions: Transport ===
   setIsPlaying: (playing: boolean) => void;
   setIsRecording: (recording: boolean) => void;
+  setRecordPhase: (phase: 'idle' | 'count-in' | 'recording') => void;
   setBpm: (bpm: number) => void;
   setTimeSignature: (ts: [number, number]) => void;
   setCurrentBeat: (beat: number) => void;
@@ -261,6 +264,7 @@ export const useStudioStore = create<StudioStore>()(
 
         isPlaying: false,
         isRecording: false,
+        recordPhase: 'idle',
         bpm: DEFAULT_BPM,
         timeSignature: DEFAULT_TIME_SIGNATURE,
         currentBeat: 0,
@@ -307,6 +311,7 @@ export const useStudioStore = create<StudioStore>()(
           set({
             isRecording: recording,
           }),
+        setRecordPhase: (phase) => set({ recordPhase: phase }),
         setBpm: (bpm) => mutate('tempo', true, () => ({ bpm })),
         setTimeSignature: (ts) => mutate('time-signature', false, () => ({ timeSignature: ts })),
         setCurrentBeat: (beat) =>
@@ -511,6 +516,7 @@ export const useStudioStore = create<StudioStore>()(
             projectDirty: false,
             isPlaying: false,
             isRecording: false,
+            recordPhase: 'idle',
             currentBeat: 0,
             selectedTrackId: tracks[0]?.id ?? null,
             selectedClipIds: [],
@@ -539,6 +545,7 @@ export const useStudioStore = create<StudioStore>()(
             masterVolume: 1,
             isPlaying: false,
             isRecording: false,
+            recordPhase: 'idle',
             currentBeat: 0,
             selectedTrackId: null,
             selectedClipIds: [],
@@ -585,6 +592,14 @@ export const useStudioStore = create<StudioStore>()(
       // Only persist settings (keybinds, audio prefs, recent projects)
       partialize: (state) => ({
         settings: state.settings,
+      }),
+      // A settings object saved before a field existed loads with that field's default.
+      merge: (persisted, current) => ({
+        ...current,
+        settings: {
+          ...DEFAULT_SETTINGS,
+          ...((persisted as { settings?: Partial<StudioSettings> } | null | undefined)?.settings ?? {}),
+        },
       }),
     },
   ),

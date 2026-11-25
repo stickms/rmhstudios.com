@@ -60,5 +60,6 @@
   "restriction-lift": "Lift",
   "restriction-lifted": "Lifted early",
   "restriction-permanent": "Permanent",
-  "restriction-until": "Ends"
+  "restriction-until": "Ends",
+  "field-report-details": "Report details"
 }

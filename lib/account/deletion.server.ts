@@ -68,6 +68,7 @@ import { assistErasureOps } from '@/lib/game/assist-run.server';
 import { matchResultErasureOps } from '@/lib/tournaments/match-results.server';
 import { matchScheduleErasureOps } from '@/lib/tournaments/scheduling.server';
 import { studioHistoryErasureOps } from '@/lib/studio/project-history.server';
+import { studioShareErasureOps } from '@/lib/studio/share.server';
 import { readingTimeErasureOps } from '@/lib/reading/time.server';
 import { bulkErasureOps } from '@/lib/bulk/bulk.server';
 import { coverageErasureOps } from '@/lib/account/erasure-coverage.server';
@@ -84,6 +85,7 @@ import {
 } from '@/lib/account/erasure-follows.server';
 import { runAfterErasureInline } from '@/lib/account/after-erasure-jobs.server';
 import { recurringThreadErasureOps } from '@/lib/communities/recurring.server';
+import { readAlongErasureOps, readAlongHandoverTargets } from '@/lib/communities/read-along.server';
 import { restoreAfterCancel } from '@/lib/account/deletion-hold.server';
 
 /**
@@ -291,6 +293,9 @@ export async function anonymizeAccount(userId: string): Promise<void> {
   await removeMemberFromFlagLists(userId);
   // s10-19 erasure-follows (counter reads before the transaction)
   const listingImageUrls = await readListingImageUrls(userId);
+  // s11-09 read-alongs (hand-over reads before the transaction)
+  const readAlongCommunities = await readAlongHandoverTargets(userId);
+
   // RMH Med Schools: the anonymous events of the member's shared milestones are found only through the milestone ids,
   // which the transaction below deletes, so they go first (idempotent; they usually went at the request). A throw
   // here (the server secret is unset while events exist) leaves the account scheduled, to be retried by the next sweep.
@@ -669,6 +674,44 @@ export async function anonymizeAccount(userId: string): Promise<void> {
 
     // s10-19 erasure-follows
     ...followsErasureOps(userId),
+
+    // Sprint 11 erasures (docs/autonomous/sprint-11/plan.md §Anchors): each feature adds its operations under its own line.
+    // s11-03 character-party
+    // The parties the member runs (their players' characters are untouched) and the member's own memberships; the
+    // cascade never fires for an anonymised account. Members of the member's parties go first (foreign-key order).
+    ...(await import('@features/rmhcharacters/engine/party.server')).characterPartyErasureOps(userId),
+
+    // s11-05 lights-out-maker
+    // The member's plays (their best moves and place on a board) are erased; the boards they made are published
+    // content and stay under "Deleted user" (erasure registry: rule 3).
+    prisma.lightsOutBoardPlay.deleteMany({ where: { userId } }),
+
+    // s11-07 studio-share
+    // The member's shared links (a share is a link to their work; the copies opened live on the openers' devices)
+    // and the opened marks they left on other members' shares (the cascade never fires for an anonymised account).
+    ...studioShareErasureOps(userId),
+
+    // s11-09 read-alongs
+    // Reader rows are erased; a read-along the member started goes to the community owner, paused (or is cancelled
+    // with its unposted parts deleted when they owned the community), as recurring threads do.
+    ...readAlongErasureOps(userId, readAlongCommunities),
+
+    // s11-10 deck-coeditors
+    // The member's own rows as an editor or an invitee (userId): the rows on decks they own stay with those decks
+    // (`FlashcardDeck` is the owner's open decision), `invitedById` pointing at the anonymised row.
+    prisma.deckEditor.deleteMany({ where: { userId } }),
+
+    // s11-12 type-challenges
+    // A challenge is a two-person record with no public trace: both sides' rows go, whichever side the member was,
+    // with the member's switch and the inbox notices of theirs that name them (the other side's copies).
+    prisma.rmhTypeChallenge.deleteMany({ where: { OR: [{ challengerId: userId }, { opponentId: userId }] } }),
+    prisma.rmhTypeChallengeOptOut.deleteMany({ where: { userId } }),
+    prisma.notification.deleteMany({ where: { entityType: 'type-challenge', actorId: userId } }),
+
+    // s11-16 rmhtube-subtitles
+    // Subtitle tracks the member added (to their own items or, as host, to others'). The queue item they hang from is
+    // shared room content and stays; its row of this member's subtitles goes.
+    prisma.rmhTubeSubtitle.deleteMany({ where: { addedById: userId } }),
 
     // med-schools-phase-4 tracker, lists, preferences (the shared anonymous events go in a pre-step, plan Task 6)
     ...medschoolsErasureOps(userId),

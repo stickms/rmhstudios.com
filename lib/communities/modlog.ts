@@ -34,6 +34,9 @@ export const MOD_ACTIONS_BY_GROUP = {
     // s10-07: a community's events. Public within the community, so these are in the public log too.
     'event_hosted',
     'event_cancelled',
+    // s11-09: a community's read-alongs. Public within the community, so these are in the public log too.
+    'read_along_started',
+    'read_along_cancelled',
   ],
   members: [
     'member_removed',
@@ -101,6 +104,8 @@ export const PUBLIC_MOD_ACTIONS = [
   'pins_reordered',
   'event_hosted',
   'event_cancelled',
+  'read_along_started',
+  'read_along_cancelled',
 ] as const;
 export type PublicModAction = (typeof PUBLIC_MOD_ACTIONS)[number];
 export const isPublicModAction = (v: string): v is PublicModAction =>
@@ -122,6 +127,7 @@ export const MOD_TARGET_TYPES = [
   'recurring',
   'page',
   'event',
+  'read_along',
 ] as const;
 export type ModTargetType = (typeof MOD_TARGET_TYPES)[number];
 

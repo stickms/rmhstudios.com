@@ -46,5 +46,6 @@
   "rotate_hint_dismiss": "Dismiss",
   "toolbar": "Game controls",
   "quit": "Quit",
-  "quit_hint": "Quit the game. Your progress is saved."
+  "quit_hint": "Quit the game. Your progress is saved.",
+  "field-save-file": "Save file"
 }

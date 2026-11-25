@@ -299,7 +299,7 @@ function AdminRidesharePage() { const fmt = useLocaleFormat();
                   <div className="mt-3">
                     {rejecting === app.id ? (
                       <div className="space-y-2">
-                        <Textarea
+                        <Textarea aria-label={t('field-rejection-reason', { defaultValue: 'Reason for rejection' })}
                           value={reason}
                           onChange={(e) => setReason(e.target.value)}
                           rows={2}

@@ -44,6 +44,7 @@
   "error-too-many": "You can upload up to {{max}} files at once.",
   "error-upload-failed": "Upload failed, nothing was saved.",
   "exit-fullscreen": "Exit fullscreen",
+  "field-page-note": "Note for this page",
   "format": "Format",
   "go-to-page": "Go to page (1–{{numPages}})",
   "jump-to-a-page": "Jump to a page",

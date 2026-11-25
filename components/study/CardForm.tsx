@@ -39,6 +39,7 @@ export function CardForm({
   onSubmit,
   onCancel,
   resetOnSave = false,
+  allowSound = true,
 }: {
   initial?: CardInput & {
     frontImage?: CardImage | null | undefined;
@@ -53,6 +54,8 @@ export function CardForm({
   onCancel?: () => void;
   /** Clear the fields after a save (the add form); the edit form closes instead. */
   resetOnSave?: boolean;
+  /** Offer the recorder (the deck's owner only: an editor never adds or changes a card's sounds, s11-10). */
+  allowSound?: boolean;
 }) {
   const { t } = useTranslation('flashcard-types');
   const uid = useId();
@@ -234,7 +237,9 @@ export function CardForm({
             </div>
             <ClozePreview text={front} />
             <CardImageField side="back" value={backImage} onChange={setBackImage} showMissing={submitted} />
-            <CardSoundField side="back" value={backSound} onChange={setBackSound} showMissing={submitted} />
+            {allowSound && (
+              <CardSoundField side="back" value={backSound} onChange={setBackSound} showMissing={submitted} />
+            )}
           </>
         ) : kind === 'occlusion' ? (
           <>
@@ -292,7 +297,9 @@ export function CardForm({
                   defaultValue: 'Shown after the answer is revealed. One card is made for each mask.',
                 })}
               </p>
-              <CardSoundField side="back" value={backSound} onChange={setBackSound} showMissing={submitted} />
+              {allowSound && (
+                <CardSoundField side="back" value={backSound} onChange={setBackSound} showMissing={submitted} />
+              )}
             </div>
           </>
         ) : (
@@ -309,7 +316,9 @@ export function CardForm({
                 onChange={(e) => setFront(e.target.value)}
               />
               <CardImageField side="front" value={frontImage} onChange={setFrontImage} showMissing={submitted} />
-              <CardSoundField side="front" value={frontSound} onChange={setFrontSound} showMissing={submitted} />
+              {allowSound && (
+                <CardSoundField side="front" value={frontSound} onChange={setFrontSound} showMissing={submitted} />
+              )}
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor={backId}>{t('back', { defaultValue: 'Back' })}</Label>
@@ -324,7 +333,9 @@ export function CardForm({
                 onChange={(e) => setBack(e.target.value)}
               />
               <CardImageField side="back" value={backImage} onChange={setBackImage} showMissing={submitted} />
-              <CardSoundField side="back" value={backSound} onChange={setBackSound} showMissing={submitted} />
+              {allowSound && (
+                <CardSoundField side="back" value={backSound} onChange={setBackSound} showMissing={submitted} />
+              )}
               {kind === 'reversible' && (
                 <p className="t-meta">
                   {t('reversible-hint', {

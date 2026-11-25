@@ -17,6 +17,7 @@ import { deleteCardImageObjects } from '@/lib/study/card-images.server';
 import { isCardKind, validateCard, type CardKind } from '@/lib/study/card-types';
 import { cardHash } from '@/lib/study/deck-sync';
 import { updateCardIn } from '@/lib/study/deck-editor.server';
+import { deckRole } from '@/lib/study/deck-access.server';
 import {
   accountOldEnough,
   isSuggestable,
@@ -31,7 +32,14 @@ import {
 } from '@/lib/study/suggestions';
 
 export type SuggestResult<T = object> =
-  ({ ok: true } & T) | { ok: false; status: 400 | 403 | 404 | 409; reason: SuggestionRefusal };
+  | ({ ok: true } & T)
+  | {
+      ok: false;
+      status: 400 | 403 | 404 | 409;
+      reason: SuggestionRefusal;
+      /** Only on `already-decided` for a "Decline and block" that lost the race: what the block still declined. */
+      declined?: number;
+    };
 
 const refuse = (status: 400 | 403 | 404 | 409, reason: SuggestionRefusal) => ({ ok: false, status, reason }) as const;
 
@@ -81,6 +89,8 @@ export async function createSuggestion(
   });
   if (!deck) return refuse(404, 'not-found');
   if (deck.userId === userId) return refuse(403, 'own-deck');
+  // An editor edits the deck directly: a suggestion from one is refused like the author's (s11-10).
+  if ((await deckRole(userId, deckId)) === 'editor') return refuse(403, 'own-deck');
 
   // A private deck is readable only to someone who copied it, and then only through their own copy's card.
   const copyDeckId = deck.isPublic ? null : await copyOf(userId, deckId);
@@ -142,7 +152,15 @@ export async function createSuggestion(
       const mine = await tx.deckSuggestion.count({ where: { deckId, suggesterId: userId, status: 'open' } });
       if (mine >= MAX_OPEN_PER_MEMBER_DECK) throw new Refused(refuse(409, 'member-cap'));
       const same = await tx.deckSuggestion.findFirst({
-        where: { deckId, cardId: card.id, status: 'open', front: proposed.front, back: proposed.back },
+        // Only the suggester's own open suggestions count: a refusal must not reveal what someone else suggested.
+        where: {
+          deckId,
+          cardId: card.id,
+          suggesterId: userId,
+          status: 'open',
+          front: proposed.front,
+          back: proposed.back,
+        },
         select: { id: true },
       });
       if (same) throw new Refused(refuse(409, 'duplicate'));
@@ -261,76 +279,84 @@ export async function decideSuggestion(
   const notices: { userId: string; deckId: string; title: string; accepted: boolean; reason: string | null }[] = [];
   const released: string[] = [];
   try {
-    const result = await prisma.$transaction(async (tx): Promise<Decided> => {
-      const row = await tx.deckSuggestion.findUnique({
-        where: { id: suggestionId },
-        select: {
-          id: true,
-          cardId: true,
-          suggesterId: true,
-          front: true,
-          back: true,
-          deck: { select: { id: true, userId: true, title: true } },
-        },
-      });
-      if (!row || row.deck.userId !== userId) throw new Refused(refuse(404, 'not-found'));
-      const now = new Date();
+    const result = await prisma.$transaction(
+      async (tx): Promise<Decided | { status: 'already-decided'; declined: number }> => {
+        const row = await tx.deckSuggestion.findUnique({
+          where: { id: suggestionId },
+          select: {
+            id: true,
+            cardId: true,
+            suggesterId: true,
+            front: true,
+            back: true,
+            deck: { select: { id: true, userId: true, title: true } },
+          },
+        });
+        if (!row || row.deck.userId !== userId) throw new Refused(refuse(404, 'not-found'));
+        const now = new Date();
 
-      if (input.decision === 'decline') {
-        const reason = input.reason?.trim() ? input.reason.trim() : null;
+        if (input.decision === 'decline') {
+          const reason = input.reason?.trim() ? input.reason.trim() : null;
+          const won = await tx.deckSuggestion.updateMany({
+            where: { id: row.id, status: 'open' },
+            data: { status: 'declined', declineReason: reason, decidedAt: now },
+          });
+          // A "Decline and block" that lost the race still blocks: the suggestion was decided by someone else's
+          // request, but the author's block of this member applies all the same.
+          if (won.count === 0 && !input.block) throw new Refused(refuse(409, 'already-decided'));
+          let declined = won.count;
+          if (input.block) {
+            const rest = await tx.deckSuggestion.updateMany({
+              where: { suggesterId: row.suggesterId, status: 'open', deck: { userId } },
+              data: { status: 'declined', decidedAt: now },
+            });
+            declined += rest.count;
+            if (won.count === 0) return { status: 'already-decided', declined };
+          } else {
+            notices.push({
+              userId: row.suggesterId,
+              deckId: row.deck.id,
+              title: row.deck.title,
+              accepted: false,
+              reason,
+            });
+          }
+          return { status: 'declined', declined };
+        }
+
+        // The card must still be a text card the author owns; an occlusion card never takes a suggestion's text.
+        const card = await tx.flashcard.findFirst({
+          where: { id: row.cardId, sourceId: null, deck: { userId } },
+          select: { kind: true },
+        });
+        if (!card) throw new Refused(refuse(404, 'not-found'));
+        if (!isSuggestable(card.kind)) throw new Refused(refuse(409, 'not-suggestable'));
         const won = await tx.deckSuggestion.updateMany({
           where: { id: row.id, status: 'open' },
-          data: { status: 'declined', declineReason: reason, decidedAt: now },
+          data: { status: 'accepted', decidedAt: now },
         });
         if (won.count === 0) throw new Refused(refuse(409, 'already-decided'));
-        let declined = 1;
-        if (input.block) {
-          const rest = await tx.deckSuggestion.updateMany({
-            where: { suggesterId: row.suggesterId, status: 'open', deck: { userId } },
-            data: { status: 'declined', decidedAt: now },
-          });
-          declined += rest.count;
-        } else {
-          notices.push({
-            userId: row.suggesterId,
-            deckId: row.deck.id,
-            title: row.deck.title,
-            accepted: false,
-            reason,
-          });
-        }
-        return { status: 'declined', declined };
-      }
-
-      // The card must still be a text card the author owns; an occlusion card never takes a suggestion's text.
-      const card = await tx.flashcard.findFirst({
-        where: { id: row.cardId, sourceId: null, deck: { userId } },
-        select: { kind: true },
-      });
-      if (!card) throw new Refused(refuse(404, 'not-found'));
-      if (!isSuggestable(card.kind)) throw new Refused(refuse(409, 'not-suggestable'));
-      const won = await tx.deckSuggestion.updateMany({
-        where: { id: row.id, status: 'open' },
-        data: { status: 'accepted', decidedAt: now },
-      });
-      if (won.count === 0) throw new Refused(refuse(409, 'already-decided'));
-      const front = input.edit ? input.edit.front : row.front;
-      const back = input.edit ? (input.edit.back ?? '') : row.back;
-      const applied = await updateCardIn(tx, userId, row.cardId, { front, back });
-      if (!applied.ok)
-        throw new Refused(refuse(applied.status === 404 ? 404 : 400, applied.status === 404 ? 'not-found' : 'invalid'));
-      released.push(...applied.released);
-      notices.push({
-        userId: row.suggesterId,
-        deckId: row.deck.id,
-        title: row.deck.title,
-        accepted: true,
-        reason: null,
-      });
-      return { status: 'accepted', declined: 0 };
-    });
+        const front = input.edit ? input.edit.front : row.front;
+        const back = input.edit ? (input.edit.back ?? '') : row.back;
+        const applied = await updateCardIn(tx, userId, row.cardId, { front, back });
+        if (!applied.ok)
+          throw new Refused(
+            refuse(applied.status === 404 ? 404 : 400, applied.status === 404 ? 'not-found' : 'invalid'),
+          );
+        released.push(...applied.released);
+        notices.push({
+          userId: row.suggesterId,
+          deckId: row.deck.id,
+          title: row.deck.title,
+          accepted: true,
+          reason: null,
+        });
+        return { status: 'accepted', declined: 0 };
+      },
+    );
     await deleteCardImageObjects(released);
     for (const n of notices) await notifySuggester(n);
+    if (result.status === 'already-decided') return { ...refuse(409, 'already-decided'), declined: result.declined };
     return { ok: true, ...result };
   } catch (error) {
     if (error instanceof Refused) return error.result;

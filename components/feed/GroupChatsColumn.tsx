@@ -186,13 +186,13 @@ export function GroupChatsColumn({
             </Button>
           </div>
           <div className="mt-3 space-y-2">
-            <Input
+            <Input aria-label={t('field-group-name', { defaultValue: 'Group name' })}
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t('group-name-placeholder', { defaultValue: 'Group name' })}
               maxLength={60}
             />
-            <HandleInput
+            <HandleInput aria-label={t('field-group-members', { defaultValue: 'Members, by handle' })}
               value={members}
               onChange={setMembers}
               multiple

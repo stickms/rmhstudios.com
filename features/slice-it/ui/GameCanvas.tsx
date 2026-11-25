@@ -3915,7 +3915,7 @@ export function GameCanvas() {
                         })}
                       </span>
                     </div>
-                    <Slider
+                    <Slider aria-label={t('field-lane-cover-height', { defaultValue: 'Lane cover height' })}
                       value={[laneCoverHeight]}
                       min={MIN_LANE_COVER}
                       max={MAX_LANE_COVER}
@@ -4065,7 +4065,7 @@ export function GameCanvas() {
                       {ts('lane-cover-reaction', { defaultValue: '{{ms}}ms', ms: reactionMs })}
                     </span>
                   </div>
-                  <Slider
+                  <Slider aria-label={t('field-lane-cover-height', { defaultValue: 'Lane cover height' })}
                     value={[laneCoverHeight]}
                     min={MIN_LANE_COVER}
                     max={MAX_LANE_COVER}

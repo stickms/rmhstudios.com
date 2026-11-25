@@ -67,7 +67,7 @@ export function HoldemLobby({ coins }: Props) {
     <div className="flex flex-col gap-3">
       {/* Join by code */}
       <div className="flex gap-2">
-        <input
+        <input aria-label={t('field-join-code', { defaultValue: 'Join code' })}
           type="text"
           placeholder={t("join-code-placeholder", { defaultValue: "Join code..." })}
           value={joinCodeInput}
@@ -87,6 +87,7 @@ export function HoldemLobby({ coins }: Props) {
       {showCreate ? (
         <div className="rule-section flex flex-col gap-2">
           <input
+            aria-label={t('field-table-name', { defaultValue: 'Table name' })}
             type="text"
             placeholder={t("table-name-placeholder", { defaultValue: "Table name (optional)" })}
             value={roomName}
@@ -97,24 +98,24 @@ export function HoldemLobby({ coins }: Props) {
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-1">
               <label className="text-xs text-site-text-muted">{t("max-players", { defaultValue: "Max players" })}</label>
-              <Select value={maxPlayers} onChange={(e) => setMaxPlayers(Number(e.target.value))}>
+              <Select aria-label={t('max-players', { defaultValue: 'Max players' })} value={maxPlayers} onChange={(e) => setMaxPlayers(Number(e.target.value))}>
                 {[2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n}</option>)}
               </Select>
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs text-site-text-muted">{t("small-blind", { defaultValue: "Small blind" })}</label>
-              <Select value={smallBlind} onChange={(e) => setSmallBlind(Number(e.target.value))}>
+              <Select aria-label={t('small-blind', { defaultValue: 'Small blind' })} value={smallBlind} onChange={(e) => setSmallBlind(Number(e.target.value))}>
                 {[1, 5, 10, 25, 50].map((n) => <option key={n} value={n}>{n}/{n * 2}</option>)}
               </Select>
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs text-site-text-muted">{t("buy-in", { defaultValue: "Buy-in" })}</label>
-              <input type="number" min={smallBlind * 2} value={buyIn} onChange={(e) => setBuyIn(Number(e.target.value))}
+              <input aria-label={t('buy-in', { defaultValue: 'Buy-in' })} type="number" min={smallBlind * 2} value={buyIn} onChange={(e) => setBuyIn(Number(e.target.value))}
                 className="surface-field border px-2 py-1 text-site-text text-sm" />
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs text-site-text-muted">{t("privacy", { defaultValue: "Privacy" })}</label>
-              <Select value={privacy} onChange={(e) => setPrivacy(e.target.value as 'public' | 'unlisted')}>
+              <Select aria-label={t('privacy', { defaultValue: 'Privacy' })} value={privacy} onChange={(e) => setPrivacy(e.target.value as 'public' | 'unlisted')}>
                 <option value="public">{t("privacy-public", { defaultValue: "Public" })}</option>
                 <option value="unlisted">{t("privacy-unlisted", { defaultValue: "Unlisted" })}</option>
               </Select>

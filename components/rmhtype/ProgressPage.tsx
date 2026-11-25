@@ -24,6 +24,7 @@ import { ProgressSummary } from '@/components/rmhtype/progress/ProgressSummary';
 import { ProgressBests } from '@/components/rmhtype/progress/ProgressBests';
 import { ProgressRuns } from '@/components/rmhtype/progress/ProgressRuns';
 import { GhostClear } from '@/components/rmhtype/GhostControls';
+import { ChallengeSection } from '@/components/rmhtype/ChallengeDialog';
 import { KeysSection } from '@/components/rmhtype/KeysSection';
 import { useProgressLabels } from '@/components/rmhtype/progress/progress-labels';
 
@@ -321,6 +322,8 @@ export default function ProgressPage() {
           </h2>
           <ProgressRuns mode={mode} start={runsFrom} onBackToLatest={() => setRunsFrom(null)} />
         </section>
+
+        <ChallengeSection />
 
         <GhostClear />
       </div>

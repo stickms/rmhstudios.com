@@ -14,7 +14,9 @@ import type {
   Task,
   PhaseCompleteEvent,
   MemberStatus,
+  RoomQuizClientState,
 } from './types';
+import type { EndView, PublicQuestion, QuizSnapshot, RevealView } from './quiz';
 import { DEFAULT_TIMER_SETTINGS } from './types';
 
 // ─── User Settings ───────────────────────────────────────────────
@@ -45,6 +47,8 @@ export interface RmhStudyStore {
   settings: RmhStudyUserSettings;
   tasks: Task[];
   lastPhaseComplete: PhaseCompleteEvent | null;
+  /** The room quiz in progress (or its standings once over); null when none. */
+  quiz: RoomQuizClientState | null;
 
   // Actions
   setConnectionStatus: (status: RmhStudyStore['connectionStatus']) => void;
@@ -58,6 +62,13 @@ export interface RmhStudyStore {
   setTimerReset: () => void;
   setPhaseComplete: (event: PhaseCompleteEvent) => void;
   clearPhaseComplete: () => void;
+
+  // Room quiz
+  setQuizQuestion: (question: PublicQuestion) => void;
+  setQuizReveal: (reveal: RevealView) => void;
+  setQuizEnd: (end: EndView) => void;
+  setQuizSnapshot: (snapshot: QuizSnapshot | null) => void;
+  dismissQuiz: () => void;
 
   // Tasks
   setTasks: (tasks: Task[]) => void;
@@ -94,6 +105,7 @@ export const useRmhStudyStore = create<RmhStudyStore>()(
       },
       tasks: [],
       lastPhaseComplete: null,
+      quiz: null,
 
       setConnectionStatus: (status) =>
         set({
@@ -212,6 +224,51 @@ export const useRmhStudyStore = create<RmhStudyStore>()(
           lastPhaseComplete: null,
         }),
 
+      // Room quiz: the server sends every event to everyone; a member's own choice arrives in a snapshot.
+      setQuizQuestion: (question) =>
+        set({
+          quiz: {
+            phase: 'question',
+            question,
+            myChoice: null,
+            canAnswer: true,
+            reveal: null,
+            standings: [],
+            end: null,
+          },
+        }),
+      setQuizReveal: (reveal) =>
+        set((state) =>
+          state.quiz ? { quiz: { ...state.quiz, phase: 'reveal', reveal, standings: reveal.standings } } : {},
+        ),
+      setQuizEnd: (end) =>
+        set((state) => ({
+          quiz: {
+            phase: 'ended',
+            question: state.quiz?.question ?? null,
+            myChoice: null,
+            canAnswer: false,
+            reveal: null,
+            standings: end.standings,
+            end,
+          },
+        })),
+      setQuizSnapshot: (snapshot) =>
+        set({
+          quiz: snapshot
+            ? {
+                phase: snapshot.phase,
+                question: snapshot.question,
+                myChoice: snapshot.myChoice,
+                canAnswer: snapshot.canAnswer,
+                reveal: snapshot.reveal,
+                standings: snapshot.standings,
+                end: null,
+              }
+            : null,
+        }),
+      dismissQuiz: () => set({ quiz: null }),
+
       // Tasks (local + server)
       setTasks: (tasks) =>
         set({
@@ -251,6 +308,7 @@ export const useRmhStudyStore = create<RmhStudyStore>()(
           room: null,
           tasks: [],
           lastPhaseComplete: null,
+          quiz: null,
         }),
 
       reset: () =>
@@ -260,6 +318,7 @@ export const useRmhStudyStore = create<RmhStudyStore>()(
           room: null,
           tasks: [],
           lastPhaseComplete: null,
+          quiz: null,
         }),
     }),
     {

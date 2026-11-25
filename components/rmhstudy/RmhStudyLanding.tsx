@@ -633,7 +633,7 @@ export default function RmhStudyLanding() {
                 }}
                 className="flex gap-2"
               >
-                <input
+                <input aria-label={t('field-room-code', { defaultValue: 'Room code' })}
                   type="text"
                   maxLength={
                     6

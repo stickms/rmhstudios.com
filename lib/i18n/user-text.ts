@@ -27,6 +27,7 @@ export const USER_TEXT_RENDERERS: readonly UserTextRenderer[] = [
   { file: 'components/lights-out/FewestMovesToday.tsx', kind: 'inline' },
   { file: 'components/profile/plus/settings/IdentitySettings.tsx', kind: 'input' },
   { file: 'components/feed/CommentItem.tsx', kind: 'inline' },
+  { file: 'components/settings/RepostMutesSection.tsx', kind: 'inline' },
   { file: 'components/feed/FeedRow.tsx', kind: 'inline' },
   { file: 'components/feed/conversation/MessageRow.tsx', kind: 'block' },
   { file: 'components/feed/group-chat/GroupMessageRow.tsx', kind: 'block' },
@@ -135,6 +136,44 @@ export const USER_TEXT_RENDERERS: readonly UserTextRenderer[] = [
 
   // s10-17 admin-communities
   { file: 'components/communities/CommunityPlusBody.tsx', kind: 'block' },
+
+  // Sprint 11 (docs/autonomous/sprint-11/plan.md §Anchors)
+  // s11-03 character-party
+  { file: 'features/rmhcharacters/ui/Parties.tsx', kind: 'block' },
+  { file: 'features/rmhcharacters/ui/PartyView.tsx', kind: 'block' },
+  { file: 'features/rmhcharacters/ui/JoinParty.tsx', kind: 'block' },
+
+  // s11-05 lights-out-maker
+  { file: 'components/lights-out/BoardMaker.tsx', kind: 'input' },
+  { file: 'components/lights-out/BoardPlay.tsx', kind: 'block' },
+  { file: 'components/lights-out/BoardsList.tsx', kind: 'block' },
+
+  // s11-06 daily-following
+
+  // s11-09 read-alongs
+  { file: 'components/communities/ReadAlongPage.tsx', kind: 'block' },
+  { file: 'components/communities/ReadAlongStart.tsx', kind: 'input' },
+  { file: 'components/communities/ReadingTogether.tsx', kind: 'block' },
+
+  // s11-10 deck-coeditors
+  { file: 'components/study/DeckEditors.tsx', kind: 'inline' },
+
+  // s11-12 type-challenges
+  { file: 'components/rmhtype/ChallengesPage.tsx', kind: 'inline' },
+  { file: 'components/rmhtype/ChallengeDialog.tsx', kind: 'inline' },
+  { file: 'components/rmhtype/GhostControls.tsx', kind: 'inline' },
+
+  // s11-14 listing-photo-alt
+
+  // s11-15 room-quiz
+  { file: 'components/rmhstudy/RoomQuizPanel.tsx', kind: 'block' },
+
+  // s11-16 rmhtube-subtitles
+  { file: 'components/rmhtube/SubtitleOverlay.tsx', kind: 'block' },
+  { file: 'components/rmhtube/AddSubtitlesDialog.tsx', kind: 'input' },
+  { file: 'components/rmhtube/SubtitleSettings.tsx', kind: 'input' },
+
+  // s11-19 s10-gaps
 ];
 
 /**
@@ -211,8 +250,6 @@ export const USER_TEXT_EXEMPT: Readonly<Record<string, string>> = {
   'components/settings/AppearancePanel.tsx': 'the description is the site-written row hint',
   'components/settings/MissingAltTextSection.tsx': 'body is a local layout node of site-written states',
   'components/settings/QuietCountsSection.tsx': 'body is the request payload of the toggle, not rendered text',
-  'components/settings/RepostMutesSection.tsx':
-    'body is a local layout node (its rows show member names without isolation: a known gap, not a text field)',
   'components/settings/SettingsSection.tsx': 'description is the site-written section hint',
   'components/settings/SpendBudgetSection.tsx': 'body is the request payload of the form, not rendered text',
   'components/create/': 'storefront copy is written by the site',

@@ -661,6 +661,7 @@ export default function ChatPanel() {
       <form onSubmit={handleSend} className="flex gap-2 px-1.5 py-3 border-t border-app-border">
         <div className="relative flex-1 min-w-0">
           <input
+            aria-label={t('field-chat-message', { defaultValue: 'Chat message' })}
             ref={inputRef}
             type="text"
             dir="auto"

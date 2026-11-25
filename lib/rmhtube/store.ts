@@ -24,6 +24,7 @@ import type {
   RoomHistoryEntry,
 } from './types';
 import type { PlaylistQueueResult } from './playlist-queue';
+import type { SubtitleLabel } from './subtitles';
 
 let playlistResultSeq = 0;
 
@@ -499,6 +500,16 @@ export function applyRoomAction(room: ClientRoomState, action: RoomAction, store
         queue: adoptQueue(data.queue as QueueBroadcastItem[], room.myUserId),
         currentIndex: (data.currentIndex as number) ?? room.currentIndex,
       };
+
+    case 'QUEUE_ITEM_SUBTITLES': {
+      const itemId = data.itemId as string;
+      const subtitles = (data.subtitles as SubtitleLabel[]) ?? [];
+      return {
+        ...room,
+        queue: room.queue.map((q) => (q.id === itemId ? { ...q, subtitles } : q)),
+        currentItem: room.currentItem?.id === itemId ? { ...room.currentItem, subtitles } : room.currentItem,
+      };
+    }
 
     case 'QUEUE_ITEM_META': {
       const itemId = data.itemId as string;

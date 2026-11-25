@@ -9,7 +9,8 @@ describe('the Read intervals unit', () => {
   it('follows Scales and keys and comes before rhythm, on the piano and guitar path only', () => {
     const at = (id: string) => PATH.findIndex((u) => u.id === id);
     expect(unit).toBeDefined();
-    expect(at('read-intervals')).toBe(at('scales-and-keys') + 1);
+    expect(at('read-intervals')).toBe(at('chords-in-every-key') + 1);
+    expect(at('chords-in-every-key')).toBe(at('scales-and-keys') + 1);
     expect(at('rhythm-basics')).toBe(at('read-intervals') + 1);
     expect(VOICE_PATH.some((u) => u.id === 'read-intervals')).toBe(false);
   });

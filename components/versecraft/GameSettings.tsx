@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { m as motion } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
 import { deleteSave } from '@/lib/versecraft/persistence';
@@ -123,6 +124,7 @@ function Segmented<T extends string>({
 }
 
 export function GameSettings() {
+  const { t } = useTranslation('c-versecraft');
   const settings = useGameStore((s) => s.settings);
   const updateSettings = useGameStore((s) => s.updateSettings);
   const goBack = useGameStore((s) => s.goBack);
@@ -161,6 +163,7 @@ export function GameSettings() {
           <Section title="Player">
             <Row label="Name" hint="What the cast calls you in new stories.">
               <input
+                aria-label={t('field-player-name', { defaultValue: 'Your name' })}
                 value={settings.playerName === 'Ash' ? '' : settings.playerName}
                 onChange={(e) =>
                   updateSettings({
@@ -263,6 +266,7 @@ export function GameSettings() {
           <Section title="Audio">
             <Row label="Music">
               <input
+                aria-label={t('field-music-volume', { defaultValue: 'Music volume' })}
                 type="range"
                 min={0}
                 max={1}
@@ -278,6 +282,7 @@ export function GameSettings() {
             </Row>
             <Row label="Sound effects">
               <input
+                aria-label={t('field-sfx-volume', { defaultValue: 'Sound effects volume' })}
                 type="range"
                 min={0}
                 max={1}

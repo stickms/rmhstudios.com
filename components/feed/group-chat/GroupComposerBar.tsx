@@ -93,7 +93,7 @@ export function GroupComposerBar({
     />
     <div className="conversation__composer">
       <div className="flex flex-wrap items-end gap-2">
-        <input
+        <input aria-label={t('field-attach-images', { defaultValue: 'Attach images' })}
           ref={imageInputRef}
           type="file"
           accept="image/*"
@@ -173,7 +173,7 @@ export function GroupComposerBar({
           {slash.popover}
           {mentionPicker.popover}
           {savedReplies.popover}
-          <MentionTextarea
+          <MentionTextarea aria-label={t('field-group-message', { defaultValue: 'Message' })}
             ref={inputRef}
             value={input}
             onChange={setInput}

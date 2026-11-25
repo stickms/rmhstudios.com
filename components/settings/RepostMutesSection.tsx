@@ -177,7 +177,9 @@ export function RepostMutesSection() {
                   >
                     <UserAvatar src={row.image ?? undefined} alt="" size={40} fallbackName={name} />
                     <span className="min-w-0">
-                      <span className="t-body block truncate font-semibold text-site-text">{name}</span>
+                      <span className="t-body block truncate font-semibold text-site-text">
+                        <bdi>{name}</bdi>
+                      </span>
                       {row.handle && <span className="t-meta block truncate">@{row.handle}</span>}
                     </span>
                   </Link>

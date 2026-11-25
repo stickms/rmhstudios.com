@@ -3,7 +3,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { PracticeTest } from '@/components/study/PracticeTest';
 import { getRequestSession } from '@/lib/auth-session.server';
-import { getDeck, getTestCards } from '@/lib/study.server';
+import { getDeck, getTestCards, isInvitationOnly } from '@/lib/study.server';
 import { noindexHead } from '@/lib/seo';
 
 // The owner's deck, or a public one: anyone may take a test of a public deck, signed in or not (only a
@@ -15,14 +15,16 @@ const fetchTestDeck = createServerFn({ method: 'GET' })
     const session = await getRequestSession();
     const detail = await getDeck(deckId, { id: session?.user?.id ?? null });
     return {
-      data: detail
-        ? {
-            deck: { id: detail.deck.id, title: detail.deck.title },
-            // Reviewable cards: reverse and cloze cards included, an authored cloze text left out.
-            cards: await getTestCards(deckId, session?.user?.id ?? null),
-            signedIn: detail.signedIn,
-          }
-        : null,
+      // A member who has only been invited to edit a private deck reads nothing of it, a test included.
+      data:
+        detail && !isInvitationOnly(detail)
+          ? {
+              deck: { id: detail.deck.id, title: detail.deck.title },
+              // Reviewable cards: reverse and cloze cards included, an authored cloze text left out.
+              cards: await getTestCards(deckId, session?.user?.id ?? null),
+              signedIn: detail.signedIn,
+            }
+          : null,
     };
   });
 

@@ -9,12 +9,14 @@
 
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBotText } from './botNames';
 import type { LogEntry } from '@features/gabriels-horn/engine/net/events';
 import { useEffectLabel } from './CardFace';
 
 export function TableLog({ log }: { log: LogEntry[] }) {
   const { t } = useTranslation('c-gabriels-horn');
   const effectLabel = useEffectLabel();
+  const { botName } = useBotText();
   const endRef = useRef<HTMLLIElement>(null);
 
   useEffect(() => {
@@ -24,8 +26,8 @@ export function TableLog({ log }: { log: LogEntry[] }) {
   }, [log.length]);
 
   const line = (entry: LogEntry): string => {
-    const actor = entry.actorName ?? '';
-    const target = entry.targetName ?? '';
+    const actor = entry.actorBot ? botName(entry.actorBot) : (entry.actorName ?? '');
+    const target = entry.targetBot ? botName(entry.targetBot) : (entry.targetName ?? '');
     switch (entry.kind) {
       case 'deal':
         return t('log-deal', {

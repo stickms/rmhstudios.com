@@ -93,7 +93,7 @@ export default function WriteInput({
 
       {/* Text input */}
       <div className="relative">
-        <textarea
+        <textarea aria-label={t('field-story-sentence', { defaultValue: 'Your sentence' })}
           ref={inputRef}
           value={value}
           onChange={(e) => setValue(e.target.value.slice(0, MAX_LENGTH))}

@@ -166,7 +166,7 @@ export function GiftCoinsButton({
             />
           </label>
 
-          <Textarea
+          <Textarea aria-label={t('field-gift-message', { defaultValue: 'Gift message' })}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             maxLength={280}

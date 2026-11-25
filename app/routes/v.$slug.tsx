@@ -977,7 +977,7 @@ function VibeViewer() {
             )}
 
             <div className="flex items-end gap-2">
-              <textarea
+              <textarea aria-label={t('field-prompt', { defaultValue: 'Describe the change' })}
                 ref={inputRef}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}

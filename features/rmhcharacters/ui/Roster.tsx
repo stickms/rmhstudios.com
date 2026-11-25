@@ -12,6 +12,7 @@ import { SYSTEM_LABEL } from '@features/rmhcharacters/engine/data';
 import { useRoster } from '@features/rmhcharacters/engine/store';
 import type { Character, GameSystem } from '@features/rmhcharacters/engine/types';
 import { ImportDialog } from './ImportDialog';
+import { PartiesButton } from './Parties';
 import { pending } from '@features/rmhcharacters/engine/pending';
 import { downloadText, useDnd5eData, usePf2eData } from './useData';
 
@@ -24,7 +25,7 @@ function summary(c: Character): string {
   return c.classId ? `Level ${c.level} · ${c.ancestryId} ${c.classId}` : '';
 }
 
-export function Roster({ onOpen }: { onOpen: (id: string) => void }) {
+export function Roster({ onOpen, onParties }: { onOpen: (id: string) => void; onParties: () => void }) {
   const { t } = useTranslation('c-rmhcharacters');
   const characters = useRoster((s) => s.characters);
   const create = useRoster((s) => s.create);
@@ -75,6 +76,7 @@ export function Roster({ onOpen }: { onOpen: (id: string) => void }) {
           <Button type="button" onClick={() => start('pf2e')}>
             <Plus aria-hidden /> {t('roster.newPf2e', { defaultValue: 'New Pathfinder 2e character' })}
           </Button>
+          <PartiesButton onClick={onParties} />
           <Button type="button" variant="ghost" onClick={() => setImporting(true)}>
             <FileUp aria-hidden /> {t('roster.import', { defaultValue: 'Import' })}
           </Button>

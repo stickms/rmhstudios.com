@@ -23,12 +23,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/lib/toast';
 import { Target, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { cn } from '@/lib/utils';
 import type { GeneratedTest } from '@/lib/rmhtype/custom-test';
-import { DEFAULT_LAYOUT, TYPING_LAYOUTS, type KeyMetrics, type TypingLayout, type TypingSummary } from '@/lib/rmhtype/keystats';
+import type { KeyMetrics, TypingLayout, TypingSummary } from '@/lib/rmhtype/keystats';
 import {
   RMHTYPE_KEYSTATS_KEY,
   buildKeyPracticeTest,
@@ -36,6 +35,8 @@ import {
   rmhTypeKeyStatsQuery,
 } from '@/lib/rmhtype/rmhtype.queries';
 import { KeyHeatmap } from './KeyHeatmap';
+import { LayoutPicker } from './LayoutPicker';
+import { useLayoutPref } from './useLayoutPref';
 import { CustomTestPanel } from './CustomTestPanel';
 import { useArrival } from '@/components/ui/arrive';
 
@@ -58,7 +59,8 @@ export function TypingStats({ onStartTest, className }: TypingStatsProps) {
   const { t } = useTranslation('weak-keys');
   const confirm = useConfirm();
   const queryClient = useQueryClient();
-  const [layout, setLayout] = useState<TypingLayout>(DEFAULT_LAYOUT);
+  // The layout this device types on, shared with the lessons and every run's recorded statistics.
+  const [layout, setLayout] = useLayoutPref();
   const [punctuation, setPunctuation] = useState(false);
   const [numbers, setNumbers] = useState(false);
 
@@ -160,19 +162,7 @@ export function TypingStatsView({
               'Counts per key: how often you pressed it, how often it was wrong, and how long it took. The order of what you typed is never stored.',
           })}
         </p>
-        <Select
-          value={layout}
-          onChange={(event) => onLayoutChange(event.target.value as TypingLayout)}
-          aria-label={t('layout-label', { ns: 'c-rmhtype', defaultValue: 'Keyboard layout' })}
-          controlSize="sm"
-          containerClassName="min-w-32"
-        >
-          {TYPING_LAYOUTS.map((id) => (
-            <option key={id} value={id}>
-              {id}
-            </option>
-          ))}
-        </Select>
+        <LayoutPicker value={layout} onChange={onLayoutChange} />
       </div>
 
       {status === 'loading' ? (

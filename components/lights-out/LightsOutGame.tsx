@@ -32,6 +32,7 @@ import {
     Sparkles, RotateCcw, Trophy, Undo2, Lightbulb, Flag,
     ArrowLeft, Calendar, ChevronDown, ChevronUp, Play,
 } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import {
@@ -48,6 +49,7 @@ import {
 import { useArrival } from '@/components/ui/arrive';
 import { SaveReplayButton } from '@/components/replays/SaveReplayButton';
 import { FewestMovesToday } from '@/components/lights-out/FewestMovesToday';
+import { LightsGrid } from '@/components/lights-out/LightsGrid';
 import {
     appendMove,
     buildReplayData,
@@ -57,7 +59,7 @@ import {
 } from '@/lib/lights-out/replay-log';
 
 export function LightsOutGame() {
-    const { t } = useTranslation(["c-lights-out", "lights-out-replays"]);
+    const { t } = useTranslation(["c-lights-out", "lights-out-replays", "lights-out-maker"]);
     // Same EST drop day as the hub, leaderboard and every other daily mode; the
     // visitor's local date disagreed with the hub for part of every day.
     const todayKey = formatDateKey(getTodayEST());
@@ -292,10 +294,6 @@ export function LightsOutGame() {
         );
     }
 
-    const isTriangle = shape.type === 'triangle';
-    const isCustom = shape.type === 'custom';
-    const gridCols = shape.type === 'rect' ? shape.cols : shape.type === 'custom' ? shape.cols : shape.size;
-    const gridRows = shape.type === 'rect' ? shape.rows : shape.type === 'custom' ? shape.rows : shape.size;
 
     const rating = solved && optimalMoves != null
         ? getPerformanceRating(moves, optimalMoves, gaveUp)
@@ -316,12 +314,6 @@ export function LightsOutGame() {
         date: dateKey,
         count: moves,
     });
-
-    const cellBase =
-        'touch-manipulation rounded-site-sm transition-colors duration-site-fast disabled:cursor-default';
-    const cellState = (on: boolean) =>
-        on ? 'bg-site-warning text-site-warning-fg' : 'border border-site-border bg-site-bg-subtle';
-    const hintRing = 'ring-2 ring-site-accent ring-offset-2 ring-offset-site-surface animate-pulse';
 
     // The board arrives into the loading frame: the column fades in once it is built (M9).
     return (
@@ -366,88 +358,14 @@ export function LightsOutGame() {
 
                 {/* Grid */}
                 <div className="surface-panel mx-auto w-full max-w-xs rounded-site p-5">
-                    {isTriangle ? (
-                        <div className="flex flex-col items-center gap-2 py-2">
-                            {grid.map((row, r) => (
-                                <div key={r} className="flex justify-center gap-2">
-                                    {row.map((on, c) => {
-                                        const isHinted = hintedCell?.[0] === r && hintedCell?.[1] === c;
-                                        return (
-                                            <button
-                                                key={`${r}-${c}`}
-                                                type="button"
-                                                onClick={() => handleCellClick(r, c)}
-                                                disabled={solved}
-                                                aria-label={t('cell-label', {
-                                                    defaultValue: 'Light row {{row}}, column {{col}}',
-                                                    row: r + 1,
-                                                    col: c + 1,
-                                                })}
-                                                aria-pressed={on}
-                                                aria-describedby={isHinted ? 'lights-out-hint' : undefined}
-                                                className={`size-10 ${cellBase} ${cellState(on)} ${isHinted ? hintRing : ''} ${solved ? '' : 'cursor-pointer hover:opacity-90 active:scale-95'}`}
-                                            />
-                                        );
-                                    })}
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div
-                            className="grid w-full gap-2"
-                            style={{
-                                gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
-                                gridTemplateRows: `repeat(${gridRows}, 1fr)`,
-                                aspectRatio: `${gridCols} / ${gridRows}`,
-                            }}
-                        >
-                            {grid.map((row, r) =>
-                                row.map((on, c) => {
-                                    const active = isActiveCell(shape, r, c);
-                                    const isHinted = hintedCell?.[0] === r && hintedCell?.[1] === c;
-
-                                    if (isCustom && !active) {
-                                        return <div key={`${r}-${c}`} />;
-                                    }
-
-                                    return (
-                                        <button
-                                            key={`${r}-${c}`}
-                                            type="button"
-                                            onClick={() => handleCellClick(r, c)}
-                                            disabled={solved || !active}
-                                            // The grid was 25 nameless buttons whose only
-                                            // state was a colour — unplayable without
-                                            // sight, and the hint was a ring with no
-                                            // non-colour equivalent. Each cell now names
-                                            // itself, reports its on/off state, and says
-                                            // when it is the hinted one.
-                                            aria-label={t('cell-label', {
-                                                defaultValue: 'Light row {{row}}, column {{col}}',
-                                                row: r + 1,
-                                                col: c + 1,
-                                            })}
-                                            aria-pressed={on}
-                                            aria-describedby={isHinted ? 'lights-out-hint' : undefined}
-                                            className={`relative min-h-0 ${cellBase} ${cellState(on)} ${isHinted ? hintRing : ''} ${!solved && active ? 'cursor-pointer hover:opacity-90 active:scale-95' : ''}`}
-                                        >
-                                            {/* A shape, not just a ring: the hint has to
-                                                survive both colour-blindness and a
-                                                greyscale display. */}
-                                            {isHinted ? (
-                                                <span
-                                                    aria-hidden
-                                                    className="pointer-events-none absolute inset-0 flex items-center justify-center text-site-accent"
-                                                >
-                                                    <Sparkles className="h-1/3 w-1/3" />
-                                                </span>
-                                            ) : null}
-                                        </button>
-                                    );
-                                })
-                            )}
-                        </div>
-                    )}
+                    <LightsGrid
+                        grid={grid}
+                        shape={shape}
+                        onPress={handleCellClick}
+                        disabled={solved}
+                        hintedCell={hintedCell}
+                        hintId="lights-out-hint"
+                    />
                     {/* Referenced by the hinted cell's aria-describedby, so the hint
                         is announced rather than existing only as a ring. */}
                     <p id="lights-out-hint" className="sr-only">
@@ -498,6 +416,16 @@ export function LightsOutGame() {
                     >
                         <RotateCcw aria-hidden />
                         {t("restart-btn", { defaultValue: "Restart" })}
+                    </Button>
+                </div>
+
+                {/* Entry to the member-made boards: make one, or play what others made. */}
+                <div className="flex flex-wrap items-center justify-center gap-2 border-t border-site-border pt-4">
+                    <Button asChild variant="default">
+                        <Link to="/lights-out/new">{t("make-board", { ns: "lights-out-maker", defaultValue: "Make a board" })}</Link>
+                    </Button>
+                    <Button asChild variant="default">
+                        <Link to="/lights-out/boards">{t("members-boards", { ns: "lights-out-maker", defaultValue: "Members' boards" })}</Link>
                     </Button>
                 </div>
             </div>

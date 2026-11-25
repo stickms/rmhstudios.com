@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Copy, RotateCcw, Sparkles, Trophy, User } from 'lucide-react';
+import { Copy, RotateCcw, Sparkles, Swords, Trophy, User } from 'lucide-react';
 import { connectToRmhType, emit } from '@/lib/rmhtype/socket';
 import { useRmhTypeStore } from '@/lib/rmhtype/store';
 import { C2S } from '@/lib/rmhtype/events';
@@ -26,14 +26,26 @@ import {
   RMHTYPE_TEXTS_KEY,
   recordKeyStats,
   recordRmhTypeTextRun,
+  rmhTypeChallengesQuery,
   rmhTypeGhostQuery,
   rmhTypeTextQuery,
 } from '@/lib/rmhtype/rmhtype.queries';
 import type { RmhTypeGhost } from '@/lib/rmhtype/ghost.contract';
 import { createKeyStatAccumulator } from '@/lib/rmhtype/keystats';
 import { buildKeyStatsBody } from '@/lib/rmhtype/record-keystats';
+import { readLayoutPref } from '@/lib/rmhtype/layout-pref';
 import { RecordKeyStatsSwitch } from '@/components/rmhtype/RecordKeyStatsSwitch';
-import { GhostRacingNote, GhostResultLine, GhostSwitch } from '@/components/rmhtype/GhostControls';
+import {
+  ChallengeRaceResult,
+  ChallengeRacingNote,
+  GhostRacingNote,
+  GhostResultLine,
+  GhostSwitch,
+} from '@/components/rmhtype/GhostControls';
+import { ChallengeDialog } from '@/components/rmhtype/ChallengeDialog';
+import { useRefusalText } from '@/components/errors/useRefusalText';
+import { isChallengeablePassage } from '@/lib/rmhtype/challenges';
+import { MIN_GHOST_ACCURACY } from '@/lib/rmhtype/ghost';
 
 export default function RmhTypeSolo() {
   const router = useRouter();
@@ -47,6 +59,9 @@ export default function RmhTypeSolo() {
   const settings = useRmhTypeStore((s) => s.settings);
   const updateSettings = useRmhTypeStore((s) => s.updateSettings);
   const connectionStatus = useRmhTypeStore((s) => s.connectionStatus);
+  const soloChallenge = useRmhTypeStore((s) => s.soloChallenge);
+  const soloChallengeResult = useRmhTypeStore((s) => s.soloChallengeResult);
+  const soloChallengeRefusal = useRmhTypeStore((s) => s.soloChallengeRefusal);
 
   const [soloDifficulty, setSoloDifficulty] = useState<Difficulty>(settings.soloDifficulty);
   const [soloLength, setSoloLength] = useState<PassageLength>(settings.soloPassageLength);
@@ -59,7 +74,26 @@ export default function RmhTypeSolo() {
   const { t } = useTranslation("c-rmhtype");
 
   // `?text=<id>`: one of the member's saved texts (s10-05). One read by id; the list is never fetched here.
-  const { text: textId } = useSearch({ strict: false }) as { text?: string };
+  const { text: textId, challenge: challengeId } = useSearch({ strict: false }) as { text?: string; challenge?: string };
+  // `?challenge=<id>` (s11-12): a challenge the member received. The server checks it is theirs, claims it once and
+  // sends the passage and the challenger's ghost; this page only asks, after an explicit Start (one attempt).
+  const refusalText = useRefusalText();
+  const challengeList = useQuery({
+    ...rmhTypeChallengesQuery(),
+    enabled: challengeId !== undefined && !started,
+    retry: false,
+  });
+  const challengeRow = challengeList.data?.received.find((r) => r.id === challengeId && r.status === 'pending');
+  const [challengeOpen, setChallengeOpen] = useState(false);
+  // Leaving a challenge race that is still running (navigating away) is the "Did not finish" the server settles.
+  const inChallengeRef = useRef(false);
+  inChallengeRef.current = challengeId !== undefined && started && !soloResult;
+  useEffect(
+    () => () => {
+      if (inChallengeRef.current) emit(C2S.ROOM_LEAVE);
+    },
+    [],
+  );
   const textQuery = useQuery(rmhTypeTextQuery(textId ?? '', textId !== undefined));
   const [textRun, setTextRun] = useState(false);
   const textStartedRef = useRef<string | null>(null);
@@ -85,7 +119,7 @@ export default function RmhTypeSolo() {
   const [customRun, setCustomRun] = useState(false);
   const customTextRef = useRef('');
   // Code, and a saved text with line breaks, are typed in a textarea with Enter and indentation handled.
-  const codeLike = source === 'code' || (textRun && !!soloPassage?.includes('\n'));
+  const codeLike = source === 'code' || ((textRun || !!soloChallenge) && !!soloPassage?.includes('\n'));
   const [tabHidden, setTabHidden] = useState(false);
   const passageRef = useRef<HTMLDivElement>(null);
 
@@ -176,6 +210,21 @@ export default function RmhTypeSolo() {
     store.setSoloPassage(textPassageId(textId), body);
   }, [textId, textQuery.data]);
 
+  const handleChallengeStart = useCallback(() => {
+    if (!challengeId) return;
+    setCustomRun(false);
+    setTextRun(false);
+    useRmhTypeStore.getState().clearSolo();
+    setStarted(true);
+    emit(C2S.SOLO_START, { challengeId });
+  }, [challengeId]);
+
+  const leaveChallenge = useCallback(() => {
+    if (inChallengeRef.current) emit(C2S.ROOM_LEAVE);
+    useRmhTypeStore.getState().clearSolo();
+    void router.navigate({ to: '/rmhtype/challenges' });
+  }, [router]);
+
   const handleSoloStart = useCallback(() => {
     setCustomRun(false);
     setTextRun(false);
@@ -227,6 +276,7 @@ export default function RmhTypeSolo() {
         enabled: useRmhTypeStore.getState().settings.recordKeyStats,
         finished: true,
         aggregates: keyStatsRef.current.snapshot(),
+        layout: readLayoutPref(),
       });
       if (body) recordKeyStats(body).catch(() => undefined);
 
@@ -270,6 +320,11 @@ export default function RmhTypeSolo() {
   }, [soloPassage, soloPassageId, finished, startTime, codeLike, typedText, customRun, textRun, textId, queryClient, t]);
 
   const handleRetry = useCallback(() => {
+    // A challenge is one attempt: there is no retry, only the way back to the list.
+    if (challengeId) {
+      leaveChallenge();
+      return;
+    }
     if (customRun) {
       // The same practice text again.
       const store = useRmhTypeStore.getState();
@@ -294,7 +349,7 @@ export default function RmhTypeSolo() {
       topic: source === 'standard' ? topic.trim() || undefined : undefined,
       source,
     });
-  }, [settings.soloDifficulty, settings.soloPassageLength, topic, source, customRun, textRun, textId]);
+  }, [settings.soloDifficulty, settings.soloPassageLength, topic, source, customRun, textRun, textId, challengeId, leaveChallenge]);
 
   // Quick restart: Esc while typing, Enter on the results screen. Tab is left to
   // keyboard navigation. Enter on a focused button/link is left to the browser so
@@ -305,7 +360,8 @@ export default function RmhTypeSolo() {
     if (!typingNow && !resultsNow) return;
     function onKeyDown(e: KeyboardEvent) {
       if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (typingNow && e.key === 'Escape') {
+      // Escape restarts a practice run; in a challenge race it would forfeit it, so it does nothing there.
+      if (typingNow && e.key === 'Escape' && !challengeId) {
         e.preventDefault();
         handleRetry();
       } else if (resultsNow && e.key === 'Enter') {
@@ -317,12 +373,18 @@ export default function RmhTypeSolo() {
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [typingNow, resultsNow, handleRetry]);
+  }, [typingNow, resultsNow, handleRetry, challengeId]);
 
   // The ghost: one read per passage start. Never for a written-to-order passage (the server keeps none).
   const raceGhost = settings.raceGhost !== false;
-  const ghostQuery = useQuery(rmhTypeGhostQuery(soloPassageId ?? '', raceGhost && started && !!soloPassageId && (!customRun || textRun)));
-  const ghost = raceGhost ? (ghostQuery.data?.ghost ?? null) : null;
+  const ghostQuery = useQuery(
+    rmhTypeGhostQuery(
+      soloPassageId ?? '',
+      raceGhost && started && !!soloPassageId && (!customRun || textRun) && challengeId === undefined,
+    ),
+  );
+  // In a challenge the ghost is the challenger's snapshot from the server, whatever the "Race my best" switch says.
+  const ghost = soloChallenge ? soloChallenge.ghost : raceGhost ? (ghostQuery.data?.ghost ?? null) : null;
   if (!finished) ghostRef.current = ghost;
   const racing = typingNow && ghost !== null;
   // The one 250 ms interval of the solo page: alive only while a run is typing and a ghost is shown, so the
@@ -357,6 +419,10 @@ export default function RmhTypeSolo() {
   }, [soloResult, t]);
 
   const handleBackToSettings = useCallback(() => {
+    if (challengeId) {
+      leaveChallenge();
+      return;
+    }
     useRmhTypeStore.getState().clearSolo();
     if (textRun) {
       // A saved text has no settings screen: back is the library.
@@ -368,15 +434,90 @@ export default function RmhTypeSolo() {
     setTypedText('');
     setStartTime(null);
     setFinished(false);
-  }, [textRun, router]);
+  }, [textRun, router, challengeId, leaveChallenge]);
 
   const handleBack = useCallback(() => {
     useRmhTypeStore.getState().clearSolo();
     router.navigate({ to: '/rmhtype' });
   }, [router]);
 
+  // A challenge the server would not start (not theirs, already raced, lapsed, a block): the reason, in their language.
+  if (challengeId && soloChallengeRefusal) {
+    return (
+      <div className="app-page">
+        <RmhTypeHeader backLabel={t('back', { defaultValue: 'Back' })} backHref="/rmhtype/challenges" />
+        <div className="flex-1 p-4 md:p-8">
+          <div className="max-w-lg mx-auto" role="alert">
+            <p className="t-heading">
+              {refusalText.maybe(soloChallengeRefusal) ??
+                t('challenge-refused', { ns: 'type-challenges', defaultValue: 'This challenge cannot be raced.' })}
+            </p>
+            <Link to="/rmhtype/challenges" className="mt-2 inline-block underline">
+              {t('to-challenges', { ns: 'type-challenges', defaultValue: 'Go to your challenges' })}
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // The ready screen: nothing is claimed until the member presses Start, so opening or reloading the link is safe.
+  if (challengeId && !started) {
+    return (
+      <div className="app-page">
+        <RmhTypeHeader backLabel={t('back', { defaultValue: 'Back' })} backHref="/rmhtype/challenges" />
+        <div className="flex-1 p-4 md:p-8">
+          <div className="max-w-lg mx-auto" role="status">
+            {challengeList.isError || (challengeList.data && !challengeRow) ? (
+              <>
+                <p className="t-heading">
+                  {t('challenge-unavailable', {
+                    ns: 'type-challenges',
+                    defaultValue: 'This challenge is not waiting for you.',
+                  })}
+                </p>
+                <Link to="/rmhtype/challenges" className="mt-2 inline-block underline">
+                  {t('to-challenges', { ns: 'type-challenges', defaultValue: 'Go to your challenges' })}
+                </Link>
+              </>
+            ) : !challengeRow ? (
+              <p className="animate-pulse text-app-text-muted">
+                {t('challenge-loading', { ns: 'type-challenges', defaultValue: 'Loading the challenge...' })}
+              </p>
+            ) : (
+              <div dir="auto">
+                <h2 className="t-heading">
+                  <bdi>{challengeRow.challenger.name}</bdi>{' '}
+                  {t('challenge-ready-title', {
+                    ns: 'type-challenges',
+                    defaultValue: 'challenged you',
+                  })}
+                </h2>
+                <p className="mt-2 text-app-text-muted">
+                  {t('challenge-ready-body', {
+                    ns: 'type-challenges',
+                    defaultValue: "Beat {{wpm}} WPM on '{{title}}'. You get one attempt: leaving or reloading counts as did not finish.",
+                    wpm: Math.round(challengeRow.challengerWpm),
+                    title: challengeRow.title,
+                  })}
+                </p>
+                <button
+                  onClick={handleChallengeStart}
+                  disabled={connectionStatus !== 'connected'}
+                  className="w-full py-3 mt-6 rounded-app-sm font-semibold text-app-accent-fg transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-app-accent hover:bg-app-accent-hover"
+                >
+                  {t('challenge-start', { ns: 'type-challenges', defaultValue: 'Start the race' })}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // A saved text is on its way (or is not the member's): there are no settings to choose first.
-  if (!started && textId) {
+  if (!started && textId && !challengeId) {
     return (
       <div className="app-page">
         <RmhTypeHeader backLabel={t("back", { defaultValue: "Back" })} backHref="/rmhtype/texts" />
@@ -541,7 +682,9 @@ export default function RmhTypeSolo() {
 
               {/* A practice run has its own reason for not posting, and it is
                   not a failure — so it must not wear the failure colour. */}
-              {textRun ? (
+              {challengeId ? (
+                <ChallengeRaceResult result={soloChallengeResult} name={soloChallenge?.challengerName ?? ''} />
+              ) : textRun ? (
                 <p className="text-sm text-app-text-muted mb-4">
                   {t('result-note', { ns: 'type-texts', defaultValue: 'Your text, not on the boards' })}
                 </p>
@@ -563,7 +706,7 @@ export default function RmhTypeSolo() {
                 </p>
               ) : null}
 
-              {ghost && !soloResult.timedOut && !soloResult.practice && (
+              {ghost && !challengeId && !soloResult.timedOut && !soloResult.practice && (
                 <GhostResultLine ghostTimeMs={ghost.timeMs} runTimeMs={soloResult.timeMs} />
               )}
               {textRun && resultGhostRef.current && (
@@ -585,6 +728,14 @@ export default function RmhTypeSolo() {
                 </div>
               </div>
 
+              {challengeId ? (
+                <button
+                  onClick={handleRetry}
+                  className="w-full py-3 rounded-app-sm font-semibold transition-colors bg-app-surface-hover text-app-text hover:bg-app-surface-active"
+                >
+                  {t('back-to-challenges', { ns: 'type-challenges', defaultValue: 'Back to challenges' })}
+                </button>
+              ) : (
               <div className="flex gap-3">
                 <button
                   onClick={handleRetry}
@@ -601,6 +752,26 @@ export default function RmhTypeSolo() {
                   {t("change-settings", { defaultValue: "Change Settings" })}
                 </button>
               </div>
+              )}
+              {!challengeId &&
+                !customRun &&
+                !textRun &&
+                !soloResult.timedOut &&
+                !soloResult.practice &&
+                soloResult.accuracy >= MIN_GHOST_ACCURACY &&
+                soloPassageId !== null &&
+                isChallengeablePassage(soloPassageId) && (
+                  <>
+                    <button
+                      onClick={() => setChallengeOpen(true)}
+                      className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-app-sm text-sm font-medium transition-colors text-app-text-muted hover:text-app-text hover:bg-app-surface-hover"
+                    >
+                      <Swords className="h-4 w-4" aria-hidden />
+                      {t('challenge-someone', { ns: 'type-challenges', defaultValue: 'Challenge someone' })}
+                    </button>
+                    <ChallengeDialog open={challengeOpen} onOpenChange={setChallengeOpen} passageId={soloPassageId} />
+                  </>
+                )}
               <button
                 onClick={handleCopyResult}
                 className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-app-sm text-sm font-medium transition-colors text-app-text-muted hover:text-app-text hover:bg-app-surface-hover"
@@ -668,11 +839,15 @@ export default function RmhTypeSolo() {
                 </div>
               </div>
 
-              {ghost && racing && <GhostRacingNote wpm={ghost.wpm} />}
+              {ghost && racing && soloChallenge ? (
+                <ChallengeRacingNote name={soloChallenge.challengerName} wpm={ghost.wpm} />
+              ) : (
+                ghost && racing && <GhostRacingNote wpm={ghost.wpm} />
+              )}
 
               {/* Input — pinned below passage, seamless on mobile */}
               {codeLike ? (
-                <textarea
+                <textarea aria-label={t('field-typing', { defaultValue: 'Type the passage' })}
                   dir="auto"
                   ref={inputRef as React.RefObject<HTMLTextAreaElement | null>}
                   rows={3}
@@ -689,7 +864,7 @@ export default function RmhTypeSolo() {
                   autoFocus
                 />
               ) : (
-                <input
+                <input aria-label={t('field-typing', { defaultValue: 'Type the passage' })}
                   ref={inputRef}
                   type="text"
                   dir="auto"

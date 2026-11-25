@@ -2,6 +2,8 @@ import { useState, type ReactNode } from 'react';
 import { FolderPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { DeckFolderRow } from '@/components/study/DeckFolderRow';
+import { DeckInvitationLine } from '@/components/study/DeckEditors';
+import type { DeckInvitation } from '@/lib/study/deck-editors';
 import { MoveToFolderMenu } from '@/components/study/MoveToFolderMenu';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
@@ -21,17 +23,25 @@ interface FolderDeck {
  * The member's own decks grouped by folder: folders in order (each with its counts, collapse and menu), then the
  * decks with no folder. With no folders the list is the flat one it always was, plus "New folder".
  */
-export function DeckFolderList<D extends FolderDeck>({
+export function DeckFolderList<D extends FolderDeck, S extends { id: string } = { id: string }>({
   decks,
   folders,
   renderDeck,
   onChanged,
+  shared = [],
+  renderShared,
+  invitations = [],
 }: {
   decks: readonly D[];
   folders: readonly DeckFolderSummary[];
   renderDeck: (deck: D) => ReactNode;
   /** Reload the deck list after any change. */
   onChanged: () => void;
+  /** Decks the member edits but does not own (s11-10): their own group, outside every folder (folders are the owner's). */
+  shared?: readonly S[];
+  renderShared?: (deck: S) => ReactNode;
+  /** Open invitations to edit a deck: the title and the owner's name, with Accept and Decline. */
+  invitations?: readonly DeckInvitation[];
 }) {
   const { t } = useTranslation('deck-folders');
   const prompt = usePrompt();
@@ -137,13 +147,22 @@ export function DeckFolderList<D extends FolderDeck>({
   const loose = groups[groups.length - 1];
   const folderGroups = groups.slice(0, -1);
 
+  const hasOwn = decks.length > 0 || folders.length > 0;
+
   return (
     <div>
-      <div className="flex items-center justify-end px-2 pb-1">
-        <Button variant="ghost" size="sm" className="gap-1" onClick={() => void createNew()}>
-          <FolderPlus aria-hidden /> {t('new-folder', { defaultValue: 'New folder' })}
-        </Button>
-      </div>
+      {invitations.map((invitation) => (
+        <div key={invitation.deckId} className="px-4">
+          <DeckInvitationLine invitation={invitation} onAnswered={onChanged} />
+        </div>
+      ))}
+      {hasOwn && (
+        <div className="flex items-center justify-end px-2 pb-1">
+          <Button variant="ghost" size="sm" className="gap-1" onClick={() => void createNew()}>
+            <FolderPlus aria-hidden /> {t('new-folder', { defaultValue: 'New folder' })}
+          </Button>
+        </div>
+      )}
       {folderGroups.map((g, i) => {
         const f = g.folder as DeckFolderSummary;
         const collapsed = collapsedNow[f.id] ?? f.collapsed;
@@ -177,6 +196,16 @@ export function DeckFolderList<D extends FolderDeck>({
             </h3>
           )}
           {loose.decks.map(row)}
+        </section>
+      )}
+      {shared.length > 0 && renderShared && (
+        <section>
+          <h3 className="t-heading border-b border-site-border px-4 py-2">
+            {t('shared-with-you', { ns: 'deck-coeditors', defaultValue: 'Shared with you' })}
+          </h3>
+          {shared.map((deck) => (
+            <div key={deck.id}>{renderShared(deck)}</div>
+          ))}
         </section>
       )}
     </div>

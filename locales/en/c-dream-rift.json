@@ -7,8 +7,8 @@
   "continues-count_one": "{{count}} continue",
   "continues-count_other": "{{count}} continue",
   "continues-remaining": "Continues remaining:",
-  "controls-action": "C — Bomb \u00a0 A — Dash \u00a0 Shift — Focus",
-  "controls-move": "Arrow keys — Move \u00a0 Z — Shoot \u00a0 X — Melee",
+  "controls-action": "C — Bomb   A — Dash   Shift — Focus",
+  "controls-move": "Arrow keys — Move   Z — Shoot   X — Melee",
   "difficulty": "Difficulty",
   "failed-to-load-leaderboard": "Failed to load leaderboard.",
   "final-score": "Final Score",
@@ -118,5 +118,7 @@
   "subtitle": "~ A Bullet Hell Story ~",
   "title": "Dream Rift",
   "total-score": "Total Score",
-  "menu-quit": "Quit"
+  "menu-quit": "Quit",
+  "field-music-volume": "Music volume",
+  "field-sfx-volume": "Sound effects volume"
 }

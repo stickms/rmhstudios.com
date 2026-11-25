@@ -1235,6 +1235,75 @@ export function noticeText(
         ...values,
       });
 
+    // Sprint 11 notices (docs/autonomous/sprint-11/plan.md §Anchors)
+    // s11-09 read-alongs
+    case 'read-along-part-open':
+      return t('notice-read-along-part-open', {
+        ns: 'notice-language',
+        defaultValue: '{{book}}: "{{part}}" is open in {{community}}',
+        ...values,
+      });
+
+    // s11-10 deck-coeditors
+    case 'deck-editor-invited':
+      return t('notice-deck-editor-invited', {
+        ns: 'notice-language',
+        defaultValue: '{{name}} invited you to edit {{deck}}',
+        ...values,
+      });
+    case 'deck-editor-accepted':
+      return t('notice-deck-editor-accepted', {
+        ns: 'notice-language',
+        defaultValue: '{{name}} accepted your invitation to edit {{deck}}',
+        ...values,
+      });
+
+    // s11-12 type-challenges
+    case 'type-challenge-received':
+      return t('notice-type-challenge-received', {
+        ns: 'notice-language',
+        defaultValue: "{{name}} challenged you to beat {{wpm}} WPM on '{{passage}}'",
+        ...values,
+      });
+    case 'type-challenge-won':
+      return t('notice-type-challenge-won', {
+        ns: 'notice-language',
+        defaultValue: "You beat {{name}}'s {{wpm}} WPM on '{{passage}}'",
+        ...values,
+      });
+    case 'type-challenge-lost':
+      return t('notice-type-challenge-lost', {
+        ns: 'notice-language',
+        defaultValue: "You lost to {{name}}'s {{wpm}} WPM on '{{passage}}'",
+        ...values,
+      });
+    case 'type-challenge-draw':
+      return t('notice-type-challenge-draw', {
+        ns: 'notice-language',
+        defaultValue: "You drew with {{name}} at {{wpm}} WPM on '{{passage}}'",
+        ...values,
+      });
+    case 'type-challenge-unfinished':
+      return t('notice-type-challenge-unfinished', {
+        ns: 'notice-language',
+        defaultValue: "You did not finish the race against {{name}}'s {{wpm}} WPM on '{{passage}}'",
+        ...values,
+      });
+    case 'type-challenge-forfeited':
+      return t('notice-type-challenge-forfeited', {
+        ns: 'notice-language',
+        defaultValue: "{{name}} did not finish your race on '{{passage}}'",
+        ...values,
+      });
+
+    // s11-13 listing-prices
+    case 'home-price-drop':
+      return t('notice-home-price-drop', {
+        ns: 'notice-language',
+        defaultValue: '{{title}} in {{city}}, {{state}} dropped from ${{was}} to ${{now}}',
+        ...values,
+      });
+
     default:
       return null;
   }

@@ -90,6 +90,7 @@ export default function ChatOverlay({ messages, onSend }: ChatOverlayProps) {
         <form onSubmit={handleSubmit} className="border-t border-app-border p-2">
           <div className="flex gap-2">
             <input
+              aria-label={t('field-chat-message', { defaultValue: 'Chat message' })}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}

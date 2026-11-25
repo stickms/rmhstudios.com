@@ -23,6 +23,7 @@ const h = vi.hoisted(() => ({
   state: {
     follows: [] as Follow[],
     events: [] as Event[],
+    deckEditorDeletes: [] as unknown[],
     blocks: [] as {
       id: string;
       blockerId: string;
@@ -297,6 +298,14 @@ vi.mock('@/lib/prisma.server', () => {
     },
     // The block endpoint also clears the blocker's repost-mute row for the person (s05-07).
     repostMute: { deleteMany: () => lazy(() => ({ count: 0 })) },
+    // ...and ends deck editing between the pair (s11-10).
+    deckEditor: {
+      deleteMany: (args: unknown) =>
+        lazy(() => {
+          h.state.deckEditorDeletes.push(args);
+          return { count: 0 };
+        }),
+    },
     userBlock: {
       findUnique: () => lazy(() => null),
       create: ({
@@ -481,6 +490,22 @@ describe('blocking', () => {
     expect(h.state.events.map((e) => `${e.followerId}>${e.followingId}:${e.kind}`).sort()).toEqual([
       'creator>fan:blocked',
       'fan>creator:blocked',
+    ]);
+  });
+
+  it('ends deck editing between the pair, both directions, in the block transaction (s11-10)', async () => {
+    h.state.deckEditorDeletes = [];
+    const res = await post({ request: request(), params: {} });
+    expect(res.status).toBe(200);
+    expect(h.state.deckEditorDeletes).toEqual([
+      {
+        where: {
+          OR: [
+            { userId: 'fan', deck: { userId: 'creator' } },
+            { userId: 'creator', deck: { userId: 'fan' } },
+          ],
+        },
+      },
     ]);
   });
 

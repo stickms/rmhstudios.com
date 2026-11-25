@@ -81,7 +81,7 @@ export function GifPicker({ onSelect, onClose, className ='', initialQuery ='', 
  <div className="flex items-center justify-between gap-2 mb-2">
  <div className="relative flex-1">
  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-muted"/>
- <input
+ <input aria-label={t('field-search-gifs', { defaultValue: 'Search GIFs' })}
  autoFocus
  value={query}
  onChange={(e) => setQuery(e.target.value)}

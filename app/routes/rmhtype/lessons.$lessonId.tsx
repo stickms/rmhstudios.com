@@ -7,10 +7,12 @@ import { createFileRoute, notFound } from '@tanstack/react-router';
 import { noindexHead } from '@/lib/seo';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import LessonRunner from '@/components/rmhtype/lessons/LessonRunner';
-import { PRACTICE_ID, lessonById } from '@/lib/rmhtype/lessons';
 
 export const Route = createFileRoute('/rmhtype/lessons/$lessonId')({
-  beforeLoad: ({ params }) => {
+  // The curriculum (every layout's course, Sprint 11 feature 11) is loaded here rather than imported: a route's options
+  // sit in every page's entry, and the page itself needs the module anyway.
+  beforeLoad: async ({ params }) => {
+    const { PRACTICE_ID, lessonById } = await import('@/lib/rmhtype/lessons');
     if (params.lessonId !== PRACTICE_ID && !lessonById(params.lessonId)) throw notFound();
   },
   head: () => noindexHead('Typing Lesson'),

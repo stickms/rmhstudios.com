@@ -623,7 +623,7 @@ function NewChatDialog({
         </DialogHeader>
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-muted" />
-          <input
+          <input aria-label={t('field-search-people', { defaultValue: 'Search people' })}
             autoFocus
             value={q}
             onChange={(e) => setQ(e.target.value)}

@@ -37,6 +37,7 @@ import { reanchor, initialVideoState } from '../../lib/rmhtube/sync-math';
 import { createPeerWaitRuntime } from './types';
 import type { RmhTubeRoom, RmhTubeMember, RoomSettings, ChatMessage, QueueItem, BannedUser, InviteLink } from './types';
 import type { ClientRoomState, ClientMemberInfo, QueueBroadcastItem, PublicRoomInfo } from '../../lib/rmhtube/types';
+import type { SubtitleLabel } from '../../lib/rmhtube/subtitles';
 
 /**
  * The database row `hydrateRoom` reads. Spelled out rather than inferred from
@@ -80,6 +81,7 @@ interface DbRoomRow {
     addedByName: string;
     position: number;
     createdAt: Date;
+    subtitles: SubtitleLabel[];
   }[];
   messages: {
     id: string;
@@ -1302,6 +1304,7 @@ export class RoomManager {
       addedAt: q.addedAt,
       position: q.position,
       live: q.live,
+      subtitles: q.subtitles ?? [],
       votes: voters?.size ?? 0,
       voters: voters ? Array.from(voters) : [],
     };
@@ -1467,6 +1470,12 @@ export class RoomManager {
       orderBy: {
         position: 'asc',
       },
+      include: {
+        subtitles: {
+          orderBy: { createdAt: 'asc' },
+          select: { id: true, label: true, lang: true, cueCount: true },
+        },
+      },
     },
     messages: {
       orderBy: {
@@ -1517,6 +1526,7 @@ export class RoomManager {
       // Liveness is a runtime observation, not a stored fact — the leader's
       // player reports it once the item loads. The URL hint is the seed.
       live: parseMedia(q.url)?.liveHint === 'live',
+      subtitles: q.subtitles,
     }));
 
     const chat: ChatMessage[] = dbRoom.messages

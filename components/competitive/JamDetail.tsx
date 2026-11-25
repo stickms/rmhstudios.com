@@ -231,7 +231,7 @@ export function JamDetail({ slug }: { slug: string }) { const fmt = useLocaleFor
             </p>
           ) : (
             <div className="flex gap-2">
-              <Select
+              <Select aria-label={t('field-jam-build', { defaultValue: 'Build to submit' })}
                 value={buildId}
                 onChange={(e) => setBuildId(e.target.value)}
                 className="flex-1"

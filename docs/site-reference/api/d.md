@@ -12,6 +12,8 @@ See the [API inventory](../api.md) for how to read the tables.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
+| `/api/daily-puzzles/following` | `GET` | `lib/daily-puzzles/api/daily-puzzles.following.server.ts` |
+| `/api/daily-puzzles/following/summary` | `GET` | `lib/daily-puzzles/api/daily-puzzles.following.summary.server.ts` |
 | `/api/daily-puzzles/leaderboard` | `GET` | `lib/daily-puzzles/api/daily-puzzles.leaderboard.server.ts` |
 | `/api/daily-puzzles/puzzle` | `GET` | `lib/daily-puzzles/api/daily-puzzles.puzzle.server.ts` |
 | `/api/daily-puzzles/results` | `GET` | `lib/daily-puzzles/api/daily-puzzles.results.server.ts` |

@@ -1,0 +1,21 @@
+{
+  "empty-explain": "Friends are people you follow who follow you back.",
+  "empty-link": "See who you follow",
+  "empty-none": "No friends have finished this puzzle yet.",
+  "empty-only-you": "None of your friends have finished this puzzle yet.",
+  "load-failed": "Could not load your friends' results. Try again in a moment.",
+  "result-dnf": "DNF",
+  "result-moves_one": "{{count}} move",
+  "result-moves_other": "{{count}} moves",
+  "result-points_one": "{{count}} pt",
+  "result-points_other": "{{count}} pts",
+  "summary-best": "Best",
+  "summary-finished_one": "{{count}} friend finished",
+  "summary-finished_other": "{{count}} friends finished",
+  "summary-none": "No friends have finished yet",
+  "summary-you": "You",
+  "tab-everyone": "Everyone",
+  "tab-friends": "Friends",
+  "tabs-label": "Whose results",
+  "you": "You"
+}
