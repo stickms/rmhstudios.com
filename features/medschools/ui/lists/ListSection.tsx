@@ -1,16 +1,18 @@
 import { useRef, useState } from 'react';
-import { ChevronDown, ChevronUp, ListPlus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, FileUp, ListPlus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MedIconButton } from '../controls/MedIconButton';
 import { MenuItem } from '@/components/ui/menu';
+import { LIMITS } from '../../engine/tracker';
 import type { MedListDto } from '../../medschools.contract';
 import { RollingSection } from '../rolling/RollingSection';
 import { OverlapSection } from '../secondaries/OverlapSection';
 import { ListItemRow } from './ListItemRow';
 
 /**
- * One saved list: the name with its count under it and one "⋯" holding add to my tracker, rename, move and delete;
+ * One saved list: the name with its count under it and one "⋯" holding add to my tracker, import schools into this
+ * list (the list import, owner 2026-11-24), rename, move and delete;
  * then the schools as rows on rules, each with its own "⋯" (note, move up and down, remove), so nothing floats beside a
  * row; then the closed rolling and overlap disclosures.
  */
@@ -22,6 +24,7 @@ export function ListSection({
   onRename,
   onDelete,
   onAddToTracker,
+  onImport,
   onReorderItems,
   onSaveNote,
   onRemoveItem,
@@ -34,6 +37,8 @@ export function ListSection({
   onRename: () => void;
   onDelete: () => void;
   onAddToTracker: () => Promise<void>;
+  /** Open the list import with this list as the target. */
+  onImport: () => void;
   onReorderItems: (ids: string[]) => void;
   onSaveNote: (itemId: string, note: string | null) => Promise<void>;
   onRemoveItem: (itemId: string) => Promise<void>;
@@ -89,6 +94,16 @@ export function ListSection({
             }}
           >
             {t('lists-add-to-tracker', { defaultValue: 'Add this list to my tracker' })}
+          </MenuItem>
+          <MenuItem
+            icon={FileUp}
+            disabled={list.items.length >= LIMITS.itemsPerList}
+            onSelect={() => {
+              setMenu(false);
+              onImport();
+            }}
+          >
+            {t('lists-import-into', { defaultValue: 'Import into this list' })}
           </MenuItem>
           <MenuItem
             icon={Pencil}

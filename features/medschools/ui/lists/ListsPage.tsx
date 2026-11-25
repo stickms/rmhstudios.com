@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { lazy, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Plus } from 'lucide-react';
+import { FileUp, Plus } from 'lucide-react';
 import { MedButton } from '../controls/MedButton';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { usePrompt } from '@/components/ui/prompt-dialog';
 import { useRefusalText } from '@/components/errors/useRefusalText';
@@ -32,6 +33,9 @@ import { SkeletonSwap } from '../skeletons';
 import { ListSection } from './ListSection';
 import { PrefsSection, type PrefsDraft } from './PrefsSection';
 
+/** The list import is its own chunk: it loads when "Import" is pressed, never with the lists page. */
+const ListImport = lazy(() => import('./import/ListImport'));
+
 /** The lists in the order the viewer is dragging them, until the server has answered. */
 const inOrder = (lists: MedListDto[], ids: string[] | null): MedListDto[] =>
   ids ? ids.flatMap((id) => lists.filter((l) => l.id === id)) : lists;
@@ -55,6 +59,8 @@ export function ListsPage() {
   const [stale, setStale] = useState(false);
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [trackerNote, setTrackerNote] = useState<string | null>(null);
+  /** The list import while open: into one list (as it was when opened), or a new list (`list: null`). */
+  const [importing, setImporting] = useState<{ list: MedListDto | null } | null>(null);
 
   const head = <PageHead title={t('lists-title', { defaultValue: 'My lists' })} />;
   const expired = lists.error instanceof HttpError && lists.error.status === 401;
@@ -184,15 +190,37 @@ export function ListsPage() {
     }
   };
 
+  // The import is the view while it is open: its "Add to list" is the one ink primary on the page (R4).
+  if (importing !== null) {
+    // The fresh copy of the list once the lists refetch (after a save), so "already there" stays true.
+    const opened = importing.list;
+    const target = opened ? (all.find((l) => l.id === opened.id) ?? opened) : null;
+    return (
+      <>
+        {head}
+        <ArrivalSuspense fallback={<SkeletonSwap ready={false}>{null}</SkeletonSwap>}>
+          <ListImport list={target} onClose={() => setImporting(null)} />
+        </ArrivalSuspense>
+      </>
+    );
+  }
+
+  const atListCap = all.length >= LIMITS.lists;
   return (
     <>
       <PageHead
         title={t('lists-title', { defaultValue: 'My lists' })}
         actions={
-          <MedButton variant="primary" disabled={all.length >= LIMITS.lists} onClick={() => void newList()}>
-            <Plus aria-hidden="true" className="size-4" />
-            {t('lists-new', { defaultValue: 'New list' })}
-          </MedButton>
+          <>
+            <MedButton variant="secondary" disabled={atListCap} onClick={() => setImporting({ list: null })}>
+              <FileUp aria-hidden="true" className="size-4" />
+              {t('lists-import-new', { defaultValue: 'Import a new list' })}
+            </MedButton>
+            <MedButton variant="primary" disabled={atListCap} onClick={() => void newList()}>
+              <Plus aria-hidden="true" className="size-4" />
+              {t('lists-new', { defaultValue: 'New list' })}
+            </MedButton>
+          </>
         }
       />
       <SkeletonSwap ready={!!lists.data}>
@@ -231,6 +259,7 @@ export function ListsPage() {
                 onRename={() => void rename(list)}
                 onDelete={() => void remove(list)}
                 onAddToTracker={() => addToTracker(list)}
+                onImport={() => setImporting({ list })}
                 onReorderItems={(ids) => void reorderItems(list, ids)}
                 onSaveNote={(itemId, note) =>
                   run(() => api(patchMedListItemApi, { params: { id: list.id, itemId }, body: { note } }))

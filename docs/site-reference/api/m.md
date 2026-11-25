@@ -41,6 +41,8 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/medschools/me/lists/:id/add-to-tracker` | `POST` | `features/medschools/api/medschools.me.lists.$id.add-to-tracker.server.ts` |
 | `/api/medschools/me/lists/:id/item-order` | `PUT` | `features/medschools/api/medschools.me.lists.$id.item-order.server.ts` |
 | `/api/medschools/me/lists/:id/items/:itemId` | `DELETE` `PATCH` | `features/medschools/api/medschools.me.lists.$id.items.$itemId.server.ts` |
+| `/api/medschools/me/lists/import/parse` | `POST` | `features/medschools/api/medschools.me.lists.import.parse.server.ts` |
+| `/api/medschools/me/lists/import/save` | `POST` | `features/medschools/api/medschools.me.lists.import.save.server.ts` |
 | `/api/medschools/me/prefs` | `GET` `PUT` | `features/medschools/api/medschools.me.prefs.server.ts` |
 | `/api/medschools/me/qa-limit-request` | `GET` `POST` | `features/medschools/api/medschools.me.qa-limit-request.server.ts` |
 | `/api/medschools/me/rolling` | `GET` | `features/medschools/api/medschools.me.rolling.server.ts` |

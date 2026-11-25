@@ -1,7 +1,6 @@
 import { Link, useRouterState } from '@tanstack/react-router';
 import { ArrowLeft, House } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 import { backTargetFor, isMedIndex } from './back-target';
 import { HeaderActions } from './HeaderActions';
 
@@ -11,12 +10,11 @@ import { HeaderActions } from './HeaderActions';
  * dark switch). On a narrow phone the actions wrap under the title as one group rather than hide. It is in the document
  * flow (never `fixed`, never `sticky` flush to the edge: the iOS bars take their colour from edge-pinned
  * layers). On the index the button is a plain home link to the site (`/`, a house) and the name is the page's `<h1>`;
- * on every other route, the error and 404 frames included, it is back: through this session's own history when there
- * is one, otherwise to the school index (`backTargetFor`).
+ * on every other route, the error and 404 frames included, it is back one level, always to the school index
+ * (`backTargetFor`), never through the browser history (owner 2026-11-24): the arrow means "up", not "where I was".
  */
 export function MedTopBar() {
   const { t } = useTranslation('medschools');
-  const goBack = useBackOrFallback();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isIndex = isMedIndex(pathname);
   const appName = t('shell-app-name', { defaultValue: 'RMH Med Schools' });
@@ -30,7 +28,6 @@ export function MedTopBar() {
       ) : (
         <Link
           to={backTargetFor(pathname)}
-          onClick={goBack}
           className="medapp-round"
           aria-label={t('shell-back-schools', { defaultValue: 'Back to all schools' })}
         >

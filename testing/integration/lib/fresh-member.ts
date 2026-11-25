@@ -9,10 +9,14 @@
  * file's is left for the next one.
  *
  * The row pair is what Better Auth's sign-up writes: a `user` and a credential `account` whose hash is copied from the
- * cast (every cast member shares `PASSWORD`). The member then signs in through the real endpoint, which is limited to
- * 10 a minute per IP too; a 429 waits for the window to turn over rather than failing the file.
+ * cast (every cast member shares `PASSWORD`). Its session is then written the way Better Auth writes one (a `session`
+ * row and the signed `session_token` cookie, HMAC-SHA256 of the token with BETTER_AUTH_SECRET, as better-call signs it)
+ * and proved once per file on a throwaway probe user through `/api/auth/get-session`, which is not rate-limited.
+ * That keeps fresh members out of the suite's shared per-IP sign-in budget (10 a minute), which the auth tests need for their real sign-ins; four files make three
+ * members each, and the files run back to back. Without the secret, or if the server does not accept the minted
+ * session, the member signs in through the real endpoint instead, waiting out a 429.
  */
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomBytes, randomUUID } from 'node:crypto';
 import { inject } from 'vitest';
 import { Client, PASSWORD, db, uniqueEmail, type TestUser } from './client';
 
@@ -46,6 +50,58 @@ async function signIn(client: Client, email: string): Promise<void> {
   }
 }
 
+const SESSION_COOKIE = 'better-auth.session_token';
+
+/** Write a session row for the user and return a client holding its signed cookie (no request is made). */
+async function writeSession(userId: string, secret: string): Promise<Client> {
+  const token = randomBytes(24).toString('base64url');
+  await db().query(
+    `insert into session (id, "userId", token, "expiresAt", "createdAt", "updatedAt")
+     values ($1, $2, $3, now() + interval '1 day', now(), now())`,
+    [randomUUID().replace(/-/g, ''), userId, token],
+  );
+  const signature = createHmac('sha256', secret).update(token).digest('base64');
+  return new Client({ [SESSION_COOKIE]: encodeURIComponent(`${token}.${signature}`) });
+}
+
+/**
+ * Whether the server accepts a minted session, decided once per file on a throwaway probe user. Proving it on the real
+ * member would be a session read, and a session read resolves the member's tier (`customSession` -> `getUserTier`,
+ * cached 60 s in the web process): a file that then inserts a Subscription row would see the stale free tier.
+ */
+let minting: Promise<string | null> | undefined;
+function mintSecret(): Promise<string | null> {
+  minting ??= (async () => {
+    const secret = process.env.BETTER_AUTH_SECRET;
+    if (!secret || process.env.BETTER_AUTH_URL?.startsWith('https')) return null;
+    const id = randomUUID().replace(/-/g, '');
+    await db().query(
+      `insert into "user" (id, name, email, "emailVerified", handle, "isAdmin", "createdAt", "updatedAt")
+       values ($1, 'Integ probe', $2, true, $3, false, now(), now())`,
+      [id, uniqueEmail('session-probe'), `it${id.slice(0, 12)}`],
+    );
+    try {
+      const probe = await writeSession(id, secret);
+      const res = await probe.get<{ user?: { id?: string } } | null>('/api/auth/get-session');
+      return res.status === 200 && res.body?.user?.id === id ? secret : null;
+    } finally {
+      await db().query('delete from "user" where id = $1', [id]);
+    }
+  })().catch(() => null);
+  return minting;
+}
+
+async function mintSession(userId: string): Promise<Client | null> {
+  const secret = await mintSecret();
+  return secret ? writeSession(userId, secret) : null;
+}
+
+async function signedIn(email: string): Promise<Client> {
+  const client = new Client();
+  await signIn(client, email);
+  return client;
+}
+
 export async function createFreshMember(label: string, opts: FreshMemberOptions = {}): Promise<FreshMember> {
   const id = randomUUID().replace(/-/g, '');
   const email = uniqueEmail(label);
@@ -62,8 +118,7 @@ export async function createFreshMember(label: string, opts: FreshMemberOptions 
      values ($1, $2, $2, 'credential', $3, now(), now())`,
     [randomUUID().replace(/-/g, ''), id, await passwordHash()],
   );
-  const client = new Client();
-  await signIn(client, email);
+  const client = (await mintSession(id)) ?? (await signedIn(email));
   return { id, email, name, cookies: client.cookies, client };
 }
 

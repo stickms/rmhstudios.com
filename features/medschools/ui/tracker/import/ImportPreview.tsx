@@ -1,78 +1,14 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { MedInput } from '../../controls/MedField';
-import { MedSearch } from '../../controls/MedSearch';
 import { MedSelect } from '../../controls/MedSelect';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
-import { Q_MAX } from '../../../engine/search';
 import { formatUtcDay } from '../../../engine/public-read';
 import { milestoneDateWindow, type MilestoneType } from '../../../engine/tracker';
-import { schoolsQuery } from '../../../medschools.queries';
 import { useMedLabels } from '../../labels';
-import {
-  editDate,
-  statusOf,
-  writes,
-  type EditMilestone,
-  type EditRow,
-  type Existing,
-  type PickedSchool,
-} from './model';
+import { editDate, statusOf, writes, type EditMilestone, type EditRow, type Existing } from './model';
+import { SchoolPicker } from './SchoolPicker';
 
-const MAX_MATCHES = 6;
 const CHECKBOX = 'medapp-check';
-
-/** A school the file named that the directory did not match: search the list and pick one. */
-function SchoolPicker({ name, onPick }: { name: string; onPick: (school: PickedSchool) => void }) {
-  const { t } = useTranslation('medschools');
-  const schools = useQuery(schoolsQuery({ program: 'ALL' }));
-  const [q, setQ] = useState('');
-  const needle = q.trim().toLowerCase();
-  const matches = needle
-    ? (schools.data?.schools ?? [])
-        .filter((s) => `${s.name} ${s.shortName} ${s.slug}`.toLowerCase().includes(needle))
-        .slice(0, MAX_MATCHES)
-    : [];
-  return (
-    <div className="mt-2">
-      <MedSearch
-        containerClassName="max-w-96"
-        aria-label={t('import-pick-search', { name, defaultValue: 'Pick the school for "{{name}}"' })}
-        placeholder={t('import-pick-placeholder', { defaultValue: 'Search schools' })}
-        maxLength={Q_MAX}
-        value={q}
-        onValueChange={setQ}
-      />
-      {needle && schools.data && matches.length === 0 ? (
-        <p className="medapp-meta mt-2">{t('tracker-add-none', { defaultValue: 'No school matches.' })}</p>
-      ) : null}
-      <ul className="medapp-list mt-1">
-        {matches.map((s) => (
-          <li key={s.slug} className="medapp-list__pick">
-            <button
-              type="button"
-              className="medapp-pick"
-              onClick={() =>
-                onPick({ slug: s.slug, name: s.name, shortName: s.shortName, degree: s.degree, state: s.state })
-              }
-            >
-              <span className="medapp-text">{s.name}</span>
-              <span className="medapp-meta">
-                {t('index-school-meta', {
-                  defaultValue: '{{degree}} · {{city}}, {{state}}',
-                  degree: s.degree,
-                  city: s.city,
-                  state: s.state,
-                })}
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
 
 function MilestoneLine({
   row,
