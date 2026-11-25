@@ -311,6 +311,7 @@ model User {
   medSchoolLists   MedSchoolList[]   @relation("UserMedSchoolLists")
   medUserPrefs     MedUserPrefs?     @relation("UserMedPrefs")
   medQaLimitRequests MedQaLimitRequest[] @relation("UserMedQaLimitRequests")
+  medApplicantProfile MedApplicantProfile? @relation("UserMedApplicantProfile")
 
   media Media[]
 

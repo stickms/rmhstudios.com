@@ -45,6 +45,8 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/medschools/me/qa-limit-request` | `GET` `POST` | `features/medschools/api/medschools.me.qa-limit-request.server.ts` |
 | `/api/medschools/me/rolling` | `GET` | `features/medschools/api/medschools.me.rolling.server.ts` |
 | `/api/medschools/me/secondaries/overlap` | `GET` | `features/medschools/api/medschools.me.secondaries.overlap.server.ts` |
+| `/api/medschools/me/stats` | `DELETE` `GET` `PUT` | `features/medschools/api/medschools.me.stats.server.ts` |
+| `/api/medschools/me/stats/onboarding` | `PUT` | `features/medschools/api/medschools.me.stats.onboarding.server.ts` |
 | `/api/medschools/me/tracker` | `GET` | `features/medschools/api/medschools.me.tracker.server.ts` |
 | `/api/medschools/me/tracker/applications` | `POST` | `features/medschools/api/medschools.me.tracker.applications.server.ts` |
 | `/api/medschools/me/tracker/applications/:id` | `DELETE` `PATCH` | `features/medschools/api/medschools.me.tracker.applications.$id.server.ts` |

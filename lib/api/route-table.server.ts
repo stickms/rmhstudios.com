@@ -604,6 +604,8 @@ import { route as r_features_medschools_api_medschools_me_prefs } from '@/featur
 import { route as r_features_medschools_api_medschools_me_qa_limit_request } from '@/features/medschools/api/medschools.me.qa-limit-request.server';
 import { route as r_features_medschools_api_medschools_me_rolling } from '@/features/medschools/api/medschools.me.rolling.server';
 import { route as r_features_medschools_api_medschools_me_secondaries_overlap } from '@/features/medschools/api/medschools.me.secondaries.overlap.server';
+import { route as r_features_medschools_api_medschools_me_stats } from '@/features/medschools/api/medschools.me.stats.server';
+import { route as r_features_medschools_api_medschools_me_stats_onboarding } from '@/features/medschools/api/medschools.me.stats.onboarding.server';
 import { route as r_features_medschools_api_medschools_me_tracker } from '@/features/medschools/api/medschools.me.tracker.server';
 import { route as r_features_medschools_api_medschools_me_tracker_applications } from '@/features/medschools/api/medschools.me.tracker.applications.server';
 import { route as r_features_medschools_api_medschools_me_tracker_applications_id } from '@/features/medschools/api/medschools.me.tracker.applications.$id.server';
@@ -1811,6 +1813,8 @@ const API_ROUTES_M: readonly ApiRoute[] = [
   r_features_medschools_api_medschools_me_qa_limit_request, // /api/medschools/me/qa-limit-request
   r_features_medschools_api_medschools_me_rolling, // /api/medschools/me/rolling
   r_features_medschools_api_medschools_me_secondaries_overlap, // /api/medschools/me/secondaries/overlap
+  r_features_medschools_api_medschools_me_stats, // /api/medschools/me/stats
+  r_features_medschools_api_medschools_me_stats_onboarding, // /api/medschools/me/stats/onboarding
   r_features_medschools_api_medschools_me_tracker, // /api/medschools/me/tracker
   r_features_medschools_api_medschools_me_tracker_applications, // /api/medschools/me/tracker/applications
   r_features_medschools_api_medschools_me_tracker_applications_id, // /api/medschools/me/tracker/applications/$id

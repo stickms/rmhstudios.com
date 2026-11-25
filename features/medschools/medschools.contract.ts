@@ -24,6 +24,8 @@ import type {
   saveListItemBody,
 } from './api/me-schemas';
 import type { MedEventType, MedProgram, MedSource } from './engine/types';
+import type { ApplicantStats } from './engine/applicant';
+import type { putOnboardingBody, putStatsBody } from './api/stats-schemas';
 
 export interface AliasMissDto {
   id: string;
@@ -1119,3 +1121,36 @@ export const postMedSecondariesAdminApi = endpoint<{
   };
   res: { prompts: number; created: number; rejected: number };
 }>()({ method: 'POST', path: '/api/admin/medschools/secondaries' });
+
+/* ------------------------- Private applicant stats (phase D) ------------------------- */
+
+/**
+ * The caller's own stats (`null` when none was ever entered) and whether the onboarding step is still offered. The home
+ * state is the preference's, repeated so the form can show it. No id of any row: attempts and activities are in order.
+ */
+export interface MedStatsRes {
+  stats: ApplicantStats | null;
+  onboarding: 'pending' | 'done';
+  homeState: string | null;
+}
+
+/** Signed in, never cached. */
+export const getMedStatsApi = endpoint<{ res: MedStatsRes }>()({ method: 'GET', path: '/api/medschools/me/stats' });
+
+/** Replace the caller's stats (400 on any value out of range; unknown keys are refused). Marks onboarding done. */
+export const putMedStatsApi = endpoint<{ body: z.infer<typeof putStatsBody>; res: MedStatsRes }>()({
+  method: 'PUT',
+  path: '/api/medschools/me/stats',
+});
+
+/** Remove every stat the caller entered. */
+export const deleteMedStatsApi = endpoint<{ res: MedStatsRes }>()({
+  method: 'DELETE',
+  path: '/api/medschools/me/stats',
+});
+
+/** "Skip for now", remembered on the account. */
+export const putMedStatsOnboardingApi = endpoint<{ body: z.infer<typeof putOnboardingBody>; res: MedStatsRes }>()({
+  method: 'PUT',
+  path: '/api/medschools/me/stats/onboarding',
+});

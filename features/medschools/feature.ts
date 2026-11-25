@@ -39,6 +39,8 @@ export default defineFeature({
     'features/medschools/api/medschools.me.lists.$id.add-to-tracker.server.ts',
     'features/medschools/api/medschools.me.prefs.server.ts',
     'features/medschools/api/medschools.me.ask.server.ts',
+    'features/medschools/api/medschools.me.stats.server.ts',
+    'features/medschools/api/medschools.me.stats.onboarding.server.ts',
   ],
   namespaces: ['medschools'],
   listed: false,

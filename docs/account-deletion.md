@@ -22,11 +22,11 @@ The `User` row is anonymised in place, never removed, so `onDelete: Cascade` fro
 
 The clearly private leaf tables (birthday, reminders, drafts, saves, history, settings, notifications, and private reading highlights) are erased by `coverageErasureOps` in `lib/account/erasure-coverage.server.ts`.
 
-394 models are classified.
+396 models are classified.
 
 ## Erased
 
-Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row stays with its member reference replaced or nulled; a `cascade` row goes with its parent in the database. 238 models.
+Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row stays with its member reference replaced or nulled; a `cascade` row goes with its parent in the database. 240 models.
 
 | Model | Decision | Reason |
 | --- | --- | --- |
@@ -162,6 +162,7 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `Listing` | erase | Live market listings (the escrowed card goes with the inventory); finished sales stay as anonymous price history. Scope: active listings only. |
 | `LoadoutPreset` | erase | Saved cosmetic loadouts; the items stay with the inventory decision. |
 | `MarathonList` | erase | A personal reading list; its shareId page 404s afterwards (the share page reads only this row). |
+| `MedApplicantProfile` | erase | The member's private applicant stats (MCAT attempts, GPAs, hours, notes); attempts, hours and activities go by the database cascade. Never aggregated or public. |
 | `Media` | deidentify | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. The exception is the member's own card sounds (voice recordings, s10-02), heard by nobody else: those rows go back to PENDING in the erasure transaction and are deleted with their stored objects after it. |
 | `MedQaLimitRequest` | erase | The member's requests for a higher Q&A limit (their optional reason and an admin's reply; never a question). Where the member decided others' requests as an admin, `decidedBy` and `revokedBy` are nulled. |
 | `MedSchoolList` | erase | The member's saved school lists; list items go by the database cascade. |
@@ -187,7 +188,6 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `NotificationPreference` | erase | Rule 1: settings only the member sees. |
 | `OfficeHoursConfig` | erase | Availability settings (windows go by cascade); bookings others made have their own entry. |
 | `Passkey` | erase | Every way to authenticate as the account is destroyed first, so a tombstone can never sign in. |
-| `TwoFactor` | erase | The second factor (encrypted authenticator secret and backup codes) is a way to authenticate as the account, so it goes with the passkeys. |
 | `Player` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
 | `PostAutoDelete` | erase | The member's own auto-delete rule. |
 | `PostSeriesFollow` | erase | Subscriptions to things (a feed, a series, a community, build or market watch), not the social graph the `Follow` owner decision covers; `PostSeries.followCount` is decremented (floored) in the same transaction. |
@@ -252,6 +252,7 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `TempleOfJoySave` | erase | A game save; no board. |
 | `Tf2HudUserBlob` | erase | The member's link to a content-addressed blob other members may share; the blob stays (an orphan sweep is not this feature's). |
 | `TrustedContact` | erase | The vouch graph is deleted in both directions (as owner and as someone else's contact). |
+| `TwoFactor` | erase | The second factor (encrypted authenticator secret and backup codes) is a way to authenticate as the account, so it goes with the passkeys. |
 | `UserAchievement` | erase | Rule 1: the member's achievement progress; a site-wide percentage computed from rows drops by one (accepted). |
 | `UserBirthday` | erase | Rule 1: the member's own birthday, shown to no one once the account is gone. |
 | `UserBlock` | erase | The member's own mute and block lists (and reposts muted); rows where others blocked or muted them are the others' safety choices and stay. Scope: rows where the member is either side. |

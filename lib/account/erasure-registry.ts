@@ -915,10 +915,15 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason:
       'Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member\'s record on it is not ours to remove. The exception is the member\'s own card sounds (voice recordings, s10-02), heard by nobody else: those rows go back to PENDING in the erasure transaction and are deleted with their stored objects after it.',
   },
+  MedApplicantProfile: {
+    decision: 'erase',
+    reason:
+      "The member's private applicant stats (MCAT attempts, GPAs, hours, notes); attempts, hours and activities go by the database cascade. Never aggregated or public.",
+  },
   MedQaLimitRequest: {
     decision: 'erase',
     reason:
-      "The member's requests for a higher Q&A limit (their optional reason and an admin's reply; never a question). Where the member decided others' requests as an admin, `decidedBy` is nulled.",
+      "The member's requests for a higher Q&A limit (their optional reason and an admin's reply; never a question). Where the member decided others' requests as an admin, `decidedBy` and `revokedBy` are nulled.",
   },
   MedSchoolList: {
     decision: 'erase',
