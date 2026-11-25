@@ -33,7 +33,7 @@ export const Route = createFileRoute('/_site/settings/security')({
     error: typeof search.error === 'string' ? search.error.slice(0, 80) : undefined,
   }),
   head: () => ({
-    meta: [{ title: 'Security | RMH Studios' }],
+    meta: [{ title: 'Account security | RMH Studios' }],
   }),
   loader: async ({ context }) => {
     await prefetchRouteQuery(context.queryClient, accountStandingQuery());

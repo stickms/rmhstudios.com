@@ -132,6 +132,8 @@ function matches(row: Record<string, unknown>, where: Where, users: Users): bool
     if (k === 'user') {
       return matches((users.get(row.userId as string) ?? {}) as Record<string, unknown>, v as Where, users);
     }
+    // s12-16: the favourite's listing is live and was not removed by a moderator, in every listing of this world.
+    if (k === 'listing') return matches({ status: 'ACTIVE', moderatedAt: null }, v as Where, users);
     const cur = row[k];
     if (v === null) return cur === null || cur === undefined;
     if (v && typeof v === 'object' && !(v instanceof Date)) {

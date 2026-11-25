@@ -32,9 +32,12 @@ import { listFolders } from '@/lib/study/folders.server';
 import { isSuggestable } from '@/lib/study/suggestions';
 import type { DeckRole } from '@/lib/study/deck-access';
 import { readDeckLanguage } from '@/lib/study/listen';
-import { canReadDeck, deckRole } from '@/lib/study/deck-access.server';
+import { activeEditorWhere, canReadDeck, deckRole } from '@/lib/study/deck-access.server';
 import type { DeckInvitation, SharedDeckSummary } from '@/lib/study/deck-editors';
 import { MEMBER_NAME, editorCounts, invitationTo, listInvitations } from '@/lib/study/deck-editors.server';
+import { DEFAULT_DECK_SORT, ratingDisplay, type DeckSort, type RatingDisplay } from '@/lib/study/deck-ratings';
+import { deckRatingLockKey, ratedOrderQuery } from '@/lib/study/deck-ratings.server';
+import { lockKey } from '@/lib/db/advisory-lock.server';
 
 export interface DeckSummary {
   id: string;
@@ -93,7 +96,7 @@ export async function listDecks(userId: string | null, tz?: string): Promise<Dec
       // A public deck the viewer edits is in "Shared with you", not here.
       where: {
         isPublic: true,
-        ...(userId ? { userId: { not: userId }, editors: { none: { userId, status: 'accepted' } } } : {}),
+        ...(userId ? { userId: { not: userId }, editors: { none: activeEditorWhere(userId) } } : {}),
       },
       orderBy: { updatedAt: 'desc' },
       take: 30,
@@ -102,7 +105,7 @@ export async function listDecks(userId: string | null, tz?: string): Promise<Dec
     userId ? listFolders(userId) : Promise.resolve([] as DeckFolderSummary[]),
     userId
       ? prisma.flashcardDeck.findMany({
-          where: { userId: { not: userId }, editors: { some: { userId, status: 'accepted' } } },
+          where: { userId: { not: userId }, editors: { some: activeEditorWhere(userId) } },
           orderBy: { updatedAt: 'desc' },
           take: 200,
           // The owner's folder, pace and test date are not selected: an editor never receives them.
@@ -153,6 +156,10 @@ export interface MarketplaceDeck {
   editorCount: number;
   /** The deck's first card with a picture, for the preview; absent when no card has one (s08-15). */
   preview?: { front: string; image: CardImage };
+  /** The ratings given (s12-08): the count, and the average from three ratings; never who rated. */
+  rating: RatingDisplay;
+  /** Copies of the deck that exist now (s12-08). */
+  copyCount: number;
 }
 
 export interface MarketplaceList {
@@ -162,19 +169,32 @@ export interface MarketplaceList {
 
 const MARKETPLACE_LIMIT = 60;
 
+/** A search term as a literal `ILIKE` pattern: the wildcards in it match themselves. */
+const likePattern = (q: string): string => `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+
 /**
- * Browse public decks (the deck "marketplace"). Ranked by size then recency,
- * optionally filtered by a title/description query. Flags decks the viewer owns
- * or has already cloned so the UI can disable re-adding them.
+ * Browse public decks (the deck "marketplace"). Ordered by `sort` (s12-08): most cards then recency (the default),
+ * best rated (a Bayesian average, see `bayesianScore`) or most copied. Optionally filtered by a title/description
+ * query. Flags decks the viewer owns or has already cloned so the UI can disable re-adding them.
  */
 export async function listMarketplaceDecks(
   viewerId: string | null,
   query: string | null,
+  sort: DeckSort = DEFAULT_DECK_SORT,
 ): Promise<MarketplaceList> {
   const q = query?.trim();
-  const decks = await prisma.flashcardDeck.findMany({
+  // "Best rated" orders by an expression Prisma cannot: the ids come from one raw query, the rows from Prisma.
+  let ratedIds: string[] | null = null;
+  if (sort === 'rated') {
+    const rows = await prisma.$queryRaw<{ id: string }[]>(ratedOrderQuery(q ? likePattern(q) : null, MARKETPLACE_LIMIT));
+    ratedIds = rows.map((r) => r.id);
+  }
+  const found = await prisma.flashcardDeck.findMany({
     where: {
+      ...(ratedIds ? { id: { in: ratedIds } } : {}),
       isPublic: true,
+      // s12-16 member-reports: a deck a moderator took down is not listed.
+      moderatedAt: null,
       cardCount: { gt: 0 },
       ...(q
         ? {
@@ -185,17 +205,25 @@ export async function listMarketplaceDecks(
           }
         : {}),
     },
-    orderBy: [{ cardCount: 'desc' }, { updatedAt: 'desc' }],
+    orderBy:
+      sort === 'copied'
+        ? [{ copyCount: 'desc' }, { cardCount: 'desc' }, { updatedAt: 'desc' }]
+        : [{ cardCount: 'desc' }, { updatedAt: 'desc' }],
     take: MARKETPLACE_LIMIT,
     select: {
       id: true,
       title: true,
       description: true,
       cardCount: true,
+      ratingSum: true,
+      ratingCount: true,
+      copyCount: true,
       userId: true,
       user: { select: { name: true, handle: true, image: true } },
     },
   });
+  const rank = new Map((ratedIds ?? []).map((id, i) => [id, i]));
+  const decks = ratedIds ? [...found].sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0)) : found;
 
   // Which of these has the viewer already cloned?
   let clonedSet = new Set<string>();
@@ -242,6 +270,8 @@ export async function listMarketplaceDecks(
         isOwn: d.userId === viewerId,
         alreadyCloned: clonedSet.has(d.id),
         editorCount: counts.get(d.id) ?? 0,
+        rating: ratingDisplay(d.ratingSum ?? 0, d.ratingCount ?? 0),
+        copyCount: d.copyCount ?? 0,
         ...(preview ? { preview } : {}),
       };
     }),
@@ -266,6 +296,7 @@ export async function cloneDeck(userId: string, sourceId: string): Promise<Clone
       id: true,
       userId: true,
       isPublic: true,
+      moderatedAt: true,
       title: true,
       description: true,
       // The languages describe the cards, so a copy keeps them (s11-17); sync never touches them afterwards.
@@ -279,7 +310,8 @@ export async function cloneDeck(userId: string, sourceId: string): Promise<Clone
       },
     },
   });
-  if (!source || !source.isPublic) return { ok: false, ...refusalBody('STUDY_DECK_NOT_FOUND'), status: 404 };
+  if (!source || !source.isPublic || source.moderatedAt)
+    return { ok: false, ...refusalBody('STUDY_DECK_NOT_FOUND'), status: 404 };
   if (source.userId === userId) return { ok: false, ...refusalBody('STUDY_DECK_OWN'), status: 400 };
 
   // Idempotent: don't create duplicate clones of the same source.
@@ -293,6 +325,11 @@ export async function cloneDeck(userId: string, sourceId: string): Promise<Clone
   if (count >= MAX_DECKS) return { ok: false, ...refusalBody('STUDY_DECK_LIMIT'), status: 400 };
 
   const deck = await prisma.$transaction(async (tx) => {
+    // The source's lock, then the check again: the one above ran before this transaction, so two clicks at once would
+    // both have passed it. Only a copy that is really created counts toward the source's `copyCount` (s12-08).
+    await lockKey(tx, deckRatingLockKey(sourceId));
+    const already = await tx.flashcardDeck.findFirst({ where: { userId, clonedFromId: sourceId }, select: { id: true } });
+    if (already) return { id: already.id, alreadyOwned: true };
     const created = await tx.flashcardDeck.create({
       data: {
         userId,
@@ -340,9 +377,11 @@ export async function cloneDeck(userId: string, sourceId: string): Promise<Clone
         }),
       );
     }
-    return created;
+    // A no-op when the source went in the meantime.
+    await tx.flashcardDeck.updateMany({ where: { id: sourceId }, data: { copyCount: { increment: 1 } } });
+    return { id: created.id, alreadyOwned: false };
   });
-  return { ok: true, id: deck.id, alreadyOwned: false };
+  return { ok: true, id: deck.id, alreadyOwned: deck.alreadyOwned };
 }
 
 const cardKind = (kind: string): CardKind => (isCardKind(kind) ? kind : 'basic');
@@ -395,6 +434,8 @@ export interface DeckDetail {
     title: string;
     description: string | null;
     isPublic: boolean;
+    /** s12-16: a moderator took the deck down. Only its owner and editors ever load it, so only they see this. */
+    removedByModerator?: boolean;
     /** The deck's owner. Everything owner-only (settings, folder, pace, sounds, suggestions) keys off this. */
     isOwner: boolean;
     /** The viewer's role: `owner`, `editor` (an accepted editor) or null. An editor adds and edits cards and studies. */
@@ -417,6 +458,9 @@ export interface DeckDetail {
      * Absent on a private deck and for the owner.
      */
     byline?: { owner: { name: string; handle: string | null }; editors: number };
+    /** A public deck's ratings and copies (s12-08), the same for every viewer: the aggregate, never who rated. */
+    rating?: RatingDisplay;
+    copyCount?: number;
   };
   /**
    * The viewer's open invitation to edit this deck (s11-10). On a private deck it is all they receive: no cards, no
@@ -512,15 +556,18 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
   const invitation = viewer.id && role === null ? await invitationTo(viewer.id, deckId) : null;
   const preview = await prisma.flashcardDeck.findUnique({
     where: { id: deckId },
-    select: { isPublic: true },
+    select: { isPublic: true, moderatedAt: true },
   });
   if (!preview) return null;
+  // s12-16 member-reports: a deck a moderator took down is 404 to anyone but its owner and editors.
+  if (preview.moderatedAt && role === null) return null;
   if (!preview.isPublic && role === null) return invitation ? invitationOnly(invitation) : null;
   const deck = await prisma.flashcardDeck.findUnique({
     where: { id: deckId },
     select: {
-      id: true, title: true, description: true, isPublic: true, userId: true, cardCount: true,
+      id: true, title: true, description: true, isPublic: true, moderatedAt: true, userId: true, cardCount: true,
       clonedFromId: true, notifyUpdates: true, folderId: true, acceptsSuggestions: true, frontLang: true, backLang: true,
+      ratingSum: true, ratingCount: true, copyCount: true,
       user: { select: MEMBER_NAME },
       cards: {
         orderBy: CARD_ORDER,
@@ -603,6 +650,7 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
       title: deck.title,
       description: deck.description,
       isPublic: deck.isPublic,
+      ...(deck.moderatedAt && role !== null ? { removedByModerator: true } : {}),
       isOwner,
       role,
       cardCount: deck.cardCount,
@@ -615,6 +663,9 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
       backLang: readDeckLanguage(deck.backLang),
       // A folder is the owner's private organisation: no other viewer's payload carries it.
       ...(isOwner ? { folderId: deck.folderId ?? null } : {}),
+      ...(deck.isPublic && !deck.moderatedAt
+        ? { rating: ratingDisplay(deck.ratingSum ?? 0, deck.ratingCount ?? 0), copyCount: deck.copyCount ?? 0 }
+        : {}),
       ...(deck.isPublic && !isOwner
         ? {
             byline: {

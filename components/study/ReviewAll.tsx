@@ -25,6 +25,8 @@ import { LEARN_MORE_STEP } from '@/lib/study/pace';
 import { useReviewKeys } from '@/components/study/useReviewKeys';
 import { LEECH_THRESHOLD } from '@/lib/study/queue';
 import { stopCardSound, toggleCardSound } from '@/lib/study/card-sound-player';
+import { useShortcuts } from '@/lib/shortcuts/useShortcuts';
+import { CardHistoryDialog } from '@/components/study/CardHistoryDialog';
 import { ListenControls } from '@/components/study/ListenControls';
 import { useCardListen } from '@/components/study/useCardListen';
 
@@ -118,6 +120,19 @@ export function ReviewAll({
   const [notice, setNotice] = useState<Notice | null>(null);
   const busyRef = useRef(false);
   const [learning, setLearning] = useState<string | null>(null);
+  // Card info (s12-09): the history of the card showing, opened with `i`.
+  const [infoOpen, setInfoOpen] = useState(false);
+  // Declared so the conflict check sees the key; the handler is the review's own (below), bound only while it is mounted.
+  useShortcuts([
+    {
+      id: 'study.review.card-info',
+      keys: ['i'],
+      scope: 'app',
+      ns: 'card-history',
+      labelKey: 'shortcut-card-info',
+      label: 'Card info',
+    },
+  ]);
 
   // "Learn more": ten more new cards from a paced deck for the rest of the day, then the queue is read again.
   async function learnMore(deckId: string) {
@@ -460,6 +475,16 @@ export function ReviewAll({
     const el = e.target as HTMLElement | null;
     const tag = el?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el?.isContentEditable) return;
+    // While Card info is open the review keys belong to it.
+    if (infoOpen) return;
+    // `i` opens the card's history (s12-09), only while this review is mounted; like `p`, never straight after `g`.
+    if (e.key === 'i' && !afterG) {
+      if (card) {
+        e.preventDefault();
+        setInfoOpen(true);
+      }
+      return;
+    }
     // `p` plays the current side's sound (s10-02): the front's until the answer is shown, then the back's. Only
     // while this review is mounted, and never on a card with no sound.
     // `g` then `p` is the site's Progress chord, so a `p` straight after a `g` is left to it.
@@ -596,7 +621,13 @@ export function ReviewAll({
             })}
           </Button>
         )}
-        <div className="mt-2 flex justify-end">
+        <div className="mt-2 flex justify-end gap-2">
+          <Button variant="ghost" size="sm" aria-keyshortcuts="i" onClick={() => setInfoOpen(true)}>
+            {t('card-info', {
+              ns: 'card-history',
+              defaultValue: 'Card info',
+            })}
+          </Button>
           <Button variant="ghost" size="sm" disabled={busy} onClick={() => void suspend(card.id, true)}>
             {t('suspend-card', {
               defaultValue: 'Suspend this card',
@@ -604,6 +635,14 @@ export function ReviewAll({
           </Button>
         </div>
       </div>
+      {infoOpen && (
+        <CardHistoryDialog
+          cardId={card.id}
+          label={card.kind === 'occlusion' ? card.front || card.back : card.front}
+          open
+          onOpenChange={setInfoOpen}
+        />
+      )}
     </div>
   );
 }

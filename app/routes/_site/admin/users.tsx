@@ -55,6 +55,8 @@ interface User {
   /** Feature timeouts in force. */
   activeRestrictions: number;
   banned: boolean;
+  /** A deletion tombstone ("Deleted user"): nothing can be granted to it. */
+  deleted?: boolean;
 }
 
 export const Route = createFileRoute('/_site/admin/users')({
@@ -350,7 +352,7 @@ function AdminUsersPage() { const fmt = useLocaleFormat();
                         label={t("title-moderation", { defaultValue: "Strikes and timeouts" })}
                       />
                       <CoinAdjustButton userId={user.id} userName={user.name} balance={user.profile?.coins ?? 0} disabled={busy} onBalanceChange={(coins) => setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, profile: { coins } } : u)))} />
-                      <IconButton icon={Crown} size="icon-sm" variant="default" disabled={busy} onClick={() => setGrantFor({ id: user.id, name: user.name })} label={t("title-grant-revoke-membership", { defaultValue: "Grant / revoke membership" })} />
+                      {!user.deleted && <IconButton icon={Crown} size="icon-sm" variant="default" disabled={busy} onClick={() => setGrantFor({ id: user.id, name: user.name })} label={t("title-grant-revoke-membership", { defaultValue: "Grant / revoke membership" })} />}
                       <IconButton
                         icon={Shield}
                         size="icon-sm"

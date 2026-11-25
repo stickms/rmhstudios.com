@@ -1,6 +1,7 @@
 /**
  * RMH Type — Shared Type Definitions
  */
+import type { RunReason } from '@/lib/rmhtype/run-check';
 
 // ─── Room Settings ───────────────────────────────────────────────
 
@@ -43,6 +44,9 @@ export interface PlayerResult {
   timeMs: number;
   score: number;
   rank: number;
+  /** The finish failed the server's check (`lib/rmhtype/run-check.ts`): "Did not finish", not ranked. */
+  didNotFinish?: boolean;
+  reason?: RunReason;
 }
 
 export interface RoundResults {
@@ -135,6 +139,11 @@ export interface SoloResult {
   accuracy: number;
   timeMs: number;
   timedOut: boolean;
+  /** Whether the run was ranked: it passed the server's check and met the accuracy bar. */
+  ranked?: boolean;
+  /** Why the server's check did not rank the run; absent when it passed (or for practice and a timed-out run). */
+  reason?: RunReason;
+  /** Kept for older clients: always equal to `ranked`. */
   scorePosted?: boolean;
   /**
    * The run used an AI passage written for a topic the player chose, so it is

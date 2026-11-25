@@ -17,7 +17,7 @@ import { reviewDataFor } from '@/lib/study/occlusion';
 import { applyAllowances, dayStartUtc, isPaced, newAllowance, todayKey, zoneOrUtc } from '@/lib/study/pace';
 import { newIntroducedToday } from '@/lib/study/pace.server';
 import { readDeckLanguage } from '@/lib/study/listen';
-import { canReadDeck, readableDeckWhere, studiedDeckWhere } from '@/lib/study/deck-access.server';
+import { activeEditorSql, canReadDeck, readableDeckWhere, studiedDeckWhere } from '@/lib/study/deck-access.server';
 
 const EXPORT_CAP = 50_000;
 
@@ -133,19 +133,33 @@ const readableDeck = readableDeckWhere;
  * The decks a session draws scheduled cards from: every readable deck, or, for a folder session, only the
  * member's own decks in that folder (a public deck is never in anyone's folder but its owner's).
  */
-const sessionDeck = (userId: string, folderId: string | undefined) =>
-  folderId
+const sessionDeck = (userId: string, folderId: string | undefined, deckId?: string): Prisma.FlashcardDeckWhereInput => {
+  const decks = folderId
     ? {
         userId,
         folderId,
       }
     : readableDeck(userId);
+  return deckId ? { AND: [decks, { id: deckId }] } : decks;
+};
+
+/** The decks a session draws never-reviewed cards from: the member's own and the ones they edit, or their folder. */
+const sessionFresh = (
+  userId: string,
+  folderId: string | undefined,
+  deckId?: string,
+): Prisma.FlashcardDeckWhereInput => {
+  const decks = folderId ? { userId, folderId } : studiedDeckWhere(userId);
+  return deckId ? { AND: [decks, { id: deckId }] } : decks;
+};
 
 /**
  * One batch of the member's review session: every scheduled card due now from a readable deck (ordered by
  * `dueAt`, then deck, then `CARD_ORDER`), then, once the scheduled cards are used up, up to
  * `NEW_PER_SESSION` never-reviewed cards from the member's own decks (oldest deck first). A batch holds at
  * most `SESSION_MAX` cards; `next` continues the scheduled list. Suspended cards are in neither part.
+ * `deckId` narrows the session to that one deck (still inside the decks the member may read or study), with the
+ * deck's pace and every other rule unchanged; the developer API's deck queue is the only caller that passes it.
  */
 export async function reviewQueue(
   userId: string,
@@ -153,6 +167,7 @@ export async function reviewQueue(
   now: Date = new Date(),
   folderId?: string,
   tz?: string,
+  deckId?: string,
 ): Promise<ReviewQueueRes> {
   const boundary = decodeCursor(after);
   const scheduled = await prisma.flashcardReview.findMany({
@@ -169,7 +184,7 @@ export async function reviewQueue(
           },
       card: {
         ...REVIEWABLE_WHERE,
-        deck: sessionDeck(userId, folderId),
+        deck: sessionDeck(userId, folderId, deckId),
       },
     },
     orderBy: [
@@ -216,7 +231,7 @@ export async function reviewQueue(
           dueAt: batch[0]!.dueAt,
           card: {
             ...REVIEWABLE_WHERE,
-            deck: sessionDeck(userId, folderId),
+            deck: sessionDeck(userId, folderId, deckId),
           },
         },
         orderBy: [
@@ -260,7 +275,7 @@ export async function reviewQueue(
     // The member's own decks, and the ones they edit; a folder session is the owner's folder, so their own decks only.
     const freshWhere = {
       ...REVIEWABLE_WHERE,
-      deck: folderId ? { userId, folderId } : studiedDeckWhere(userId),
+      deck: sessionFresh(userId, folderId, deckId),
       reviews: {
         none: {
           userId,
@@ -433,8 +448,7 @@ export async function dueByDeck(userId: string, now: Date = new Date(), tz?: str
     JOIN flashcard_deck d ON d."id" = c."deckId"
     LEFT JOIN flashcard_review r ON r."cardId" = c."id" AND r."userId" = ${userId}
     WHERE (d."userId" = ${userId}
-           OR EXISTS (SELECT 1 FROM deck_editor e
-                      WHERE e."deckId" = d."id" AND e."userId" = ${userId} AND e."status" = 'accepted'))
+           OR ${activeEditorSql(userId)})
       AND NOT (c."kind" = 'cloze' AND c."sourceId" IS NULL)
       AND NOT (c."kind" = 'occlusion' AND c."sourceId" IS NULL)
     GROUP BY c."deckId"`;

@@ -36,6 +36,7 @@ import { getShopItem, type ShopItem } from '@/lib/shop/catalog';
 import { levelFromXp } from '@/lib/xp/levels';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { notifyAdminsOfReview } from '@/lib/admin-review.server';
+import { notice } from '@/lib/notifications/notice-keys';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import {
   isTradable,
@@ -353,7 +354,7 @@ export async function buyListing({ buyerId, listingId }: { buyerId: string; list
   // Side effects AFTER the tx commits (never inside): queue anomaly review.
   if (result.status === 'HELD') {
     void notifyAdminsOfReview({
-      preview: `Marketplace listing held for review: ${result.price} coins (≥10× median)`,
+      notice: notice('admin-review-market', { count: result.price }),
       kind: 'market',
       link: '/admin/market',
     }).catch(() => {});

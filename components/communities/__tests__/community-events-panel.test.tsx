@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 
@@ -9,13 +11,15 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 vi.mock('@/components/events/EventCard', () => ({
-  EventCard: ({ event }: { event: { id: string; title: string } }) => (
-    <article data-event={event.id}>{event.title}</article>
+  EventCard: ({ event, onRsvpRefused }: { event: { id: string; title: string }; onRsvpRefused?: () => void }) => (
+    <article data-event={event.id} data-refresh={onRsvpRefused ? 'yes' : 'no'}>
+      {event.title}
+    </article>
   ),
 }));
 vi.mock('@/components/events/EventComposer', () => ({ EventComposer: () => null }));
 
-import { CommunityEventsView } from '@/components/communities/CommunityEventsPanel';
+import { CommunityEventsView, eventRowKey } from '@/components/communities/CommunityEventsPanel';
 import type { EventDTO } from '@/lib/events.server';
 
 const ev = (id: string, title: string) => ({ id, title }) as unknown as EventDTO;
@@ -62,5 +66,32 @@ describe('community events panel', () => {
     expect(open).not.toContain('Show past events');
     expect(open).toContain('data-event="p1"');
     expect(view({ pastOpen: true, past: [] })).toContain('No past events.');
+  });
+
+  it('hands every card, upcoming and past, the refresh that runs after a refused RSVP', () => {
+    const html = view({
+      events: [ev('a', 'Game night')],
+      pastOpen: true,
+      past: [ev('p1', 'Old night')],
+      onRsvpRefused: noop,
+    });
+    expect(html.match(/data-refresh="yes"/g)).toHaveLength(2);
+    expect(view({ events: [ev('a', 'Game night')] })).toContain('data-refresh="no"');
+  });
+
+  it('remounts a row whose counts or answer the server changed, and keeps one whose data is the same', () => {
+    const base = { id: 'e1', goingCount: 10, maybeCount: 2, waitlistCount: 0, viewerRsvp: null } as const;
+    expect(eventRowKey(base)).toBe(eventRowKey({ ...base }));
+    expect(eventRowKey({ ...base, goingCount: 12 })).not.toBe(eventRowKey(base));
+    expect(eventRowKey({ ...base, waitlistCount: 1 })).not.toBe(eventRowKey(base));
+    expect(eventRowKey({ ...base, viewerRsvp: 'going' })).not.toBe(eventRowKey(base));
+    expect(eventRowKey({ ...base, id: 'e2' })).not.toBe(eventRowKey(base));
+  });
+
+  it('refreshes when the RSVP button reports a refusal, from the catch path only', () => {
+    const src = readFileSync(join(__dirname, '..', '..', 'events', 'RsvpButton.tsx'), 'utf8');
+    const catchBlock = src.slice(src.indexOf('} catch (e) {'), src.indexOf('} finally {'));
+    expect(catchBlock).toContain('onRefused?.()');
+    expect(src.slice(src.indexOf('const submit'), src.indexOf('} catch (e) {'))).not.toContain('onRefused');
   });
 });

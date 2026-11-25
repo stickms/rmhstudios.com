@@ -48,12 +48,15 @@ import {
 } from '@/lib/study/card-sound';
 import { attachCardSounds, releaseCardSounds } from '@/lib/study/card-sound.server';
 import { deckRole, requireDeckRole } from '@/lib/study/deck-access.server';
+import { lockSourceOfCopy, uncountCopy } from '@/lib/study/deck-ratings.server';
 import type { DeckRole } from '@/lib/study/deck-access';
 
 export type EditResult<T = object> = ({ ok: true } & T) | { ok: false; status: 400 | 404 | 409; error: string };
 
 const INVALID_LANGUAGE = { ok: false, status: 400, ...refusalBody('INVALID_INPUT') } as const;
 const NOT_FOUND = { ok: false, status: 404, error: 'Not found' } as const;
+/** s12-16: a moderator took the deck down, so the owner cannot make it public again. */
+const REMOVED_BY_MODERATOR = { ok: false, status: 409, ...refusalBody('CONTENT_REMOVED_BY_MODERATOR') } as const;
 const DECK_FULL = { ok: false, status: 400, ...refusalBody('STUDY_DECK_FULL') } as const;
 const INVALID_CARD = { ok: false, status: 400, ...refusalBody('STUDY_CARD_INVALID') } as const;
 /** A picture with no description, a cloze front picture, or an address the flashcard surface never stored. */
@@ -167,11 +170,17 @@ export async function deleteDeck(userId: string, deckId: string): Promise<EditRe
   const anySounds =
     ((await prisma.flashcard.findMany({ where: soundedWhere, select: CARD_SOUND_SELECT, take: 1 })) ?? []).length > 0;
   if (!anyPictures && !anySounds) {
-    const { count } = await prisma.flashcardDeck.deleteMany({ where: { id: deckId, userId } });
-    if (count === 0) return NOT_FOUND;
-    // One deck tombstone; a client drops the deck's cards with it.
-    await recordTombstone(prisma, userId, 'deck', deckId);
-    return { ok: true };
+    // A copy also takes one off its source's `copyCount`, so the delete is a transaction here too (s12-08).
+    const deleted = await prisma.$transaction(async (tx) => {
+      const sourceId = await lockSourceOfCopy(tx, userId, deckId);
+      const { count } = await tx.flashcardDeck.deleteMany({ where: { id: deckId, userId } });
+      if (count === 0) return false;
+      await uncountCopy(tx, sourceId);
+      // One deck tombstone; a client drops the deck's cards with it.
+      await recordTombstone(tx, userId, 'deck', deckId);
+      return true;
+    });
+    return deleted ? { ok: true } : NOT_FOUND;
   }
   const keys = await prisma.$transaction(async (tx) => {
     // Pictures first (read again under the transaction): once the cards are gone, a picture no card shows is deleted
@@ -179,8 +188,10 @@ export async function deleteDeck(userId: string, deckId: string): Promise<EditRe
     const pictured = await tx.flashcard.findMany({ where: picturedWhere, select: CARD_IMAGE_SELECT });
     // Sounds are one object per side: they go with their cards (s10-02).
     const sounded = await tx.flashcard.findMany({ where: soundedWhere, select: CARD_SOUND_SELECT });
+    const sourceId = await lockSourceOfCopy(tx, userId, deckId);
     const { count } = await tx.flashcardDeck.deleteMany({ where: { id: deckId, userId } });
     if (count === 0) return null;
+    await uncountCopy(tx, sourceId);
     await recordTombstone(tx, userId, 'deck', deckId);
     return [
       ...(await releaseCardImages(
@@ -233,8 +244,21 @@ export async function updateDeck(
   }
   if (patch.frontLang !== undefined) data.frontLang = patch.frontLang;
   if (patch.backLang !== undefined) data.backLang = patch.backLang;
-  const { count } = await prisma.flashcardDeck.updateMany({ where: { id: deckId, userId }, data });
-  return count === 0 ? NOT_FOUND : { ok: true };
+  // s12-16 member-reports: while a moderator's takedown stands, "public" is refused. The condition is part of the same
+  // conditional write, so a takedown that lands between a read and this write is still honoured.
+  const wantsPublic = patch.isPublic === true;
+  const { count } = wantsPublic
+    ? await prisma.flashcardDeck.updateMany({ where: { id: deckId, userId, moderatedAt: null }, data })
+    : await prisma.flashcardDeck.updateMany({ where: { id: deckId, userId }, data });
+  if (count > 0) return { ok: true };
+  if (wantsPublic) {
+    const removed = await prisma.flashcardDeck.findFirst({
+      where: { id: deckId, userId, moderatedAt: { not: null } },
+      select: { id: true },
+    });
+    if (removed) return REMOVED_BY_MODERATOR;
+  }
+  return NOT_FOUND;
 }
 
 /** Where a copied card came from; generated siblings never carry it. */

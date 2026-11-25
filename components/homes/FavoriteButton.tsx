@@ -18,6 +18,8 @@ interface FavoriteButtonProps {
   /** The saved listing's "Tell me if the price drops" switch (on by default). Full-size variant only. */
   priceAlerts?: boolean;
   onChange?: (favorited: boolean) => void;
+  /** Asked before a saved listing is unsaved; answer `false` to keep it (s12 10: unsaving also deletes the note). */
+  confirmUnsave?: () => Promise<boolean>;
   /** Compact icon-only variant for cards. */
   compact?: boolean;
   /**
@@ -35,6 +37,7 @@ export function FavoriteButton({
   favorited,
   priceAlerts = true,
   onChange,
+  confirmUnsave,
   compact,
   onMedia = true,
 }: FavoriteButtonProps) {
@@ -51,6 +54,7 @@ export function FavoriteButton({
     if (busy) return;
 
     const next = !isFav;
+    if (!next && confirmUnsave && !(await confirmUnsave())) return;
     setIsFav(next);
     setBusy(true);
     try {

@@ -1876,7 +1876,7 @@ export const ENDPOINTS: ApiEndpoint[] = [
     scope: 'read:study',
     summary: 'Get due counts',
     description:
-      'How many cards in the deck are due now and in the next 24 hours (suspended cards are not counted), for a “you have 40 cards due” widget. No card content. Reviews are made in the app and cannot be written through the API.',
+      'How many cards in the deck are due now and in the next 24 hours (suspended cards are not counted), for a “you have 40 cards due” widget. No card content. To fetch the cards themselves use `GET /api/v1/me/decks/{id}/review`.',
     params: [
       {
         name: 'id',
@@ -3695,8 +3695,16 @@ export const ENDPOINTS: ApiEndpoint[] = [
     requestBody: {
       fields: [
         { name: 'decision', type: 'string', required: true, description: '`approve` or `remove`.' },
-        { name: 'rule_id', type: 'string', description: 'The community rule a removal cites (`GET /communities/{slug}/rules`).' },
-        { name: 'message', type: 'string', description: 'A note sent to the author with a removal, up to 1000 characters.' },
+        {
+          name: 'rule_id',
+          type: 'string',
+          description: 'The community rule a removal cites (`GET /communities/{slug}/rules`).',
+        },
+        {
+          name: 'message',
+          type: 'string',
+          description: 'A note sent to the author with a removal, up to 1000 characters.',
+        },
       ],
       example: { decision: 'remove', rule_id: 'clrule1', message: 'Please keep promotion to the weekly thread.' },
     },
@@ -3710,7 +3718,7 @@ export const ENDPOINTS: ApiEndpoint[] = [
     scope: 'manage:moderation',
     summary: "List a community's timeouts and bans",
     description:
-      'Current timeouts and bans (`active=true`, the default), or the lifted and ended ones (`active=false`), newest first. `reason` is the private note moderators wrote (an empty string when there is none); it is never shown to the member. `endsAt` is `null` for a ban with no end; `moderator` is `null` when that moderator\'s account was erased. `403 not_moderator` when you are not a moderator of the community now.',
+      "Current timeouts and bans (`active=true`, the default), or the lifted and ended ones (`active=false`), newest first. `reason` is the private note moderators wrote (an empty string when there is none); it is never shown to the member. `endsAt` is `null` for a ban with no end; `moderator` is `null` when that moderator's account was erased. `403 not_moderator` when you are not a moderator of the community now.",
     paginated: true,
     params: [
       { name: 'slug', in: 'path', type: 'string', description: 'The community slug.', required: true },
@@ -3750,11 +3758,21 @@ export const ENDPOINTS: ApiEndpoint[] = [
       fields: [
         { name: 'handle', type: 'string', required: true, description: 'The member, with or without a leading `@`.' },
         { name: 'kind', type: 'string', required: true, description: '`timeout` or `ban`.' },
-        { name: 'duration', type: 'string', description: '`1h`, `1d`, `3d`, `7d`, `30d` or `forever`; which are allowed depends on `kind`.' },
+        {
+          name: 'duration',
+          type: 'string',
+          description: '`1h`, `1d`, `3d`, `7d`, `30d` or `forever`; which are allowed depends on `kind`.',
+        },
         { name: 'rule_id', type: 'string', description: 'The community rule the sanction cites.' },
         { name: 'reason', type: 'string', description: 'A private note for moderators, up to 300 characters.' },
       ],
-      example: { handle: 'grace', kind: 'timeout', duration: '1d', rule_id: 'clrule1', reason: 'Second warning today.' },
+      example: {
+        handle: 'grace',
+        kind: 'timeout',
+        duration: '1d',
+        rule_id: 'clrule1',
+        reason: 'Second warning today.',
+      },
     },
     responseExample: { id: 'clsanction1', kind: 'ban', endsAt: null },
   },
@@ -3947,6 +3965,267 @@ export const ENDPOINTS: ApiEndpoint[] = [
       },
       paused: false,
       days: [{ day: '2026-11-22', minutes: 45 }],
+    },
+  },
+
+  // Sprint 12
+  // s12-12 api-reviews
+  {
+    method: 'GET',
+    path: '/api/v1/me/decks/{id}/review',
+    operationId: 'getMyDeckReview',
+    group: 'Study',
+    scope: 'read:study',
+    summary: 'Get the cards due for review',
+    description:
+      'The cards the site’s review queue would show you now for this deck, in its order: scheduled cards that are due, then new cards within the deck’s daily pace (suspended cards are left out). A deck you edit or a public deck is reviewed on your own schedule. Each card has its text, pictures with their descriptions, its `externalId` and its `schedule` (`state` is `new` or `review`). A cloze card is one deletion (`clozeIndex`); an occlusion card is one mask (`clozeIndex` is the mask id). Card sounds are never returned. Grade a card with `POST /api/v1/me/decks/{id}/cards/{cardId}/review`. A deck you may not read is 404.',
+    params: [
+      {
+        name: 'id',
+        in: 'path',
+        type: 'string',
+        description: 'The deck id.',
+        required: true,
+      },
+      {
+        name: 'limit',
+        in: 'query',
+        type: 'integer',
+        description: 'Cards to return, 1–50 (default 20).',
+      },
+    ],
+    responseExample: {
+      data: [
+        {
+          id: 'clcard1',
+          kind: 'basic',
+          front: 'hablar',
+          back: 'to speak',
+          clozeIndex: null,
+          externalId: null,
+          frontImage: null,
+          backImage: null,
+          occlusion: null,
+          schedule: {
+            state: 'new',
+            dueAt: null,
+            intervalDays: 0,
+          },
+        },
+        {
+          id: 'clcard2',
+          kind: 'basic',
+          front: 'comer',
+          back: 'to eat',
+          clozeIndex: null,
+          externalId: 'verbs-002',
+          frontImage: null,
+          backImage: null,
+          occlusion: null,
+          schedule: {
+            state: 'review',
+            dueAt: '2026-11-25T08:00:00.000Z',
+            intervalDays: 6,
+          },
+        },
+      ],
+    },
+  },
+  {
+    method: 'POST',
+    path: '/api/v1/me/decks/{id}/cards/{cardId}/review',
+    operationId: 'gradeMyDeckCard',
+    group: 'Study',
+    scope: 'write:study-reviews',
+    summary: 'Grade a card',
+    description:
+      'Grade one card (`again`, `hard`, `good` or `easy`) on your own schedule. It is the same review as one in the browser: the schedule, your history and the leech rule are the site’s, so it shows up on your statistics. It earns no daily quest progress or XP. Send `Idempotency-Key` so a retry never grades twice. `cardId` is a card id from `GET /api/v1/me/decks/{id}/review` (a generated cloze or occlusion card included). A card that is not in the deck, or is not one you may read, is 404; a card you suspended is 409. At most 120 grades a minute. Needs the explicit `write:study-reviews` scope, which `*` and `write:*` do not include.',
+    idempotent: true,
+    params: [
+      {
+        name: 'id',
+        in: 'path',
+        type: 'string',
+        description: 'The deck id.',
+        required: true,
+      },
+      {
+        name: 'cardId',
+        in: 'path',
+        type: 'string',
+        description: 'The card id.',
+        required: true,
+      },
+    ],
+    requestBody: {
+      fields: [
+        {
+          name: 'grade',
+          type: 'string',
+          required: true,
+          description: 'How well you knew it: `again`, `hard`, `good` or `easy`.',
+        },
+      ],
+      example: {
+        grade: 'good',
+      },
+    },
+    responseExample: {
+      data: {
+        dueAt: '2026-11-26T08:00:00.000Z',
+        intervalDays: 1,
+        leech: false,
+      },
+    },
+  },
+
+  // s12-13 api-characters
+  {
+    method: 'GET',
+    path: '/api/v1/me/characters',
+    operationId: 'listMyCharacters',
+    group: 'RMHCharacters',
+    scope: 'read:characters',
+    summary: 'List your characters',
+    description:
+      "Your RMHCharacters sheets, most recently edited first. `summary` is the one a party sees, computed by the site's own rules engine: armor class, hit points, conditions, Perception (passive in 5e), speed and initiative. A sheet the rules data can no longer read is left out. Never cached (`Cache-Control: private, no-store`).",
+    paginated: true,
+    params: [
+      { name: 'limit', in: 'query', type: 'integer', description: 'Page size, 1–50 (default 25).' },
+      {
+        name: 'cursor',
+        in: 'query',
+        type: 'string',
+        description: 'Opaque cursor from a previous `nextCursor` to fetch the next page.',
+      },
+    ],
+    responseExample: {
+      data: [
+        {
+          id: '0b9f6c1e-5d1a-4a0e-9d57-6a3f1d2c8e11',
+          system: 'dnd5e',
+          name: 'Brienne',
+          level: 5,
+          summary: {
+            system: 'dnd5e',
+            name: 'Brienne',
+            level: 5,
+            ancestry: null,
+            classes: [{ name: 'Fighter', level: 5 }],
+            ac: 18,
+            hp: { current: 38, max: 44, temp: 0 },
+            conditions: ['Poisoned'],
+            perception: 13,
+            speed: 30,
+            initiative: 2,
+          },
+          updatedAt: '2026-11-24T19:30:00.000Z',
+        },
+      ],
+      nextCursor: null,
+    },
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/me/characters/{id}',
+    operationId: 'getMyCharacter',
+    group: 'RMHCharacters',
+    scope: 'read:characters',
+    summary: 'Get one of your characters',
+    description:
+      "One of your characters: the list fields plus `sheet`, the stored sheet as the site keeps it, without the `portrait` image (it is large); `portrait` says whether the sheet had one. Your own `notes` are part of the sheet. Another member's character is `404 not_found`. Never cached.",
+    params: [{ name: 'id', in: 'path', type: 'string', description: 'The character id.', required: true }],
+    responseExample: {
+      data: {
+        id: '0b9f6c1e-5d1a-4a0e-9d57-6a3f1d2c8e11',
+        system: 'dnd5e',
+        name: 'Brienne',
+        level: 5,
+        summary: {
+          system: 'dnd5e',
+          name: 'Brienne',
+          level: 5,
+          ancestry: null,
+          classes: [{ name: 'Fighter', level: 5 }],
+          ac: 18,
+          hp: { current: 38, max: 44, temp: 0 },
+          conditions: ['Poisoned'],
+          perception: 13,
+          speed: 30,
+          initiative: 2,
+        },
+        updatedAt: '2026-11-24T19:30:00.000Z',
+        portrait: false,
+        sheet: { id: '0b9f6c1e-5d1a-4a0e-9d57-6a3f1d2c8e11', system: 'dnd5e', name: 'Brienne', notes: '' },
+      },
+    },
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/me/parties',
+    operationId: 'listMyParties',
+    group: 'RMHCharacters',
+    scope: 'read:characters',
+    summary: 'List your parties',
+    description:
+      "The parties you run (`role` `gm`) or play in (`player`), most recently changed first, with the game master's name and the number of players. Never cached.",
+    responseExample: {
+      data: [
+        {
+          id: 'clparty1',
+          name: 'Thursday table',
+          system: 'dnd5e',
+          role: 'player',
+          gm: 'Ada',
+          members: 4,
+        },
+      ],
+    },
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/me/parties/{id}',
+    operationId: 'getMyParty',
+    group: 'RMHCharacters',
+    scope: 'read:characters',
+    summary: 'Get one of your parties',
+    description:
+      "One party as the site shows it to you: each member's name and the summary of the character they brought, the turn order and `turnIndex`, the line whose turn it is. A member's `summary` is `null` when the sheet cannot be read. Never another player's sheet or notes, and never the invite code. A party you are not in, or have left, is `404 not_found`. Never cached.",
+    params: [{ name: 'id', in: 'path', type: 'string', description: 'The party id.', required: true }],
+    responseExample: {
+      data: {
+        id: 'clparty1',
+        name: 'Thursday table',
+        system: 'dnd5e',
+        role: 'player',
+        gm: 'Ada',
+        members: [
+          {
+            userId: 'cluser1',
+            name: 'Ada',
+            joinedAt: '2026-11-01T18:00:00.000Z',
+            isGm: true,
+            summary: {
+              system: 'dnd5e',
+              name: 'Brienne',
+              level: 5,
+              ancestry: null,
+              classes: [{ name: 'Fighter', level: 5 }],
+              ac: 18,
+              hp: { current: 38, max: 44, temp: 0 },
+              conditions: ['Poisoned'],
+              perception: 13,
+              speed: 30,
+              initiative: 2,
+            },
+          },
+        ],
+        order: [
+          { id: 'line2', kind: 'extra', userId: null, name: 'Goblin', value: 12 },
+          { id: 'line1', kind: 'member', userId: 'cluser1', name: 'Ada', value: 17 },
+        ],
+        turnIndex: 0,
+      },
     },
   },
 ];

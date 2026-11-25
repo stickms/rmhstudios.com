@@ -53,6 +53,8 @@ import { route as r_lib_admin_api_admin_curated_builds_image_proxy } from '@/lib
 import { route as r_lib_ai_api_admin_deepseek_balance } from '@/lib/ai/api/admin.deepseek.balance.server';
 import { route as r_lib_ai_api_admin_deepseek_history } from '@/lib/ai/api/admin.deepseek.history.server';
 import { route as r_lib_ai_api_admin_deepseek_refresh } from '@/lib/ai/api/admin.deepseek.refresh.server';
+import { route as r_lib_admin_api_admin_deletions } from '@/lib/admin/api/admin.deletions.server';
+import { route as r_lib_admin_api_admin_deletions_userId_retry } from '@/lib/admin/api/admin.deletions.$userId.retry.server';
 import { route as r_lib_delight_api_admin_delight_fools } from '@/lib/delight/api/admin.delight.fools.server';
 import { route as r_lib_delight_api_admin_delight_fortunes } from '@/lib/delight/api/admin.delight.fortunes.server';
 import { route as r_lib_delight_api_admin_delight_fortunes_id } from '@/lib/delight/api/admin.delight.fortunes.$id.server';
@@ -83,6 +85,9 @@ import { route as r_lib_admin_api_admin_flags_key_history } from '@/lib/admin/ap
 import { route as r_lib_admin_api_admin_flags_key_targeting } from '@/lib/admin/api/admin.flags.$key.targeting.server';
 import { route as r_lib_admin_api_admin_forecasting_seasons } from '@/lib/admin/api/admin.forecasting.seasons.server';
 import { route as r_lib_gifting_api_admin_gift_exchanges_id_verify } from '@/lib/gifting/api/admin.gift-exchanges.$id.verify.server';
+import { route as r_lib_admin_api_admin_homes } from '@/lib/admin/api/admin.homes.server';
+import { route as r_lib_admin_api_admin_homes_scrape } from '@/lib/admin/api/admin.homes.scrape.server';
+import { route as r_lib_admin_api_admin_homes_sources_id_status } from '@/lib/admin/api/admin.homes.sources.$id.status.server';
 import { route as r_lib_ops_api_admin_insights_cohorts } from '@/lib/ops/api/admin.insights.cohorts.server';
 import { route as r_lib_ops_api_admin_insights_errors } from '@/lib/ops/api/admin.insights.errors.server';
 import { route as r_lib_ops_api_admin_insights_experiments } from '@/lib/ops/api/admin.insights.experiments.server';
@@ -328,8 +333,10 @@ import { route as r_lib_communities_api_community_pages_id_revisions } from '@/l
 import { route as r_lib_party_api_connections_grids } from '@/lib/party/api/connections.grids.server';
 import { route as r_lib_party_api_connections_grids_id } from '@/lib/party/api/connections.grids.$id.server';
 import { route as r_lib_party_api_connections_grids_id_guess } from '@/lib/party/api/connections.grids.$id.guess.server';
+import { route as r_lib_party_api_connections_grids_id_publish } from '@/lib/party/api/connections.grids.$id.publish.server';
 import { route as r_lib_party_api_connections_grids_id_rate } from '@/lib/party/api/connections.grids.$id.rate.server';
 import { route as r_lib_party_api_connections_grids_id_schedule } from '@/lib/party/api/connections.grids.$id.schedule.server';
+import { route as r_lib_party_api_connections_mine } from '@/lib/party/api/connections.mine.server';
 import { route as r_lib_context_notes_api_context_notes } from '@/lib/context-notes/api/context-notes.server';
 import { route as r_lib_context_notes_api_context_notes_id } from '@/lib/context-notes/api/context-notes.$id.server';
 import { route as r_lib_context_notes_api_context_notes_id_rate } from '@/lib/context-notes/api/context-notes.$id.rate.server';
@@ -542,10 +549,12 @@ import { route as r_lib_shop_api_history_id } from '@/lib/shop/api/history.$id.s
 import { route as r_lib_history_api_history_beat } from '@/lib/history/api/history.beat.server';
 import { route as r_lib_history_api_history_resume } from '@/lib/history/api/history.resume.server';
 import { route as r_lib_homes_api_homes_ai_image } from '@/lib/homes/api/homes.ai-image.server';
+import { route as r_lib_homes_api_homes_compare } from '@/lib/homes/api/homes.compare.server';
 import { route as r_lib_homes_api_homes_geocode } from '@/lib/homes/api/homes.geocode.server';
 import { route as r_lib_homes_api_homes_listings_id } from '@/lib/homes/api/homes.listings.$id.server';
 import { route as r_lib_homes_api_homes_listings_id_favorite } from '@/lib/homes/api/homes.listings.$id.favorite.server';
 import { route as r_lib_homes_api_homes_listings_id_favorite_alerts } from '@/lib/homes/api/homes.listings.$id.favorite.alerts.server';
+import { route as r_lib_homes_api_homes_listings_id_favorite_note } from '@/lib/homes/api/homes.listings.$id.favorite.note.server';
 import { route as r_lib_homes_api_homes_listings_id_prices } from '@/lib/homes/api/homes.listings.$id.prices.server';
 import { route as r_lib_homes_api_homes_listings_id_roommate } from '@/lib/homes/api/homes.listings.$id.roommate.server';
 import { route as r_lib_homes_api_homes_roommate } from '@/lib/homes/api/homes.roommate.server';
@@ -754,6 +763,7 @@ import { route as r_lib_guestbook_api_profile_id_guestbook } from '@/lib/guestbo
 import { route as r_lib_guestbook_api_profile_id_guestbook_entryId } from '@/lib/guestbook/api/profile.$id.guestbook.$entryId.server';
 import { route as r_lib_profile_api_profile_id_kudos } from '@/lib/profile/api/profile.$id.kudos.server';
 import { route as r_lib_profile_api_profile_id_likes } from '@/lib/profile/api/profile.$id.likes.server';
+import { route as r_lib_profile_api_profile_id_made } from '@/lib/profile/api/profile.$id.made.server';
 import { route as r_lib_profile_api_profile_id_membership } from '@/lib/profile/api/profile.$id.membership.server';
 import { route as r_lib_profile_api_profile_id_plus } from '@/lib/profile/api/profile.$id.plus.server';
 import { route as r_lib_profile_api_profile_id_pronunciation } from '@/lib/profile/api/profile.$id.pronunciation.server';
@@ -808,6 +818,7 @@ import { route as r_lib_reminders_api_reminders_id } from '@/lib/reminders/api/r
 import { route as r_lib_game_api_replays } from '@/lib/game/api/replays.server';
 import { route as r_lib_game_api_replays_id } from '@/lib/game/api/replays.$id.server';
 import { route as r_lib_game_api_replays_board } from '@/lib/game/api/replays.board.server';
+import { route as r_lib_game_api_replays_ghost_friends } from '@/lib/game/api/replays.ghost.friends.server';
 import { route as r_lib_game_api_replays_mine } from '@/lib/game/api/replays.mine.server';
 import { route as r_lib_requests_api_requests } from '@/lib/requests/api/requests.server';
 import { route as r_lib_requests_api_requests_id } from '@/lib/requests/api/requests.$id.server';
@@ -875,6 +886,7 @@ import { route as r_features_rmhcharacters_api_rmhcharacters_parties_id_code } f
 import { route as r_features_rmhcharacters_api_rmhcharacters_parties_id_leave } from '@/features/rmhcharacters/api/rmhcharacters.parties.$id.leave.server';
 import { route as r_features_rmhcharacters_api_rmhcharacters_parties_id_members_userId } from '@/features/rmhcharacters/api/rmhcharacters.parties.$id.members.$userId.server';
 import { route as r_features_rmhcharacters_api_rmhcharacters_parties_id_order } from '@/features/rmhcharacters/api/rmhcharacters.parties.$id.order.server';
+import { route as r_features_rmhcharacters_api_rmhcharacters_parties_id_rolls } from '@/features/rmhcharacters/api/rmhcharacters.parties.$id.rolls.server';
 import { route as r_features_rmhcharacters_api_rmhcharacters_parties_id_sharing } from '@/features/rmhcharacters/api/rmhcharacters.parties.$id.sharing.server';
 import { route as r_features_rmhcharacters_api_rmhcharacters_parties_id_sheet_userId } from '@/features/rmhcharacters/api/rmhcharacters.parties.$id.sheet.$userId.server';
 import { route as r_features_rmhcharacters_api_rmhcharacters_party_join } from '@/features/rmhcharacters/api/rmhcharacters.party-join.server';
@@ -1012,6 +1024,7 @@ import { route as r_features_slice_it_api_slice_it_charts } from '@/features/sli
 import { route as r_features_slice_it_api_slice_it_charts_id } from '@/features/slice-it/api/slice-it.charts.$id.server';
 import { route as r_features_slice_it_api_slice_it_charts_id_reviews } from '@/features/slice-it/api/slice-it.charts.$id.reviews.server';
 import { route as r_features_slice_it_api_slice_it_charts_id_revisions } from '@/features/slice-it/api/slice-it.charts.$id.revisions.server';
+import { route as r_features_slice_it_api_slice_it_charts_id_revisions_revisionId } from '@/features/slice-it/api/slice-it.charts.$id.revisions.$revisionId.server';
 import { route as r_features_slice_it_api_slice_it_charts_ranking } from '@/features/slice-it/api/slice-it.charts.ranking.server';
 import { route as r_features_slice_it_api_slice_it_daily } from '@/features/slice-it/api/slice-it.daily.server';
 import { route as r_features_slice_it_api_slice_it_daily_submit } from '@/features/slice-it/api/slice-it.daily.submit.server';
@@ -1090,6 +1103,8 @@ import { route as r_lib_study_api_study_card_images } from '@/lib/study/api/stud
 import { route as r_lib_study_api_study_card_sound } from '@/lib/study/api/study.card-sound.server';
 import { route as r_lib_study_api_study_card_sound_file } from '@/lib/study/api/study.card-sound.$file.server';
 import { route as r_lib_study_api_study_cards_id } from '@/lib/study/api/study.cards.$id.server';
+import { route as r_lib_study_api_study_cards_id_history } from '@/lib/study/api/study.cards.$id.history.server';
+import { route as r_lib_study_api_study_cards_id_restart } from '@/lib/study/api/study.cards.$id.restart.server';
 import { route as r_lib_study_api_study_cards_id_review } from '@/lib/study/api/study.cards.$id.review.server';
 import { route as r_lib_study_api_study_cards_id_suspend } from '@/lib/study/api/study.cards.$id.suspend.server';
 import { route as r_lib_study_api_study_decks } from '@/lib/study/api/study.decks.server';
@@ -1104,6 +1119,7 @@ import { route as r_lib_study_api_study_decks_id_leave } from '@/lib/study/api/s
 import { route as r_lib_study_api_study_decks_id_link_original } from '@/lib/study/api/study.decks.$id.link-original.server';
 import { route as r_lib_study_api_study_decks_id_order } from '@/lib/study/api/study.decks.$id.order.server';
 import { route as r_lib_study_api_study_decks_id_pace } from '@/lib/study/api/study.decks.$id.pace.server';
+import { route as r_lib_study_api_study_decks_id_rating } from '@/lib/study/api/study.decks.$id.rating.server';
 import { route as r_lib_study_api_study_decks_id_review } from '@/lib/study/api/study.decks.$id.review.server';
 import { route as r_lib_study_api_study_decks_id_suggestions } from '@/lib/study/api/study.decks.$id.suggestions.server';
 import { route as r_lib_study_api_study_decks_id_tests } from '@/lib/study/api/study.decks.$id.tests.server';
@@ -1266,6 +1282,8 @@ const API_ROUTES_A: readonly ApiRoute[] = [
   r_lib_ai_api_admin_deepseek_balance, // /api/admin/deepseek/balance
   r_lib_ai_api_admin_deepseek_history, // /api/admin/deepseek/history
   r_lib_ai_api_admin_deepseek_refresh, // /api/admin/deepseek/refresh
+  r_lib_admin_api_admin_deletions, // /api/admin/deletions
+  r_lib_admin_api_admin_deletions_userId_retry, // /api/admin/deletions/$userId/retry
   r_lib_delight_api_admin_delight_fools, // /api/admin/delight/fools
   r_lib_delight_api_admin_delight_fortunes, // /api/admin/delight/fortunes
   r_lib_delight_api_admin_delight_fortunes_id, // /api/admin/delight/fortunes/$id
@@ -1296,6 +1314,9 @@ const API_ROUTES_A: readonly ApiRoute[] = [
   r_lib_admin_api_admin_flags_key_targeting, // /api/admin/flags/$key/targeting
   r_lib_admin_api_admin_forecasting_seasons, // /api/admin/forecasting/seasons
   r_lib_gifting_api_admin_gift_exchanges_id_verify, // /api/admin/gift-exchanges/$id/verify
+  r_lib_admin_api_admin_homes, // /api/admin/homes
+  r_lib_admin_api_admin_homes_scrape, // /api/admin/homes/scrape
+  r_lib_admin_api_admin_homes_sources_id_status, // /api/admin/homes/sources/$id/status
   r_lib_ops_api_admin_insights_cohorts, // /api/admin/insights/cohorts
   r_lib_ops_api_admin_insights_errors, // /api/admin/insights/errors
   r_lib_ops_api_admin_insights_experiments, // /api/admin/insights/experiments
@@ -1547,8 +1568,10 @@ const API_ROUTES_C: readonly ApiRoute[] = [
   r_lib_party_api_connections_grids, // /api/connections/grids
   r_lib_party_api_connections_grids_id, // /api/connections/grids/$id
   r_lib_party_api_connections_grids_id_guess, // /api/connections/grids/$id/guess
+  r_lib_party_api_connections_grids_id_publish, // /api/connections/grids/$id/publish
   r_lib_party_api_connections_grids_id_rate, // /api/connections/grids/$id/rate
   r_lib_party_api_connections_grids_id_schedule, // /api/connections/grids/$id/schedule
+  r_lib_party_api_connections_mine, // /api/connections/mine
   r_lib_context_notes_api_context_notes, // /api/context-notes
   r_lib_context_notes_api_context_notes_id, // /api/context-notes/$id
   r_lib_context_notes_api_context_notes_id_rate, // /api/context-notes/$id/rate
@@ -1776,10 +1799,12 @@ const API_ROUTES_H: readonly ApiRoute[] = [
   r_lib_history_api_history_beat, // /api/history/beat
   r_lib_history_api_history_resume, // /api/history/resume
   r_lib_homes_api_homes_ai_image, // /api/homes/ai-image
+  r_lib_homes_api_homes_compare, // /api/homes/compare
   r_lib_homes_api_homes_geocode, // /api/homes/geocode
   r_lib_homes_api_homes_listings_id, // /api/homes/listings/$id
   r_lib_homes_api_homes_listings_id_favorite, // /api/homes/listings/$id/favorite
   r_lib_homes_api_homes_listings_id_favorite_alerts, // /api/homes/listings/$id/favorite/alerts
+  r_lib_homes_api_homes_listings_id_favorite_note, // /api/homes/listings/$id/favorite/note
   r_lib_homes_api_homes_listings_id_prices, // /api/homes/listings/$id/prices
   r_lib_homes_api_homes_listings_id_roommate, // /api/homes/listings/$id/roommate
   r_lib_homes_api_homes_roommate, // /api/homes/roommate
@@ -2012,6 +2037,7 @@ const API_ROUTES_P: readonly ApiRoute[] = [
   r_lib_guestbook_api_profile_id_guestbook_entryId, // /api/profile/$id/guestbook/$entryId
   r_lib_profile_api_profile_id_kudos, // /api/profile/$id/kudos
   r_lib_profile_api_profile_id_likes, // /api/profile/$id/likes
+  r_lib_profile_api_profile_id_made, // /api/profile/$id/made
   r_lib_profile_api_profile_id_membership, // /api/profile/$id/membership
   r_lib_profile_api_profile_id_plus, // /api/profile/$id/plus
   r_lib_profile_api_profile_id_pronunciation, // /api/profile/$id/pronunciation
@@ -2072,6 +2098,7 @@ const API_ROUTES_R: readonly ApiRoute[] = [
   r_lib_game_api_replays, // /api/replays
   r_lib_game_api_replays_id, // /api/replays/$id
   r_lib_game_api_replays_board, // /api/replays/board
+  r_lib_game_api_replays_ghost_friends, // /api/replays/ghost/friends
   r_lib_game_api_replays_mine, // /api/replays/mine
   r_lib_requests_api_requests, // /api/requests
   r_lib_requests_api_requests_id, // /api/requests/$id
@@ -2139,6 +2166,7 @@ const API_ROUTES_R: readonly ApiRoute[] = [
   r_features_rmhcharacters_api_rmhcharacters_parties_id_leave, // /api/rmhcharacters/parties/$id/leave
   r_features_rmhcharacters_api_rmhcharacters_parties_id_members_userId, // /api/rmhcharacters/parties/$id/members/$userId
   r_features_rmhcharacters_api_rmhcharacters_parties_id_order, // /api/rmhcharacters/parties/$id/order
+  r_features_rmhcharacters_api_rmhcharacters_parties_id_rolls, // /api/rmhcharacters/parties/$id/rolls
   r_features_rmhcharacters_api_rmhcharacters_parties_id_sharing, // /api/rmhcharacters/parties/$id/sharing
   r_features_rmhcharacters_api_rmhcharacters_parties_id_sheet_userId, // /api/rmhcharacters/parties/$id/sheet/$userId
   r_features_rmhcharacters_api_rmhcharacters_party_join, // /api/rmhcharacters/party-join
@@ -2279,6 +2307,7 @@ const API_ROUTES_S: readonly ApiRoute[] = [
   r_features_slice_it_api_slice_it_charts_id, // /api/slice-it/charts/$id
   r_features_slice_it_api_slice_it_charts_id_reviews, // /api/slice-it/charts/$id/reviews
   r_features_slice_it_api_slice_it_charts_id_revisions, // /api/slice-it/charts/$id/revisions
+  r_features_slice_it_api_slice_it_charts_id_revisions_revisionId, // /api/slice-it/charts/$id/revisions/$revisionId
   r_features_slice_it_api_slice_it_charts_ranking, // /api/slice-it/charts/ranking
   r_features_slice_it_api_slice_it_daily, // /api/slice-it/daily
   r_features_slice_it_api_slice_it_daily_submit, // /api/slice-it/daily/submit
@@ -2357,6 +2386,8 @@ const API_ROUTES_S: readonly ApiRoute[] = [
   r_lib_study_api_study_card_sound, // /api/study/card-sound
   r_lib_study_api_study_card_sound_file, // /api/study/card-sound/$file
   r_lib_study_api_study_cards_id, // /api/study/cards/$id
+  r_lib_study_api_study_cards_id_history, // /api/study/cards/$id/history
+  r_lib_study_api_study_cards_id_restart, // /api/study/cards/$id/restart
   r_lib_study_api_study_cards_id_review, // /api/study/cards/$id/review
   r_lib_study_api_study_cards_id_suspend, // /api/study/cards/$id/suspend
   r_lib_study_api_study_decks, // /api/study/decks
@@ -2371,6 +2402,7 @@ const API_ROUTES_S: readonly ApiRoute[] = [
   r_lib_study_api_study_decks_id_link_original, // /api/study/decks/$id/link-original
   r_lib_study_api_study_decks_id_order, // /api/study/decks/$id/order
   r_lib_study_api_study_decks_id_pace, // /api/study/decks/$id/pace
+  r_lib_study_api_study_decks_id_rating, // /api/study/decks/$id/rating
   r_lib_study_api_study_decks_id_review, // /api/study/decks/$id/review
   r_lib_study_api_study_decks_id_suggestions, // /api/study/decks/$id/suggestions
   r_lib_study_api_study_decks_id_tests, // /api/study/decks/$id/tests

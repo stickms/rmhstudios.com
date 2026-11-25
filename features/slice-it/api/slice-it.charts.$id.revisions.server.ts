@@ -3,9 +3,9 @@
  *
  * Design doc: `docs/slice-it-chart-editor.md` §1.1 (`ChartRevision`) / §2.
  *
- * Read-only in phases 1–3: autosave appends here (see `charts/$id.ts` PATCH) and
- * this is how an author sees that it worked. Restoring a revision is a POST this
- * route deliberately does not have yet — see the TODO below.
+ * Read-only: autosave appends here (see `charts/$id.ts` PATCH) and this is how an author sees that it worked. The
+ * editor's Versions panel lists them, `…/revisions/$revisionId` returns one revision's notes, and restoring is an
+ * edit in the editor saved through the chart's PATCH (see `engine/editor/restore.ts`), never a write here.
  */
 
 import { apiRoute } from '@/lib/api/route.server';
@@ -61,10 +61,4 @@ export const route = apiRoute('/api/slice-it/charts/$id/revisions', {
       return Response.json({ revisions });
     },
   ),
-
-  // TODO(phase 7 — `docs/slice-it-chart-editor.md` §2): POST here restores a
-  // revision onto the chart. It needs the publish/status machinery to decide
-  // what restoring onto a PUBLISHED chart means for its leaderboard (§17.2),
-  // which is the same open question `publish.ts` has to answer, so both land
-  // together rather than this one landing half-answered.
 });

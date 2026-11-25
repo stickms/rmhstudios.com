@@ -1,10 +1,10 @@
 import { useRefusalText } from '@/components/errors/useRefusalText';
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCopyFallback } from '@/components/ui/copy-fallback';
 import { toast } from '@/lib/toast';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { CalendarCheck, Plus, Share2, Star, Trash2 } from 'lucide-react';
+import { CalendarCheck, Flag, Plus, Share2, Star, Trash2 } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Section } from '@/components/ui/rules';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,6 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useSession } from '@/components/Providers';
 import { api } from '@/lib/contract/client';
 import {
-  createConnectionGridApi,
   deleteConnectionGridApi,
   getConnectionGridApi,
   guessConnectionGridApi,
@@ -33,8 +32,15 @@ import {
   type GridSummary,
 } from '@/lib/party/connections';
 import { useArrival } from '@/components/ui/arrive';
+import { ConnectionsAuthorBar } from '@/components/party/ConnectionsAuthorBar';
+import { ConnectionsEditor } from '@/components/party/ConnectionsEditor';
+import { YourGridsLink } from '@/components/party/ConnectionsMine';
+import { ConnectionsPractice, GROUP_BANDS as BAND } from '@/components/party/ConnectionsPractice';
 
-const BAND = ['bg-site-warning/25', 'bg-site-success/25', 'bg-site-accent/25', 'bg-site-danger/25'];
+// s12-16 member-reports: the dialog carries a zod schema, so it loads only when a member opens it.
+const ReportDialog = lazy(() =>
+  import('@/components/moderation/ReportDialog').then((m) => ({ default: m.ReportDialog })),
+);
 
 function GridRow({ g, tag }: { g: GridSummary; tag?: string }) {
   const { t } = useTranslation('f-party');
@@ -42,7 +48,9 @@ function GridRow({ g, tag }: { g: GridSummary; tag?: string }) {
     <Link to="/connections/u/$id" params={{ id: g.id }} className="block">
       <div className="row-hover flex items-center justify-between gap-3 border-b border-site-border py-3">
         <div className="min-w-0">
-          <p className="truncate font-semibold text-site-text">{g.title}</p>
+          <p className="truncate font-semibold text-site-text" dir="auto">
+            {g.title}
+          </p>
           <p className="text-xs text-site-text-muted">
             {t('grid-meta', {
               defaultValue: 'by {{author}} · {{plays}} plays · {{solve}} solved',
@@ -104,12 +112,15 @@ export function ConnectionsSection() {
               'Sort sixteen items into four hidden groups. Members make the grids; the best become the daily.',
           })}
         </p>
-        <Button asChild variant="default" size="sm">
-          <Link to="/connections/new">
-            <Plus aria-hidden />
-            {t('make-grid', { defaultValue: 'Make a grid' })}
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <YourGridsLink />
+          <Button asChild variant="default" size="sm">
+            <Link to="/connections/new">
+              <Plus aria-hidden />
+              {t('make-grid', { defaultValue: 'Make a grid' })}
+            </Link>
+          </Button>
+        </div>
       </div>
       <div className={cn('space-y-[var(--site-section-gap)]', listArrival)}>
         {!data ? (
@@ -143,38 +154,7 @@ export function ConnectionsSection() {
 
 export function ConnectionsNew() {
   const { t } = useTranslation('f-party');
-  const refusalText = useRefusalText();
   const session = useSession();
-  const navigate = useNavigate();
-  const [title, setTitle] = useState('');
-  const [groups, setGroups] = useState(() =>
-    Array.from({ length: 4 }, () => ({ label: '', items: ['', '', '', ''] })),
-  );
-  const [busy, setBusy] = useState(false);
-
-  const setLabel = (g: number, v: string) =>
-    setGroups((gs) => gs.map((x, i) => (i === g ? { ...x, label: v } : x)));
-  const setItem = (g: number, k: number, v: string) =>
-    setGroups((gs) =>
-      gs.map((x, i) => (i === g ? { ...x, items: x.items.map((y, j) => (j === k ? v : y)) } : x)),
-    );
-
-  const flat = groups.flatMap((g) => g.items.map((i) => i.trim().toLowerCase()));
-  const filled = flat.every(Boolean) && groups.every((g) => g.label.trim().length >= 2);
-  const unique = new Set(flat).size === 16;
-
-  async function submit() {
-    setBusy(true);
-    try {
-      const { id } = await api(createConnectionGridApi, { body: { title, groups } });
-      setBusy(false);
-      toast.success(t('grid-created', { defaultValue: 'Grid published.' }));
-      void navigate({ to: '/connections/u/$id', params: { id } });
-    } catch (err) {
-      setBusy(false);
-      toast.error(refusalText.maybe(err) ?? t('grid-failed', { defaultValue: 'Could not publish the grid.' }));
-    }
-  }
 
   if (!session.data?.user) {
     return (
@@ -196,59 +176,14 @@ export function ConnectionsNew() {
           'Four groups, four items each, sixteen different items. Each group needs a label.',
       })}
     >
-      <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
-        <Input
-          value={title}
-          maxLength={80}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder={t('grid-title', { defaultValue: 'Grid title' })}
-          aria-label={t('grid-title', { defaultValue: 'Grid title' })}
-        />
-        {groups.map((g, gi) => (
-          <Section key={gi} className={cn('space-y-3 p-4', BAND[gi])}>
-            <Input
-              value={g.label}
-              maxLength={40}
-              onChange={(e) => setLabel(gi, e.target.value)}
-              placeholder={t('group-label', { defaultValue: 'Group {{n}} label', n: gi + 1 })}
-              aria-label={t('group-label', { defaultValue: 'Group {{n}} label', n: gi + 1 })}
-            />
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {g.items.map((it, k) => (
-                <Input
-                  key={k}
-                  value={it}
-                  maxLength={30}
-                  onChange={(e) => setItem(gi, k, e.target.value)}
-                  aria-label={t('item-label', {
-                    defaultValue: 'Group {{n}} item {{k}}',
-                    n: gi + 1,
-                    k: k + 1,
-                  })}
-                />
-              ))}
-            </div>
-          </Section>
-        ))}
-        {filled && !unique ? (
-          <p className="text-sm text-site-danger">
-            {t('dupes', { defaultValue: 'Every one of the 16 items must be different.' })}
-          </p>
-        ) : null}
-        <Button
-          variant="default"
-          disabled={busy || title.trim().length < 3 || !filled || !unique}
-          onClick={() => void submit()}
-        >
-          {t('publish-grid', { defaultValue: 'Publish grid' })}
-        </Button>
-      </div>
+      <ConnectionsEditor draft />
     </PageLayout>
   );
 }
 
 export function ConnectionsPlay({ id }: { id: string }) {
   const { t } = useTranslation('f-party');
+  const [reporting, setReporting] = useState(false);
   const refusalText = useRefusalText();
   const session = useSession();
   const signedIn = !!session.data?.user;
@@ -261,6 +196,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
   const [picked, setPicked] = useState<string[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
   const [date, setDate] = useState('');
+  const [mode, setMode] = useState<'view' | 'edit' | 'try'>('view');
   const gridArrival = useArrival(missing || grid !== null);
 
   const load = useCallback(async () => {
@@ -291,6 +227,28 @@ export function ConnectionsPlay({ id }: { id: string }) {
         <div className="flex justify-center py-20">
           <Spinner />
         </div>
+      </PageLayout>
+    );
+  }
+
+  // The author's own views of the grid: the form (until it is played) and the client-only practice mode.
+  if (grid.isAuthor && grid.solution && mode !== 'view') {
+    return (
+      <PageLayout title={grid.title} backTo="/connections/mine">
+        {mode === 'edit' ? (
+          <ConnectionsEditor
+            gridId={grid.id}
+            draft={grid.draft}
+            initial={{ title: grid.title, groups: grid.solution }}
+            onCancel={() => setMode('view')}
+            onSaved={() => {
+              setMode('view');
+              void load();
+            }}
+          />
+        ) : (
+          <ConnectionsPractice seed={grid.id} groups={grid.solution} onExit={() => setMode('view')} />
+        )}
       </PageLayout>
     );
   }
@@ -378,6 +336,8 @@ export function ConnectionsPlay({ id }: { id: string }) {
     done && grid.solution
       ? grid.solution.filter((g) => !grid.found.some((f) => f.label === g.label))
       : [];
+  // A draft is not played: its author sees the groups as they have them so far.
+  const draftGroups: GridGroup[] = grid.draft && grid.solution ? grid.solution : [];
 
   return (
     <PageLayout
@@ -405,8 +365,22 @@ export function ConnectionsPlay({ id }: { id: string }) {
               key={f.index}
               className={cn('rounded-site px-4 py-3 text-center', BAND[f.index % 4])}
             >
-              <p className="text-xs font-semibold text-site-text">{f.label}</p>
-              <p className="text-sm text-site-text">{f.items.join(', ')}</p>
+              <p className="text-xs font-semibold text-site-text" dir="auto">
+                {f.label}
+              </p>
+              <p className="text-sm text-site-text" dir="auto">
+                {f.items.join(', ')}
+              </p>
+            </div>
+          ))}
+          {draftGroups.map((g, i) => (
+            <div key={i} className={cn('rounded-site px-4 py-3 text-center', BAND[i % 4])}>
+              <p className="text-xs font-semibold text-site-text" dir="auto">
+                {g.label}
+              </p>
+              <p className="text-sm text-site-text" dir="auto">
+                {g.items.filter(Boolean).join(', ')}
+              </p>
             </div>
           ))}
           {revealRest.map((g, i) => (
@@ -417,13 +391,17 @@ export function ConnectionsPlay({ id }: { id: string }) {
                 BAND[(grid.found.length + i) % 4],
               )}
             >
-              <p className="text-xs font-semibold text-site-text">{g.label}</p>
-              <p className="text-sm text-site-text">{g.items.join(', ')}</p>
+              <p className="text-xs font-semibold text-site-text" dir="auto">
+                {g.label}
+              </p>
+              <p className="text-sm text-site-text" dir="auto">
+                {g.items.join(', ')}
+              </p>
             </div>
           ))}
         </div>
 
-        {!done ? (
+        {!done && !grid.draft ? (
           <div className="grid grid-cols-4 gap-2">
             {remaining.map((item) => (
               <button
@@ -467,7 +445,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
             {t('play-sign-in', { defaultValue: 'Sign in to play this grid.' })}
           </p>
         ) : null}
-        {grid.isAuthor ? (
+        {grid.isAuthor && !grid.draft ? (
           <p className="text-center text-sm text-site-text-muted">
             {t('your-grid', {
               defaultValue: 'Your grid: {{plays}} plays, {{solve}} solved.',
@@ -538,6 +516,14 @@ export function ConnectionsPlay({ id }: { id: string }) {
             ) : null}
           </Section>
         ) : null}
+        {grid.isAuthor ? (
+          <ConnectionsAuthorBar
+            grid={grid}
+            onEdit={() => setMode('edit')}
+            onTry={() => setMode('try')}
+            onChanged={() => void load()}
+          />
+        ) : null}
         {grid.isAuthor || isAdmin ? (
           <div className="text-center">
             <Button size="sm" variant="ghost" onClick={() => void remove()}>
@@ -545,6 +531,19 @@ export function ConnectionsPlay({ id }: { id: string }) {
               {t('delete', { defaultValue: 'Delete' })}
             </Button>
           </div>
+        ) : null}
+        {signedIn && !grid.isAuthor && !grid.draft ? (
+          <div className="text-center">
+            <Button size="sm" variant="ghost" onClick={() => setReporting(true)}>
+              <Flag aria-hidden />
+              {t('report-grid', { ns: 'member-reports', defaultValue: 'Report this grid' })}
+            </Button>
+          </div>
+        ) : null}
+        {reporting ? (
+          <Suspense fallback={null}>
+            <ReportDialog open onOpenChange={setReporting} entityType="connections-grid" entityId={id} />
+          </Suspense>
         ) : null}
       </div>
     </PageLayout>

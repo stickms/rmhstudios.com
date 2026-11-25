@@ -1,0 +1,19 @@
+{
+  "copies_one": "{{count}} copy",
+  "copies_other": "{{count}} copies",
+  "rate-failed": "Could not save your rating",
+  "rate-remove": "Remove my rating",
+  "rate-removed": "Rating removed",
+  "rate-saved": "Rating saved",
+  "rate-study-more": "Study your copy of this deck to rate it: {{reviews}} of {{needed}} reviews so far.",
+  "rate-title": "Rate this deck",
+  "rating-average_one": "{{average}} out of 5 from {{count}} rating",
+  "rating-average_other": "{{average}} out of 5 from {{count}} ratings",
+  "rating-none": "Not enough ratings yet",
+  "sort-cards": "Most cards",
+  "sort-copied": "Most copied",
+  "sort-label": "Order decks by",
+  "sort-rated": "Best rated",
+  "stars-n_one": "{{count}} star",
+  "stars-n_other": "{{count}} stars"
+}

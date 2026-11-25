@@ -5,7 +5,7 @@
 
 # Study
 
-11 endpoints. Paths are relative to `https://rmhstudios.com`.
+13 endpoints. Paths are relative to `https://rmhstudios.com`.
 
 | Endpoint | Scope | Summary |
 | -------- | ----- | ------- |
@@ -20,6 +20,8 @@
 | `DELETE /api/v1/me/decks/{id}/cards/{cardId}` | `write:study` | Delete a card |
 | `PUT /api/v1/me/decks/{id}/cards/by-external-id/{externalId}` | `write:study` | Create or update a card by external id |
 | `GET /api/v1/me/decks/{id}/due` | `read:study` | Get due counts |
+| `GET /api/v1/me/decks/{id}/review` | `read:study` | Get the cards due for review |
+| `POST /api/v1/me/decks/{id}/cards/{cardId}/review` | `write:study-reviews` | Grade a card |
 
 ## Reference
 
@@ -363,7 +365,7 @@ Create the card keyed by your own id in this deck, or update it. The same body s
 
 ### `GET /api/v1/me/decks/{id}/due`
 
-How many cards in the deck are due now and in the next 24 hours (suspended cards are not counted), for a “you have 40 cards due” widget. No card content. Reviews are made in the app and cannot be written through the API.
+How many cards in the deck are due now and in the next 24 hours (suspended cards are not counted), for a “you have 40 cards due” widget. No card content. To fetch the cards themselves use `GET /api/v1/me/decks/{id}/review`.
 
 **Scope:** `read:study` · **Success:** `200` · **Operation id:** `getMyDeckDue`
 
@@ -379,5 +381,92 @@ How many cards in the deck are due now and in the next 24 hours (suspended cards
   "dueNow": 40,
   "dueNext24h": 12,
   "asOf": "2026-11-20T21:14:00.000Z"
+}
+```
+
+### `GET /api/v1/me/decks/{id}/review`
+
+The cards the site’s review queue would show you now for this deck, in its order: scheduled cards that are due, then new cards within the deck’s daily pace (suspended cards are left out). A deck you edit or a public deck is reviewed on your own schedule. Each card has its text, pictures with their descriptions, its `externalId` and its `schedule` (`state` is `new` or `review`). A cloze card is one deletion (`clozeIndex`); an occlusion card is one mask (`clozeIndex` is the mask id). Card sounds are never returned. Grade a card with `POST /api/v1/me/decks/{id}/cards/{cardId}/review`. A deck you may not read is 404.
+
+**Scope:** `read:study` · **Success:** `200` · **Operation id:** `getMyDeckReview`
+
+| Parameter | In | Type | Required | Description |
+| --------- | -- | ---- | -------- | ----------- |
+| `id` | path | string | yes | The deck id. |
+| `limit` | query | integer | no | Cards to return, 1–50 (default 20). |
+
+**Example response** (`200`)
+
+```json
+{
+  "data": [
+    {
+      "id": "clcard1",
+      "kind": "basic",
+      "front": "hablar",
+      "back": "to speak",
+      "clozeIndex": null,
+      "externalId": null,
+      "frontImage": null,
+      "backImage": null,
+      "occlusion": null,
+      "schedule": {
+        "state": "new",
+        "dueAt": null,
+        "intervalDays": 0
+      }
+    },
+    {
+      "id": "clcard2",
+      "kind": "basic",
+      "front": "comer",
+      "back": "to eat",
+      "clozeIndex": null,
+      "externalId": "verbs-002",
+      "frontImage": null,
+      "backImage": null,
+      "occlusion": null,
+      "schedule": {
+        "state": "review",
+        "dueAt": "2026-11-25T08:00:00.000Z",
+        "intervalDays": 6
+      }
+    }
+  ]
+}
+```
+
+### `POST /api/v1/me/decks/{id}/cards/{cardId}/review`
+
+Grade one card (`again`, `hard`, `good` or `easy`) on your own schedule. It is the same review as one in the browser: the schedule, your history and the leech rule are the site’s, so it shows up on your statistics. It earns no daily quest progress or XP. Send `Idempotency-Key` so a retry never grades twice. `cardId` is a card id from `GET /api/v1/me/decks/{id}/review` (a generated cloze or occlusion card included). A card that is not in the deck, or is not one you may read, is 404; a card you suspended is 409. At most 120 grades a minute. Needs the explicit `write:study-reviews` scope, which `*` and `write:*` do not include.
+
+**Scope:** `write:study-reviews` · **Success:** `200` · **Idempotent:** accepts `Idempotency-Key` · **Operation id:** `gradeMyDeckCard`
+
+| Parameter | In | Type | Required | Description |
+| --------- | -- | ---- | -------- | ----------- |
+| `id` | path | string | yes | The deck id. |
+| `cardId` | path | string | yes | The card id. |
+
+**Request body** (`application/json`)
+
+| Field | Type | Required | Description |
+| ----- | ---- | -------- | ----------- |
+| `grade` | `string` | yes | How well you knew it: `again`, `hard`, `good` or `easy`. |
+
+```json
+{
+  "grade": "good"
+}
+```
+
+**Example response** (`200`)
+
+```json
+{
+  "data": {
+    "dueAt": "2026-11-26T08:00:00.000Z",
+    "intervalDays": 1,
+    "leech": false
+  }
 }
 ```

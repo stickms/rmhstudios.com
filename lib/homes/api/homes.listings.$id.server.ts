@@ -10,6 +10,7 @@ import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/homes/homes.contract';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
+import { refusalBody } from '@/lib/errors/codes';
 import {
   getListing,
   listingAuthorId,
@@ -75,6 +76,8 @@ export const route = apiRoute('/api/homes/listings/$id', {
         const parsed = statusSchema.safeParse(body);
         if (!parsed.success) return Response.json({ error: 'Invalid status' }, { status: 400 });
         const ok = await setListingStatus(params.id, session.user.id, parsed.data.status);
+        // s12-16: a moderator's removal cannot be undone by the author.
+        if (ok === 'moderated') return Response.json(refusalBody('CONTENT_REMOVED_BY_MODERATOR'), { status: 409 });
         if (!ok) return Response.json({ error: 'Not found' }, { status: 404 });
         return Response.json({ ok: true });
       }

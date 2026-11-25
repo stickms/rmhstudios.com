@@ -299,6 +299,23 @@ export const DEVICE_STORES: readonly DeviceStore[] = [
     names: ['rmh:study:listen'],
     personal: false,
   },
+
+  // Sprint 12
+  // s12-03 friend-ghosts
+  {
+    id: 'ndw-ghost-friend',
+    kind: 'localstorage-prefix',
+    names: ['ndw-ghost-friend'],
+    personal: true,
+  },
+
+  // s12-10 homes-compare
+  {
+    id: 'homes-compare-place',
+    kind: 'localstorage-prefix',
+    names: ['rmh:homes:compare-place'],
+    personal: true,
+  },
 ];
 
 /** The Web Storage key every sign-out path reads: "clear this device when I sign out". A per-device choice. */

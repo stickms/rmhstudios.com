@@ -8,6 +8,7 @@ import { sinceParam } from '@/lib/api/v1/sync-schema';
 import { CARD_SIDE_MAX, CLOZE_TEXT_MAX } from '@/lib/study/limits';
 import { CARD_IMAGE_ALT_MAX } from '@/lib/study/card-images';
 import { occlusionInput } from '@/lib/study/occlusion-schema';
+import type { Grade } from '@/lib/rmhstudy/srs';
 
 /** Cards one `POST …/cards` request may add. */
 export const API_BATCH_MAX = 100;
@@ -216,6 +217,33 @@ export const patchDeckBody = z
   .refine((b) => b.title !== undefined || b.description !== undefined || b.isPublic !== undefined, {
     message: 'Provide title, description or isPublic.',
   });
+
+/* --------------------------------- reviews --------------------------------- */
+
+/** Cards one `GET …/review` may return (the site's queue is longer; a tool asks for what its screen holds). */
+export const REVIEW_LIMIT_MAX = 50;
+export const REVIEW_LIMIT_DEFAULT = 20;
+
+/** `?limit=` on a deck's review queue; a repeated parameter is not supported. */
+export const reviewQuery = z.object({
+  limit: z.coerce.number().int().min(1).max(REVIEW_LIMIT_MAX).default(REVIEW_LIMIT_DEFAULT),
+});
+
+/** The grades by name, in the site's order (`Grade` 0 to 3 in `lib/rmhstudy/srs.ts`). */
+export const GRADE_NAMES = ['again', 'hard', 'good', 'easy'] as const;
+export type GradeName = (typeof GRADE_NAMES)[number];
+
+/** `{ grade: 'again' | 'hard' | 'good' | 'easy' }`. */
+export const gradeBody = z
+  .object({
+    grade: z.enum(GRADE_NAMES),
+  })
+  .strict();
+
+/** The scheduler's number for a grade name. */
+export function gradeOf(name: GradeName): Grade {
+  return GRADE_NAMES.indexOf(name) as Grade;
+}
 
 /* -------------------------------- cursors --------------------------------- */
 

@@ -36,8 +36,11 @@ describe('DUE_COUNT_READ_PATHS', () => {
     // Writers of the schedule (the grade path) and unrelated "dueAt" fields are not counts.
     const WRITERS = new Set([
       'lib/study/review-log.server.ts',
+      'lib/study/review.server.ts',
       'lib/study/api/study.cards.$id.review.server.ts',
       'lib/history/resume.server.ts',
+      // One card's own schedule, shown to its member whatever its state (a suspended card included); never a count or a queue.
+      'lib/study/card-history.server.ts',
     ]);
     const listed = new Set<string>(DUE_COUNT_READ_PATHS);
     const readers = walk(join(ROOT, 'lib'))

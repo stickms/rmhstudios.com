@@ -16,6 +16,7 @@ import { clearPinnedForComment } from '@/lib/feed/conversation-controls.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { takedownStamp } from '@/lib/profile/stamps.server';
 import { createNotification } from '@/lib/notifications.server';
+import { notice } from '@/lib/notifications/notice-keys';
 import { takedownRing } from '@/lib/profile/webrings.server';
 import { hideMusicContent } from '@/lib/rmhmusic/learn/moderation.server';
 import { notifyReportersOfOutcome } from '@/lib/moderation/my-reports.server';
@@ -159,6 +160,18 @@ export async function takedownReportedContent(entityType: string, entityId: stri
     // s11-07: the share is revoked (its data cleared); the copies already opened live on the openers' devices.
     await takedownShare(entityId);
   }
+  // s12-16 member-reports
+  // Each takedown makes the item non-public for good (a grid is hidden; a deck, persona or listing is stamped
+  // `moderatedAt` so its owner cannot make it public again). Each is idempotent, so a repeated decision is harmless.
+  if (entityType === 'connections-grid') {
+    await (await import('@/lib/party/connections.server')).hideGridForReport(entityId);
+  } else if (entityType === 'study-deck') {
+    await (await import('@/lib/study/deck-moderation.server')).moderateDeck(entityId, now);
+  } else if (entityType === 'persona') {
+    await (await import('@/lib/personas/moderation.server')).moderatePersona(entityId, now);
+  } else if (entityType === 'home-listing') {
+    await (await import('@/lib/homes/listings.server')).moderateListing(entityId, now);
+  }
 }
 
 export interface Decision {
@@ -300,7 +313,7 @@ export async function decideReports(ids: readonly string[], decision: Decision):
         type: 'SYSTEM',
         entityType: 'report',
         entityId: first.id,
-        preview: decision.message,
+        preview: notice('report-decision', { message: decision.message }),
       });
     }
   }
@@ -515,6 +528,28 @@ async function previewsFor(targets: readonly DecideTarget[]): Promise<Map<string
           .then((rows) => {
             for (const r of rows) out.set(groupKey('studio-share', r.token), snippet(r.name, 160));
           })
+      : Promise.resolve(),
+    // s12-16 member-reports: an admin reading a report of a grid, deck or listing sees its title, and of a persona its
+    // name and the system prompt the chat answers from (member text, whatever the item's state; admin-only).
+    idsOf('connections-grid').length
+      ? (await import('@/lib/party/connections.server')).gridReportTitles(idsOf('connections-grid')).then((titles) => {
+          for (const [id, title] of titles) out.set(groupKey('connections-grid', id), snippet(title, 160));
+        })
+      : Promise.resolve(),
+    idsOf('study-deck').length
+      ? (await import('@/lib/study/deck-moderation.server')).deckReportTitles(idsOf('study-deck')).then((titles) => {
+          for (const [id, title] of titles) out.set(groupKey('study-deck', id), snippet(title, 160));
+        })
+      : Promise.resolve(),
+    idsOf('persona').length
+      ? (await import('@/lib/personas/moderation.server')).personaReportTexts(idsOf('persona')).then((texts) => {
+          for (const [id, p] of texts) out.set(groupKey('persona', id), snippet(`${p.name}: ${p.systemPrompt}`, 600));
+        })
+      : Promise.resolve(),
+    idsOf('home-listing').length
+      ? (await import('@/lib/homes/listings.server')).listingReportTitles(idsOf('home-listing')).then((titles) => {
+          for (const [id, title] of titles) out.set(groupKey('home-listing', id), snippet(title, 160));
+        })
       : Promise.resolve(),
   ]);
   for (const bi of buildIssues)

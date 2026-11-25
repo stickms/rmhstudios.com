@@ -8,7 +8,7 @@
 
 import { DIFFICULTIES } from '@features/slice-it/engine/constants';
 import type { SliceSong } from '@features/slice-it/engine/types';
-import type { ChartDto, ChartRevisionDto } from './api-schemas';
+import type { ChartDto, ChartRevisionDetailDto, ChartRevisionDto } from './api-schemas';
 import { emptyChart } from './store';
 import type { EditorLoadPayload } from './store';
 import { toEditorNotes, type Charts, type Difficulty, type Slice, type SvPoint, type TimingPoint } from './types';
@@ -18,6 +18,7 @@ import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
 import { getSliceSongApi } from '@features/slice-it/engine/play.contract';
 import {
+  getChartRevisionApi,
   listChartRevisionsApi,
   publishChartApi,
   saveChartApi,
@@ -156,6 +157,8 @@ export interface SaveChartInput {
   timingPoints?: TimingPoint[];
   svPoints?: SvPoint[];
   kind?: 'autosave' | 'manual' | 'publish';
+  /** The name of a saved version. Only with `kind: 'manual'`; 1 to 120 characters. */
+  label?: string;
   /**
    * `keepalive` on the unload path. A normal fetch is cancelled when the
    * document goes away; this one survives it, which is what makes the
@@ -174,6 +177,11 @@ export async function saveChart(input: SaveChartInput): Promise<ChartDto> {
       body: {
         notes: input.notes,
         kind: input.kind ?? 'autosave',
+        ...(input.label
+          ? {
+              label: input.label,
+            }
+          : {}),
         ...(input.timingPoints
           ? {
               timingPoints: input.timingPoints,
@@ -199,13 +207,31 @@ export async function saveChart(input: SaveChartInput): Promise<ChartDto> {
   );
 }
 
-export async function listRevisions(chartId: string): Promise<ChartRevisionDto[]> {
+/** How many versions the Versions panel lists (the route's maximum). */
+export const VERSIONS_LIMIT = 50;
+
+export async function listRevisions(chartId: string, limit: number = VERSIONS_LIMIT): Promise<ChartRevisionDto[]> {
   const body = await asChartApiError(() =>
     api(listChartRevisionsApi, {
       params: {
         id: chartId,
       },
+      query: {
+        limit,
+      },
     }),
   );
   return body.revisions;
+}
+
+/** One revision with its notes: fetched only when a version is previewed or restored. */
+export async function getRevision(chartId: string, revisionId: string): Promise<ChartRevisionDetailDto> {
+  // Not wrapped in `ChartApiError`: the Versions panel renders a refusal (a version that was pruned) with
+  // `useRefusalText()`, which reads the server's body off the `HttpError`.
+  return api(getChartRevisionApi, {
+    params: {
+      id: chartId,
+      revisionId,
+    },
+  });
 }

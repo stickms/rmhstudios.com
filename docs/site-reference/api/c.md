@@ -190,10 +190,12 @@ See the [API inventory](../api.md) for how to read the tables.
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/connections/grids` | `GET` `POST` | `lib/party/api/connections.grids.server.ts` |
-| `/api/connections/grids/:id` | `DELETE` `GET` | `lib/party/api/connections.grids.$id.server.ts` |
+| `/api/connections/grids/:id` | `DELETE` `GET` `PATCH` | `lib/party/api/connections.grids.$id.server.ts` |
 | `/api/connections/grids/:id/guess` | `POST` | `lib/party/api/connections.grids.$id.guess.server.ts` |
+| `/api/connections/grids/:id/publish` | `POST` | `lib/party/api/connections.grids.$id.publish.server.ts` |
 | `/api/connections/grids/:id/rate` | `POST` | `lib/party/api/connections.grids.$id.rate.server.ts` |
 | `/api/connections/grids/:id/schedule` | `POST` | `lib/party/api/connections.grids.$id.schedule.server.ts` |
+| `/api/connections/mine` | `GET` | `lib/party/api/connections.mine.server.ts` |
 
 ## `/api/context-notes`
 

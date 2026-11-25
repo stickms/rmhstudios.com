@@ -56,6 +56,10 @@ describe('RMH Music in the moderation queue', () => {
       expect(handled, `${type} has no takedown branch`).toBe(true);
     }
     expect(REMOVABLE_REPORT_ENTITY_TYPES).toContain('music-score');
+    // s12-16: a grid, a deck, a persona and a listing are removable too, each with its branch above.
+    for (const type of ['connections-grid', 'study-deck', 'persona', 'home-listing']) {
+      expect(REMOVABLE_REPORT_ENTITY_TYPES).toContain(type);
+    }
   });
 
   it('the admin page offers removal from the one list, and the report route resolves music owners', () => {

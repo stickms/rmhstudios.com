@@ -3,6 +3,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
 import { generatePersonaReply } from '@/lib/personas/chat.server';
+import { personaVisibleTo } from '@/lib/personas/moderation.server';
 
 const schema = z.object({ message: z.string().min(1).max(1000) });
 
@@ -24,10 +25,10 @@ export const route = apiRoute('/api/personas/$id/chat', {
 
       const persona = await prisma.aiPersona.findUnique({
         where: { id: params.id },
-        select: { id: true, name: true, systemPrompt: true, isPublic: true, ownerId: true },
+        select: { id: true, name: true, systemPrompt: true, isPublic: true, moderatedAt: true, ownerId: true },
       });
       if (!persona) return Response.json({ error: 'Not found' }, { status: 404 });
-      if (!persona.isPublic && persona.ownerId !== session.user.id) {
+      if (!personaVisibleTo(persona, session.user.id)) {
         return Response.json({ error: 'Not found' }, { status: 404 });
       }
 

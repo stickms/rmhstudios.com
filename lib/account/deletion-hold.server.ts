@@ -10,11 +10,13 @@ import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { cancelBulkOperation } from '@/lib/bulk/bulk.server';
 import { createNotification } from '@/lib/notifications.server';
+import { enqueueBillingSync } from '@/lib/account/deletion-billing-queue.server';
 import { deleteSessionsOf, revokeRmhCodeTokensOf, rotateCalendarFeedOf } from '@/lib/admin/secure-account.server';
 import {
   DELETION_DRAFTS_WAITED_ENTITY,
   DELETION_REQUESTED,
   DRAFTS_PAGE_PATH,
+  BILLING_LIVE_STATUSES,
   mergeIds,
   planRestore,
   type DeletionPausePreview,
@@ -22,12 +24,27 @@ import {
 
 /** What a request would pause, counted. Reads only. */
 export async function previewDeletionPause(userId: string): Promise<DeletionPausePreview> {
-  const [apiKeys, webhooks, scheduledPosts] = await Promise.all([
+  const [apiKeys, webhooks, scheduledPosts, memberships] = await Promise.all([
     prisma.developerApiKey.count({ where: { userId, revokedAt: null, suspendedAt: null } }),
     prisma.webhookEndpoint.count({ where: { userId, enabled: true } }),
     prisma.scheduledPost.count({ where: { userId, publishedId: null, scheduledAt: { not: null } } }),
+    // The rows the plugin wrote: good enough for a sentence about what will happen (the job reads Stripe itself).
+    prisma.subscription.findMany({
+      where: {
+        referenceId: userId,
+        status: { in: [...BILLING_LIVE_STATUSES] },
+        OR: [{ cancelAtPeriodEnd: null }, { cancelAtPeriodEnd: false }],
+      },
+      select: { plan: true, periodEnd: true },
+      orderBy: { periodEnd: 'asc' },
+      take: 10,
+    }),
   ]);
-  return { apiKeys, webhooks, scheduledPosts };
+  const subscriptions = (Array.isArray(memberships) ? memberships : []).map((m) => ({
+    plan: m.plan,
+    periodEnd: m.periodEnd instanceof Date ? m.periodEnd.toISOString() : null,
+  }));
+  return { apiKeys, webhooks, scheduledPosts, subscriptions };
 }
 
 /**
@@ -89,6 +106,10 @@ export async function pauseForDeletion(userId: string, now: Date = new Date()): 
       },
     });
   });
+
+  // The membership stops renewing through one reconciling job, queued only now that the hold has committed. It
+  // decides from the database when it runs, so it is safe if the request is withdrawn before then (s12-18).
+  await enqueueBillingSync(userId);
 }
 
 /**
@@ -123,8 +144,17 @@ export async function restoreAfterCancel(userId: string, now: Date = new Date())
       where: { userId, id: { in: plan.webhookIds }, enabled: false, adminDisabledAt: null },
       data: { enabled: true, failureCount: 0 },
     }),
-    prisma.deletionHold.deleteMany({ where: { userId } }),
+    // The hold goes with the restore unless a membership the request ended is still waiting to be resumed: the
+    // billing sync deletes it after resuming. The conditions are repeated in the writes, so a sync that recorded
+    // an id since the read above is not lost.
+    prisma.deletionHold.deleteMany({ where: { userId, subscriptionIds: { isEmpty: true } } }),
+    prisma.deletionHold.updateMany({
+      where: { userId, subscriptionIds: { isEmpty: false } },
+      data: { keyIds: [], webhookIds: [] },
+    }),
   ]);
+  // Resume what the request stopped: queued after the commit, never inside it.
+  if (plan.keepHold) await enqueueBillingSync(userId);
 
   const waited = await prisma.scheduledPost.count({
     where: { userId, publishedId: null, scheduledAt: { not: null, gte: hold.createdAt, lte: now } },

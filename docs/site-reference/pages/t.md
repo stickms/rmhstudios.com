@@ -52,12 +52,12 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/temple-of-joy` | — | public | `app/routes/temple-of-joy/index.tsx` |
 | `/tf2` | — | public | `app/routes/tf2/index.tsx` |
 | `/tf2/hud-editor` | TF2 HUD Editor | public | `app/routes/tf2/hud-editor/index.tsx` |
-| `/tf2/hud-editor/editor` | — | public | `app/routes/tf2/hud-editor/editor.tsx` |
+| `/tf2/hud-editor/editor` | Edit a TF2 HUD | public | `app/routes/tf2/hud-editor/editor.tsx` |
 | `/tf2/hud-editor/h/:slug` | — | public | `app/routes/tf2/hud-editor/h.$slug.tsx` |
-| `/tf2/hud-editor/mine` | — | public | `app/routes/tf2/hud-editor/mine.tsx` |
-| `/tf2/hud-editor/s/:token` | — | public | `app/routes/tf2/hud-editor/s.$token.tsx` |
+| `/tf2/hud-editor/mine` | My TF2 HUDs | public | `app/routes/tf2/hud-editor/mine.tsx` |
+| `/tf2/hud-editor/s/:token` | Shared TF2 HUD | public | `app/routes/tf2/hud-editor/s.$token.tsx` |
 | `/tf2/loadout` | TF2 Loadout Builder | public | `app/routes/tf2/loadout/index.tsx` |
 | `/tf2/loadout/l/:slug` | — | public | `app/routes/tf2/loadout/l.$slug.tsx` |
-| `/tf2/loadout/mine` | — | public | `app/routes/tf2/loadout/mine.tsx` |
+| `/tf2/loadout/mine` | My TF2 loadouts | public | `app/routes/tf2/loadout/mine.tsx` |
 | `/tf2/play` | Play TF2 | public | `app/routes/tf2/play.tsx` |
 | `/tf2/workshop` | TF2 Workshop | public | `app/routes/tf2/workshop.tsx` |

@@ -142,7 +142,7 @@ export async function requestRedemption(
     });
 
     void notifyAdminsOfReview({
-      preview: `New ${opts.input.kind} redemption for ${cost} coins`,
+      notice: notice('admin-review-redemption', { kind: opts.input.kind, count: cost }),
       kind: 'redemptions',
       link: '/admin/redemptions',
     }).catch(() => {});

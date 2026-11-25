@@ -17,6 +17,8 @@ import type { ChatPanelMessage } from '@/components/shared/ChatPanel';
 import type { Difficulty, PassageLength } from '@/lib/rmhtype/types';
 import { useParams, useRouter } from '@tanstack/react-router';
 import { useTranslation } from "react-i18next";
+import { buildSamples } from '@/lib/rmhtype/ghost';
+import { useRunReasonText } from '@/components/rmhtype/RunReasonLine';
 
 export default function RmhTypeRoom() {
   const { t } = useTranslation("c-rmhtype");
@@ -32,6 +34,11 @@ export default function RmhTypeRoom() {
   const [finished, setFinished] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const passageRef = useRef<HTMLDivElement>(null);
+  // The moments the typed length changed, as the solo page keeps them: the room sends the curve at finish so the
+  // server can check the run (`lib/rmhtype/run-check.ts`).
+  const runStartRef = useRef(Date.now());
+  const marksRef = useRef<Array<[number, number]>>([]);
+  const reasonText = useRunReasonText();
 
   // Next round countdown
   const [nextRoundCountdown, setNextRoundCountdown] = useState<number | null>(null);
@@ -113,6 +120,8 @@ export default function RmhTypeRoom() {
     if (room?.status === 'TYPING' && room.passage) {
       setTypedText('');
       setStartTime(Date.now());
+      runStartRef.current = Date.now();
+      marksRef.current = [];
       setFinished(false);
       inputRef.current?.focus();
     }
@@ -145,11 +154,13 @@ export default function RmhTypeRoom() {
 
     const errors = [...value].filter((c, i) => c !== room.passage![i]).length;
     emit(C2S.GAME_PROGRESS, { position: value.length, errors });
+    const elapsed = Date.now() - runStartRef.current;
+    marksRef.current.push([elapsed, value.length]);
 
     // Check if finished
     if (value.length >= room.passage.length) {
       setFinished(true);
-      emit(C2S.GAME_FINISH, { position: value.length, errors });
+      emit(C2S.GAME_FINISH, { position: value.length, errors, samples: buildSamples(marksRef.current, elapsed) });
     }
   }, [room?.passage, finished, roomCode]);
 
@@ -490,11 +501,18 @@ export default function RmhTypeRoom() {
                       <span className="text-lg font-bold w-8 text-center text-app-text-dim">#{r.rank}</span>
                       <span className="font-medium">{r.userName}</span>
                     </div>
+                    {r.didNotFinish ? (
+                      <div className="text-sm text-app-danger text-right">
+                        <div>{t('did-not-finish', { ns: 'type-scoring', defaultValue: 'Did not finish' })}</div>
+                        {r.reason ? <div className="text-xs text-app-text-muted">{reasonText(r.reason)}</div> : null}
+                      </div>
+                    ) : (
                     <div className="flex items-center gap-4 text-sm text-app-text-muted">
                       <span>{r.wpm} WPM</span>
                       <span>{r.accuracy}%</span>
                       <span className="font-bold text-app-accent">{r.score} pts</span>
                     </div>
+                    )}
                   </div>
                 ))}
               </div>

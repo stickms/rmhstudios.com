@@ -33,7 +33,16 @@ const VENUE_META: Record<
   IRL: { icon: MapPin, labelKey: 'venue-irl', label: 'In person' },
 };
 
-export function EventCard({ event: initial, className }: { event: EventDTO; className?: string }) {
+export function EventCard({
+  event: initial,
+  className,
+  onRsvpRefused,
+}: {
+  event: EventDTO;
+  className?: string;
+  /** Called when an RSVP is refused, for a list that wants to read the server's state again. */
+  onRsvpRefused?: () => void;
+}) {
   const { t } = useTranslation('site');
   const { t: tr } = useTranslation('event-waitlist');
   const { t: tc, i18n } = useTranslation('event-cohosts');
@@ -257,6 +266,7 @@ export function EventCard({ event: initial, className }: { event: EventDTO; clas
               capacity={event.capacity}
               waitlistPosition={place}
               onChange={onChange}
+              {...(onRsvpRefused ? { onRefused: onRsvpRefused } : {})}
             />
           )}
           {!canceled && past && (waiting > 0 || viewerRsvp === 'waitlist') && (

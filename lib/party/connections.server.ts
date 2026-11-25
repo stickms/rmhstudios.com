@@ -2,15 +2,19 @@ import { prisma } from '@/lib/prisma.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { utcDayKey } from '@/lib/arcade/seeded';
+import { lockKey } from '@/lib/db/advisory-lock.server';
+import type { ErrorCode } from '@/lib/errors/codes';
 import {
   MAX_GRIDS_PER_MEMBER,
-  MAX_MISTAKES,
+  MIN_RATINGS_FOR_AVERAGE,
   gridScore,
-  type CreateGridInput,
   type GridGroup,
   type GridPlayView,
   type GridSummary,
+  type MyGridSummary,
 } from '@/lib/party/connections';
+import { judgeGuess, stableOrder, validatePick, type PlayProgress } from '@/lib/party/connections-practice';
+import { createGridSchema, type EditGridInput, type SaveGridInput } from '@/lib/party/connections-schema';
 
 const LIST_KEY = 'connections:list';
 
@@ -56,27 +60,118 @@ function summary(r: GridRow): GridSummary {
   };
 }
 
-/** FNV-style hash so every viewer sees the same shuffled order for a grid. */
-function stableOrder(id: string, items: string[]): string[] {
-  const h = (s: string) => {
-    let x = 0x811c9dc5;
-    for (let i = 0; i < s.length; i++) x = Math.imul(x ^ s.charCodeAt(i), 0x01000193);
-    return x >>> 0;
-  };
-  return [...items].sort((a, b) => h(id + a) - h(id + b));
+/**
+ * Save a grid as a draft (private to its author) or publish it. The cap counts drafts too, and is checked and the row
+ * created under one lock per author, so two quick saves cannot both pass a cap that has room for one.
+ */
+export async function createGrid(userId: string, input: Pick<SaveGridInput, 'title' | 'groups'>, draft = false) {
+  const made = await prisma.$transaction(async (tx) => {
+    await lockKey(tx, `connections-grids:${userId}`);
+    const owned = await tx.connectionsGrid.count({ where: { authorId: userId } });
+    if (owned >= MAX_GRIDS_PER_MEMBER) return null;
+    return tx.connectionsGrid.create({
+      data: {
+        authorId: userId,
+        title: input.title,
+        groups: input.groups,
+        draft,
+        publishedAt: draft ? null : new Date(),
+      },
+      select: { id: true },
+    });
+  });
+  if (!made) return { ok: false as const, status: 409, error: `Limit of ${MAX_GRIDS_PER_MEMBER} grids` };
+  if (!draft) void invalidateCached(LIST_KEY);
+  return { ok: true as const, id: made.id };
 }
 
-export async function createGrid(userId: string, input: CreateGridInput) {
-  const owned = await prisma.connectionsGrid.count({ where: { authorId: userId } });
-  if (owned >= MAX_GRIDS_PER_MEMBER) {
-    return { ok: false as const, status: 409, error: `Limit of ${MAX_GRIDS_PER_MEMBER} grids` };
-  }
-  const row = await prisma.connectionsGrid.create({
-    data: { authorId: userId, title: input.title, groups: input.groups },
-    select: { id: true },
+export type MakerResult = { ok: true } | { ok: false; status: number; code: ErrorCode };
+
+/**
+ * Change a draft, or a published grid nobody else has played. The edit and a first play serialise on the grid's lock
+ * (`submitGuess` takes it too), and the write is a compare-and-set on `playCount: 0`, so a play that lands first wins
+ * and a guess is never judged against groups that changed under it.
+ */
+export async function updateGrid(userId: string, id: string, input: EditGridInput): Promise<MakerResult> {
+  const result = await prisma.$transaction(async (tx): Promise<MakerResult & { listed?: boolean }> => {
+    await lockKey(tx, `connections-grid:${id}`);
+    const g = await tx.connectionsGrid.findUnique({
+      where: { id },
+      select: { authorId: true, draft: true, hidden: true, playCount: true },
+    });
+    if (!g || g.authorId !== userId || g.hidden) return { ok: false, status: 404, code: 'NOT_FOUND' };
+    if (g.playCount > 0) return { ok: false, status: 409, code: 'CONNECTIONS_GRID_PLAYED' };
+    // A published grid stays complete; a draft may be half made.
+    if (!g.draft && !createGridSchema.safeParse(input).success) {
+      return { ok: false, status: 400, code: 'CONNECTIONS_GRID_INCOMPLETE' };
+    }
+    const r = await tx.connectionsGrid.updateMany({
+      where: { id, authorId: userId, playCount: 0, hidden: false },
+      data: { title: input.title, groups: input.groups, updatedAt: new Date() },
+    });
+    if (r.count !== 1) return { ok: false, status: 409, code: 'CONNECTIONS_GRID_PLAYED' };
+    return { ok: true, listed: !g.draft };
   });
-  void invalidateCached(LIST_KEY);
-  return { ok: true as const, id: row.id };
+  if (result.ok && result.listed) void invalidateCached(LIST_KEY);
+  return result.ok ? { ok: true } : result;
+}
+
+/** Turn a complete draft into a published grid. Publishing a grid that is already published is a no-op. */
+export async function publishGrid(userId: string, id: string): Promise<MakerResult> {
+  const result = await prisma.$transaction(async (tx): Promise<MakerResult & { published?: boolean }> => {
+    await lockKey(tx, `connections-grid:${id}`);
+    const g = await tx.connectionsGrid.findUnique({
+      where: { id },
+      select: { authorId: true, draft: true, hidden: true, title: true, groups: true },
+    });
+    if (!g || g.authorId !== userId || g.hidden) return { ok: false, status: 404, code: 'NOT_FOUND' };
+    if (!g.draft) return { ok: true };
+    if (!createGridSchema.safeParse({ title: g.title, groups: g.groups }).success) {
+      return { ok: false, status: 400, code: 'CONNECTIONS_GRID_INCOMPLETE' };
+    }
+    const now = new Date();
+    const r = await tx.connectionsGrid.updateMany({
+      where: { id, authorId: userId, draft: true },
+      data: { draft: false, publishedAt: now, updatedAt: now },
+    });
+    return r.count === 1 ? { ok: true, published: true } : { ok: false, status: 404, code: 'NOT_FOUND' };
+  });
+  if (result.ok && result.published) void invalidateCached(LIST_KEY);
+  return result.ok ? { ok: true } : result;
+}
+
+/** The author's own grids, drafts first, with the figures for each published one. Never cached: it is private. */
+export async function listMyGrids(userId: string): Promise<MyGridSummary[]> {
+  const rows = await prisma.connectionsGrid.findMany({
+    where: { authorId: userId },
+    orderBy: [{ draft: 'desc' }, { createdAt: 'desc' }],
+    take: MAX_GRIDS_PER_MEMBER,
+    select: {
+      id: true,
+      title: true,
+      draft: true,
+      publishedAt: true,
+      playCount: true,
+      solveCount: true,
+      ratingSum: true,
+      ratingCount: true,
+      dailyDate: true,
+      hidden: true,
+    },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    draft: r.draft,
+    publishedAt: r.publishedAt ? r.publishedAt.toISOString() : null,
+    playCount: r.playCount,
+    solveCount: r.solveCount,
+    ratingAverage:
+      r.ratingCount >= MIN_RATINGS_FOR_AVERAGE ? Math.round((r.ratingSum / r.ratingCount) * 10) / 10 : null,
+    ratingCount: r.ratingCount,
+    dailyDate: r.dailyDate,
+    hidden: r.hidden,
+  }));
 }
 
 /** Today's scheduled daily, newest grids and the top-rated among them. Public, cached. */
@@ -85,11 +180,11 @@ export async function listGrids() {
     const today = utcDayKey();
     const [daily, recent] = await Promise.all([
       prisma.connectionsGrid.findFirst({
-        where: { dailyDate: today, hidden: false },
+        where: { dailyDate: today, hidden: false, draft: false },
         select: gridSelect,
       }),
       prisma.connectionsGrid.findMany({
-        where: { hidden: false },
+        where: { hidden: false, draft: false },
         orderBy: { createdAt: 'desc' },
         take: 60,
         select: gridSelect,
@@ -107,11 +202,13 @@ export async function listGrids() {
 export async function getGrid(id: string, userId: string | null): Promise<GridPlayView | null> {
   const g = await prisma.connectionsGrid.findUnique({
     where: { id },
-    select: { ...gridSelect, hidden: true },
+    select: { ...gridSelect, hidden: true, draft: true },
   });
   if (!g || g.hidden) return null;
-  const groups = groupsOf(g);
   const isAuthor = g.authorId === userId;
+  // A draft is 404 to everyone but its author (admins included).
+  if (g.draft && !isAuthor) return null;
+  const groups = groupsOf(g);
   const play = userId
     ? await prisma.connectionsPlay.findUnique({
         where: { gridId_userId: { gridId: id, userId } },
@@ -127,6 +224,8 @@ export async function getGrid(id: string, userId: string | null): Promise<GridPl
       groups.flatMap((x) => x.items),
     ),
     isAuthor,
+    draft: g.draft,
+    editable: isAuthor && g.playCount === 0,
     found: foundIdx.map((index) => ({ index, ...groups[index] })),
     mistakes: play?.mistakes ?? 0,
     status,
@@ -147,25 +246,27 @@ export type GuessResult =
       solution: GridGroup[] | null;
     };
 
-export async function submitGuess(
-  userId: string,
-  id: string,
-  items: string[],
-): Promise<GuessResult> {
-  const g = await prisma.connectionsGrid.findUnique({
-    where: { id },
-    select: { authorId: true, groups: true, hidden: true },
-  });
-  if (!g || g.hidden) return { ok: false, status: 404, error: 'Not found' };
-  if (g.authorId === userId) return { ok: false, status: 403, error: 'You made this grid' };
-  const groups = g.groups as unknown as GridGroup[];
-  const lower = items.map((i) => i.toLowerCase());
-  if (new Set(lower).size !== 4)
-    return { ok: false, status: 400, error: 'Pick four different items' };
-  const all = new Set(groups.flatMap((x) => x.items.map((i) => i.toLowerCase())));
-  if (!lower.every((i) => all.has(i))) return { ok: false, status: 400, error: 'Unknown item' };
+const PICK_ERRORS = {
+  'not-four': 'Pick four different items',
+  'unknown-item': 'Unknown item',
+  'item-solved': 'Item already solved',
+} as const;
 
+export async function submitGuess(userId: string, id: string, items: string[]): Promise<GuessResult> {
   return prisma.$transaction(async (tx): Promise<GuessResult> => {
+    // The same lock an edit takes: the groups are read below, inside the lock, so a guess is judged against the
+    // groups as they are now and an edit cannot land between the read and the first play being written.
+    await lockKey(tx, `connections-grid:${id}`);
+    const g = await tx.connectionsGrid.findUnique({
+      where: { id },
+      select: { authorId: true, groups: true, hidden: true, draft: true },
+    });
+    if (!g || g.hidden || g.draft) return { ok: false, status: 404, error: 'Not found' };
+    if (g.authorId === userId) return { ok: false, status: 403, error: 'You made this grid' };
+    const groups = g.groups as unknown as GridGroup[];
+    const bad = validatePick(groups, items);
+    if (bad) return { ok: false, status: 400, error: PICK_ERRORS[bad] };
+
     let play = await tx.connectionsPlay.findUnique({
       where: { gridId_userId: { gridId: id, userId } },
     });
@@ -173,58 +274,51 @@ export async function submitGuess(
       play = await tx.connectionsPlay.create({ data: { gridId: id, userId } });
       await tx.connectionsGrid.update({ where: { id }, data: { playCount: { increment: 1 } } });
     }
-    if (play.status !== 'active') return { ok: false, status: 409, error: 'Already finished' };
-    const found = play.found as number[];
-    const hit = groups.findIndex(
-      (grp, idx) => !found.includes(idx) && grp.items.every((i) => lower.includes(i.toLowerCase())),
-    );
-    if (found.some((idx) => groups[idx].items.some((i) => lower.includes(i.toLowerCase())))) {
-      return { ok: false, status: 400, error: 'Item already solved' };
-    }
-    if (hit >= 0) {
-      const nextFound = [...found, hit];
-      const solved = nextFound.length === 4;
-      await tx.connectionsPlay.update({
-        where: { id: play.id },
-        data: { found: nextFound, status: solved ? 'solved' : 'active' },
-      });
-      if (solved)
-        await tx.connectionsGrid.update({ where: { id }, data: { solveCount: { increment: 1 } } });
+    const progress: PlayProgress = {
+      found: play.found as number[],
+      mistakes: play.mistakes,
+      status: play.status as PlayProgress['status'],
+    };
+    const j = judgeGuess(groups, progress, items);
+    if (j.kind === 'finished') return { ok: false, status: 409, error: 'Already finished' };
+    if (j.kind === 'invalid') return { ok: false, status: 400, error: PICK_ERRORS[j.reason] };
+    await tx.connectionsPlay.update({
+      where: { id: play.id },
+      data:
+        j.kind === 'hit'
+          ? { found: j.progress.found, status: j.progress.status }
+          : { mistakes: j.progress.mistakes, status: j.progress.status },
+    });
+    if (j.kind === 'hit') {
+      const solved = j.progress.status === 'solved';
+      if (solved) await tx.connectionsGrid.update({ where: { id }, data: { solveCount: { increment: 1 } } });
       return {
         ok: true,
         correct: true,
         oneAway: false,
-        group: { index: hit, ...groups[hit] },
-        mistakes: play.mistakes,
-        state: solved ? 'solved' : 'active',
+        group: { index: j.index, ...groups[j.index]! },
+        mistakes: j.progress.mistakes,
+        state: j.progress.status,
         solution: solved ? groups : null,
       };
     }
-    const oneAway = groups.some(
-      (grp) => grp.items.filter((i) => lower.includes(i.toLowerCase())).length === 3,
-    );
-    const mistakes = play.mistakes + 1;
-    const failed = mistakes >= MAX_MISTAKES;
-    await tx.connectionsPlay.update({
-      where: { id: play.id },
-      data: { mistakes, status: failed ? 'failed' : 'active' },
-    });
     return {
       ok: true,
       correct: false,
-      oneAway,
+      oneAway: j.oneAway,
       group: null,
-      mistakes,
-      state: failed ? 'failed' : 'active',
-      solution: failed ? groups : null,
+      mistakes: j.progress.mistakes,
+      state: j.progress.status,
+      solution: j.progress.status === 'failed' ? groups : null,
     };
   });
 }
 
 export async function rateGrid(userId: string, id: string, rating: number) {
   const result = await prisma.$transaction(async (tx) => {
-    const play = await tx.connectionsPlay.findUnique({
-      where: { gridId_userId: { gridId: id, userId } },
+    // A draft cannot be played, so it cannot be rated either.
+    const play = await tx.connectionsPlay.findFirst({
+      where: { gridId: id, userId, grid: { draft: false } },
     });
     if (!play || play.status === 'active') return 'unfinished' as const;
     await tx.connectionsPlay.update({ where: { id: play.id }, data: { rating } });
@@ -249,6 +343,26 @@ export async function deleteGrid(userId: string, id: string, isAdmin: boolean) {
   return r.count === 1;
 }
 
+// s12-16 member-reports
+/** A moderator's takedown of a reported grid: it leaves every list and its link, as an admin hide does (idempotent). */
+export async function hideGridForReport(gridId: string): Promise<void> {
+  const r = await prisma.connectionsGrid.updateMany({ where: { id: gridId, hidden: false }, data: { hidden: true } });
+  if (r.count) void invalidateCached(LIST_KEY);
+}
+
+/** The author of a grid, for the report route (a report is about the member who made it). Drafts and hidden grids have no public page. */
+export async function gridReportAuthor(gridId: string): Promise<string | null> {
+  const row = await prisma.connectionsGrid.findUnique({ where: { id: gridId }, select: { authorId: true, draft: true, hidden: true } });
+  return row && !row.draft && !row.hidden ? row.authorId : null;
+}
+
+/** A grid's title, for an admin reading a report (whatever its state). */
+export async function gridReportTitles(ids: readonly string[]): Promise<Map<string, string>> {
+  if (ids.length === 0) return new Map();
+  const rows = await prisma.connectionsGrid.findMany({ where: { id: { in: [...ids] } }, select: { id: true, title: true } });
+  return new Map(rows.map((r) => [r.id, r.title]));
+}
+
 /** Admin: make this grid the daily for a UTC date (replacing any other), or clear it with null. */
 export async function scheduleGrid(id: string, date: string | null) {
   if (date && (Number.isNaN(Date.parse(`${date}T00:00:00Z`)) || date < utcDayKey())) {
@@ -261,7 +375,9 @@ export async function scheduleGrid(id: string, date: string | null) {
           where: { dailyDate: date, NOT: { id } },
           data: { dailyDate: null },
         });
-      await tx.connectionsGrid.update({ where: { id }, data: { dailyDate: date } });
+      // A draft is never a daily (and to an admin it does not exist).
+      const set = await tx.connectionsGrid.updateMany({ where: { id, draft: false }, data: { dailyDate: date } });
+      if (set.count !== 1) throw new Error('not-found');
     });
   } catch {
     return { ok: false as const, status: 404, error: 'Not found' };

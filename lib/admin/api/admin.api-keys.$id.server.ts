@@ -1,7 +1,8 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { patchAdminApiKeyApi } from '@/lib/admin/api-keys.contract';
-import { apiKeyPatchBody } from '@/lib/admin/api-keys-schema';
+import { apiKeyPatchBody, isReservedSuspendReason } from '@/lib/admin/api-keys-schema';
+import { refusalBody } from '@/lib/errors/codes';
 import { changeApiKey } from '@/lib/admin/api-keys.server';
 
 /**
@@ -18,6 +19,8 @@ export const route = apiRoute('/api/admin/api-keys/$id', {
       body: apiKeyPatchBody,
     },
     async ({ params, session, body }) => {
+      if (body.suspend && isReservedSuspendReason(body.suspend.reason))
+        return Response.json(refusalBody('API_KEY_REASON_RESERVED'), { status: 400 });
       const out = await changeApiKey(session.user.id, params.id, body);
       if (!out.ok)
         return Response.json(

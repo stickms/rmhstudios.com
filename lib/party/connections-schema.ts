@@ -40,6 +40,32 @@ export const createGridSchema = z
 
 export type CreateGridInput = z.infer<typeof createGridSchema>;
 
+/**
+ * What a save may carry: a draft can be half made (empty labels and cells), so the shape is checked and the content is
+ * not. A publish runs `createGridSchema` over the same title and groups.
+ */
+const looseCell = z.string().trim().max(30);
+const looseGroups = z
+  .array(z.object({ label: z.string().trim().max(40), items: z.array(looseCell).length(4) }))
+  .length(4);
+
+export const saveGridSchema = z.object({
+  title: z.string().trim().min(1).max(80),
+  groups: looseGroups,
+  /** Create only: store the grid unpublished. */
+  draft: z.boolean().optional(),
+});
+
+export type SaveGridInput = z.infer<typeof saveGridSchema>;
+
+/** Edit a draft or an unplayed grid: the same loose shape, no `draft` flag. */
+export const editGridSchema = z.object({
+  title: z.string().trim().min(1).max(80),
+  groups: looseGroups,
+});
+
+export type EditGridInput = z.infer<typeof editGridSchema>;
+
 export const guessSchema = z.object({
   items: z.array(cell).length(4),
 });

@@ -143,6 +143,7 @@ vi.mock('@/lib/db/advisory-lock.server', () => ({
 import { createFolder, deleteFolder, moveDeck, moveFolder, ownsFolder, renameFolder } from '@/lib/study/folders.server';
 import { reviewQueue } from '@/lib/study/queue.server';
 import { getDeck, listMarketplaceDecks } from '@/lib/study.server';
+import { activeEditorWhere } from '@/lib/study/deck-access.server';
 
 const ROOT = join(__dirname, '..', '..', '..');
 
@@ -303,12 +304,12 @@ describe('the review queue’s folder filter', () => {
     await reviewQueue('u1', undefined, now);
     const scheduled = state.reviewFindMany[0] as { where: { card: { deck: unknown } } };
     expect(scheduled.where.card.deck).toEqual({
-      OR: [{ isPublic: true }, { userId: 'u1' }, { editors: { some: { userId: 'u1', status: 'accepted' } } }],
+      OR: [{ isPublic: true }, { userId: 'u1' }, { editors: { some: activeEditorWhere('u1', expect.any(Date)) } }],
     });
     // New cards come from the member's own decks and the ones they edit.
     const fresh = state.cardFindMany[0] as { where: { deck: unknown } };
     expect(fresh.where.deck).toEqual({
-      OR: [{ userId: 'u1' }, { editors: { some: { userId: 'u1', status: 'accepted' } } }],
+      OR: [{ userId: 'u1' }, { editors: { some: activeEditorWhere('u1', expect.any(Date)) } }],
     });
   });
 

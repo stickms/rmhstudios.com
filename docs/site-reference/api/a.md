@@ -72,6 +72,8 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/admin/deepseek/balance` | `GET` | `lib/ai/api/admin.deepseek.balance.server.ts` |
 | `/api/admin/deepseek/history` | `GET` | `lib/ai/api/admin.deepseek.history.server.ts` |
 | `/api/admin/deepseek/refresh` | `POST` | `lib/ai/api/admin.deepseek.refresh.server.ts` |
+| `/api/admin/deletions` | `GET` | `lib/admin/api/admin.deletions.server.ts` |
+| `/api/admin/deletions/:userId/retry` | `POST` | `lib/admin/api/admin.deletions.$userId.retry.server.ts` |
 | `/api/admin/delight/fools` | `GET` `POST` | `lib/delight/api/admin.delight.fools.server.ts` |
 | `/api/admin/delight/fortunes` | `GET` | `lib/delight/api/admin.delight.fortunes.server.ts` |
 | `/api/admin/delight/fortunes/:id` | `POST` | `lib/delight/api/admin.delight.fortunes.$id.server.ts` |
@@ -102,6 +104,9 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/admin/flags/:key/targeting` | `GET` `PUT` | `lib/admin/api/admin.flags.$key.targeting.server.ts` |
 | `/api/admin/forecasting/seasons` | `POST` | `lib/admin/api/admin.forecasting.seasons.server.ts` |
 | `/api/admin/gift-exchanges/:id/verify` | `GET` | `lib/gifting/api/admin.gift-exchanges.$id.verify.server.ts` |
+| `/api/admin/homes` | `GET` `POST` | `lib/admin/api/admin.homes.server.ts` |
+| `/api/admin/homes/scrape` | `POST` | `lib/admin/api/admin.homes.scrape.server.ts` |
+| `/api/admin/homes/sources/:id/status` | `POST` | `lib/admin/api/admin.homes.sources.$id.status.server.ts` |
 | `/api/admin/insights/cohorts` | `GET` `POST` | `lib/ops/api/admin.insights.cohorts.server.ts` |
 | `/api/admin/insights/errors` | `GET` `PATCH` | `lib/ops/api/admin.insights.errors.server.ts` |
 | `/api/admin/insights/experiments` | `GET` `PATCH` `POST` | `lib/ops/api/admin.insights.experiments.server.ts` |

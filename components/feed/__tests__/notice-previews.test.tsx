@@ -48,14 +48,16 @@ describe('the notice catalogue', () => {
       const expected = fillNotice(NOTICE_TEMPLATES[key], params, (iso) => `<${iso}>`);
       expect(strip(text), key).toBe(expected);
     }
-    expect(calls.map((c) => c.key).sort()).toEqual(KEYS.map((k) => `notice-${k}`).sort());
-    expect(new Set(calls.map((c) => c.ns))).toEqual(new Set(['notice-language']));
+    // The report-kind words an admin notice borrows come from `my-reports`, not from the notice catalogue.
+    const own = calls.filter((c) => c.ns === 'notice-language');
+    expect(own.map((c) => c.key).sort()).toEqual(KEYS.map((k) => `notice-${k}`).sort());
+    expect(new Set(calls.map((c) => c.ns))).toEqual(new Set(['notice-language', 'my-reports']));
   });
 
   it('keeps each default equal to the template, so a locale without the key reads like the fallback', () => {
     const { t, calls } = recordingT();
     for (const key of KEYS) noticeText(t, key, sample(key), (iso) => iso);
-    for (const c of calls)
+    for (const c of calls.filter((c) => c.ns === 'notice-language'))
       expect(c.defaultValue, c.key).toBe(NOTICE_TEMPLATES[c.key.slice('notice-'.length) as NoticeKey]);
   });
 });

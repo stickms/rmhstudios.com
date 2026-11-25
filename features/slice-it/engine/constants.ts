@@ -591,3 +591,6 @@ export function clampLinePosition(value: number): number {
   if (!Number.isFinite(value)) return DEFAULT_LINE_POSITION;
   return Math.max(MIN_LINE_POSITION, Math.min(MAX_LINE_POSITION, value));
 }
+
+/** The longest name a saved version of a chart can have (`ChartRevision.label` is `VarChar(120)`). */
+export const REVISION_LABEL_MAX = 120;

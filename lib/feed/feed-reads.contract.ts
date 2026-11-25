@@ -8,6 +8,7 @@ import type { FeedFilter, FeedItem } from '@/lib/feed-types';
 import type { TimelineResult } from '@/lib/feed/timeline';
 import type { searchMentionUsers } from '@/lib/feed/mention-search.server';
 import type { MarketplaceList } from '@/lib/study.server';
+import type { DeckSort } from '@/lib/study/deck-ratings';
 
 /** Viewer-aware `@mention` suggestions; an empty `q` suggests friends. */
 export const mentionSearchApi = endpoint<{
@@ -55,6 +56,8 @@ export const profileLikesApi = endpoint<{
 export const deckMarketplaceApi = endpoint<{
   query: {
     q: string;
+    /** The order (s12-08): `cards` (default), `rated` or `copied`. */
+    sort?: DeckSort;
   };
   res: MarketplaceList;
 }>()({

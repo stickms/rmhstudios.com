@@ -12,6 +12,7 @@ import { prisma } from '@/lib/prisma.server';
 import { recordAdminActionIn } from '@/lib/admin-audit.server';
 import { userChipSelect } from '@/lib/user-display';
 import { createNotification } from '@/lib/notifications.server';
+import { notice, type NoticePreview } from '@/lib/notifications/notice-keys';
 import {
   API_KEYS_PAGE_SIZE,
   HIGH_ERROR_RATE,
@@ -415,10 +416,10 @@ export async function changeApiKey(
   },
   now: Date = new Date(),
 ): Promise<ApiKeyChange> {
-  let notice: {
+  let owed: {
     userId: string;
     entityType: string;
-    preview: string | null;
+    preview: NoticePreview;
   } | null = null;
   try {
     await prisma.$transaction(async (tx) => {
@@ -457,10 +458,10 @@ export async function changeApiKey(
           targetId: keyId,
           detail: `${label}: ${change.suspend.reason}`,
         });
-        notice = {
+        owed = {
           userId: key.userId,
           entityType: KEY_SUSPENDED_ENTITY,
-          preview: change.suspend.reason,
+          preview: notice('api-key-suspended', { name: key.name, reason: change.suspend.reason }),
         };
       } else if (change.suspend === null) {
         const { count } = await tx.developerApiKey.updateMany({
@@ -481,10 +482,10 @@ export async function changeApiKey(
           targetId: keyId,
           detail: label,
         });
-        notice = {
+        owed = {
           userId: key.userId,
           entityType: KEY_RESTORED_ENTITY,
-          preview: key.name,
+          preview: notice('api-key-restored', { name: key.name }),
         };
       }
 
@@ -517,10 +518,10 @@ export async function changeApiKey(
     throw err;
   }
 
-  const sent = notice as {
+  const sent = owed as {
     userId: string;
     entityType: string;
-    preview: string | null;
+    preview: NoticePreview;
   } | null;
   if (sent) {
     // Best effort: the change is committed, and createNotification applies the owner's preferences.

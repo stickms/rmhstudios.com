@@ -10,6 +10,7 @@
  * save that calls it has already kept the run.
  */
 import { notifyAdminsOfReview } from '@/lib/admin-review.server';
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 
 /** The report entity type of a Daily score (`lib/moderation/report-schema.ts`). */
@@ -84,7 +85,7 @@ export async function fileBoardReview(args: BoardReviewArgs): Promise<boolean> {
       },
     });
     void notifyAdminsOfReview({
-      preview: 'A Daily board score asks for a look (automated check)',
+      notice: notice('admin-review-music-score', {}),
       kind: 'reports',
     });
     return true;

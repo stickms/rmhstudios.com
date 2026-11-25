@@ -411,7 +411,9 @@ describe('suspend, lift and cap', () => {
   it('refuses the reserved deletion-hold reason, trimmed and in any case', async () => {
     admin();
     for (const reason of ['Account deletion requested', '  account DELETION requested  ']) {
-      expect((await call('PATCH', { id: 'k1' }, { body: { suspend: { reason } } })).status).toBe(400);
+      const out = await call('PATCH', { id: 'k1' }, { body: { suspend: { reason } } });
+      expect(out.status).toBe(400);
+      expect(out.json).toMatchObject({ code: 'API_KEY_REASON_RESERVED' });
     }
     expect(h.keys[0]!.suspendedAt).toBeNull();
   });

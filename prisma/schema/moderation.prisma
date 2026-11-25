@@ -168,6 +168,8 @@ model AiPersona {
   avatarUrl    String?  @db.VarChar(500)
   isPublic     Boolean  @default(true)
   chatCount    Int      @default(0)
+  /// Set when a moderator took this persona down after a report (s12-16): it is no longer public and others' chats answer 404.
+  moderatedAt  DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

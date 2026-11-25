@@ -6,6 +6,7 @@
  */
 
 import { rhythmActivity } from '../machines/rhythm';
+import { rhythmReadingPatterns } from './rhythm-patterns';
 import { staffChordsLesson } from '../machines/staff-chords';
 import { staffIntervalLesson } from '../theory/staff-intervals';
 import { DECKS } from './decks';
@@ -16,6 +17,7 @@ const ROUTED: Record<LessonMode, true> = {
   'keyboard-map': true,
   fretboard: true,
   'rhythm-basics': true,
+  'rhythm-reading': true,
   'play-note': true,
   'match-note': true,
   'ear-interval': true,
@@ -36,6 +38,7 @@ export const ROUTED_MODES: ReadonlySet<LessonMode> = new Set(Object.keys(ROUTED)
 export function isPlayable(lesson: Lesson | undefined): lesson is Lesson {
   if (!lesson?.available || !ROUTED_MODES.has(lesson.mode)) return false;
   if (lesson.mode === 'rhythm-basics') return rhythmActivity(lesson.id) !== null;
+  if (lesson.mode === 'rhythm-reading') return rhythmReadingPatterns(lesson.id) !== null;
   if (lesson.mode === 'staff-intervals') return staffIntervalLesson(lesson.id) !== null;
   if (lesson.mode === 'staff-chords') return staffChordsLesson(lesson.id) !== null;
   if (lesson.mode === 'staff-flashcards')

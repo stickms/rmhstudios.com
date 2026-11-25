@@ -8,8 +8,8 @@ const explicit = SCOPES.filter((s) => s.explicit);
 const ordinary = SCOPES.filter((s) => !s.explicit);
 
 describe('explicit scopes', () => {
-  it('manage:moderation is the only explicit scope', () => {
-    expect(explicit.map((s) => s.id)).toEqual(['manage:moderation']);
+  it('manage:moderation and write:study-reviews are the explicit scopes', () => {
+    expect(explicit.map((s) => s.id)).toEqual(['manage:moderation', 'write:study-reviews']);
   });
 
   it('ignore * and the action wildcard, and need a literal entry', () => {

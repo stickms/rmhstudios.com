@@ -11,6 +11,7 @@ function cmp(value: unknown, cond: unknown): boolean {
   if (cond !== null && typeof cond === 'object' && !(cond instanceof Date) && !Array.isArray(cond)) {
     const c = cond as Record<string, unknown>;
     if ('in' in c) return (c.in as unknown[]).includes(value);
+    if ('isEmpty' in c) return (Array.isArray(value) ? value.length === 0 : true) === c.isEmpty;
     let ok = true;
     if ('not' in c) ok &&= c.not === null ? value !== null && value !== undefined : value !== c.not;
     if ('gte' in c) ok &&= value instanceof Date && value.getTime() >= (c.gte as Date).getTime();

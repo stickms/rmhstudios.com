@@ -6,7 +6,8 @@
  * A saved text (`text:<id>`, private), a written-to-order passage (`ai-…`), a news-sentence passage (`lore-…`, a
  * different run of sentences each time) and anything else has no text that is the same for both members.
  *
- * The result is settled from the server's own figures, checked: see {@link evaluateFinish} and {@link decideOutcome}.
+ * The result is settled from the server's own figures, checked: see `evaluateFinish` (`run-check.ts`, re-exported here)
+ * and {@link decideOutcome}.
  */
 import { PASSAGES } from '@/lib/rmhtype/passages';
 import { CODE_SNIPPETS } from '@/lib/rmhtype/sources';
@@ -93,59 +94,8 @@ export const isolate = (name: string) => `\u2068${name}\u2069`;
 
 export const round2 = (n: number) => Math.round(n * 100) / 100;
 
-/** The server's own figures for a finished solo run, as the settlement reads them. */
-export interface RaceFigures {
-  /** Whether the run counts as a full-length finish that passed every check. */
-  finished: boolean;
-  wpm: number;
-  accuracy: number;
-  timeMs: number;
-  /** The position the figures were computed from, clamped to the passage length. */
-  position: number;
-}
-
-/**
- * A client's reported position and error count, made safe to score: whole numbers, the position within the passage
- * and the errors within the position. Anything that is not a finite number counts as 0. Every RMHType run the hub
- * scores (a challenge race, an ordinary solo run, live progress) goes through this, so no client figure can raise a
- * speed past what the passage allows or push accuracy outside 0 to 100.
- */
-export function clampRunCounts(
-  position: unknown,
-  errors: unknown,
-  passageLength: number,
-): { position: number; errors: number } {
-  const raw = typeof position === 'number' && Number.isFinite(position) ? position : 0;
-  const clampedPosition = Math.min(Math.max(0, Math.floor(raw)), Math.max(0, passageLength));
-  const rawErrors = typeof errors === 'number' && Number.isFinite(errors) ? errors : 0;
-  return { position: clampedPosition, errors: Math.min(Math.max(0, Math.floor(rawErrors)), clampedPosition) };
-}
-
-/**
- * Judge a finish from the server's clock and the passage, never from the client's say-so. The position is clamped to
- * the passage length; the run is a finish only when the clamped position IS the passage length, the speed computed
- * from the server's time is at most {@link MAX_WPM}, and the curve passes {@link isPlausibleGhost} against that time
- * and length. Anything else is "Did not finish". Accuracy still comes from the client's error count (a residual risk
- * the specification records), clamped to what the position allows.
- */
-export function evaluateFinish(input: {
-  passageLength: number;
-  position: unknown;
-  errors: unknown;
-  /** The server's measure of the run, in ms. */
-  timeMs: number;
-  samples: unknown;
-}): RaceFigures {
-  const { passageLength, timeMs } = input;
-  const { position, errors } = clampRunCounts(input.position, input.errors, passageLength);
-  if (!(timeMs > 0) || position <= 0)
-    return { finished: false, wpm: 0, accuracy: 0, timeMs: Math.max(0, timeMs), position };
-  const wpm = position / 5 / (timeMs / 60000);
-  const accuracy = ((position - errors) / position) * 100;
-  const finished =
-    position === passageLength && wpm <= MAX_WPM && isPlausibleGhost(input.samples, { passageLength, timeMs });
-  return { finished, wpm, accuracy, timeMs, position };
-}
+export { clampRunCounts, evaluateFinish } from '@/lib/rmhtype/run-check';
+export type { RaceFigures, RunReason } from '@/lib/rmhtype/run-check';
 
 /**
  * Who won. The higher speed, provided accuracy is at least 90%; a run under 90% or one that did not finish loses; the

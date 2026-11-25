@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
+import type { NoticePreview } from '@/lib/notifications/notice-keys';
 import { countPendingPacks } from '@/lib/emoji/packs.server';
 import { countHeldCosmetics } from '@/lib/listings/listings.server';
 
@@ -49,7 +50,8 @@ export async function getAdminReviewCounts(): Promise<AdminReviewCounts> {
  * action, and failures are logged, not thrown.
  */
 export async function notifyAdminsOfReview(opts: {
-  preview: string;
+  /** The alert as a key (`notice('admin-review-report', { kind })`), so the admin reads it in their language. */
+  notice: NoticePreview;
   /** Groups the alert; same kind → one grouped notification (default 'reports'). */
   kind?: string;
   link?: string;
@@ -63,7 +65,7 @@ export async function notifyAdminsOfReview(opts: {
           type: 'SYSTEM',
           entityType: 'admin-review',
           entityId: opts.kind ?? 'reports',
-          preview: opts.preview,
+          preview: opts.notice,
           link: opts.link ?? '/admin/reports',
           dedupeUnread: true,
         }),

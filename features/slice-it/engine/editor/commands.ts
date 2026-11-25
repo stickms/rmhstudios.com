@@ -36,7 +36,8 @@ export type CommandKind =
   | 'mirror'
   | 'quantize'
   | 'scale'
-  | 'shift-time';
+  | 'shift-time'
+  | 'restore';
 
 /**
  * The song's timing map. It is not part of {@link Charts} (it is one list for the

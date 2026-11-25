@@ -135,6 +135,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/slice-it/charts/:id` | `DELETE` `GET` `PATCH` `POST` | `features/slice-it/api/slice-it.charts.$id.server.ts` |
 | `/api/slice-it/charts/:id/reviews` | `DELETE` `GET` `PUT` | `features/slice-it/api/slice-it.charts.$id.reviews.server.ts` |
 | `/api/slice-it/charts/:id/revisions` | `GET` | `features/slice-it/api/slice-it.charts.$id.revisions.server.ts` |
+| `/api/slice-it/charts/:id/revisions/:revisionId` | `GET` | `features/slice-it/api/slice-it.charts.$id.revisions.$revisionId.server.ts` |
 | `/api/slice-it/charts/ranking` | `GET` `POST` | `features/slice-it/api/slice-it.charts.ranking.server.ts` |
 | `/api/slice-it/daily` | `GET` | `features/slice-it/api/slice-it.daily.server.ts` |
 | `/api/slice-it/daily/submit` | `POST` | `features/slice-it/api/slice-it.daily.submit.server.ts` |
@@ -264,6 +265,8 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/study/card-sound` | `POST` | `lib/study/api/study.card-sound.server.ts` |
 | `/api/study/card-sound/:file` | `GET` | `lib/study/api/study.card-sound.$file.server.ts` |
 | `/api/study/cards/:id` | `DELETE` `PATCH` | `lib/study/api/study.cards.$id.server.ts` |
+| `/api/study/cards/:id/history` | `GET` | `lib/study/api/study.cards.$id.history.server.ts` |
+| `/api/study/cards/:id/restart` | `POST` | `lib/study/api/study.cards.$id.restart.server.ts` |
 | `/api/study/cards/:id/review` | `POST` | `lib/study/api/study.cards.$id.review.server.ts` |
 | `/api/study/cards/:id/suspend` | `PUT` | `lib/study/api/study.cards.$id.suspend.server.ts` |
 | `/api/study/decks` | `GET` `POST` | `lib/study/api/study.decks.server.ts` |
@@ -278,6 +281,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/study/decks/:id/link-original` | `POST` | `lib/study/api/study.decks.$id.link-original.server.ts` |
 | `/api/study/decks/:id/order` | `PUT` | `lib/study/api/study.decks.$id.order.server.ts` |
 | `/api/study/decks/:id/pace` | `GET` `PATCH` | `lib/study/api/study.decks.$id.pace.server.ts` |
+| `/api/study/decks/:id/rating` | `DELETE` `GET` `PUT` | `lib/study/api/study.decks.$id.rating.server.ts` |
 | `/api/study/decks/:id/review` | `GET` | `lib/study/api/study.decks.$id.review.server.ts` |
 | `/api/study/decks/:id/suggestions` | `GET` `POST` | `lib/study/api/study.decks.$id.suggestions.server.ts` |
 | `/api/study/decks/:id/tests` | `GET` `POST` | `lib/study/api/study.decks.$id.tests.server.ts` |

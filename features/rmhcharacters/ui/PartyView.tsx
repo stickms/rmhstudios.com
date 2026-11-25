@@ -49,6 +49,7 @@ import { useRoster } from '@features/rmhcharacters/engine/store';
 import type { Dnd5eCharacter, GameSystem, Pf2eCharacter } from '@features/rmhcharacters/engine/types';
 import { Sheet5e } from './dnd5e/Sheet5e';
 import { SheetPf2e } from './pf2e/SheetPf2e';
+import { TableRolls } from './TableRolls';
 import { partyKey, partyListKey, useParty, usePartySheet } from './useParty';
 import { useDnd5eData, usePf2eData } from './useData';
 
@@ -477,11 +478,14 @@ export function PartyView({
   id,
   onBack,
   onBring,
+  onOpenSheet,
 }: {
   id: string;
   onBack: () => void;
   /** The game master brings a character of their own: opens the join screen with the party's code. */
   onBring: (code: string) => void;
+  /** A player opens their own sheet from the table's log, with "Roll for the table" available. */
+  onOpenSheet?: (characterId: string) => void;
 }) {
   const { t } = useTranslation('character-party');
   const q = useParty(id);
@@ -522,7 +526,7 @@ export function PartyView({
   return (
     <div className={cn('flex flex-col gap-6', arrive)}>
       <div>{back}</div>
-      <PartyBody party={q.data.party} onBack={onBack} onBring={onBring} />
+      <PartyBody party={q.data.party} onBack={onBack} onBring={onBring} {...(onOpenSheet ? { onOpenSheet } : {})} />
     </div>
   );
 }
@@ -541,10 +545,12 @@ function PartyBody({
   party,
   onBack,
   onBring,
+  onOpenSheet,
 }: {
   party: PartyDetail;
   onBack: () => void;
   onBring: (code: string) => void;
+  onOpenSheet?: (characterId: string) => void;
 }) {
   const { t } = useTranslation('character-party');
   const refusalText = useRefusalText();
@@ -635,6 +641,13 @@ function PartyBody({
           onClose={() => setOpenSheet(null)}
         />
       ) : null}
+
+      <TableRolls
+        partyId={party.id}
+        system={party.system}
+        role={party.role}
+        {...(onOpenSheet ? { onOpenSheet } : {})}
+      />
 
       <Row
         title={t('turn.title', { defaultValue: 'Turn order' })}

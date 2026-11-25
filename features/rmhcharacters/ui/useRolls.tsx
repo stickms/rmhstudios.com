@@ -5,6 +5,9 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RollBar } from './RollBar';
+import type { PartyRoll, RollVisibility, SheetRequest } from '@features/rmhcharacters/engine/party-rolls';
+import type { GameSystem } from '@features/rmhcharacters/engine/types';
+import { useRollForTable } from './usePartyRolls';
 import { appendRoll, clearRollLog, readRollLog, type RollLogEntry } from '@features/rmhcharacters/engine/roll-log';
 import {
   formatOutcome,
@@ -28,6 +31,27 @@ export interface LastRoll {
   type?: string;
 }
 
+/** The party a sheet was opened from: the table switch exists only while one is given. */
+export interface PartyRollContext {
+  id: string;
+  role: 'gm' | 'player';
+  system: GameSystem;
+}
+
+/** "Roll for the table": off by default each time a sheet opens. */
+export interface TableApi {
+  role: 'gm' | 'player';
+  on: boolean;
+  setOn: (on: boolean) => void;
+  visibility: Extract<RollVisibility, 'table' | 'gm' | 'secret'>;
+  setVisibility: (v: Extract<RollVisibility, 'table' | 'gm' | 'secret'>) => void;
+  pending: boolean;
+  /** The newest roll the server made for this sheet, so a critical hit can offer its damage. */
+  last: PartyRoll | null;
+  /** Ask the server to roll `req` for the table; it reads the character and computes the modifier itself. */
+  send: (req: SheetRequest) => void;
+}
+
 export interface RollsApi {
   system: '5e' | 'pf2e';
   mode: RollMode;
@@ -45,13 +69,20 @@ export interface RollsApi {
   damage: (label: string, text: string, critical: boolean) => void;
   /** The free roll box; `null` when it rolled, otherwise what was wrong. */
   free: (input: string) => FreeRollError | null;
+  /** Present only while the sheet is opened from a party. */
+  table?: TableApi;
 }
 
 export const RollsContext = createContext<RollsApi | null>(null);
 
 export const useRollsContext = () => useContext(RollsContext);
 
-export function useRolls(characterId: string, system: '5e' | 'pf2e', exhaustion: number): RollsApi {
+export function useRolls(
+  characterId: string,
+  system: '5e' | 'pf2e',
+  exhaustion: number,
+  party?: PartyRollContext,
+): RollsApi {
   const { t } = useTranslation('character-rolls');
   const [mode, setMode] = useState<RollMode>('normal');
   const [pinned, setPinned] = useState(false);
@@ -59,6 +90,10 @@ export function useRolls(characterId: string, system: '5e' | 'pf2e', exhaustion:
   const [last, setLast] = useState<LastRoll | null>(null);
   const [entries, setEntries] = useState<RollLogEntry[]>([]);
   const [seq, setSeq] = useState(0);
+  const [tableOn, setTableOn] = useState(false);
+  const [visibility, setVisibility] = useState<TableApi['visibility']>('table');
+  const [tableLast, setTableLast] = useState<PartyRoll | null>(null);
+  const sendRoll = useRollForTable(party?.id ?? '', setTableLast);
 
   // Read after mount: the server and the first client render both show an empty log.
   useEffect(() => {
@@ -115,7 +150,53 @@ export function useRolls(characterId: string, system: '5e' | 'pf2e', exhaustion:
     setEntries([]);
   }, [characterId]);
 
-  return { system, mode, setMode, pinned, setPinned, dc, setDc, last, entries, clear, d20, damage, free };
+  const send = useCallback(
+    (req: SheetRequest) => {
+      if (!party) return;
+      const dcNum = dc.trim() !== '' && Number.isFinite(Number(dc)) ? Math.round(Number(dc)) : undefined;
+      sendRoll.mutate({
+        roll: req,
+        mode: system === '5e' ? mode : 'normal',
+        visibility,
+        // Only the game master's secret Pathfinder roll carries a DC; the server refuses one from a player.
+        ...(party.role === 'gm' && visibility === 'secret' && system === 'pf2e' && dcNum !== undefined
+          ? { dc: Math.min(60, Math.max(0, dcNum)) }
+          : {}),
+      });
+      if (system === '5e' && !pinned) setMode('normal');
+    },
+    [party, dc, sendRoll, system, mode, visibility, pinned],
+  );
+
+  const table: TableApi | undefined = party
+    ? {
+        role: party.role,
+        on: tableOn,
+        setOn: setTableOn,
+        visibility,
+        setVisibility,
+        pending: sendRoll.isPending,
+        last: tableLast,
+        send,
+      }
+    : undefined;
+
+  return {
+    system,
+    mode,
+    setMode,
+    pinned,
+    setPinned,
+    dc,
+    setDc,
+    last,
+    entries,
+    clear,
+    d20,
+    damage,
+    free,
+    ...(table ? { table } : {}),
+  };
 }
 
 /** Provides the roll state to a sheet and draws the dice bar above it, so the sheet bodies stay untouched. */
@@ -123,14 +204,17 @@ export function RollsProvider({
   characterId,
   system,
   exhaustion,
+  party,
   children,
 }: {
   characterId: string;
   system: '5e' | 'pf2e';
   exhaustion: number;
+  /** Set when the sheet was opened from a party: the "Roll for the table" switch appears. */
+  party?: PartyRollContext;
   children: React.ReactNode;
 }) {
-  const rolls = useRolls(characterId, system, exhaustion);
+  const rolls = useRolls(characterId, system, exhaustion, party);
   return (
     <RollsContext.Provider value={rolls}>
       <RollBar rolls={rolls} />

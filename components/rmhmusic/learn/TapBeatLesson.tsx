@@ -64,9 +64,9 @@ import { useMachine } from './useMachine';
 import { cn } from '@/lib/utils';
 
 /** The note the pad sends through the on-screen keys (never sounded: the pad is silent). */
-const PAD_NOTE = 72;
+export const PAD_NOTE = 72;
 /** Let go of the pad's note, if it is down (so a later press is not taken for a repeat). */
-function releasePad() {
+export function releasePad() {
   useLearnStore.getState().screen?.release(PAD_NOTE);
 }
 
@@ -527,7 +527,7 @@ function BeatBar({ position }: { position: number | null }) {
  * note held that would make the next press look like a repeat. A tap still held when the run ends
  * must not start the next one when it is let go: see `input/pad-guard.ts`.
  */
-function TapPad({
+export function TapPad({
   mode,
   label,
   busy,

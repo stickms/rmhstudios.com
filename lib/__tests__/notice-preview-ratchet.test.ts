@@ -26,16 +26,13 @@ const REMAINING: Record<string, number> = {};
  * SYSTEM notices that reach `createNotification` through a helper or a variable, so the AST count above cannot see
  * them, and that are still English only. Each is named with the reason it stays; the list only shrinks, and the test
  * below fails an entry whose file no longer exists or has started to use `notice(`, so a converted site leaves it.
- * Quoted member text (a post excerpt, a reminder note, a guestbook entry, an update body) is not a notice and is not
- * listed.
+ * Quoted member text (a post excerpt, a reminder note, a guestbook entry, an update body, a recipe author's message)
+ * is not a notice and is not listed; the emitter frames it in a key instead.
+ *
+ * Sprint 12 (feature 19) converted the last five (RMHLadder alerts, API key suspend and restore, the report decision,
+ * the admins' review alerts, recipe messages); the list is empty and stays empty.
  */
-const PASSED_THROUGH_HELPERS: Record<string, string> = {
-  'lib/rmhladder/alerts/dispatch.server.ts': 'alert text is composed by the ladder alert pipeline for each alert kind',
-  'lib/admin-review.server.ts': 'staff-only queue alerts; eight callers pass a bare sentence',
-  'lib/moderation/triage.server.ts': 'the triage decision message is composed with the report reason',
-  'lib/admin/api-keys.server.ts': 'the suspend notice text is built by the key-abuse helper',
-  'lib/developer/recipes.server.ts': 'the message is the recipe author or runner text, a developer-facing surface',
-};
+const PASSED_THROUGH_HELPERS: Record<string, string> = {};
 
 const ROOTS = ['lib', 'server', 'features', 'app', 'components', 'scripts'];
 
@@ -124,10 +121,25 @@ describe('SYSTEM notices are written as keys, not bare English', () => {
     expect(stale, 'lower or remove these REMAINING entries').toEqual([]);
   });
 
-  it('lists only helper-passed notices that are still English', () => {
+  it('has no notice that reaches createNotification through a helper in English', () => {
+    expect(Object.keys(PASSED_THROUGH_HELPERS)).toEqual([]);
     for (const file of Object.keys(PASSED_THROUGH_HELPERS)) {
       const source = readFileSync(file, 'utf8');
       expect(source, `${file} now uses notice(): remove it from PASSED_THROUGH_HELPERS`).not.toMatch(/\bnotice\(/);
+    }
+  });
+
+  it('the five helper emitters of sprint 12 (19) write their notices as keys', () => {
+    for (const file of [
+      'lib/rmhladder/alerts/dispatch.server.ts',
+      'lib/admin-review.server.ts',
+      'lib/moderation/triage.server.ts',
+      'lib/admin/api-keys.server.ts',
+      'lib/developer/recipes.server.ts',
+    ]) {
+      const source = readFileSync(file, 'utf8');
+      // admin-review.server.ts receives its notice from the seven callers; the others build it.
+      expect(source, file).toMatch(file.includes('admin-review') ? /notice: NoticePreview/ : /\bnotice\(/);
     }
   });
 

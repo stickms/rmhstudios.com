@@ -17,6 +17,7 @@ vi.mock('@/lib/prisma.server', () => ({
     return h.fake.db;
   },
 }));
+vi.mock('@/lib/account/deletion-billing-queue.server', () => ({ enqueueBillingSync: vi.fn(async () => true) }));
 vi.mock('@/lib/notifications.server', () => ({
   createNotification: vi.fn(async (n: Record<string, unknown>) => {
     h.notices.push(n);

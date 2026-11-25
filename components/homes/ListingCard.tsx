@@ -15,6 +15,7 @@
  * media chip; the tenure and type that used to be badges in the opposite corner are words in the caption
  * now, so nothing shares the picture with it. In a row it sits at the end of the row.
  */
+import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Globe, ImageOff, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -43,6 +44,10 @@ interface ListingCardProps {
   /** Show status pill for non-active listings (used on the manage page). */
   showStatus?: boolean;
   layout?: 'card' | 'row';
+  /** Asked before the save control unsaves this listing (see `FavoriteButton`). */
+  confirmUnsave?: () => Promise<boolean>;
+  /** Content under the caption, inside the same row (the Saved tab's note and Compare tick). */
+  footer?: ReactNode;
 }
 
 export function ListingCard({
@@ -52,6 +57,8 @@ export function ListingCard({
   onHover,
   showStatus,
   layout = 'card',
+  confirmUnsave,
+  footer,
 }: ListingCardProps) {
   const { t, i18n } = useTranslation('site');
   const location = formatLocation(listing);
@@ -173,9 +180,11 @@ export function ListingCard({
           favorited={listing.favorited}
           compact
           onMedia={!row}
+          confirmUnsave={confirmUnsave}
           onChange={(f) => onFavoriteChange?.(listing.id, f)}
         />
       </div>
+      {footer}
     </article>
   );
 }

@@ -4,8 +4,14 @@
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
-import type { GridGroup, GridPlayView, GridSummary } from '@/lib/party/connections';
-import type { createGridSchema, guessSchema, rateSchema, scheduleSchema } from '@/lib/party/connections-schema';
+import type { GridGroup, GridPlayView, GridSummary, MyGridSummary } from '@/lib/party/connections';
+import type {
+  editGridSchema,
+  guessSchema,
+  rateSchema,
+  saveGridSchema,
+  scheduleSchema,
+} from '@/lib/party/connections-schema';
 
 /** Today's daily, the top-rated and the newest grids. Public. */
 export const listConnectionGridsApi = endpoint<{
@@ -19,9 +25,9 @@ export const listConnectionGridsApi = endpoint<{
   path: '/api/connections/grids',
 });
 
-/** 201 with the new id; 4xx carries the reason (limit reached, duplicate…). */
+/** 201 with the new id; 4xx carries the reason (limit reached, duplicate…). `draft: true` saves it unpublished. */
 export const createConnectionGridApi = endpoint<{
-  body: z.infer<typeof createGridSchema>;
+  body: z.infer<typeof saveGridSchema>;
   res: {
     id: string;
   };
@@ -106,4 +112,41 @@ export const scheduleConnectionGridApi = endpoint<{
 }>()({
   method: 'POST',
   path: '/api/connections/grids/$id/schedule',
+});
+
+/** The author changes a draft, or a grid nobody else has played. 409 once another member has played it. */
+export const editConnectionGridApi = endpoint<{
+  params: {
+    id: string;
+  };
+  body: z.infer<typeof editGridSchema>;
+  res: {
+    ok: true;
+  };
+}>()({
+  method: 'PATCH',
+  path: '/api/connections/grids/$id',
+});
+
+/** The author publishes a complete draft. 400 while a group or item is still empty. */
+export const publishConnectionGridApi = endpoint<{
+  params: {
+    id: string;
+  };
+  res: {
+    ok: true;
+  };
+}>()({
+  method: 'POST',
+  path: '/api/connections/grids/$id/publish',
+});
+
+/** The caller's own grids, drafts first, with each published grid's figures. Private. */
+export const myConnectionGridsApi = endpoint<{
+  res: {
+    grids: MyGridSummary[];
+  };
+}>()({
+  method: 'GET',
+  path: '/api/connections/mine',
 });

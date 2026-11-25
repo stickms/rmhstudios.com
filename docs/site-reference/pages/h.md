@@ -17,6 +17,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/help` | Help & Concierge | public | `app/routes/_site/help.tsx` |
 | `/history` | History | public | `app/routes/_site/history.tsx` |
 | `/homes` | RMHHomes | public | `app/routes/_site/homes/index.tsx` |
+| `/homes/compare` | RMHHomes — Compare saved homes | public | `app/routes/_site/homes/compare.tsx` |
 | `/homes/listing/:id` | Listing \| RMHHomes | public | `app/routes/_site/homes/listing.$id.tsx` |
 | `/homes/manage` | RMHHomes — Your homes | public | `app/routes/_site/homes/manage.tsx` |
 | `/homes/rent-split` | Fair Rent Split Calculator \| RMHHomes | public | `app/routes/_site/homes/rent-split.tsx` |

@@ -88,10 +88,8 @@ function makeRunPrisma() {
       },
     },
     homeSource: {
-      async update() {
-        return {
-          id: 'src1',
-        };
+      async updateMany() {
+        return { count: 1 };
       },
       async findMany() {
         return [SOURCE_ROW];

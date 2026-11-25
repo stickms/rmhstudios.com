@@ -59,6 +59,7 @@ function DiscordRMHboxPage() {
 
 export const Route = createFileRoute('/discord/rmhbox')({
     head: () => ({
+        meta: [{ title: 'RMHBox — RMH Studios' }],
         links: [{ rel: 'stylesheet', href: rmhboxCss }],
     }),
     component: DiscordRMHboxPage,

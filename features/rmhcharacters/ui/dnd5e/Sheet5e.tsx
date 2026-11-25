@@ -75,14 +75,14 @@ function Sheet5eBody({
             <div key={a} className="rmhc-stat">
               <div className="text-xs font-medium text-app-text-muted">{ABILITY_NAMES[a]}</div>
               <div className="font-mono text-2xl tabular-nums text-app-text">
-                <RollButton kind="check" name={ABILITY_NAMES[a]} bonus={mod}>
+                <RollButton kind="check" name={ABILITY_NAMES[a]} bonus={mod} which={a}>
                   {R.signed(mod)}
                 </RollButton>
               </div>
               <div className="font-mono text-xs text-app-text-muted">{scores[a]}</div>
               <div className="mt-1 border-t border-app-border pt-1 font-mono text-xs text-app-text-muted">
                 {t('s5.save', { defaultValue: 'Save' })}{' '}
-                <RollButton kind="save" name={ABILITY_NAMES[a]} bonus={mod + (saves.includes(a) ? pb : 0)}>
+                <RollButton kind="save" name={ABILITY_NAMES[a]} bonus={mod + (saves.includes(a) ? pb : 0)} which={a}>
                   {R.signed(mod + (saves.includes(a) ? pb : 0))}
                 </RollButton>
                 {saves.includes(a) ? ' ●' : ''}
@@ -265,16 +265,16 @@ function Sheet5eBody({
           </Section>
 
           <Section title={t('s5.attacks', { defaultValue: 'Attacks' })}>
-            {R.attacks(c, d).map((a) => (
+            {R.attacks(c, d).map((a, i) => (
               <StatRow
                 key={a.name}
                 label={a.name}
                 value={
                   <span className="inline-flex flex-wrap items-center justify-end gap-2">
-                    <RollButton kind="attack" name={a.name} bonus={a.toHit} damage={a.damage}>
+                    <RollButton kind="attack" name={a.name} bonus={a.toHit} damage={a.damage} which={i}>
                       {R.signed(a.toHit)}
                     </RollButton>
-                    <RollButton kind="damage" name={a.name} damage={a.damage}>
+                    <RollButton kind="damage" name={a.name} damage={a.damage} which={i}>
                       {a.damage}
                     </RollButton>
                   </span>
@@ -300,7 +300,7 @@ function Sheet5eBody({
                 key={s.id}
                 label={`${s.proficient ? (s.expertise ? '◆ ' : '● ') : ''}${s.name} (${s.ability.toUpperCase()})`}
                 value={
-                  <RollButton kind="skill" name={s.name} bonus={s.bonus}>
+                  <RollButton kind="skill" name={s.name} bonus={s.bonus} which={s.id}>
                     {R.signed(s.bonus)}
                   </RollButton>
                 }

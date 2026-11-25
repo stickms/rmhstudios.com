@@ -23,6 +23,7 @@ import {
   type ScheduledConsumer,
 } from '../../lib/jobs/scheduled-consumer.server';
 import { runHomesScrape, type RunPrisma } from '../../lib/homes/scrape/run';
+import { HOMES_SCRAPE_QUEUE, scrapeTriggerOf } from '../../lib/homes/scrape/trigger';
 import { seedHomeSources, type SeedPrisma } from '../../lib/homes/scrape/seed';
 import {
   notifyFavouritersOfExternalDrop,
@@ -64,7 +65,8 @@ const SHUTDOWN_DEADLINE_MS = (() => {
   return Number.isInteger(n) && n > 0 ? n : 8_000;
 })();
 
-async function tick() {
+/** `data` is the job's payload: `{}` for a cron fire, `{ trigger: 'MANUAL', by }` from /admin/homes. */
+async function tick(data: Record<string, unknown> = {}) {
   if (!SCRAPE_ENABLED || stopping) return;
   if (running) {
     console.log('[homes-worker] Tick skipped — previous run still in flight');
@@ -79,7 +81,7 @@ async function tick() {
         onNewListing: (id) => notifyWatchersOfExternalListing(notifyPrisma, id),
         onPriceDrop: (drop) => notifyFavouritersOfExternalDrop(notifyPrisma, drop),
       },
-      { trigger: 'CRON' },
+      { trigger: scrapeTriggerOf(data) },
     );
     console.log(
       `[homes-worker] Run complete [${result.runId}] — sources=${result.sources} discovered=${result.discovered} created=${result.created} updated=${result.updated} expired=${result.expired} errors=${result.errors} durationMs=${result.durationMs}`,
@@ -128,7 +130,7 @@ async function bootstrap(): Promise<boolean> {
 // queued or active, replacing the `running` overlap guard as the cross-process lock.
 
 const cronSchedule = process.env.HOMES_CRON_SCHEDULE?.trim() || '0 */6 * * *';
-const HOMES_QUEUE = 'homes.scrape';
+const HOMES_QUEUE = HOMES_SCRAPE_QUEUE;
 let consumer: ScheduledConsumer | null = null;
 
 async function main() {

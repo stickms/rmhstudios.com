@@ -4,7 +4,7 @@ import type { ProfileModule, PlusModuleKind } from '@/lib/profile/modules';
 
 /**
  * The P05 profile showcase modules (Top Four, /now, stamp wall, webrings,
- * skills, visitor counter). `ProfileShowcase` lazy-loads THIS file the first
+ * skills, visitor counter, made here). `ProfileShowcase` lazy-loads THIS file the first
  * time a profile actually has one of these modules, and each module is its own
  * chunk beyond that — a profile with only a /now block does not download the
  * stamp wall or the report dialog.
@@ -15,6 +15,7 @@ const StampWallModule = lazy(() => import('./StampWallModule'));
 const WebringStripModule = lazy(() => import('./WebringStripModule'));
 const EndorsementsModule = lazy(() => import('./EndorsementsModule'));
 const VisitorCounterModule = lazy(() => import('./VisitorCounterModule'));
+const MadeModule = lazy(() => import('./MadeModule'));
 
 export type PlusModule = Extract<
   ProfileModule,
@@ -46,6 +47,8 @@ export default function PlusModules({
         <WebringStripModule title={title} userId={userId} isOwner={isOwner} />
       ) : module.kind === 'endorsements' ? (
         <EndorsementsModule title={title} userId={userId} isOwner={isOwner} />
+      ) : module.kind === 'made' ? (
+        <MadeModule title={title} userId={userId} isOwner={isOwner} kinds={module.config.kinds} />
       ) : (
         <VisitorCounterModule title={title} userId={userId} />
       )}

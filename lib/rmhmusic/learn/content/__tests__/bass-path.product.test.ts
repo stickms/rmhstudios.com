@@ -32,6 +32,12 @@ const EARLIER_IDS = [
   'rhythm-note-values',
   'rhythm-44-vs-34',
   'rhythm-tap-the-beat',
+  // Read rhythms (sprint 12) follows rhythm basics on every path.
+  'rhythm-read-quarters-halves',
+  'rhythm-read-eighths',
+  'rhythm-read-rests',
+  'rhythm-read-dotted',
+  'rhythm-read-ties-34',
   'staff-sharps-flats',
   'staff-sharps-flats-bass',
   'staff-keys-sharps',
@@ -98,6 +104,7 @@ describe('the bass clef unit', () => {
       'chords-in-every-key',
       'read-intervals',
       'rhythm-basics',
+      'read-rhythms',
       'read-sharps-flats-keys',
     ]);
   });

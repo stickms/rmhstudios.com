@@ -10,7 +10,20 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { Eraser, Gauge, Ghost, MousePointer2, Plus, Redo2, Save, Timer, Undo2, ZoomIn, ZoomOut } from 'lucide-react';
+import {
+  Eraser,
+  Gauge,
+  Ghost,
+  History,
+  MousePointer2,
+  Plus,
+  Redo2,
+  Save,
+  Timer,
+  Undo2,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
@@ -27,9 +40,11 @@ interface ToolbarProps {
   onSave: () => void;
   /** Clipboard and time operations (the Edit menu). */
   onClipboardOp: (op: ClipboardOp) => void;
+  /** Open the Versions panel. */
+  onVersions: () => void;
 }
 
-export function Toolbar({ onSave, onClipboardOp }: ToolbarProps) {
+export function Toolbar({ onSave, onClipboardOp, onVersions }: ToolbarProps) {
   const { t } = useTranslation('r-slice-it');
   const tool = useEditorStore((s) => s.tool);
   const setTool = useEditorStore((s) => s.setTool);
@@ -270,7 +285,19 @@ export function Toolbar({ onSave, onClipboardOp }: ToolbarProps) {
 
       <button
         type="button"
-        className="neumorphic-sm ml-auto flex h-9 items-center gap-2 px-3 text-sm disabled:opacity-40"
+        className="neumorphic-sm ml-auto flex h-9 items-center gap-2 px-3 text-sm"
+        onClick={onVersions}
+      >
+        <History className="h-4 w-4" aria-hidden />
+        {t('versions', {
+          ns: 'chart-history',
+          defaultValue: 'Versions',
+        })}
+      </button>
+
+      <button
+        type="button"
+        className="neumorphic-sm flex h-9 items-center gap-2 px-3 text-sm disabled:opacity-40"
         onClick={onSave}
         disabled={saving || !dirty}
       >

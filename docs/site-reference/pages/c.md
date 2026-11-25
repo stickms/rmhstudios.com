@@ -23,6 +23,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/canvas` | Community canvas | public | `app/routes/_site/canvas.tsx` |
 | `/communities` | Communities | public | `app/routes/_site/communities.tsx` |
 | `/compete` | Compete | public | `app/routes/_site/compete.tsx` |
+| `/connections/mine` | Your Connections Grids | public | `app/routes/_site/connections.mine.tsx` |
 | `/connections/new` | Make a Connections Grid | public | `app/routes/_site/connections.new.tsx` |
 | `/connections/u/:id` | Connections Grid | public | `app/routes/_site/connections.u.$id.tsx` |
 | `/cookies` | Cookie Policy | public | `app/routes/_site/cookies.tsx` |

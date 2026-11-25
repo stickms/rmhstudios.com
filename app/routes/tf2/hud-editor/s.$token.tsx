@@ -7,7 +7,7 @@ import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import Tf2HudDetail from '@/components/tf2-hud/Tf2HudDetail';
 
 export const Route = createFileRoute('/tf2/hud-editor/s/$token')({
-  head: () => ({ meta: [{ name: 'robots', content: 'noindex' }] }),
+  head: () => ({ meta: [{ title: 'Shared TF2 HUD | RMH Studios' }, { name: 'robots', content: 'noindex' }] }),
   component: ShareRoute,
 });
 

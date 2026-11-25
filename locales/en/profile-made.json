@@ -1,0 +1,21 @@
+{
+  "difficulty-easy": "Easy",
+  "difficulty-expert": "Expert",
+  "difficulty-hard": "Hard",
+  "difficulty-normal": "Normal",
+  "empty": "Nothing published yet",
+  "empty-hint": "Puzzles, decks, charts and builds you publish show up here.",
+  "error": "Couldn't load this",
+  "figure-cards_one": "{{count}} card",
+  "figure-cards_other": "{{count}} cards",
+  "figure-plays_one": "{{count}} play",
+  "figure-plays_other": "{{count}} plays",
+  "figure-releases_one": "{{count}} release",
+  "figure-releases_other": "{{count}} releases",
+  "kind-build": "Build",
+  "kind-chart": "Slice It chart",
+  "kind-connections": "Connections grid",
+  "kind-deck": "Deck",
+  "kind-lights-out": "Lights Out board",
+  "settings-heading": "Show in Made here"
+}

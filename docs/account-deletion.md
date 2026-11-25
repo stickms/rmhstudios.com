@@ -22,11 +22,11 @@ The `User` row is anonymised in place, never removed, so `onDelete: Cascade` fro
 
 The clearly private leaf tables (birthday, reminders, drafts, saves, history, settings, notifications, and private reading highlights) are erased by `coverageErasureOps` in `lib/account/erasure-coverage.server.ts`.
 
-407 models are classified.
+409 models are classified.
 
 ## Erased
 
-Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row stays with its member reference replaced or nulled; a `cascade` row goes with its parent in the database. 250 models.
+Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row stays with its member reference replaced or nulled; a `cascade` row goes with its parent in the database. 253 models.
 
 | Model | Decision | Reason |
 | --- | --- | --- |
@@ -72,6 +72,7 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `CommunityMember` | deidentify | Membership survives an anonymised account, so post alerts are reset to off. |
 | `CommunityOnboardingAnswer` | erase | The member's answers, seen only by the community's moderators. |
 | `CommunityRecurringThread` | deidentify | Thread templates the member authored are handed to the community owner and paused (nothing posts under their name until a moderator saves one); when the member owned the community, or it has no owner, they are deleted. |
+| `ConnectionsGrid` | erase | Drafts were never published, so nobody else uses them and they go with the account. A published grid stays under "Deleted user" (rule 3: published content others use). Scope: draft rows only (draft = true); published grids stay under "Deleted user" (rule 3). |
 | `ConnectionsPlay` | erase | The member's own plays; no board. No children: it is the child of `ConnectionsGrid`, whose anonymous play and rating tallies stay (counter rule). |
 | `ContentReport` | deidentify | The report stays as the moderators' record; the reporter's free-text details are nulled. |
 | `ConversationPref` | erase | Per-conversation notification choices (muted posts and chats). |
@@ -80,6 +81,7 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `DailyPuzzleScore` | erase | The daily leaderboard and results endpoints read at request time; the member's cached stats (`dailyStatsKey`) are dropped after the transaction. |
 | `DeckEditor` | erase | Who may edit a deck is the owner's choice, but a member's own membership of someone else's deck is their own record: erased, so a deleted member leaves every deck they edited. Rows on the member's own decks stay because the decks do (FlashcardDeck is the open public-decks decision); nobody can invite to such a deck any more. Scope: rows where the member is the editor or the invitee (userId); rows on decks the member owns stay with those decks (invitedById points at the anonymised member). |
 | `DeckFolder` | erase | Private deck folders (sprint 07 deck-folders); decks stay, folderless. |
+| `DeckRating` | erase | The member's own ratings go with the account and each rated deck's sum and count are corrected in the same transaction; the decks stay (FlashcardDeck), so no copyCount changes. |
 | `DeckSuggestion` | erase | The member's proposed corrections to other members' cards are their own writing, private to them and the deck's author: erased, so open ones leave the author's list. Scope: rows where the member is the suggester (suggesterId); suggestions to the member's own decks stay with the decks. |
 | `DeletionHold` | erase | The ids of the keys and webhooks a deletion request paused (sprint 09 deletion-pause); the hold has no use once the account is anonymised. |
 | `DeveloperApiKey` | erase | Hashed developer API keys; deleting a key also cascades its usage, refusal and idempotency rows. |
@@ -129,7 +131,7 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `HandleChange` | erase | Rows past the 30-day reclaim window go with the account; newer ones stay so the released handle is still protected, and a daily job erases them once they pass it. "Previously known as" is never shown for a deleted profile. Scope: Rows older than the reclaim window at deletion; the rest by the daily job. |
 | `HeldNotification` | erase | Rule 1: notifications held for the member by quiet hours. |
 | `HistoryEntry` | erase | Rule 1: the member's own browsing history. |
-| `HomeFavorite` | erase | The member's saved homes. |
+| `HomeFavorite` | erase | The member's saved homes, with their private notes. |
 | `HomeListing` | erase | The member's listings (inquiries and favourites cascade from the listing). |
 | `HomeRoommateProfile` | erase | The member's roommate profile. |
 | `HomeWatch` | erase | The member's saved home searches. |
@@ -219,6 +221,7 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `RmhCharacter` | erase | The member's characters; private (only the owner-scoped character API reads them). |
 | `RmhCharacterParty` | erase | Parties the member runs (name, invite code, turn order with the extras' names) are deleted with their membership rows; the players' own characters are untouched. |
 | `RmhCharacterPartyMember` | erase | The member's seat in other members' parties (which character, whether they share the full sheet). A turn order may still hold the pseudonymous id of an erased member; readers drop it, and no name is stored there. |
+| `RmhCharacterPartyRoll` | erase | The member's rolls for the table in any party, and every roll in a party they run (it goes with the party). A roll stores the user id and the character id, never a name; the view joins the current name. |
 | `RmhCodeToken` | erase | Hashed bearer tokens for the rmhcode CLI would stay valid for a tombstone. |
 | `RmhStudyProfile` | erase | Focus totals and sessions (RmhStudySession by the cascade); the RMHStudy boards read this table, so the member leaves them. |
 | `RmhTubeRoom` | deidentify | A party the member hosts and has not held is closed so it cannot open as the erased account; the room row stays. |
@@ -283,7 +286,7 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 
 ## Kept on purpose
 
-Kept for a stated reason: a ledger, an audit trail, another member's record, or published content that stays under "Deleted user" as posts do. 146 models.
+Kept for a stated reason: a ledger, an audit trail, another member's record, or published content that stays under "Deleted user" as posts do. 145 models.
 
 | Model | Decision | Reason |
 | --- | --- | --- |
@@ -324,7 +327,6 @@ Kept for a stated reason: a ledger, an audit trail, another member's record, or 
 | `CommunityPageRevision` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
 | `CommunityPinnedPost` | keep | Rule 2: a community's arrangement of its own content; it never shows who pinned. |
 | `ComputeGrant` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
-| `ConnectionsGrid` | keep | Rule 3: published content others use stays under "Deleted user". |
 | `ContentAward` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
 | `ContextNote` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
 | `ContextNoteRating` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |

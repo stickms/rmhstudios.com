@@ -660,9 +660,9 @@ describe('the editor studies on their own schedule', () => {
     await reviewQueue('ed', undefined, NOW);
     const scheduled = reviewFindMany.mock.calls[0]![0] as { where: { userId: string; card: { deck: unknown } } };
     expect(scheduled.where.userId).toBe('ed');
-    expect(scheduled.where.card.deck).toEqual(readableDeckWhere('ed'));
+    expect(scheduled.where.card.deck).toEqual(readableDeckWhere('ed', expect.any(Date)));
     const newCards = cardFindMany.mock.calls[0]![0] as { where: { deck: unknown; reviews: unknown } };
-    expect(newCards.where.deck).toEqual(studiedDeckWhere('ed'));
+    expect(newCards.where.deck).toEqual(studiedDeckWhere('ed', expect.any(Date)));
     expect(newCards.where.reviews).toEqual({ none: { userId: 'ed' } });
   });
 
@@ -678,14 +678,6 @@ describe('the editor studies on their own schedule', () => {
   });
 
   it('due counts and statistics name the real table and quoted columns, and the pace columns are the owner’s only', async () => {
-    await dueByDeck('ed', NOW);
-    const sql = raw[0]!.sql;
-    expect(sql).toMatch(/FROM deck_editor e/);
-    expect(sql).toMatch(/e\."deckId" = d\."id" AND e\."userId" = \? AND e\."status" = 'accepted'/);
-    expect(sql).toMatch(/MAX\(CASE WHEN d\."userId" = \? THEN d\."newPerDay" END\)/);
-    expect(sql).toMatch(/"suspendedAt" IS NULL/);
-    raw.length = 0;
-    await getStudyStats('ed', { timeZone: 'UTC' });
     const flat = (value: unknown): string =>
       typeof value === 'object' && value !== null && 'strings' in value
         ? (value as unknown as { strings: string[]; values: unknown[] }).strings.reduce(
@@ -693,8 +685,20 @@ describe('the editor studies on their own schedule', () => {
             '',
           )
         : '';
+    await dueByDeck('ed', NOW);
+    const sql = raw[0]!.sql + raw[0]!.values.map(flat).join('');
+    expect(sql).toMatch(/FROM deck_editor e/);
+    expect(sql).toMatch(/e\."deckId" = d\."id" AND e\."userId" = \? AND e\."status" = 'accepted'/);
+    // A banned editor is not an editor (the same rule as `deckRole`).
+    expect(sql).toMatch(/FROM "user" u WHERE u\."id" = e\."userId" AND u\."bannedUntil" > now\(\)/);
+    expect(sql).toMatch(/MAX\(CASE WHEN d\."userId" = \? THEN d\."newPerDay" END\)/);
+    expect(sql).toMatch(/"suspendedAt" IS NULL/);
+    raw.length = 0;
+    await getStudyStats('ed', { timeZone: 'UTC' });
     const decks = raw.map((r) => r.sql + r.values.map(flat).join('')).find((s) => s.includes('flashcard_deck d'))!;
-    expect(decks).toMatch(/deck_editor e WHERE e\."deckId" = d\.id AND e\."userId" = \? AND e\."status" = 'accepted'/);
+    expect(decks).toMatch(
+      /deck_editor e WHERE e\."deckId" = d\."id" AND e\."userId" = \? AND e\."status" = 'accepted'/,
+    );
   });
 
   it('the table and columns the SQL names are the schema’s', () => {

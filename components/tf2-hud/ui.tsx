@@ -21,6 +21,7 @@ import {
   useMemo,
   useRef,
   useState,
+  cloneElement,
   type ButtonHTMLAttributes,
   type ChangeEvent,
   type CSSProperties,
@@ -353,6 +354,15 @@ export const SelectField = function SelectField({
   );
 };
 
+/** Children a `<label htmlFor>` can name: a native field, or one of this file's pass-through field components. */
+const LABELABLE_CHILDREN = new Set<unknown>(['input', 'textarea', 'select', TextField, SelectField]);
+
+/**
+ * A labelled field. A label names a field only when `htmlFor` points at one, so a single field child is given the
+ * label's id and the visible label is a real `<label>` for it. A child that is not one of those (a searchable list, a
+ * pair of controls) names itself (`label`, `aria-label`), so the visible text is not a second name for it: it is
+ * hidden from assistive technology rather than pointed at a wrapping `div`.
+ */
 export function Field({
   label,
   children,
@@ -365,15 +375,22 @@ export function Field({
   className?: string;
 }) {
   const id = useId();
+  const only = Children.count(children) === 1 ? Children.toArray(children)[0] : null;
+  const linkable =
+    isValidElement<{ id?: string }>(only) && LABELABLE_CHILDREN.has(only.type) && only.props.id === undefined;
+  const labelClass = 'text-[11px] font-semibold uppercase tracking-wider text-app-text-dim pointer-coarse:text-xs';
   return (
     <div className={cn('flex flex-col gap-1', className)}>
-      <label
-        htmlFor={id}
-        className="text-[11px] font-semibold uppercase tracking-wider text-app-text-dim pointer-coarse:text-xs"
-      >
-        {label}
-      </label>
-      <div id={id}>{children}</div>
+      {linkable ? (
+        <label htmlFor={id} className={labelClass}>
+          {label}
+        </label>
+      ) : (
+        <span aria-hidden="true" className={labelClass}>
+          {label}
+        </span>
+      )}
+      {linkable ? cloneElement(only, { id }) : <div>{children}</div>}
       {hint ? <p className="text-[11px] text-app-text-dim pointer-coarse:text-xs">{hint}</p> : null}
     </div>
   );

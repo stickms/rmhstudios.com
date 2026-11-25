@@ -2,6 +2,8 @@ import { notice } from '@/lib/notifications/notice-keys';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/admin/admin-ops.contract';
+import { refusalBody } from '@/lib/errors/codes';
+import { isDeletedAccount } from '@/lib/account-lifecycle';
 import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
 import { logAdminAction } from '@/lib/admin-audit.server';
@@ -31,9 +33,11 @@ export const route = apiRoute('/api/admin/users/$id/grant-membership', {
     async ({ params, session, body }) => {
       const target = await prisma.user.findUnique({
         where: { id: params.id },
-        select: { id: true },
+        select: { id: true, banReason: true },
       });
       if (!target) return Response.json({ error: 'User not found' }, { status: 404 });
+      // A deleted account is a tombstone: nothing is granted to it, and a grant would outlive the person.
+      if (isDeletedAccount(target)) return Response.json(refusalBody('GONE'), { status: 410 });
 
       if ('revoke' in body) {
         const { count } = await prisma.giftMembership.deleteMany({

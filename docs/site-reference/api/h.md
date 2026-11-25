@@ -48,11 +48,13 @@ See the [API inventory](../api.md) for how to read the tables.
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/homes/ai-image` | `GET` `POST` | `lib/homes/api/homes.ai-image.server.ts` |
+| `/api/homes/compare` | `GET` | `lib/homes/api/homes.compare.server.ts` |
 | `/api/homes/geocode` | `GET` | `lib/homes/api/homes.geocode.server.ts` |
 | `/api/homes/listings` | `GET` `POST` | `app/routes/api/homes/listings.ts` |
 | `/api/homes/listings/:id` | `DELETE` `GET` `PATCH` | `lib/homes/api/homes.listings.$id.server.ts` |
 | `/api/homes/listings/:id/favorite` | `DELETE` `POST` | `lib/homes/api/homes.listings.$id.favorite.server.ts` |
 | `/api/homes/listings/:id/favorite/alerts` | `PUT` | `lib/homes/api/homes.listings.$id.favorite.alerts.server.ts` |
+| `/api/homes/listings/:id/favorite/note` | `PUT` | `lib/homes/api/homes.listings.$id.favorite.note.server.ts` |
 | `/api/homes/listings/:id/prices` | `GET` | `lib/homes/api/homes.listings.$id.prices.server.ts` |
 | `/api/homes/listings/:id/roommate` | `GET` | `lib/homes/api/homes.listings.$id.roommate.server.ts` |
 | `/api/homes/roommate` | `GET` `PUT` | `lib/homes/api/homes.roommate.server.ts` |

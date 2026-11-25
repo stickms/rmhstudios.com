@@ -24,6 +24,7 @@ vi.mock('@/lib/bulk/bulk.server', () => ({
     return true;
   }),
 }));
+vi.mock('@/lib/account/deletion-billing-queue.server', () => ({ enqueueBillingSync: vi.fn(async () => true) }));
 vi.mock('@/lib/notifications.server', () => ({ createNotification: vi.fn(async () => undefined) }));
 vi.mock('@/lib/admin-audit.server', () => ({ recordAdminActionIn: vi.fn() }));
 vi.mock('@/lib/notify/dispatch.server', () => ({ dispatch: vi.fn() }));
@@ -139,7 +140,7 @@ describe('pauseForDeletion', () => {
 
 describe('previewDeletionPause', () => {
   it('counts what the request would stop: active keys, enabled webhooks, scheduled posts', async () => {
-    expect(await previewDeletionPause('u1')).toEqual({ apiKeys: 1, webhooks: 1, scheduledPosts: 1 });
+    expect(await previewDeletionPause('u1')).toEqual({ apiKeys: 1, webhooks: 1, scheduledPosts: 1, subscriptions: [] });
   });
 });
 

@@ -14,7 +14,9 @@ import { notifyWatchersOfNewListing } from './watches.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
 import { reducedSince } from './prices';
 import { normalizeAlts } from './photos';
-import { notifyFavouritersOfDrop, recordPriceChange, reductionsFor } from './prices.server';
+import { lastChangesFor, notifyFavouritersOfDrop, recordPriceChange, reductionsFor } from './prices.server';
+import { MAX_COMPARE, normalizeNote } from './compare';
+import type { PriceChange } from './prices';
 import type {
   Listing,
   ListingInput,
@@ -38,6 +40,10 @@ const authorSelect = {
 type ListingRow = Prisma.HomeListingGetPayload<{
   include: { author: { select: typeof authorSelect }; favorites: true };
 }>;
+
+function myFavorite(row: ListingRow, viewerId: string) {
+  return row.favorites.find((f) => f.userId === viewerId);
+}
 
 /** Map a DB row (+ viewer context) to the client Listing DTO. */
 function toDTO(row: ListingRow, viewerId: string | null, reducedBy: number | null = null): Listing {
@@ -80,8 +86,12 @@ function toDTO(row: ListingRow, viewerId: string | null, reducedBy: number | nul
     sourceName: row.sourceName,
     favorited: viewerId ? row.favorites.some((f) => f.userId === viewerId) : false,
     isOwner: viewerId != null && viewerId === row.authorId,
+    // s12-16: only the author is told a moderator removed it (everyone else gets a 404 before this runs).
+    ...(row.moderatedAt && viewerId != null && viewerId === row.authorId ? { removedByModerator: true } : {}),
     ...(reducedBy != null ? { reducedByCents: reducedBy } : {}),
     ...(viewerId ? { priceAlerts: row.favorites.find((f) => f.userId === viewerId)?.priceAlerts ?? true } : {}),
+    // The viewer's own private note, from their own favourite row only (`includeFor` never loads anyone else's).
+    ...(viewerId && myFavorite(row, viewerId) ? { note: myFavorite(row, viewerId)?.note ?? null } : {}),
   };
 }
 
@@ -125,7 +135,8 @@ export async function browseListings(
     center = await resolveCenter(filters.location);
   }
 
-  const where: Prisma.HomeListingWhereInput = { status: 'ACTIVE' };
+  // s12-16 member-reports: a listing a moderator removed is never browsed (its status is REMOVED too).
+  const where: Prisma.HomeListingWhereInput = { status: 'ACTIVE', moderatedAt: null };
   if (filters.listingType !== 'any') where.listingType = filters.listingType;
   if (filters.source === 'community') where.source = 'COMMUNITY';
   else if (filters.source === 'external') where.source = 'EXTERNAL';
@@ -177,7 +188,10 @@ export async function browseListings(
   return { listings, total, page, pageSize, center };
 }
 
-/** Fetch a single listing (any status) and increment its view count. */
+/**
+ * Fetch a single listing (any status) and increment its view count. A listing a moderator removed (s12-16) is a
+ * miss for everyone but its author.
+ */
 export async function getListing(
   id: string,
   viewerId: string | null,
@@ -188,6 +202,7 @@ export async function getListing(
     include: includeFor(viewerId),
   });
   if (!row) return null;
+  if (row.moderatedAt && viewerId !== row.authorId) return null;
 
   // Count a view unless the owner is looking at their own listing.
   if (countView && viewerId !== row.authorId) {
@@ -307,13 +322,64 @@ export async function updateListing(
   return true;
 }
 
+/**
+ * The author's status change. While a moderator's removal stands (`moderatedAt` set) only `REMOVED` is accepted, so
+ * "active", "rented" or "sold" answer `'moderated'` (s12-16); the condition is part of the one conditional write.
+ */
 export async function setListingStatus(
   id: string,
   authorId: string,
   status: ListingStatus,
-): Promise<boolean> {
-  const res = await prisma.homeListing.updateMany({ where: { id, authorId }, data: { status } });
-  return res.count > 0;
+): Promise<boolean | 'moderated'> {
+  const res = await prisma.homeListing.updateMany({
+    where: { id, authorId, ...(status === 'REMOVED' ? {} : { moderatedAt: null }) },
+    data: { status },
+  });
+  if (res.count > 0) return true;
+  if (status !== 'REMOVED') {
+    const removed = await prisma.homeListing.findFirst({
+      where: { id, authorId, moderatedAt: { not: null } },
+      select: { id: true },
+    });
+    if (removed) return 'moderated';
+  }
+  return false;
+}
+
+// s12-16 member-reports
+/**
+ * A moderator's takedown of a reported community listing: status REMOVED and `moderatedAt` stamped, so the author
+ * cannot reactivate it. A scraped listing has no member author and is not touched. Idempotent. Returns whether this
+ * call did it.
+ */
+export async function moderateListing(listingId: string, now: Date = new Date()): Promise<boolean> {
+  const done = await prisma.homeListing.updateMany({
+    where: { id: listingId, source: 'COMMUNITY', moderatedAt: null },
+    data: { moderatedAt: now, status: 'REMOVED' },
+  });
+  return done.count === 1;
+}
+
+/**
+ * The author of a listing a member may report: a community listing with an author that has not already been taken
+ * down. A scraped listing (no member author) and anything else is `null`.
+ */
+export async function listingReportAuthor(listingId: string): Promise<string | null> {
+  const row = await prisma.homeListing.findUnique({
+    where: { id: listingId },
+    select: { authorId: true, source: true, moderatedAt: true },
+  });
+  return row && row.source === 'COMMUNITY' && !row.moderatedAt ? row.authorId : null;
+}
+
+/** Listing titles, for an admin reading a report (whatever the listing's state). */
+export async function listingReportTitles(ids: readonly string[]): Promise<Map<string, string>> {
+  if (ids.length === 0) return new Map();
+  const rows = await prisma.homeListing.findMany({
+    where: { id: { in: [...ids] } },
+    select: { id: true, title: true },
+  });
+  return new Map(rows.map((r) => [r.id, r.title]));
 }
 
 export async function deleteListing(id: string, authorId: string): Promise<boolean> {
@@ -336,7 +402,8 @@ export async function listMine(authorId: string): Promise<Listing[]> {
 
 export async function listFavorites(userId: string): Promise<Listing[]> {
   const favs = await prisma.homeFavorite.findMany({
-    where: { userId },
+    // A listing a moderator removed (s12-16) drops out of everyone's saved list.
+    where: { userId, listing: { moderatedAt: null } },
     orderBy: { createdAt: 'desc' },
     take: 500,
     include: { listing: { include: includeFor(userId) } },
@@ -349,7 +416,7 @@ export async function listFavorites(userId: string): Promise<Listing[]> {
 
 export async function favorite(userId: string, listingId: string): Promise<boolean> {
   const exists = await prisma.homeListing.findUnique({
-    where: { id: listingId },
+    where: { id: listingId, moderatedAt: null },
     select: { id: true },
   });
   if (!exists) return false;
@@ -363,4 +430,51 @@ export async function favorite(userId: string, listingId: string): Promise<boole
 
 export async function unfavorite(userId: string, listingId: string): Promise<void> {
   await prisma.homeFavorite.deleteMany({ where: { userId, listingId } });
+}
+
+/**
+ * Write the caller's private note on a listing they saved (`null` or an empty note clears it). False when they have
+ * not saved it. The `where` names the caller, so one member cannot write another's note.
+ */
+export async function setFavoriteNote(userId: string, listingId: string, note: string | null): Promise<boolean> {
+  const res = await prisma.homeFavorite.updateMany({
+    where: { userId, listingId },
+    data: { note: note == null ? null : normalizeNote(note) },
+  });
+  return res.count > 0;
+}
+
+export interface FavoriteComparison {
+  listings: Listing[];
+  notes: Record<string, string | null>;
+  changes: Record<string, PriceChange | null>;
+  /** Distinct ids asked for that are not in the caller's saved homes. */
+  missing: number;
+}
+
+/**
+ * Up to four of the caller's saved listings, in the order asked, with their notes and last price change. The saved-by-
+ * caller filter is in the query (`userId`), so an id that is not theirs never loads.
+ */
+export async function compareFavorites(userId: string, ids: readonly string[]): Promise<FavoriteComparison> {
+  const wanted = [...new Set(ids)].slice(0, MAX_COMPARE);
+  if (wanted.length === 0) return { listings: [], notes: {}, changes: {}, missing: 0 };
+  const favs = await prisma.homeFavorite.findMany({
+    where: { userId, listingId: { in: wanted }, listing: { moderatedAt: null } },
+    take: MAX_COMPARE,
+    include: { listing: { include: includeFor(userId) } },
+  });
+  const byId = new Map(favs.filter((f) => f.listing).map((f) => [f.listingId, f] as const));
+  const found = wanted.filter((id) => byId.has(id));
+  const rows = found.map((id) => byId.get(id)!.listing as ListingRow);
+  const listings = await toDTOs(rows, userId);
+  const notes: Record<string, string | null> = {};
+  for (const id of found) notes[id] = byId.get(id)?.note ?? null;
+  const changes = await lastChangesFor(found);
+  return {
+    listings,
+    notes,
+    changes: Object.fromEntries(found.map((id) => [id, changes.get(id) ?? null])),
+    missing: wanted.length - found.length,
+  };
 }

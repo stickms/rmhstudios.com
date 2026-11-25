@@ -102,7 +102,8 @@ describe('sanitizeForShare', () => {
     const { project } = sanitizeForShare(original);
     expect(project.clips.m1).toEqual(original.clips.m1);
     expect(project.clips.p1).toEqual(original.clips.p1);
-    expect(project.tracks).toEqual(original.tracks);
+    // Only the audio track's name changes (S11-07); the MIDI track is as it was.
+    expect(project.tracks).toEqual([{ ...original.tracks[0]!, name: '' }, original.tracks[1]]);
     expect(project.patterns).toEqual(original.patterns);
   });
 

@@ -311,8 +311,11 @@ describe('an ordinary solo run (no challenge) is clamped the same way', () => {
     const bo = connect('bo', 'Bo');
     const passage = await startSolo(bo);
     const timeMs = passage.length * 240; // 50 WPM
+    const marks: [number, number][] = [];
+    for (let i = 1; i <= passage.length; i++) marks.push([i * 240, i]);
     await vi.advanceTimersByTimeAsync(timeMs);
-    call(bo, 'rmhtype:solo:finish', { position: 1e9, errors: -40 });
+    // A run is ranked only with the curve that backs it (sprint 12 17), so this one carries its own.
+    call(bo, 'rmhtype:solo:finish', { position: 1e9, errors: -40, samples: buildSamples(marks, timeMs) });
     const result = events(bo, 'rmhtype:solo:result')[0] as { wpm: number; accuracy: number; scorePosted: boolean };
     expect(result.wpm).toBeCloseTo(50, 0);
     expect(result.accuracy).toBe(100);

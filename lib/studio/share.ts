@@ -2,8 +2,9 @@
  * The pure half of sharing a Studio project (feature 07): the copy that is shared, and the copy a visitor opens.
  *
  * - `sanitizeForShare` runs on the SERVER's own copy of the cloud project. Every audio clip keeps its place on the
- *   timeline but loses its `bufferId` (a device sample id) and its `name` (often the sample's file name): there is no
- *   built-in sample library, so every sample lives on the sharer's device and none of it is shared.
+ *   timeline but loses its `bufferId` (a device sample id) and its `name` (often the sample's file name), and an audio
+ *   track loses its name too (a track is often named for its sample): there is no built-in sample library, so every
+ *   sample lives on the sharer's device and none of it is shared. MIDI track names stay: they are not file names.
  * - `copyFromShare` turns a read share into a project of the opener's own, with fresh project, track and clip ids so
  *   the copy never collides with the original or with another copy.
  *
@@ -22,6 +23,8 @@ export const SHARED_PROJECT_ID = 'shared';
 /** The shape both the zod-validated project and the editor's `Project` satisfy. */
 export interface ShareableProject {
   clips: Record<string, { type: string }>;
+  /** The tracks, when the project has them: an audio track's name is emptied like an audio clip's. */
+  tracks?: { type: string; name: string }[];
 }
 
 export interface SanitizedShare<P> {
@@ -36,8 +39,8 @@ function isAudioClip(clip: { type: string }): clip is { type: 'audio'; bufferId:
 }
 
 /**
- * The copy to store: every audio clip's `bufferId` and `name` emptied and the project id replaced by a neutral one,
- * everything else as it was. The input is not
+ * The copy to store: every audio clip's `bufferId` and `name` and every audio track's `name` emptied and the project id
+ * replaced by a neutral one, everything else as it was. The input is not
  * changed. `missingSamples` counts every audio clip (an already empty one needs a sample too).
  */
 export function sanitizeForShare<P extends ShareableProject>(project: P): SanitizedShare<P> {
@@ -53,7 +56,10 @@ export function sanitizeForShare<P extends ShareableProject>(project: P): Saniti
   }
   // The project's own id is the account project's id (a primary key on the sharer's account): never shared.
   const id = 'id' in project ? { id: SHARED_PROJECT_ID } : {};
-  return { project: { ...project, ...id, clips } as P, missingSamples };
+  const tracks = project.tracks
+    ? { tracks: project.tracks.map((track) => (track.type === 'audio' ? { ...track, name: '' } : track)) }
+    : {};
+  return { project: { ...project, ...id, ...tracks, clips } as P, missingSamples };
 }
 
 /** The audio clips of a project, for the "N clips need a sample" count before anything is shared. */
@@ -82,6 +88,8 @@ export interface CopyOptions {
   now?: number;
   /** Mints an id; defaults to `crypto.randomUUID`. */
   mintId?: () => string;
+  /** The name of the nth audio track a share left unnamed (1-based); the caller translates it. */
+  audioTrackName?: (n: number) => string;
 }
 
 /**
@@ -98,11 +106,19 @@ export function copyFromShare(data: Project, options: CopyOptions = {}): Project
   const mapClip = (id: string) => clipIds.get(id) ?? id;
   const mapTrack = (id: string) => trackIds.get(id) ?? id;
 
-  const tracks: Track[] = data.tracks.map((track) => ({
-    ...track,
-    id: mapTrack(track.id),
-    clipIds: track.clipIds.map(mapClip),
-  }));
+  const audioTrackName = options.audioTrackName ?? ((n: number) => `Audio track ${n}`);
+  let unnamedAudio = 0;
+  const tracks: Track[] = data.tracks.map((track) => {
+    // A share empties an audio track's name; the copy labels it "Audio track N", counting the unnamed ones.
+    const unnamed = track.type === 'audio' && track.name.trim() === '';
+    if (unnamed) unnamedAudio += 1;
+    return {
+      ...track,
+      id: mapTrack(track.id),
+      name: unnamed ? audioTrackName(unnamedAudio) : track.name,
+      clipIds: track.clipIds.map(mapClip),
+    };
+  });
   const clips: Record<string, Clip> = {};
   for (const [key, clip] of Object.entries(data.clips)) {
     const id = mapClip(key);
