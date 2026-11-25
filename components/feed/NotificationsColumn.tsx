@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { AlarmClock, Bell } from 'lucide-react';
+import { AlarmClock, Bell, BellOff, BellRing, CheckCheck, Settings } from 'lucide-react';
+import { IconButton } from '@/components/ui/icon-button';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
@@ -9,7 +10,6 @@ import { Switch } from '@/components/ui/switch';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
-import { Spine, SpineItem } from '@/components/ui/spine';
 import { NotificationRowMenu } from '@/components/feed/NotificationRowMenu';
 import { InboxAvatar } from '@/components/feed/InboxAvatar';
 import { NOTIFICATIONS_READ_EVENT } from '@/hooks/useNotificationCount';
@@ -465,11 +465,16 @@ export function NotificationsColumn({
           {t('notifications-heading', { defaultValue: 'Notifications' })}
         </h1>
       )}
-      {/* The toolbar: three words, no primary (section 10, Inbox). */}
+      {/* The toolbar: three icons with hover labels, no primary (section 10, Inbox). */}
       <div className="flex flex-wrap items-center gap-1 pb-3">
         {push.supported && (
-          <Button
-            variant="ghost"
+          <IconButton
+            icon={push.subscribed ? BellOff : BellRing}
+            label={
+              push.subscribed
+                ? t('push-off', { defaultValue: 'Disable push' })
+                : t('push-on', { defaultValue: 'Enable push' })
+            }
             disabled={push.busy}
             onClick={async () => {
               if (push.subscribed) {
@@ -495,27 +500,25 @@ export function NotificationsColumn({
                   );
               }
             }}
-            title={
-              push.subscribed
-                ? t('push-toggle-off', { defaultValue: 'Turn off push notifications' })
-                : t('push-toggle-on', { defaultValue: 'Turn on push notifications' })
-            }
-          >
-            {push.subscribed
-              ? t('push-off', { defaultValue: 'Disable push' })
-              : t('push-on', { defaultValue: 'Enable push' })}
-          </Button>
+          />
         )}
-        <Button variant="ghost" onClick={markAllRead}>
-          {filter === 'all'
-            ? t('mark-all-read', { defaultValue: 'Mark all read' })
-            : tn('mark-filter-read', { defaultValue: 'Mark these read' })}
-        </Button>
-        <Button asChild variant="ghost">
+        <IconButton
+          icon={CheckCheck}
+          label={
+            filter === 'all'
+              ? t('mark-all-read', { defaultValue: 'Mark all read' })
+              : tn('mark-filter-read', { defaultValue: 'Mark these read' })
+          }
+          onClick={markAllRead}
+        />
+        <IconButton
+          asChild
+          label={t('notification-prefs-toggle', { defaultValue: 'Notification preferences' })}
+        >
           <Link to="/settings/notifications">
-            {t('notification-prefs-toggle', { defaultValue: 'Notification preferences' })}
+            <Settings aria-hidden />
           </Link>
-        </Button>
+        </IconButton>
       </div>
 
       {/* Filter and Unread: the inbox tab strip is above, so the filter is a select, not a second strip. */}
@@ -587,7 +590,7 @@ export function NotificationsColumn({
           }
         />
       ) : (
-        <Spine className={arrival}>
+        <div className={arrival}>
           {groups.map((g) => {
             const n = g.newest;
             const grouped = g.count > 1;
@@ -625,13 +628,9 @@ export function NotificationsColumn({
               previewText && sys
                 ? previewText
                 : `${actorName} ${verb}`.trim();
-            // One dot per unread item (section 10): a read notification is a plain row.
+            // An unread notification is bold; a read one is a plain row.
             return (
-              <SpineItem
-                key={g.key}
-                dot={!g.read}
-                className={cn('row-hover', isNew(g.key) && ARRIVE)}
-              >
+              <div key={g.key} className={cn('rule-row row-hover py-3.5', isNew(g.key) && ARRIVE)}>
                 <SwipeRow
                   trailing={{
                     icon: AlarmClock,
@@ -676,8 +675,14 @@ export function NotificationsColumn({
                         </p>
                       </div>
                     </button>
-                    <Button variant="ghost" size="xs" onClick={snooze}>
-                      {t('snooze', { defaultValue: 'Later' })}
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      onClick={snooze}
+                      aria-label={t('snooze', { defaultValue: 'Later' })}
+                      title={t('snooze', { defaultValue: 'Later' })}
+                    >
+                      <Bell className="h-4 w-4" aria-hidden />
                     </Button>
                     <NotificationRowMenu
                       summary={rowSummary}
@@ -687,10 +692,10 @@ export function NotificationsColumn({
                     />
                   </div>
                 </SwipeRow>
-              </SpineItem>
+              </div>
             );
           })}
-        </Spine>
+        </div>
       )}
 
       {nextCursor && (

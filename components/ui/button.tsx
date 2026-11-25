@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 // Steel K1 to K3 (docs/plans/2026-11-11-steel-design-implementation.md section 6): 8px radius, 1px border, 500 weight,
 // 14px text, 36px high on a fine pointer and 44px on touch. Hover is a fill change in 90 ms (M1); nothing scales, glows
 // or lifts. Focus is the global K10 outline: no component here sets a ring.
+const BLEED = 'first:-ms-4 [:is(.justify-between,.justify-center,.justify-end)>&]:first:ms-0';
+
 const buttonVariants = cva(
   "relative inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-site border border-transparent text-sm font-medium transition-[background-color,border-color,color,opacity] duration-(--m1) ease-[ease] disabled:pointer-events-none disabled:opacity-45 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 aria-invalid:border-site-danger",
   {
@@ -40,6 +42,12 @@ const buttonVariants = cva(
         'icon-compact': 'hit-slop size-8 pointer-coarse:mx-1.5',
       },
     },
+    compoundVariants: [
+      // A ghost button has no border or fill at rest, so its padding reads as an indent. The first ghost text button in
+      // a row bleeds out by its own padding: the label lands on the column edge and only the hover fill overhangs.
+      // Rows that are not start-aligned (`justify-end`, `justify-center`, `justify-between`) keep their padding.
+      { variant: 'ghost', size: ['default', 'sm', 'lg', 'compact'], className: BLEED },
+    ],
     defaultVariants: {
       variant: 'default',
       size: 'default',
