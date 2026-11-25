@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
  * item 11): the Steel content rules this file used to hold (no rounded, shadow, backdrop, uppercase) came out with the
  * tier move, and the app-tier rules below replace them: palette tokens only, no hex, no keyframes, nothing `fixed`.
  */
-const ROUTES = ['index', 'live', '$slug', 'tracker', 'lists', 'ask', 'practice'].map((n) => `app/routes/med/${n}.tsx`);
+const ROUTES = ['index', 'live', '$slug', 'tracker', 'lists', 'ask', 'practice', 'stats', 'lists_.build'].map((n) => `app/routes/med/${n}.tsx`);
 const uiFiles = globSync('features/medschools/ui/**/*.tsx')
   .map(String)
   .filter((f) => !/\.test\./.test(f))

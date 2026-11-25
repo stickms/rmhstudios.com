@@ -32,6 +32,8 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/med/:slug` | — | public | `app/routes/med/$slug.tsx` |
 | `/med/ask` | Ask the data | public | `app/routes/med/ask.tsx` |
 | `/med/lists` | My lists | public | `app/routes/med/lists.tsx` |
+| `/med/lists/build` | Build a list | public | `app/routes/med/lists_.build.tsx` |
 | `/med/live` | Live reported events \| RMH Med Schools | public | `app/routes/med/live.tsx` |
 | `/med/practice` | Interview practice | public | `app/routes/med/practice.tsx` |
+| `/med/stats` | My stats | public | `app/routes/med/stats.tsx` |
 | `/med/tracker` | My tracker | public | `app/routes/med/tracker.tsx` |

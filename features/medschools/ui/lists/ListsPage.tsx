@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Plus } from 'lucide-react';
-import { MedButton } from '../controls/MedButton';
+import { Plus, Sparkles } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { MedButton, medButtonClass } from '../controls/MedButton';
+import { OnboardingNote } from '../stats/OnboardingNote';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { usePrompt } from '@/components/ui/prompt-dialog';
 import { useRefusalText } from '@/components/errors/useRefusalText';
@@ -189,12 +191,19 @@ export function ListsPage() {
       <PageHead
         title={t('lists-title', { defaultValue: 'My lists' })}
         actions={
-          <MedButton variant="primary" disabled={all.length >= LIMITS.lists} onClick={() => void newList()}>
-            <Plus aria-hidden="true" className="size-4" />
-            {t('lists-new', { defaultValue: 'New list' })}
-          </MedButton>
+          <>
+            <Link to="/med/lists/build" className={medButtonClass('secondary')}>
+              <Sparkles aria-hidden="true" className="size-4" />
+              {t('lists-build', { defaultValue: 'Build with AI' })}
+            </Link>
+            <MedButton variant="primary" disabled={all.length >= LIMITS.lists} onClick={() => void newList()}>
+              <Plus aria-hidden="true" className="size-4" />
+              {t('lists-new', { defaultValue: 'New list' })}
+            </MedButton>
+          </>
         }
       />
+      <OnboardingNote signedIn={signedIn} />
       <SkeletonSwap ready={!!lists.data}>
         {stale ? (
           <p className="medapp-meta mb-4" role="status">

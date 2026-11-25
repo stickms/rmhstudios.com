@@ -18,6 +18,8 @@ export default defineFeature({
     'app/routes/med/lists.tsx',
     'app/routes/med/ask.tsx',
     'app/routes/med/practice.tsx',
+    'app/routes/med/stats.tsx',
+    'app/routes/med/lists_.build.tsx',
     'features/medschools/api/medschools.schools.server.ts',
     'features/medschools/api/medschools.schools.$slug.server.ts',
     'features/medschools/api/medschools.schools.$slug.activity.server.ts',

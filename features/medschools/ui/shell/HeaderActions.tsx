@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Link, useRouterState } from '@tanstack/react-router';
 import {
   Activity,
+  BarChart3,
   CalendarCheck,
   ListChecks,
   MessageCircleQuestion,
@@ -52,11 +53,12 @@ function RoundLink({ to, icon: Icon, label }: { to: '/med/practice' | '/med/live
   );
 }
 
-// The member's places. "My stats" (the private stats and the AI school list) joins here once it exists.
-type Mine = 'cycle' | 'lists' | 'prefs' | 'ask';
+// The member's places. "My stats" (phase D) is the private stats; the AI list builder is reached from My school lists.
+type Mine = 'cycle' | 'lists' | 'stats' | 'prefs' | 'ask';
 const MINE: { id: Mine; to: string; hash?: string; icon: LucideIcon }[] = [
   { id: 'cycle', to: '/med/tracker', icon: CalendarCheck },
   { id: 'lists', to: '/med/lists', icon: ListChecks },
+  { id: 'stats', to: '/med/stats', icon: BarChart3 },
   { id: 'prefs', to: '/med/lists', hash: 'preferences', icon: SlidersHorizontal },
   { id: 'ask', to: '/med/ask', icon: MessageCircleQuestion },
 ];
@@ -74,6 +76,8 @@ function ProfileButton({ pathname, href }: { pathname: string; href: string }) {
         return t('shell-mine-cycle', { defaultValue: 'My cycle' });
       case 'lists':
         return t('shell-mine-lists', { defaultValue: 'My school lists' });
+      case 'stats':
+        return t('shell-mine-stats', { defaultValue: 'My stats' });
       case 'prefs':
         return t('shell-mine-prefs', { defaultValue: 'Preferences' });
       case 'ask':

@@ -108,7 +108,8 @@ export function EnteringClassView({
   );
 }
 
-function useKindLabel() {
+/** The figure's name, per profile kind (also the list builder's figure labels). */
+export function useKindLabel() {
   const { t } = useTranslation('medschools');
   return (kind: string): string => {
     switch (kind) {

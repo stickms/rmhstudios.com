@@ -525,6 +525,8 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/med/ask': 'personal', // signed-in Q&A (noindex)
   '/med/practice': 'noindex', // interview practice (noindex)
   '/med/lists': 'personal', // the member's private saved lists and preferences (noindex)
+  '/med/lists/build': 'personal', // the signed-in AI list builder (noindex)
+  '/med/stats': 'personal', // the member's private applicant stats (noindex)
   '/connections/new': 'personal', // signed-in authoring form
   '/games/trades': 'personal', // the viewer's own offers
   '/games/market': 'noindex', // card listings change by the minute and are behind sign-in to act on
