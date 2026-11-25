@@ -48,6 +48,8 @@ export interface OncallClient {
   send(alert: OncallAlert): Promise<void>;
   /** Signed GET; resolves to the parsed JSON body. */
   get<T>(path: string): Promise<T>;
+  /** Signed POST of a JSON body, once (an admin's click is not retried); resolves to the parsed JSON answer. */
+  postJson<T>(path: string, body: unknown): Promise<T>;
 }
 
 export function oncallClient(
@@ -105,7 +107,28 @@ export function oncallClient(
     return (await res.json()) as T;
   }
 
+  async function postJson<T>(path: string, body: unknown): Promise<T> {
+    const raw = JSON.stringify(body);
+    const ts = String(Math.floor(Date.now() / 1000));
+    const nonce = randomBytes(16).toString('hex');
+    const res = await fetchImpl(`${base}${path}`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'user-agent': 'rmh-oncall-client/1',
+        'x-oncall-timestamp': ts,
+        'x-oncall-nonce': nonce,
+        'x-oncall-signature': signOncall(secret, ts, nonce, 'POST', path, raw),
+      },
+      body: raw,
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    if (!res.ok) throw new Error(`oncall ${path}: HTTP ${res.status}`);
+    return (await res.json()) as T;
+  }
+
   return {
+    postJson,
     heartbeat: (name) => post(`/v1/heartbeat/${name}`, ''),
     send: (alert) => post('/v1/alert', JSON.stringify(alert)),
     get,

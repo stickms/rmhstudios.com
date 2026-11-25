@@ -24,6 +24,26 @@ Seen something on-call should handle? Type `/page` anywhere in the Discord serve
 SEV2 pages `@oncall` immediately; SEV1 also pages the escalation role. It shows in `#rmh-oncall` and on `/admin/alarms`,
 and `@oncall` closes it with **Resolve**.
 
+## The admin panel
+
+Every alert in `#rmh-oncall` has an **🛠️ Open in panel** button that lands on that alarm's card in `/admin/alarms`
+(works on a phone). The panel shows open and resolved alarms (14 days of history, searchable) and does what the Discord
+buttons do, and the Discord alert updates to match:
+
+- **Acknowledge**, **Escalate** and **Resolve** (the watchdog owns the state; the reply in Discord names you as "(admin
+  panel)").
+- **Per-alarm actions**, shown only on the alarms they fit and always behind a confirm:
+
+| Action              | Alarms          | What it does                                                                                            |
+| ------------------- | --------------- | ------------------------------------------------------------------------------------------------------- |
+| Re-run deploy       | D01 D02 D03 D04 | Starts `deploy.yml` on `main` again. Needs `ONCALL_GITHUB_TOKEN` (Actions: write). Not offered for D05. |
+| Requeue dead events | A15 B13         | Requeues every dead outbox event (the same action as `/admin/outbox`).                                  |
+| Retry failed jobs   | A16 B06 B13     | Retries up to 100 newest failed jobs in each queue that has failures (as `/admin/jobs`).                |
+
+Each action is an admin-only API call, rate limited, and written to the audit log (`oncall.*`). Add a new one in
+`lib/oncall/remediations.ts` (menu) and `lib/oncall/remediate.server.ts` (what it does). If the site is down, use the
+Discord buttons and the runbook; they do not depend on it.
+
 ## When you are paged
 
 1. **Acknowledge** (✅). Only `@oncall` members can, and it stops the re-pings.

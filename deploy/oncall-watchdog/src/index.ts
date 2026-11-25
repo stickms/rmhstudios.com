@@ -5,6 +5,7 @@
 //   POST /v1/alert        → alarms raised by the VPS (status service, deploy.sh, backups)
 //   POST /v1/heartbeat/:n → VPS check-ins; silence is the alarm
 //   GET  /v1/alarms       → current alarm records (debugging; feeds the alarms dashboard)
+//   POST /v1/alarms/:key/(ack|escalate|resolve) → the admin panel acting on an alarm (same effect as the Discord buttons)
 //
 // /v1/* requests are HMAC-signed by the VPS with a timestamp + one-time nonce
 // (signing.ts); the nonce is claimed inside the Durable Object so a captured
@@ -125,6 +126,21 @@ async function handleV1(request: Request, env: Env, url: URL): Promise<Response>
   const hb = /^\/v1\/heartbeat\/([a-z0-9-]{1,40})$/.exec(url.pathname);
   if (hb) return toDO(env, '/heartbeat', { nonce, name: hb[1] });
 
+  // Admin-panel actions: POST /v1/alarms/<key>/<ack|escalate|resolve> { by, name }.
+  const act = /^\/v1\/alarms\/([A-Za-z0-9][A-Za-z0-9_.:-]{0,79})\/(ack|escalate|resolve)$/.exec(url.pathname);
+  if (act) {
+    let body: { by?: unknown; name?: unknown };
+    try {
+      body = raw ? JSON.parse(raw) : {};
+    } catch {
+      return json({ error: 'invalid JSON' }, 400);
+    }
+    const by = typeof body.by === 'string' && body.by.length > 0 && body.by.length <= 64 ? body.by : null;
+    if (!by) return json({ error: 'by (the acting user id) is required' }, 400);
+    const name = typeof body.name === 'string' ? body.name.slice(0, 80) : undefined;
+    return toDO(env, '/web', { nonce, key: act[1], action: act[2], by, name });
+  }
+
   if (url.pathname === '/v1/alert') {
     let body: unknown;
     try {
@@ -168,7 +184,7 @@ export class OncallState {
     private readonly state: DurableObjectStateLike,
     private readonly env: Env,
   ) {
-    this.msgCtx = { roleId: env.ONCALL_ROLE_ID, escalationRoleId: env.ESCALATION_ROLE_ID, runbookBase: env.RUNBOOK_BASE };
+    this.msgCtx = { siteUrl: env.SITE_URL, roleId: env.ONCALL_ROLE_ID, escalationRoleId: env.ESCALATION_ROLE_ID, runbookBase: env.RUNBOOK_BASE };
     this.engine = new Engine(
       state.storage,
       discordNotifier({ botToken: env.DISCORD_BOT_TOKEN, channelId: env.ONCALL_CHANNEL_ID, fallbackWebhookUrl: env.ONCALL_WEBHOOK_URL }),
@@ -199,7 +215,7 @@ export class OncallState {
     const now = Date.now();
 
     // Every /v1 call carries a signed nonce; accept each one exactly once.
-    if ((path === '/alert' || path === '/heartbeat' || path === '/list') && !(await this.claimNonce(body.nonce, now))) {
+    if ((path === '/alert' || path === '/heartbeat' || path === '/list' || path === '/web') && !(await this.claimNonce(body.nonce, now))) {
       return json({ error: 'replayed request' }, 401);
     }
 
@@ -239,6 +255,16 @@ export class OncallState {
           })),
         );
         return json({ now, alarms: await this.engine.list(), heartbeats });
+      }
+      case '/web': {
+        const result = await this.engine.act(
+          String(body.key),
+          body.action as 'ack' | 'escalate' | 'resolve',
+          { by: String(body.by), via: 'web', name: typeof body.name === 'string' ? body.name : undefined },
+          now,
+        );
+        // A refusal ("already acknowledged") is a normal answer, not a server fault.
+        return typeof result === 'string' ? json({ ok: false, error: result }) : json({ ok: true, alarm: result });
       }
       case '/ticket': {
         const userId = String(body.userId);

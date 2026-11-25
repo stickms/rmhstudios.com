@@ -1,6 +1,6 @@
 // Discord: interaction signature check, the alert message shape, and a REST client.
 
-import type { AlarmRecord } from './engine';
+import { mention, type AlarmRecord } from './engine';
 
 /* ─── Interaction signature (Ed25519) ───────────────────────────────────────
  *
@@ -69,6 +69,8 @@ const ACKED_COLOR = 0x1c7ed6;
 const unix = (ms: number) => Math.floor(ms / 1000);
 
 export interface MessageContext {
+  /** Site origin; when set, every alert links to its card in the admin panel. */
+  siteUrl?: string;
   roleId: string;
   escalationRoleId?: string;
   runbookBase: string;
@@ -81,9 +83,15 @@ export function runbookUrl(rec: AlarmRecord, ctx: MessageContext): string | null
   return `${ctx.runbookBase.replace(/\/$/, '')}/${name.replace(/\.md$/, '')}.md`;
 }
 
+/** Deep link to one alarm's card in the admin panel; null when the site origin is unknown. */
+export function panelUrl(key: string, ctx: MessageContext): string | null {
+  if (!ctx.siteUrl || !/^https?:\/\//.test(ctx.siteUrl)) return null;
+  return `${ctx.siteUrl.replace(/\/+$/, '')}/admin/alarms?alarm=${encodeURIComponent(key)}`;
+}
+
 function statusLine(rec: AlarmRecord): string {
   if (rec.state === 'resolved') return `✅ Resolved <t:${unix(rec.resolvedAt ?? rec.updatedAt)}:R>`;
-  if (rec.acked) return `👀 Acked by <@${rec.acked.by}> <t:${unix(rec.acked.at)}:R>`;
+  if (rec.acked) return `👀 Acked by ${mention(rec.acked)} <t:${unix(rec.acked.at)}:R>`;
   return pages(rec.sev) ? '🚨 Firing — **not acknowledged**' : '⚠️ Firing';
 }
 
@@ -116,6 +124,8 @@ export function alertMessage(rec: AlarmRecord, ctx: MessageContext): DiscordMess
   if (rec.state === 'firing' && rec.id === TICKET_ID) {
     buttons.push({ type: 2, style: ButtonStyle.SECONDARY, label: 'Resolve', emoji: { name: '✔️' }, custom_id: `res|${rec.key}` });
   }
+  const panel = panelUrl(rec.key, ctx);
+  if (panel) buttons.push({ type: 2, style: ButtonStyle.LINK, label: 'Open in panel', emoji: { name: '🛠️' }, url: panel });
   if (url) buttons.push({ type: 2, style: ButtonStyle.LINK, label: 'Runbook', emoji: { name: '📖' }, url });
 
   return {

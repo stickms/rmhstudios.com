@@ -180,3 +180,73 @@ describe('alarm attachments', () => {
     expect(validateInput({ ...base, attachment: { name: 'ok.txt', content: 'x'.repeat(MAX_ATTACHMENT_CHARS) } })).toMatchObject({ attachment: { name: 'ok.txt' } });
   });
 });
+
+// The admin panel acts on the same records as the Discord buttons, and the
+// Discord alert has to follow along (a button gets that for free from its reply).
+describe('Engine.act (admin panel)', () => {
+  const WEB = { by: 'user_1', via: 'web' as const, name: 'Sam *Admin*' };
+
+  it('acks from the panel: stops re-paging, edits the alert, names the admin', async () => {
+    const { engine, notifier } = setup();
+    await engine.fire(SITE_DOWN, T0);
+    const res = await engine.act('A01', 'ack', WEB, T0 + 1);
+    expect(typeof res).not.toBe('string');
+    expect(notifier.edits).toHaveLength(1);
+    const embed = JSON.stringify(notifier.edits[0]!.msg.embeds);
+    expect(embed).toContain('(admin panel)');
+    expect(embed).not.toContain('*Admin*'); // markdown in a display name is stripped
+    await engine.tick(T0 + 5 * REPAGE_MS);
+    expect(notifier.posts).toHaveLength(1);
+  });
+
+  it('escalates from the panel: Sev1, un-acks, edits and announces', async () => {
+    const { engine, notifier } = setup();
+    await engine.fire(SITE_DOWN, T0);
+    await engine.ack('A01', 'U1', T0 + 1);
+    const res = await engine.act('A01', 'escalate', WEB, T0 + 2);
+    expect(typeof res).not.toBe('string');
+    const rec = await engine.get('A01');
+    expect(rec?.sev).toBe(1);
+    expect(rec?.acked).toBeUndefined();
+    expect(notifier.edits).toHaveLength(1);
+    expect(notifier.posts.at(-1)!.content).toContain('Escalated to SEV1');
+    expect(notifier.posts.at(-1)!.content).toContain('(admin panel)');
+  });
+
+  it('resolves from the panel and says who', async () => {
+    const { engine, notifier } = setup();
+    await engine.fire({ ...SITE_DOWN, id: 'TICKET', instance: 'x' }, T0);
+    await engine.act('TICKET:x', 'resolve', WEB, T0 + 60_000);
+    expect((await engine.get('TICKET:x'))?.state).toBe('resolved');
+    expect(notifier.posts.at(-1)!.content).toContain('resolved by **Sam Admin** (admin panel)');
+  });
+
+  it('answers a refusal as text, not a throw', async () => {
+    const { engine } = setup();
+    expect(await engine.act('NOPE', 'ack', WEB, T0)).toMatch(/no longer exists/);
+    await engine.fire(SITE_DOWN, T0);
+    await engine.act('A01', 'ack', WEB, T0 + 1);
+    expect(await engine.act('A01', 'ack', WEB, T0 + 2)).toMatch(/Already acknowledged/);
+  });
+
+  it('keeps resolved alarms for 14 days so the panel has history', async () => {
+    const { engine } = setup();
+    await engine.fire(SITE_DOWN, T0);
+    await engine.resolve('A01', T0 + 1000);
+    await engine.tick(T0 + 13 * 24 * 3_600_000);
+    expect(await engine.get('A01')).toBeDefined();
+    await engine.tick(T0 + 15 * 24 * 3_600_000);
+    expect(await engine.get('A01')).toBeUndefined();
+  });
+});
+
+describe('alertMessage panel link', () => {
+  it('links to the alarm in the admin panel when the site origin is known', async () => {
+    const { engine } = setup();
+    const rec = await engine.fire(SITE_DOWN, T0);
+    const msg = alertMessage(rec as AlarmRecord, { ...ctx, siteUrl: 'https://rmhstudios.com/' });
+    const buttons = JSON.stringify(msg.components);
+    expect(buttons).toContain('https://rmhstudios.com/admin/alarms?alarm=A01');
+    expect(JSON.stringify(alertMessage(rec as AlarmRecord, ctx).components)).not.toContain('/admin/alarms');
+  });
+});

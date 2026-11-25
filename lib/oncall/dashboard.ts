@@ -2,6 +2,14 @@
 // that order and label it. Client-safe (no imports) so the page and its tests
 // share one definition; the server side lives in lib/admin/api/admin.oncall.server.ts.
 
+/** Who acked or escalated: a Discord user id, or (`via: 'web'`) an admin acting from the panel, with `name`. */
+export interface ActorView {
+  by: string;
+  at: number;
+  via?: 'web';
+  name?: string;
+}
+
 /** Mirrors the watchdog's AlarmRecord (deploy/oncall-watchdog/src/engine.ts). */
 export interface AlarmView {
   key: string;
@@ -15,14 +23,8 @@ export interface AlarmView {
   firedAt: number;
   updatedAt: number;
   resolvedAt?: number;
-  acked?: {
-    by: string;
-    at: number;
-  };
-  escalated?: {
-    by: string;
-    at: number;
-  };
+  acked?: ActorView;
+  escalated?: ActorView;
   pageCount: number;
 }
 
@@ -41,6 +43,8 @@ export interface WatchdogOverview {
 export type OncallApiResponse =
   | ({
       ok: true;
+      /** Which remediations can run on this server right now, by action id (see remediations.ts). */
+      remediations: Record<string, { available: boolean; reason?: string }>;
     } & WatchdogOverview)
   | {
       ok: false;
@@ -88,4 +92,33 @@ export type HeartbeatHealth = 'ok' | 'late' | 'waiting';
 export function heartbeatHealth(h: HeartbeatView, now: number): HeartbeatHealth {
   if (h.lastSeen === null) return 'waiting';
   return now - h.lastSeen > h.maxAgeMs ? 'late' : 'ok';
+}
+
+export type AlarmAction = 'ack' | 'escalate' | 'resolve';
+
+/** What the panel may offer for an alarm right now. Resolved alarms offer nothing; Sev1 cannot escalate again. */
+export function actionsFor(a: AlarmView): AlarmAction[] {
+  if (a.state !== 'firing') return [];
+  const out: AlarmAction[] = [];
+  if (!a.acked) out.push('ack');
+  if (a.sev > 1) out.push('escalate');
+  out.push('resolve');
+  return out;
+}
+
+export type AlarmFilter = 'open' | 'resolved' | 'all';
+
+/** The list the filter tabs and the search box show, in triage order. */
+export function filterAlarms(alarms: AlarmView[], filter: AlarmFilter, query: string): AlarmView[] {
+  const q = query.trim().toLowerCase();
+  return sortAlarms(alarms).filter((a) => {
+    if (filter === 'open' && a.state !== 'firing') return false;
+    if (filter === 'resolved' && a.state !== 'resolved') return false;
+    return !q || `${a.key} ${a.title} ${a.detail} ${a.source}`.toLowerCase().includes(q);
+  });
+}
+
+/** Who to show for an actor: the admin's name from the panel, otherwise the Discord user id. */
+export function actorLabel(actor: ActorView): string {
+  return actor.via === 'web' ? actor.name || 'an admin' : actor.by;
 }

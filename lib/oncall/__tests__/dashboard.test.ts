@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { heartbeatHealth, phaseOf, runbookHref, sortAlarms, type AlarmView } from '../dashboard';
+import {
+  actionsFor,
+  actorLabel,
+  filterAlarms,
+  heartbeatHealth,
+  phaseOf,
+  runbookHref,
+  sortAlarms,
+  type AlarmView,
+} from '../dashboard';
 
 // The alarms page's ordering is the on-call's triage order: an unacked page
 // must never sort below something already handled.
@@ -120,5 +129,31 @@ describe('runbookHref', () => {
         runbook: 'javascript:alert(1)',
       }),
     ).toBeNull();
+  });
+});
+
+describe('actionsFor / filterAlarms', () => {
+  it('offers ack, escalate and resolve to an unacked Sev2, and nothing once resolved', () => {
+    expect(actionsFor(alarm({}))).toEqual(['ack', 'escalate', 'resolve']);
+    expect(actionsFor(alarm({ acked: { by: 'u', at: 1 } }))).toEqual(['escalate', 'resolve']);
+    expect(actionsFor(alarm({ sev: 1 }))).toEqual(['ack', 'resolve']);
+    expect(actionsFor(alarm({ state: 'resolved', resolvedAt: 5 }))).toEqual([]);
+  });
+
+  it('filters by state and searches key, title, detail and source', () => {
+    const list = [
+      alarm({ key: 'D03', title: 'Deploy failed', detail: 'build step' }),
+      alarm({ key: 'A01', title: 'Site down', state: 'resolved', resolvedAt: 9, source: 'external' }),
+    ];
+    expect(filterAlarms(list, 'open', '').map((a) => a.key)).toEqual(['D03']);
+    expect(filterAlarms(list, 'resolved', '').map((a) => a.key)).toEqual(['A01']);
+    expect(filterAlarms(list, 'all', '')).toHaveLength(2);
+    expect(filterAlarms(list, 'all', ' BUILD ').map((a) => a.key)).toEqual(['D03']);
+    expect(filterAlarms(list, 'all', 'external').map((a) => a.key)).toEqual(['A01']);
+  });
+
+  it('names an admin acting from the panel, and a Discord user by id', () => {
+    expect(actorLabel({ by: 'u1', at: 1, via: 'web', name: 'Sam' })).toBe('Sam');
+    expect(actorLabel({ by: '123', at: 1 })).toBe('123');
   });
 });
