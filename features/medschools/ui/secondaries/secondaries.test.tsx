@@ -61,6 +61,8 @@ const detail: MedSchoolDetailDto = {
     state: 'NC',
     website: null,
     interviewFormat: null,
+    admissionsUrl: null,
+    mdphdUrl: null,
     interviewType: null,
   },
   cycleYear: 2027,

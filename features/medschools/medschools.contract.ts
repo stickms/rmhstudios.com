@@ -172,6 +172,10 @@ export interface MedSchoolDetailDto {
     city: string;
     state: string;
     website: string | null;
+    /** The school's own admissions page for its degree (hand-read); null when none was read. */
+    admissionsUrl: string | null;
+    /** The school's MD-PhD (DO-PhD) program page; null when it has no combined program. */
+    mdphdUrl: string | null;
     interviewFormat: string | null;
     interviewType: string | null;
   };

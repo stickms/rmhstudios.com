@@ -89,6 +89,8 @@ const detail = (o: Partial<MedSchoolDetailDto> = {}, degree: 'MD' | 'DO' = 'MD')
     state: 'NC',
     website: 'https://medschool.duke.edu/',
     interviewFormat: 'MMI',
+    admissionsUrl: null,
+    mdphdUrl: null,
     interviewType: null,
   },
   cycleYear: 2026,
