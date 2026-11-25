@@ -600,6 +600,8 @@ import { route as r_features_medschools_api_medschools_me_lists_id } from '@/fea
 import { route as r_features_medschools_api_medschools_me_lists_id_add_to_tracker } from '@/features/medschools/api/medschools.me.lists.$id.add-to-tracker.server';
 import { route as r_features_medschools_api_medschools_me_lists_id_item_order } from '@/features/medschools/api/medschools.me.lists.$id.item-order.server';
 import { route as r_features_medschools_api_medschools_me_lists_id_items_itemId } from '@/features/medschools/api/medschools.me.lists.$id.items.$itemId.server';
+import { route as r_features_medschools_api_medschools_me_lists_import_parse } from '@/features/medschools/api/medschools.me.lists.import.parse.server';
+import { route as r_features_medschools_api_medschools_me_lists_import_save } from '@/features/medschools/api/medschools.me.lists.import.save.server';
 import { route as r_features_medschools_api_medschools_me_prefs } from '@/features/medschools/api/medschools.me.prefs.server';
 import { route as r_features_medschools_api_medschools_me_qa_limit_request } from '@/features/medschools/api/medschools.me.qa-limit-request.server';
 import { route as r_features_medschools_api_medschools_me_rolling } from '@/features/medschools/api/medschools.me.rolling.server';
@@ -1807,6 +1809,8 @@ const API_ROUTES_M: readonly ApiRoute[] = [
   r_features_medschools_api_medschools_me_lists_id_add_to_tracker, // /api/medschools/me/lists/$id/add-to-tracker
   r_features_medschools_api_medschools_me_lists_id_item_order, // /api/medschools/me/lists/$id/item-order
   r_features_medschools_api_medschools_me_lists_id_items_itemId, // /api/medschools/me/lists/$id/items/$itemId
+  r_features_medschools_api_medschools_me_lists_import_parse, // /api/medschools/me/lists/import/parse
+  r_features_medschools_api_medschools_me_lists_import_save, // /api/medschools/me/lists/import/save
   r_features_medschools_api_medschools_me_prefs, // /api/medschools/me/prefs
   r_features_medschools_api_medschools_me_qa_limit_request, // /api/medschools/me/qa-limit-request
   r_features_medschools_api_medschools_me_rolling, // /api/medschools/me/rolling

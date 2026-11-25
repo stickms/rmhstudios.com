@@ -1047,6 +1047,26 @@ export const ERROR_CODES = {
     i18n: 'errors:medschoolsImportEmpty',
     text: 'No application dates were found in that file',
   },
+  MEDSCHOOLS_LIST_IMPORT_EMPTY: {
+    http: 422,
+    i18n: 'errors:medschoolsListImportEmpty',
+    text: 'No medical schools were found in that file',
+  },
+  MEDSCHOOLS_LIST_IMPORT_UNSUPPORTED: {
+    http: 415,
+    i18n: 'errors:medschoolsListImportUnsupported',
+    text: 'That file could not be read. Use a spreadsheet (.xlsx or .csv), a Word document (.docx), a PDF or a text file with your school names',
+  },
+  MEDSCHOOLS_LIST_IMPORT_TOO_LARGE: {
+    http: 413,
+    i18n: 'errors:medschoolsListImportTooLarge',
+    text: 'That file is over 2 MB. Save just the school names in a smaller file, or paste them',
+  },
+  MEDSCHOOLS_LIST_IMPORT_UNREADABLE: {
+    http: 503,
+    i18n: 'errors:medschoolsListImportUnreadable',
+    text: 'The school names could not be read this time. Try again, or paste a shorter list',
+  },
 } as const;
 
 export type ErrorCode = keyof typeof ERROR_CODES;

@@ -4,7 +4,7 @@
  * server modules (`api/import/`) and the import view both read it, so a rule is written once.
  */
 import { cycleYearOf } from './cycle';
-import { MILESTONE_TYPES, milestoneDateProblem, type MilestoneType } from './tracker';
+import { LIMITS, MILESTONE_TYPES, milestoneDateProblem, type MilestoneType } from './tracker';
 import type { MedEventType } from './types';
 
 export const IMPORT_LIMITS = {
@@ -20,6 +20,16 @@ export const IMPORT_LIMITS = {
   schools: 60,
   /** A grounding quote: a cell or a short phrase, never a paragraph. */
   rawChars: 80,
+} as const;
+
+/**
+ * The list import (owner 2026-11-24) reads the same files under the same byte and text caps; what differs is what comes
+ * back. A preview holds at most one list's worth of schools, and the model may name twice that before the cut.
+ */
+export const LIST_IMPORT_LIMITS = {
+  schools: LIMITS.itemsPerList,
+  modelSchools: LIMITS.itemsPerList * 2,
+  nameChars: 160,
 } as const;
 
 /** The milestone types a file can carry (all of the tracker's: the enum is the schema's). */

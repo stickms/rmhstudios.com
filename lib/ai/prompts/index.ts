@@ -741,6 +741,31 @@ export const MEDSCHOOLS_IMPORT: PromptSpec = {
   maxChars: 24_000,
 };
 
+export const MEDSCHOOLS_LIST_IMPORT_ID = 'medschools-list-import';
+
+/**
+ * RMH Med Schools list import (owner 2026-11-24): read a member's own file or pasted text and return only the medical
+ * school names in it, with a program where the text says one. Metered under the tracker import's task
+ * (`medschools-import`), so it is one of the day's questions. The server keeps a name only when the text holds it and
+ * resolves it against the active schools itself (`features/medschools/api/import/list-validate.ts`); the model is never
+ * trusted with a school, so the wording is guidance.
+ */
+export const MEDSCHOOLS_LIST_IMPORT: PromptSpec = {
+  id: MEDSCHOOLS_LIST_IMPORT_ID,
+  version: 1,
+  task: 'medschools-import',
+  instructions: [
+    'The input is JSON: { "text": string }, the text of a member\'s own list of medical schools (a spreadsheet read row by row with " | " between cells, a document, or pasted notes).',
+    'Return ONLY a JSON object, no prose and no markdown:',
+    '{"schools":[{"name":"as written","program":"MD|DO|MD-PhD|DO-PhD|"}]}',
+    'One entry per medical school the text names, in the order the text gives them. Only school names. Never copy an essay, a note, a date, a contact or any other text.',
+    '"name" is copied exactly from the input: the full name, a short name or the initials, as written. Never expand, correct, shorten or guess a name, and never add a school the input does not name.',
+    '"program" is MD-PhD or DO-PhD only when the input says so for that school (MD-PhD, MSTP, PhD); MD or DO when the input says only that; otherwise an empty string.',
+    'If the input names no medical school, return {"schools":[]}.',
+  ].join('\n'),
+  maxChars: 24_000,
+};
+
 /**
  * RMH News: the summary a reader sees on an article they opened (lib/news-wire/summary.server.ts). Written once per
  * article from the outlet's own text and cached, so it runs only for articles somebody actually clicked.
@@ -792,5 +817,6 @@ export const ALL_PROMPTS: readonly PromptSpec[] = [
   MEDSCHOOLS_QA_ANSWER,
   MEDSCHOOLS_INTERVIEW_FOLLOWUPS,
   MEDSCHOOLS_IMPORT,
+  MEDSCHOOLS_LIST_IMPORT,
   NEWS_SUMMARY,
 ] as const;

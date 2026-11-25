@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { IMPORT_LIMITS } from '../engine/import';
-import { MILESTONE_TYPES, cycleYearProblem, type MilestoneType } from '../engine/tracker';
+import { IMPORT_LIMITS, LIST_IMPORT_LIMITS } from '../engine/import';
+import { LIMITS, MILESTONE_TYPES, cleanText, cycleYearProblem, type MilestoneType } from '../engine/tracker';
 
 /**
- * The tracker import's inputs (server-side importer only; the contract imports types). Restated here, like
+ * The tracker and list imports' inputs (server-side importer only; the contract imports types). Restated here, like
  * `qa-schemas.ts`, so this module and its tests do not load Prisma.
  */
 
@@ -80,3 +80,38 @@ export const importSaveBody = z
   })
   .strict();
 export type ImportSaveBody = z.infer<typeof importSaveBody>;
+
+/* ------------------------------ the list import (owner 2026-11-24) ------------------------------ */
+
+/** What the list import's model must return: names, each checked on its own (`list-validate.ts`). */
+export const listModelOutput = z.object({
+  schools: z.array(z.unknown()).max(LIST_IMPORT_LIMITS.modelSchools),
+});
+export const listModelRow = z.object({
+  name: z.string().trim().min(2).max(LIST_IMPORT_LIMITS.nameChars),
+  program: z.string().trim().max(40).optional(),
+});
+
+const rowId = z.string().min(1).max(100);
+const listName = z
+  .string()
+  .max(LIMITS.listName * 4 + 64)
+  .refine((v) => cleanText(v, LIMITS.listName) !== null, { message: 'invalid list name' });
+
+/**
+ * `POST me/lists/import/save`: the ticked rows, by slug and program, into one of the caller's lists or a new one. Never
+ * a user, an item id or a school id (strict); another member's list id is a 404 from the writer.
+ */
+export const listImportSaveBody = z
+  .object({
+    target: z.union([
+      z.object({ listId: rowId }).strict(),
+      z.object({ newList: listName }).strict(),
+    ]),
+    items: z
+      .array(z.object({ slug, program: z.enum(['ANY', 'REG', 'PHD']) }).strict())
+      .min(1)
+      .max(LIST_IMPORT_LIMITS.schools),
+  })
+  .strict();
+export type ListImportSaveBody = z.infer<typeof listImportSaveBody>;
