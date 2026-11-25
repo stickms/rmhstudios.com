@@ -349,7 +349,13 @@ const BUDGETS = {
   // RMH Med Schools share cards (2026-11-25): entry RAISED 718,200 -> 718,600 B raw (OPT-01, named in the PR body) for
   // `cardVersionFor` in lib/seo.ts (the med cards carry their own version) and the /med routes' shorter titles; the
   // title and description builders load on demand. CI measured 701.6 KB against 701.4 KB.
-  entryRaw: 718_600,
+  // RMH Med Schools source toggle (2026-11-25): entry RAISED 718,600 -> 719,000 B raw (OPT-01, named in the PR body). The
+  // feature that bought the bytes is the reader's CycleTrack / Admit.org choice: the `source=` URL parser the /med and
+  // /med/$slug routes' validateSearch and loaderDeps reach (features/medschools/engine/search.ts) and the one-line
+  // query helper the loaders call, so the server HTML of a shared `?source=admit` link already shows Admit.org's
+  // figures; measured +309 B on a plain `vite build`. The toggle, its store, the favicons and the reordering rules stay
+  // in page chunks.
+  entryRaw: 719_000,
   // RMH Med Schools round 2 (2026-11-24): critical path RAISED 938,200 -> 939,000 B raw (OPT-01, named in the PR body).
   // The bytes are the /med URL parsers the routes' validateSearch reaches (features/medschools/engine/search.ts): a
   // states LIST (`state=CA,NY`, the owner's multi-state filter) and the by-day chart's category list (`daily=`), plus
@@ -359,7 +365,9 @@ const BUDGETS = {
   // and sentences (OPT-01, named in the PR body); CI measured 918.1 KB against 918.0 KB.
   // RMH Med Schools share cards (2026-11-25): critical path RAISED 940,400 -> 940,800 B raw for the same bytes (OPT-01,
   // named in the PR body); CI measured 918.6 KB against 918.4 KB.
-  criticalPathRaw: 940_800,
+  // RMH Med Schools source toggle (2026-11-25): critical path RAISED 940,800 -> 941,200 B raw for the same bytes as the
+  // entry line (OPT-01, named in the PR body). Brotli stays under its line.
+  criticalPathRaw: 941_200,
   // Inbox icon toolbars (2026-11-25): critical path brotli RAISED 247,500 -> 248,000 B (OPT-01, named in the PR body). The
   // raw lines were raised for the same bytes in the previous change (the inbox icon buttons and the ghost-button bleed
   // class) but this one was left, and the deploy build measured 241.7 KB against 241.7 KB (+0.0%), about 100 B over,

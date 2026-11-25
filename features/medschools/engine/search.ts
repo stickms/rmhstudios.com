@@ -68,6 +68,12 @@ const listParam = (v: unknown): string | undefined => {
   const s = str(v)?.trim();
   return s && /^[a-z0-9]{1,40}$/.test(s) ? s : undefined;
 };
+/**
+ * `source=cycletrack|admit` (owner 2026-11-24): which source the totals and primary series follow. Any case. The school
+ * page's `source` (History's picker: any source, upper case) is read through it too, so `ADMIT` there is the choice.
+ */
+export const parseSourcePref = (v: unknown): 'cycletrack' | 'admit' | undefined =>
+  pick(str(v)?.toLowerCase(), ['cycletrack', 'admit'] as const, false);
 /** `mine=cycle`: the schools of the signed-in viewer's current tracker cycle (`engine/mine.ts`). */
 const mineParam = (v: unknown): 'cycle' | undefined => (str(v)?.trim().toLowerCase() === 'cycle' ? 'cycle' : undefined);
 
@@ -100,18 +106,21 @@ export function parseIndexSearch(raw: Record<string, unknown>): {
   programs?: ProgramKey[];
   list?: string;
   mine?: 'cycle';
+  source?: 'cycletrack' | 'admit';
 } {
   const q = str(raw.q)?.trim().slice(0, Q_MAX);
   const states = parseStates(raw.state);
   const programs = programSetOf(raw);
   const list = listParam(raw.list);
   const mine = mineParam(raw.mine);
+  const source = parseSourcePref(raw.source);
   return {
     ...(q ? { q } : {}),
     ...(states.length ? { states } : {}),
     ...(programs ? { programs } : {}),
     ...(list ? { list } : {}),
     ...(mine ? { mine } : {}),
+    ...(source ? { source } : {}),
   };
 }
 

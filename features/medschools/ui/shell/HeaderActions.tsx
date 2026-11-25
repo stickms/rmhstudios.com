@@ -12,13 +12,19 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
-import { MenuItem } from '@/components/ui/menu';
+import { MenuItem, MenuSeparator } from '@/components/ui/menu';
 import { useSession } from '@/components/session/session-context';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
+import { SourceMenuRows, SourceToggle } from './SourceToggle';
 import { ThemeToggle } from './ThemeToggle';
 
+/** Under this width the source toggle does not fit beside the round buttons: it moves into the member's menu. */
+const NARROW = '(max-width: 599px)';
+
 /**
- * The top bar's actions (owner 2026-11-24): Interview practice, Live activity, the member's own area and the light /
+ * The top bar's actions (owner 2026-11-24): the source choice (CycleTrack or Admit.org, `SourceToggle`; from 600px,
+ * in the member's menu below), Interview practice, Live activity, the member's own area and the light /
  * dark switch, as 44px round icon buttons, each named and titled. A page does not link to itself: the live page has no
  * Live button and the practice page no practice button; on the member's own pages the profile button shows as current.
  *
@@ -32,6 +38,7 @@ export function HeaderActions() {
   const at = (p: string) => pathname === p || pathname === `${p}/`;
   return (
     <div className="medapp-bar__actions" role="group" aria-label={t('shell-actions-label', { defaultValue: 'Go to' })}>
+      <SourceToggle />
       {at('/med/practice') ? null : (
         <RoundLink to="/med/practice" icon={Mic} label={t('shell-practice', { defaultValue: 'Interview practice' })} />
       )}
@@ -66,6 +73,8 @@ function ProfileButton({ pathname, href }: { pathname: string; href: string }) {
   const { data: session } = useSession();
   const ref = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
+  // Read when the menu opens (a client event): the source rows join it only where the bar has no toggle.
+  const narrow = useMediaQuery(NARROW);
   const label = t('shell-mine-label', { defaultValue: 'My cycle and lists' });
   const mine = MINE.some((m) => pathname.startsWith(m.to));
   const name = (id: Mine): string => {
@@ -82,16 +91,46 @@ function ProfileButton({ pathname, href }: { pathname: string; href: string }) {
   };
 
   if (!session) {
+    const signIn = t('shell-mine-signin', { defaultValue: 'Sign in to see your cycle and lists' });
+    const menuName = t('source-menu-signedout', { defaultValue: 'Sign in or choose a source' });
+    // A phone's top bar has no room for the source toggle, so signed out the button there opens a menu of sign in and
+    // the source choice (CSS shows it under 600px and the plain sign-in link from 600px).
     return (
-      <Link
-        to="/login"
-        search={{ callbackURL: href }}
-        className="medapp-round"
-        aria-label={t('shell-mine-signin', { defaultValue: 'Sign in to see your cycle and lists' })}
-        title={label}
-      >
-        <UserRound aria-hidden="true" size={18} />
-      </Link>
+      <>
+        <Link
+          to="/login"
+          search={{ callbackURL: href }}
+          className="medapp-round medapp-wide-only"
+          aria-label={signIn}
+          title={label}
+        >
+          <UserRound aria-hidden="true" size={18} />
+        </Link>
+        <button
+          ref={ref}
+          type="button"
+          className="medapp-round medapp-narrow-only"
+          aria-label={menuName}
+          title={menuName}
+          aria-haspopup="menu"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+        >
+          <UserRound aria-hidden="true" size={18} />
+        </button>
+        <AnchoredMenu open={open} onClose={() => setOpen(false)} anchorRef={ref} label={menuName} className="w-60">
+          <MenuItem
+            icon={UserRound}
+            href="/login"
+            {...({ search: { callbackURL: href } } as object)}
+            onSelect={() => setOpen(false)}
+          >
+            {t('source-menu-signin', { defaultValue: 'Sign in' })}
+          </MenuItem>
+          <MenuSeparator />
+          <SourceMenuRows onDone={() => setOpen(false)} />
+        </AnchoredMenu>
+      </>
     );
   }
   const image = session.user.image;
@@ -126,6 +165,12 @@ function ProfileButton({ pathname, href }: { pathname: string; href: string }) {
             </MenuItem>
           );
         })}
+        {narrow ? (
+          <>
+            <MenuSeparator />
+            <SourceMenuRows onDone={() => setOpen(false)} />
+          </>
+        ) : null}
       </AnchoredMenu>
     </>
   );

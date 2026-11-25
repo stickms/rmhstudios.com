@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { CHARTED_TYPES, SHORT_SOURCE_NAMES, formatUtcDay, toCumulativeByDay } from '../engine/public-read';
 import { cycleEndOn, cycleLabelIsolated } from '../engine/cycle';
 import { buildTotalsMatrix } from '../engine/totals';
-import { activityQuery } from '../medschools.queries';
+import { activityQuery, sourceParamOf } from '../medschools.queries';
 import type { MedChartedTypeId, MedSchoolDetailDto, MedSourceId } from '../medschools.contract';
 import { CATEGORY_ORDER, CategoryToggles } from './CategoryToggles';
 import { CategoryLines } from './charts/CategoryLines';
@@ -22,6 +22,7 @@ import { StatusIcon } from './status/StatusIcon';
 import { StatusText } from './status/StatusText';
 import { statusOfEvent } from './status/status';
 import { WaveNote } from './WaveNote';
+import { useSourcePref } from './useSourcePref';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const todayUtc = () => new Date().toISOString().slice(0, 10);
@@ -43,7 +44,11 @@ export function ActivityTab({
   const chartLabels = useChartLabels();
   const { locale } = useLocaleFormat();
   const nf = new Intl.NumberFormat(locale);
-  const query = useQuery(activityQuery(slug, { program: search.program, cycle: search.cycle }));
+  // The header's CycleTrack / Admit.org choice: each category's primary (and the waves) prefer it where it has data.
+  const pref = useSourcePref();
+  const query = useQuery(
+    activityQuery(slug, { program: search.program, cycle: search.cycle, ...sourceParamOf(pref.value) }),
+  );
   // Fixed per mount: the server and the first client render must agree on the last day drawn.
   const [today] = useState(todayUtc);
 
@@ -58,7 +63,7 @@ export function ActivityTab({
 
   const data = query.data;
   const types = data?.types ?? [];
-  const matrix = buildTotalsMatrix(types, data?.otherTotals);
+  const matrix = buildTotalsMatrix(types, data?.otherTotals, pref.source);
   const visible = search.show.filter((s): s is MedChartedTypeId => CHARTED_TYPES.includes(s));
   // The charts run from day zero to today, or to the cycle's last day once it is over (the last category's: decisions
   // run to August 31): never 500 days of nothing.
