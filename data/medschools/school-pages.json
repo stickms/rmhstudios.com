@@ -700,26 +700,6 @@
       }
     },
     {
-      "slug": "charles-r-drew-ucla",
-      "checkedOn": "2026-11-23",
-      "secondary": {
-        "url": null,
-        "cycleYear": null,
-        "prompts": []
-      },
-      "admissions": {
-        "url": null,
-        "rolling": {
-          "REG": null,
-          "PHD": null
-        },
-        "evidence": {
-          "REG": null,
-          "PHD": null
-        }
-      }
-    },
-    {
       "slug": "chicago",
       "checkedOn": "2026-11-23",
       "secondary": {

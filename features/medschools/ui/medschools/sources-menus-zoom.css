@@ -214,6 +214,10 @@
 .medapp-schoolrow > .medapp-row__body {
   overflow-wrap: break-word;
 }
+/* The save button is always the last column, so it stays at the row's end when the school has no status yet. */
+.medapp-schoolrow > .medapp-round {
+  grid-column: 4;
+}
 .medapp-latest {
   display: flex;
   flex: none;

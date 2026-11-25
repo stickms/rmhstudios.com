@@ -50,7 +50,9 @@ async function main() {
   >;
   const extras = (JSON.parse(readFileSync(join(DATA, 'registry-extra.json'), 'utf8')) as { schools: RegistrySchool[] })
     .schools;
+  const closed = (JSON.parse(readFileSync(join(DATA, 'closed.json'), 'utf8')) as { keys: string[] }).keys;
   const { schools, excluded, review } = buildRegistry({
+    closed,
     schoolKeys,
     first,
     titles,

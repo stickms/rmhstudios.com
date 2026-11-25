@@ -56,7 +56,7 @@ export function registryKeyOf(s: Pick<RegistrySchool, 'aliases' | 'shortName'>):
   return s.aliases.find((a) => a.source === 'CYCLETRACK')?.sourceKey ?? s.shortName;
 }
 
-export type ExcludeReason = 'canadian' | 'no-first-row' | 'no-title';
+export type ExcludeReason = 'canadian' | 'closed' | 'no-first-row' | 'no-title';
 
 const TITLE = /^(.*?)(?:\s+(MD|DO))?\s+Admissions Data(?:\s+\((.*)\))?\s*\|\s*CycleTrack$/s;
 
@@ -87,6 +87,8 @@ export function buildRegistry(input: {
   overrides: Record<string, Partial<RegistrySchool>>;
   /** Hand-maintained schools CycleTrack does not list, slug set, no CYCLETRACK alias. */
   extras?: RegistrySchool[];
+  /** CycleTrack keys of programmes that have shut down (data/medschools/closed.json): listed there, left out here. */
+  closed?: string[];
 }): {
   schools: RegistrySchool[];
   excluded: Array<{
@@ -103,7 +105,12 @@ export function buildRegistry(input: {
   const review: string[] = [];
   const built: RegistrySchool[] = [];
 
+  const closed = new Set(input.closed ?? []);
   for (const key of [...input.schoolKeys].sort()) {
+    if (closed.has(key)) {
+      excluded.push({ key, reason: 'closed' });
+      continue;
+    }
     const html = input.titles[key];
     const title = html === undefined ? null : parsePageTitle(html);
     if (title && isCanadianLocation(`${title.city}, ${title.state}`)) {

@@ -577,7 +577,8 @@ model MedTrackerApplication {
           !d.endsWith('_medschools_school_facts') &&
           !d.endsWith('_medschools_admit_curriculum') &&
           !d.endsWith('_medschools_mdphd_sources') &&
-          !d.endsWith('_medschools_applicant_stats'),
+          !d.endsWith('_medschools_applicant_stats') &&
+          !d.endsWith('_medschools_retire_drew_ucla'),
       );
       for (const o of others) expect(mine > o, o).toBe(true);
     });

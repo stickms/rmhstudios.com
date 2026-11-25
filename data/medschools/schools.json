@@ -472,22 +472,6 @@
       ]
     },
     {
-      "slug": "charles-r-drew-ucla",
-      "name": "Charles R. Drew/UCLA Medical Education Program",
-      "shortName": "Charles R. Drew-UCLA",
-      "degree": "MD",
-      "city": "Los Angeles",
-      "state": "CA",
-      "country": "US",
-      "website": null,
-      "aliases": [
-        {
-          "source": "CYCLETRACK",
-          "sourceKey": "Charles R. Drew-UCLA"
-        }
-      ]
-    },
-    {
       "slug": "chicago",
       "name": "University of Chicago",
       "shortName": "Chicago",
