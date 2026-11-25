@@ -27,6 +27,25 @@
  */
 export const OG_CARD_VERSION = 'steel-2';
 
+/**
+ * A card family drawn in an app's own design (L8) carries its own version, so redrawing it moves only its URLs and
+ * leaves every other card's preview cache alone. `med-1` (2026-11-25): the RMH Med Schools cards in the app's look
+ * (`lib/og/med-card.server.tsx`).
+ */
+export const MED_CARD_VERSION = 'med-1';
+
+/** By section card file or dynamic card kind; everything else is `OG_CARD_VERSION`. */
+const CARD_VERSIONS: Readonly<Record<string, string>> = {
+  med: MED_CARD_VERSION,
+  'med-live': MED_CARD_VERSION,
+  'med-school': MED_CARD_VERSION,
+};
+
+/** The `?v=` a card URL carries: its family's own version, or the site's. */
+export function cardVersionFor(fileOrKind: string): string {
+  return CARD_VERSIONS[fileOrKind] ?? OG_CARD_VERSION;
+}
+
 /** `[path prefix, card file]`, in `STATIC_CARDS` order. */
 export const STATIC_CARD_INDEX: readonly (readonly [string, string])[] = [
   ['/', 'default'],
@@ -128,5 +147,5 @@ export function staticCardFileFor(path: string): string | null {
 export function staticCardImageFor(file: string): string {
   return file === 'default'
     ? `/images/og/default.png?v=${OG_CARD_VERSION}`
-    : `/api/og/section/${file}?v=${OG_CARD_VERSION}`;
+    : `/api/og/section/${file}?v=${cardVersionFor(file)}`;
 }

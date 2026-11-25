@@ -12,7 +12,7 @@ import { ListsPage } from '@features/medschools/ui/lists/ListsPage';
 export const Route = createFileRoute('/med/lists')({
   head: definePage({
     path: '/med/lists',
-    title: 'My lists | RMH Studios',
+    title: 'My lists | RMH Med Schools',
     description: 'Your private saved medical school lists and preferences.',
     noIndex: true,
   }),

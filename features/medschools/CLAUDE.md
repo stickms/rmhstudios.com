@@ -257,6 +257,20 @@ few borders, no wall of identical cards, no pill soup, no panels in panels.
   never replaces the page. The live feed keeps one list across filter changes (`useLiveFeed` replaces its rows when the
   new filter's first page lands). `ui/keep-place.test.ts` holds the static half.
 
+## Link previews (owner 2026-11-24)
+
+The cards are the app's own design, not the site's (`lib/og/med-card.server.tsx`; `docs/open-graph.md`): the light wash
+on the paper ground, DM Sans, paper tiles, status colours, the "RMH Med Schools" wordmark. `/med` and `/med/live` are
+the `med` and `med-live` section cards (copy in `lib/og/static-cards.ts`; the index shows a fixed row of crests, the
+live card the status colours as labels, no data). A school (`/api/og/med-school/$slug`, `getCardData`) shows its crest
+or initials, name, degree and place, and at most three tiles: the newest class's MCAT and GPA from
+`engine/headline-figures.ts` (the class profile's own string under the stored kind's label, "Median MCAT 519", never
+computed; regular program only), the k-floored "Reported interview invites" of the cycle, then the newest public event
+in the footer ("Latest: Interview invite · Nov 24", Admit and SDN only). Absent facts are left out; the cache key is
+everything drawn. The school page's title is `schoolTitle` ("Duke University | RMH Med Schools") and its description
+`schoolDescription` (the class figures when the profile has them, "Reported events, not applicants."); the loader reads
+the facts query for it.
+
 ## The read rules (`engine/public-read.ts`, pure and client-safe)
 
 - **k floor (spec §6):** `K_FLOOR = 3`. RMH tracker count rows are dropped when `contributors` is null or under 3 (fail

@@ -15,9 +15,9 @@ import { LivePage } from '@features/medschools/ui/LivePage';
 export const Route = createFileRoute('/med/live')({
   head: definePage({
     path: '/med/live',
-    title: 'Live reported events | RMH Med Schools | RMH Studios',
+    title: 'Live reported events | RMH Med Schools',
     description:
-      'The latest interview invites and decisions reported across medical schools, with no names. Reported events, not applicants.',
+      'The latest interview invites, secondaries and decisions reported across US medical schools, as they arrive, with no names. Reported events, not applicants.',
   }),
   validateSearch: validateLiveSearch,
   // No `stripSearchParams`: absent `programs` means "the viewer's preferences", present is a choice (D14).

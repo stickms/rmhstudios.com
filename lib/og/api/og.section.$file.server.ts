@@ -3,8 +3,12 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { STATIC_CARDS } from '@/lib/og/static-cards';
 import { liveStatsFor } from '@/lib/og/live-stats.server';
 import { renderPageCard } from '@/lib/og/page-card.server';
+import { renderMedSectionCard } from '@/lib/og/med-card.server';
 import { apps } from '@/lib/catalog';
 import { shuffle } from '@/lib/core/rng';
+
+/** The section cards drawn in the RMH Med Schools design (`lib/og/med-card.server.tsx`). */
+const MED_SECTION_KIND: Record<string, 'index' | 'live'> = { med: 'index', 'med-live': 'live' };
 
 /** How many of the catalog's cards a gallery card draws (the 2×2 the post card uses for four photos). */
 const GALLERY_SIZE = 4;
@@ -36,6 +40,17 @@ export const route = apiRoute('/api/og/section/$file', {
     if (!card || card.file === 'default') return new Response('Not found', { status: 404 });
 
     try {
+      // RMH Med Schools keeps its own look on its cards (L8): the same copy, drawn by the app's renderer.
+      const med = MED_SECTION_KIND[card.file];
+      if (med) {
+        const png = await renderMedSectionCard({ kind: med, title: card.title, subtitle: card.subtitle });
+        return new Response(new Uint8Array(png), {
+          headers: {
+            'Content-Type': 'image/png',
+            'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800',
+          },
+        });
+      }
       const stats = await liveStatsFor(card);
       const gallery = card.gallery ? pickGallery(card.gallery) : undefined;
       const png = await renderPageCard({

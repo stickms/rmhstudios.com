@@ -14,6 +14,8 @@ import path from 'node:path';
 
 export const OG_FONT_SANS = 'Geist';
 export const OG_FONT_MONO = 'Geist Mono';
+/** RMH Med Schools keeps its own face on its cards (`./med-card.server`), as its pages do (L8). */
+export const OG_FONT_DM_SANS = 'DM Sans';
 
 type Weight = 400 | 500 | 600 | 700 | 800;
 const SANS_FILES: Record<Weight, string> = {
@@ -27,6 +29,11 @@ const MONO_FILES: Partial<Record<Weight, string>> = {
   400: 'GeistMono-400.ttf',
   700: 'GeistMono-700.ttf',
 };
+const DM_SANS_FILES = {
+  400: 'DMSans-400.ttf',
+  500: 'DMSans-500.ttf',
+  600: 'DMSans-600.ttf',
+} as const;
 
 // Dev and tests run from the app root; the production image runs from /app with the
 // built public tree under .output/public (same lookup as lib/rmhvibe/vibe-bundle).
@@ -80,4 +87,14 @@ export function satoriFontFaces(opts: { weights: readonly Weight[]; mono?: boole
     }
   }
   return faces;
+}
+
+/** DM Sans 400/500/600 (static instances, `scripts/gen-og-fonts.py`): the RMH Med Schools cards. */
+export function dmSansFontFaces(): SatoriFont[] {
+  return ([400, 500, 600] as const).map((weight) => ({
+    name: OG_FONT_DM_SANS,
+    data: readFont(DM_SANS_FILES[weight]),
+    weight,
+    style: 'normal' as const,
+  }));
 }

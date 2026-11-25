@@ -30,6 +30,7 @@ import { programPair, programsQueryValue, type ProgramKey } from './engine/progr
 import { applyPrefs, type Prefs } from './engine/prefs';
 import type { ProgramFilter } from './engine/search';
 import type { SchoolTab } from './engine/public-read';
+import { headlineFigures, type HeadlineFigure } from './engine/headline-figures';
 
 const CHARTED: readonly string[] = ['INTERVIEW', 'SECONDARY', 'WAITLIST', 'REJECTION', 'ACCEPTANCE'];
 
@@ -312,6 +313,8 @@ export interface SchoolHead {
   degree: MedDegreeId;
   state: string;
   city: string;
+  /** The newest entering class's MCAT and GPA as the Facts tab shows them, for the description; empty when none. */
+  figures: HeadlineFigure[];
 }
 
 /**
@@ -325,6 +328,9 @@ export async function loadSchoolHead(
   prefs: Prefs | null = null,
   cause?: 'enter' | 'stay' | 'preload',
 ): Promise<SchoolHead | null> {
+  // The facts (for the description's class figures) in parallel with the school: the public, cached query the Facts
+  // tab and the background tab prefetch read anyway. Cached data is used as it is; a failure only drops the figures.
+  const facts = queryClient.ensureQueryData(schoolFactsQuery(slug)).catch(() => null);
   let detail;
   try {
     detail = await queryClient.fetchQuery(schoolQuery(slug));
@@ -352,7 +358,7 @@ export async function loadSchoolHead(
     // One query for both sections (the AAMC reports and Admit's curriculum), for an MD and a DO school alike.
     tab = prefetchRouteQuery(queryClient, schoolFactsQuery(slug));
   }
-  await waitUnlessStay(cause, tab);
+  const [factsRes] = await Promise.all([facts, waitUnlessStay(cause, tab)]);
   const { school } = detail;
   return {
     slug: school.slug,
@@ -361,5 +367,6 @@ export async function loadSchoolHead(
     degree: school.degree,
     state: school.state,
     city: school.city,
+    figures: factsRes ? headlineFigures(factsRes.classes) : [],
   };
 }
