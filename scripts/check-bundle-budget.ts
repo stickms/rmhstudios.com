@@ -346,7 +346,10 @@ const BUDGETS = {
   // the four MEDSCHOOLS_LIST_IMPORT_* error codes and their refusal sentences in the site-wide catalogues
   // (lib/errors/codes.ts, components/errors/refusal-sentence.ts), which every page carries. CI measured 701.1 KB
   // against 701.0 KB; the import view itself is a lazy chunk.
-  entryRaw: 718_200,
+  // RMH Med Schools share cards (2026-11-25): entry RAISED 718,200 -> 718,600 B raw (OPT-01, named in the PR body) for
+  // `cardVersionFor` in lib/seo.ts (the med cards carry their own version) and the /med routes' shorter titles; the
+  // title and description builders load on demand. CI measured 701.6 KB against 701.4 KB.
+  entryRaw: 718_600,
   // RMH Med Schools round 2 (2026-11-24): critical path RAISED 938,200 -> 939,000 B raw (OPT-01, named in the PR body).
   // The bytes are the /med URL parsers the routes' validateSearch reaches (features/medschools/engine/search.ts): a
   // states LIST (`state=CA,NY`, the owner's multi-state filter) and the by-day chart's category list (`daily=`), plus
@@ -354,7 +357,9 @@ const BUDGETS = {
   // 200 B over; no state-name table, library, page component or chart entered the entry (those stay in page chunks).
   // RMH Med Schools list import (2026-11-25): critical path RAISED 940,000 -> 940,400 B raw for the same error codes
   // and sentences (OPT-01, named in the PR body); CI measured 918.1 KB against 918.0 KB.
-  criticalPathRaw: 940_400,
+  // RMH Med Schools share cards (2026-11-25): critical path RAISED 940,400 -> 940,800 B raw for the same bytes (OPT-01,
+  // named in the PR body); CI measured 918.6 KB against 918.4 KB.
+  criticalPathRaw: 940_800,
   // Inbox icon toolbars (2026-11-25): critical path brotli RAISED 247,500 -> 248,000 B (OPT-01, named in the PR body). The
   // raw lines were raised for the same bytes in the previous change (the inbox icon buttons and the ghost-button bleed
   // class) but this one was left, and the deploy build measured 241.7 KB against 241.7 KB (+0.0%), about 100 B over,

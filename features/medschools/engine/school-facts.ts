@@ -347,38 +347,5 @@ export function isPhdOnlyQualifier(qualifier: string | null): boolean {
   return !/\bincl|&|\band\b|,/i.test(qualifier);
 }
 
-/**
- * Words that only restate a figure's kind (the page's own wording of "Average MCAT", "new matriculants", "Overall Grade
- * Point Average"): a qualifier made of nothing else says no more than the tile's label and is not shown under it.
- */
-const RESTATING = new Set(
-  (
-    'mcat gpa gpas score scores exam class average avg mean median overall cumulative total grade point undergraduate ' +
-    'undergrad ug science bcpm composite matriculating matriculants matriculated entering students student new ' +
-    'applicants applicant applications application received interviewed interviews interview enrolled enrollment size ' +
-    'incoming number of the is and for a an highest standard granted completed amcas candidates in state in-state ' +
-    'resident residents currently faq answer'
-  ).split(' '),
-);
-
-/**
- * The qualifier as a reader sees it under a figure, or null when it adds nothing to the kind's own label: a research
- * note on the page's wording ("labelled Average MCAT", "PDF label …", "row …"), or the page's words for the kind itself
- * ("MCAT Exam Class Average", "new matriculants"; `RESTATING`). A note about the page's spelling ("(page spells …)",
- * "; page says …") is dropped. The rest is the page's own scope and is shown ("five-year average", "among those
- * accepted", "virtual interviews", "Oregon Campus column", "North Carolina").
- */
-export function profileQualifierNote(qualifier: string | null): string | null {
-  if (!qualifier) return null;
-  const q = qualifier
-    .replace(/\s*\(page [^)]*\)/gi, '')
-    .replace(/;\s*page says.*$/i, '')
-    .trim();
-  if (q === '' || /^(labelled|labeled|pdf label|row )/i.test(q)) return null;
-  const words = q
-    .toLowerCase()
-    .split(/[^a-z0-9-]+/)
-    .filter((w) => w !== '');
-  if (words.every((w) => RESTATING.has(w) || /^20\d\d$/.test(w))) return null;
-  return q;
-}
+// The qualifier rule lives with the headline figures (a small, import-free module the route head can use).
+export { profileQualifierNote } from './headline-figures';

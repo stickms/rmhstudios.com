@@ -1,4 +1,6 @@
-import { crestSrc } from '../engine/crests';
+import { crestInitials, crestSrc } from '../engine/crests';
+
+export { crestInitials };
 
 export type CrestSize = 20 | 24 | 40 | 76;
 
@@ -8,18 +10,6 @@ const BOX: Record<CrestSize, string> = {
   40: 'medapp-crest--40',
   76: 'medapp-crest--76',
 };
-const SKIP = new Set(['the', 'of', 'at', 'and', 'for']);
-
-/** Up to two capitals from the significant words of a school name ("Harvard Medical School" is "HM"). */
-export function crestInitials(name: string): string {
-  return name
-    .split(/[\s\-–,()]+/)
-    .filter((w) => /^[A-Za-z]/.test(w) && !SKIP.has(w.toLowerCase()))
-    .slice(0, 2)
-    .map((w) => w[0]!.toUpperCase())
-    .join('');
-}
-
 /**
  * A school's crest in a small rounded picture box (`.medapp-crest`: `--app-bg-subtle`, 1px `--app-border`), or its initials when there is none.
  * Decorative: the school's name is always printed beside it, so the image has an empty alt and the initials are

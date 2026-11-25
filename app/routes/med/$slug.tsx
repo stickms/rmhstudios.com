@@ -28,9 +28,11 @@ export const Route = createFileRoute('/med/$slug')({
   },
   head: definePage<SchoolHeadData, SchoolParams>({
     path: ({ params }) => `/med/${params.slug}`,
-    title: ({ loaderData }) => `${loaderData?.name ?? 'Med school'} | RMH Med Schools | RMH Studios`,
+    // Built in the loader (`loadSchoolHead`): the class MCAT and GPA are the Facts tab's own public figures.
+    title: ({ loaderData }) => loaderData?.title ?? 'Med school | RMH Med Schools',
     description: ({ loaderData }) =>
-      `Reported interview invites and decisions at ${loaderData?.name ?? 'this school'}, by day, with past cycles. Reported events, not applicants.`,
+      loaderData?.description ??
+      'Reported interview invites and decisions at this school by day, with secondaries and interview questions. Reported events, not applicants.',
     ogCard: ({ params }) => ({ kind: 'med-school', id: params.slug }),
     jsonLd: ({ loaderData, params }) =>
       loaderData

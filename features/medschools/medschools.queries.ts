@@ -312,6 +312,10 @@ export interface SchoolHead {
   degree: MedDegreeId;
   state: string;
   city: string;
+  /** The page's `<title>` and meta description, built in the loader (the builders load on demand, off the entry). */
+  title: string;
+  /** Names the newest entering class's MCAT and GPA as the Facts tab shows them, when the school has a profile. */
+  description: string;
 }
 
 /**
@@ -325,6 +329,9 @@ export async function loadSchoolHead(
   prefs: Prefs | null = null,
   cause?: 'enter' | 'stay' | 'preload',
 ): Promise<SchoolHead | null> {
+  // The facts (for the description's class figures) in parallel with the school: the public, cached query the Facts
+  // tab and the background tab prefetch read anyway. Cached data is used as it is; a failure only drops the figures.
+  const facts = queryClient.ensureQueryData(schoolFactsQuery(slug)).catch(() => null);
   let detail;
   try {
     detail = await queryClient.fetchQuery(schoolQuery(slug));
@@ -352,8 +359,11 @@ export async function loadSchoolHead(
     // One query for both sections (the AAMC reports and Admit's curriculum), for an MD and a DO school alike.
     tab = prefetchRouteQuery(queryClient, schoolFactsQuery(slug));
   }
-  await waitUnlessStay(cause, tab);
+  // The title and description builders are imported on demand: route loaders sit in every page's shared entry
+  // (check-bundle-budget), and only a school page needs them.
+  const [factsRes, hf] = await Promise.all([facts, import('./engine/headline-figures'), waitUnlessStay(cause, tab)]);
   const { school } = detail;
+  const figures = factsRes ? hf.headlineFigures(factsRes.classes) : [];
   return {
     slug: school.slug,
     name: school.name,
@@ -361,5 +371,7 @@ export async function loadSchoolHead(
     degree: school.degree,
     state: school.state,
     city: school.city,
+    title: hf.schoolTitle(school.name),
+    description: hf.schoolDescription(school.name, figures),
   };
 }

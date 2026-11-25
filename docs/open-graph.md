@@ -65,7 +65,11 @@ cards changes, bump it so every page's `og:image` becomes a new URL, and run `pn
 pre-rendered file, `public/images/og/default.png`.
 
 The elections card (`lib/og/elections-card.server.tsx`) keeps the elections app's own look, as the full-screen apps do
-on the site (L8).
+on the site (L8). So do the RMH Med Schools cards (`lib/og/med-card.server.tsx`: the school card and the `med` and
+`med-live` section cards): the app's cream paper and painterly wash, DM Sans (`public/fonts/og/DMSans-*.ttf`), paper
+tiles and the status colours, with the palette restated from `features/medschools/ui/medschools/palette.css` and held
+equal by `lib/og/__tests__/med-school-card.test.ts`. A family drawn in its own design carries its own version
+(`MED_CARD_VERSION`, through `cardVersionFor` in `lib/og/static-card-index.ts`), so redrawing it moves only its URLs.
 
 ---
 
@@ -96,8 +100,10 @@ Dynamic cards are `GET /api/og/<kind>/<id>`, all `auth: 'none'`, all returning `
 `post` · `post/$id/story` · `profile` · `replay` · `moment` · `game` · `app` · `blog` · `job` · `section` · `build` ·
 `story` · `album` · `music` (a shared RMH Music result: ten minutes, not immutable, and a 404 once the link is stopped,
 expired or hidden, so stopping a link takes its card down; every answer is `X-Robots-Tag: noindex`, so a capability
-link's card never lands in image search) · `med-school` (an RMH Med Schools page: the school's name, degree and place,
-plus one interview figure only when the k floor lets the public page show it; a 404 for an unknown or inactive slug)
+link's card never lands in image search) · `med-school` (an RMH Med Schools page, in the app's design: the school's
+crest or initials, name, degree and place, the newest entering class's MCAT and GPA exactly as the Facts tab prints
+them, the reported interview invites only when the k floor lets the public page show them, and the newest public event
+the index row shows; absent facts are left out; a 404 for an unknown or inactive slug)
 
 Reference them through **`ogCardPath(kind, id)`** rather than by writing the path — that keeps the set of pages with a
 real card greppable, and stops a route pointing at an endpoint that no longer exists.

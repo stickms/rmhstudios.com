@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { execSync } from 'node:child_process';
 import { buildMeta, ogCardPath, absoluteUrl, SITE_URL, DEFAULT_OG_IMAGE } from '@/lib/seo';
 import { OG_CARD_VERSION, STATIC_CARDS, staticCardFor, staticCardImage } from '@/lib/og/static-cards';
+import { MED_CARD_VERSION, cardVersionFor } from '@/lib/og/static-card-index';
 import { catalogStatsFor } from '@/lib/og/catalog-stats';
 import { STATIC_CARD_INDEX, staticCardFileFor } from '@/lib/og/static-card-index';
 import { fitText } from '@/lib/og/chrome.server';
@@ -45,8 +46,17 @@ describe('static cards', () => {
 
   it('every other card is answered by the section route', () => {
     for (const card of STATIC_CARDS.filter((c) => c.file !== 'default')) {
-      expect(staticCardImage(card)).toBe(`/api/og/section/${card.file}?v=${OG_CARD_VERSION}`);
+      expect(staticCardImage(card)).toBe(`/api/og/section/${card.file}?v=${cardVersionFor(card.file)}`);
     }
+  });
+
+  it("an app family drawn in its own design carries its own version; every other card the site's", () => {
+    expect(cardVersionFor('med')).toBe(MED_CARD_VERSION);
+    expect(cardVersionFor('med-live')).toBe(MED_CARD_VERSION);
+    expect(ogCardPath('med-school', 'duke')).toBe(`/api/og/med-school/duke?v=${MED_CARD_VERSION}`);
+    expect(ogCardPath('section', 'med')).toBe(`/api/og/section/med?v=${MED_CARD_VERSION}`);
+    expect(MED_CARD_VERSION).not.toBe(OG_CARD_VERSION);
+    expect(cardVersionFor('library')).toBe(OG_CARD_VERSION);
   });
 
   it('cards that share a file share their copy (the file is the card, the path is only who it answers for)', () => {

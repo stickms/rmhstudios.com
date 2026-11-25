@@ -19,6 +19,7 @@ const m = vi.hoisted(() => {
     medSchoolAlias: d(),
     medCycle: d(),
     medForecast: d(),
+    medSchoolFact: d(),
     $queryRaw: vi.fn(async (..._a: unknown[]): Promise<unknown[]> => []),
   };
 });
@@ -746,12 +747,15 @@ describe('getCardData', () => {
       { source: 'CYCLETRACK', _sum: { count: 9, publishedCount: null } },
     ]);
     expect(await getCardData('duke', NOW)).toEqual({
+      slug: 'duke',
       name: 'Duke',
       degree: 'MD',
       city: 'Durham',
       state: 'NC',
       cycleYear: 2027,
       reported: { source: 'CYCLETRACK', count: 9 },
+      figures: [],
+      latest: null,
     });
     const arg = m.medCycleCount.groupBy.mock.calls[0]?.[0] as { where: Record<string, unknown> };
     expect(arg.where).toMatchObject({
@@ -767,6 +771,48 @@ describe('getCardData', () => {
     m.medSchool.findFirst.mockResolvedValue(school);
     const card = await getCardData('duke', NOW);
     expect(card?.reported).toBeNull();
+    expect(card?.figures).toEqual([]);
+    expect(card?.latest).toBeNull();
+  });
+
+  it("takes the newest class's MCAT and GPA from the school's own profile rows, as the page prints them", async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    const row = (kind: string, cycleYear: number, text: string, program = 'REG', qualifier: string | null = null) => ({
+      kind,
+      program,
+      cycleYear,
+      valueText: text,
+      valueNum: Number(text),
+      valueJson: { text, label: `Class ${cycleYear}`, evidence: `figure ${text}`, qualifier },
+      sourceUrl: 'https://med.duke.edu/profile',
+      checkedOn: d('2026-11-20'),
+    });
+    m.medSchoolFact.findMany.mockResolvedValue([
+      row('PROFILE_MCAT_MEDIAN', 2025, '518'),
+      row('PROFILE_MCAT_MEDIAN', 2026, '519'),
+      row('PROFILE_GPA_MEAN', 2026, '3.82'),
+      row('PROFILE_MCAT_MEAN', 2026, '521', 'PHD', 'MD-PhD (MSTP)'),
+    ]);
+    const card = await getCardData('duke', NOW);
+    expect(card?.figures).toEqual([
+      { kind: 'MCAT_MEDIAN', label: 'Median MCAT', value: '519', scope: null },
+      { kind: 'GPA_MEAN', label: 'Mean GPA', value: '3.82', scope: null },
+    ]);
+    const arg = m.medSchoolFact.findMany.mock.calls[0]![0] as { where: Record<string, unknown> };
+    expect(arg.where).toMatchObject({ schoolId: 's1', source: 'SCHOOL_PROFILE' });
+  });
+
+  it("reads the newest public event the index shows: Admit and SDN only, this school's site cycle", async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2027 });
+    m.medCycleEvent.findMany.mockResolvedValue([
+      { eventType: 'INTERVIEW', occurredAt: new Date('2026-11-24T00:00:00.000Z') },
+    ]);
+    const card = await getCardData('duke', NOW);
+    expect(card?.latest).toEqual({ eventType: 'INTERVIEW', occurredAt: '2026-11-24T00:00:00.000Z', dayOnly: true });
+    const arg = m.medCycleEvent.findMany.mock.calls[0]![0] as { where: Record<string, unknown>; take: number };
+    expect(arg.where).toEqual({ schoolId: 's1', cycleYear: 2027, source: { in: ['ADMIT', 'SDN'] } });
+    expect(arg.take).toBe(1);
   });
 });
 

@@ -13,3 +13,18 @@ const known: ReadonlySet<string> = new Set(manifest.slugs);
 export function crestSrc(slug: string): string | null {
   return known.has(slug) ? `${CREST_DIR}/${slug}.webp` : null;
 }
+
+const SKIP = new Set(['the', 'of', 'at', 'and', 'for']);
+
+/**
+ * Up to two capitals from the significant words of a school name ("Harvard Medical School" is "HM"), drawn in a
+ * crest's place by `ui/SchoolCrest.tsx` and the link-preview card.
+ */
+export function crestInitials(name: string): string {
+  return name
+    .split(/[\s\-–,()]+/)
+    .filter((w) => /^[A-Za-z]/.test(w) && !SKIP.has(w.toLowerCase()))
+    .slice(0, 2)
+    .map((w) => w[0]!.toUpperCase())
+    .join('');
+}

@@ -10,7 +10,7 @@ import { AskPage } from '@features/medschools/ui/AskPage';
 export const Route = createFileRoute('/med/ask')({
   head: definePage({
     path: '/med/ask',
-    title: 'Ask the data | RMH Studios',
+    title: 'Ask the data | RMH Med Schools',
     description: 'Ask a question about med school admissions data. Answers cite the rows they use.',
     noIndex: true,
   }),

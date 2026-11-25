@@ -18,6 +18,8 @@ import {
   type CountCell,
 } from '../engine/public-read';
 import { floorWhere, publicSum } from '../engine/floor';
+import { headlineFigures, type HeadlineFigure } from '../engine/headline-figures';
+import { classProfilesForSchool } from './school-facts.server';
 import { slugsOf } from '../engine/mine';
 import { ARRIVAL_CYCLE_MIN, ARRIVAL_ZONE, enoughArrivals, shapeArrivals } from '../engine/arrivals';
 import { cycleEndOn, cycleYearOf, defaultDayZero } from '../engine/cycle';
@@ -265,41 +267,70 @@ async function latestPublicEvents(
   );
 }
 
-/** What the link-preview card draws (Task 8): the school and one floored figure, never a program-less or suppressed one. */
+/**
+ * What the link-preview card draws: the school, its newest entering class's MCAT and GPA as the Facts tab shows them
+ * (`headlineFigures`: the page's own strings, never computed), one floored interview figure (never a program-less or
+ * suppressed one), and the newest public event the index row shows (Admit and SDN only, the live feed's rule).
+ */
 export interface MedSchoolCardData {
+  slug: string;
   name: string;
   degree: MedDegreeId;
   city: string;
   state: string;
   cycleYear: number;
   reported: { source: MedSourceId; count: number } | null;
+  figures: HeadlineFigure[];
+  latest: { eventType: MedEventType; occurredAt: string; dayOnly: boolean } | null;
 }
 
-/** Null for an unknown or inactive slug. The count is the primary source's interview total, REG + PHD, after the floor. */
+/**
+ * Null for an unknown or inactive slug. The count is the primary source's interview total, REG + PHD, after the floor.
+ * The latest event is `latestPublicEvents`' rule for this one school with every program on (the index's default).
+ */
 export async function getCardData(slug: string, now: Date = new Date()): Promise<MedSchoolCardData | null> {
   const school = await findSchool(slug);
   if (!school) return null;
   const cycleYear = await siteCycle(now);
-  const sums = await prisma.medCycleCount.groupBy({
-    by: ['source'],
-    where: {
-      schoolId: school.id,
-      cycleYear,
-      eventType: 'INTERVIEW',
-      program: { in: programsOf('ALL') },
-      ...floorWhere(now),
-    },
-    _sum: { count: true, publishedCount: true },
-  });
+  const [sums, classes, latestRows] = await Promise.all([
+    prisma.medCycleCount.groupBy({
+      by: ['source'],
+      where: {
+        schoolId: school.id,
+        cycleYear,
+        eventType: 'INTERVIEW',
+        program: { in: programsOf('ALL') },
+        ...floorWhere(now),
+      },
+      _sum: { count: true, publishedCount: true },
+    }),
+    classProfilesForSchool(school.id),
+    prisma.medCycleEvent.findMany({
+      where: { schoolId: school.id, cycleYear, source: { in: ['ADMIT', 'SDN'] } },
+      orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
+      take: 1,
+      select: { eventType: true, occurredAt: true },
+    }),
+  ]);
   const primary = pickPrimary(sums.map((x) => x.source));
   const hit = sums.find((x) => x.source === primary);
+  const newest = latestRows[0];
   return {
+    slug: school.slug,
     name: school.name,
     degree: school.degree,
     city: school.city,
     state: school.state,
     cycleYear,
     reported: hit ? { source: hit.source, count: publicSum(hit.source, hit._sum) } : null,
+    figures: headlineFigures(classes),
+    latest: newest
+      ? {
+          eventType: newest.eventType,
+          occurredAt: truncateToMinute(newest.occurredAt),
+          dayOnly: newest.occurredAt.toISOString().slice(10) === 'T00:00:00.000Z',
+        }
+      : null,
   };
 }
 

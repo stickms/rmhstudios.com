@@ -13,7 +13,7 @@ import { TrackerPage } from '@features/medschools/ui/tracker/TrackerPage';
 export const Route = createFileRoute('/med/tracker')({
   head: definePage({
     path: '/med/tracker',
-    title: 'My tracker | RMH Studios',
+    title: 'My tracker | RMH Med Schools',
     description: 'Your private medical school application tracker: schools, dates and optional anonymous sharing.',
     noIndex: true,
   }),
