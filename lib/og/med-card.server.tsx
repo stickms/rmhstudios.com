@@ -47,12 +47,12 @@ export const MED_PALETTE = {
 /** The status trios (`--app-med-<stem>-swatch / -ink / -text`), light. */
 export const MED_STATUS_COLORS: Record<string, { swatch: string; ink: string; text: string }> = {
   accept: { swatch: '#cfe8d2', ink: '#3e7a4c', text: '#3e7a4c' },
-  reject: { swatch: '#f3d2cc', ink: '#b4483e', text: '#b4483e' },
+  reject: { swatch: '#f8d3d0', ink: '#b3261e', text: '#b3261e' },
   hold: { swatch: '#ddd2ee', ink: '#4a2d7a', text: '#4a2d7a' },
   interview: { swatch: '#d6e9f7', ink: '#2f6795', text: '#2f6795' },
   waitlist: { swatch: '#f6e7b4', ink: '#7d5f0e', text: '#7d5f0e' },
   matric: { swatch: '#f5d5e3', ink: '#9a3466', text: '#9a3466' },
-  secondary: { swatch: '#f7dcc8', ink: '#9a4e22', text: '#9a4e22' },
+  secondary: { swatch: '#fde1cc', ink: '#b14408', text: '#b14408' },
   withdrawn: { swatch: '#e7e1d6', ink: '#5f5a68', text: '#5f5a68' },
 };
 
