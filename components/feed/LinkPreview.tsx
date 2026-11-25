@@ -60,7 +60,10 @@ export function LinkPreview({ url, className = '', onUnavailable }: LinkPreviewP
     setLoading(true);
     let cancelled = false;
 
-    api(ogOembedApi, { query: { type: 'og', url } })
+    // No retry: a preview is decoration, and the post hides its link while the card is pending. The default GET retry
+    // honours a 5xx's Retry-After (up to 60 s), which left a blank box and no link for a minute whenever the origin
+    // site refuses our fetch (axios.com answers 403, which /api/oembed reports as 502).
+    api(ogOembedApi, { query: { type: 'og', url }, retries: 0 })
       .then((result) => {
         if (cancelled) return;
         ogCache.set(url, result);

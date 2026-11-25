@@ -13,7 +13,7 @@ import { useEmojiInsert } from'@/lib/emoji/use-emoji-insert';
 import { useResolvedUser, useSession } from'@/components/Providers';
 import { buildOptimizedUrl } from'@/components/ui/OptimizedImage';
 import { Button } from'@/components/ui/button';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { MenuItem } from '@/components/ui/menu';
 import { usePopPresence } from '@/hooks/usePopPresence';
 import { api } from '@/lib/contract/client';
@@ -251,6 +251,9 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  >
  <DialogContent
  mobileFullscreen={mobileFullscreen}
+ // The close button lives in the header row below, so it shares that row's centre line by construction. The
+ // dialog's own corner button is positioned for a padded title (p-5/p-6) and sat below this header's centre.
+ hideClose
  aria-describedby={undefined}
  data-motion="rise"
  data-compose-sheet={mobileFullscreen ? undefined : ''}
@@ -271,7 +274,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  )}
  >
  {/* Header */}
- <div className="flex items-center justify-between border-b border-site-border py-3 pl-4 pr-14">
+ <div className="flex items-center justify-between border-b border-site-border py-3 pl-4 pr-3">
  <DialogTitle className="text-sm font-semibold">
  {t('palette-new-post', { defaultValue:'New post'})}
  </DialogTitle>
@@ -380,6 +383,14 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  onSelect={insertEmoji}
  />
  </div>
+
+ <DialogClose
+ aria-label={t('compose-close', { defaultValue: 'Close' })}
+ title={t('compose-close', { defaultValue: 'Close' })}
+ className="p-1.5 rounded-full text-site-text-muted hover:text-site-accent hover:bg-site-accent/10 transition-colors"
+ >
+ <X className="w-4.5 h-4.5" aria-hidden />
+ </DialogClose>
  </div>
  </div>
 
