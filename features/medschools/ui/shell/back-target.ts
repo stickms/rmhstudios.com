@@ -9,7 +9,7 @@ export function isMedIndex(pathname: string): boolean {
 
 /**
  * The index is the app's home, so its left button is a home link to the site (`/`); every other page is one step below
- * the index, which is where back goes when there is no earlier page of this session.
+ * the index, and back always goes there (owner 2026-11-24: one level up, not the browser history).
  */
 export function backTargetFor(pathname: string): BackTarget {
   return isMedIndex(pathname) ? '/' : '/med';

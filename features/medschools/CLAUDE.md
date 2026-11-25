@@ -53,15 +53,15 @@ longer govern this feature**; the admin page does not move with it (`components/
   `/med` is in `SITE_SHEET_ROUTES` (`lib/style-tier.ts`): it takes the lean site stylesheet, not the app superset
   (`--app-*` utilities are already in it).
 - **Shell (`ui/shell/`).** `MedApp` (AppShell + `.app-page`, the cookie notice, a grid of the main column and the live
-  rail), `MedTopBar` (over the main column only: 44px round back button, always present: the session's history, else `/`
-  from the index and the index from everywhere else; the app's name; `HeaderActions`), `useMedMode` and `ThemeToggle`.
-  **Header (owner 2026-11-24):** `HeaderActions` is one group at the bar's end, on the title's row at every width (the
-  title ends in an ellipsis on a narrow phone; the icons never wrap): Interview practice (`Mic`), Live activity
-  (`Activity`), the member's area (`UserRound`) and the light/dark toggle, each a 44px round link or button with an
-  accessible name and a `title`. A page never links to itself (no Live on `/med/live`, no practice on `/med/practice`).
-  The member's area, signed in, is an `AnchoredMenu` (keyboard, Escape, focus back): My cycle (`/med/tracker`), My
-  school lists, Preferences (`/med/lists#preferences`), Ask about schools; "My stats" joins it when it exists. On those
-  pages the button is the ink fill and the item is `aria-current`. Signed out it is a link to
+  rail), `MedTopBar` (over the main column only: 44px round back button, always present: one level up, never the browser
+  history (owner 2026-11-24): `/` from the index and the index from everywhere else; the app's name; `HeaderActions`),
+  `useMedMode` and `ThemeToggle`. **Header (owner 2026-11-24):** `HeaderActions` is one group at the bar's end, on the
+  title's row at every width (the title ends in an ellipsis on a narrow phone; the icons never wrap): Interview practice
+  (`Mic`), Live activity (`Activity`), the member's area (`UserRound`) and the light/dark toggle, each a 44px round link
+  or button with an accessible name and a `title`. A page never links to itself (no Live on `/med/live`, no practice on
+  `/med/practice`). The member's area, signed in, is an `AnchoredMenu` (keyboard, Escape, focus back): My cycle
+  (`/med/tracker`), My school lists, Preferences (`/med/lists#preferences`), Ask about schools; "My stats" joins it when
+  it exists. On those pages the button is the ink fill and the item is `aria-current`. Signed out it is a link to
   `/login?callbackURL=<this page>`. The index's old link row (`Places`) is gone; the school page's member links moved
   into the same menu. **The rail** is in the server HTML at every width (frame, the open-live icon link
   `SquareArrowOutUpRight`, the search, the two filters and `RailSkeleton`'s eight static rows) and CSS shows the column
