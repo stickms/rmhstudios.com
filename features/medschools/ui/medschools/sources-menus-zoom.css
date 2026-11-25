@@ -379,6 +379,29 @@
   inset-inline-start: 0;
   inset-inline-end: auto;
 }
+/* "My schools" in the rail: the compact multi-selects' height and text, on its own line under them. */
+.medapp-select.medapp-select--compact {
+  min-block-size: 36px;
+  block-size: 36px;
+  padding-inline-start: 10px;
+  font-size: var(--app-med-text-secondary);
+}
+.medapp-rail-filters__wide {
+  grid-column: 1 / -1;
+}
+/* A text button inside a muted note ("Clear saved filters"): the note's words, underlined, with a 44px target that
+   does not move the line. */
+.medapp-inlinebtn {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 44px;
+  margin-block: -12px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
 
 /* ── Chart zoom: three small round buttons over the plot's end, and the grab cursor once zoomed ─ */
 .medapp-zoom {

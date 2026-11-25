@@ -11,20 +11,21 @@ import type { ChanceDto, TrackerApplicationDto } from '../medschools.contract';
 /**
  * Which earlier milestone a step is measured from, first match wins: the first candidate the application has with a
  * date on or before the step. A decision counts from the interview invite, or from complete when there was no invite
- * (a rejection before any interview). Withdrawn and submitted are not waits.
+ * (a rejection before any interview), and from the secondary submitted date when there is no complete date (owner
+ * 2026-11-24). Withdrawn and submitted are not waits.
  */
 const MEASURED_FROM: Record<MilestoneType, readonly MilestoneType[]> = {
   SUBMITTED: [],
   COMPLETE: ['SUBMITTED'],
   SECONDARY: ['COMPLETE'],
   SECONDARY_SUBMITTED: ['SECONDARY'],
-  INTERVIEW: ['COMPLETE'],
-  WAITLIST: ['INTERVIEW', 'COMPLETE'],
-  REJECTION: ['INTERVIEW', 'COMPLETE'],
-  ACCEPTANCE: ['INTERVIEW', 'COMPLETE'],
+  INTERVIEW: ['COMPLETE', 'SECONDARY_SUBMITTED'],
+  WAITLIST: ['INTERVIEW', 'COMPLETE', 'SECONDARY_SUBMITTED'],
+  REJECTION: ['INTERVIEW', 'COMPLETE', 'SECONDARY_SUBMITTED'],
+  ACCEPTANCE: ['INTERVIEW', 'COMPLETE', 'SECONDARY_SUBMITTED'],
   MATRICULATED: ['ACCEPTANCE'],
   WITHDRAWN: [],
-  HOLD: ['INTERVIEW', 'COMPLETE'],
+  HOLD: ['INTERVIEW', 'COMPLETE', 'SECONDARY_SUBMITTED'],
 };
 
 export interface TimelineEntry {

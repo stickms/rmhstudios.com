@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { SdnOverride } from '../engine/sdn-match';
 import { parseSummaryKey, summaryKey } from '../engine/sdn-title';
-import type { RegistryFile, SdnAliasFile } from './registry';
+import { registryKeyOf, type RegistryFile, type SdnAliasFile } from './registry';
 
 const read = <T>(name: string): T =>
   JSON.parse(readFileSync(join(process.cwd(), 'data/medschools', name), 'utf8')) as T;
@@ -11,15 +11,20 @@ const read = <T>(name: string): T =>
 const file = read<SdnAliasFile>('sdn-aliases.json');
 const schools = read<RegistryFile>('schools.json').schools;
 const overrides = read<Record<string, SdnOverride>>('sdn-overrides.json');
-const registryKeys = new Set(
-  schools.flatMap((s) => s.aliases.filter((a) => a.source === 'CYCLETRACK').map((a) => a.sourceKey)),
-);
+/** CycleTrack keys, plus the shortName of each registry extra CycleTrack does not list. */
+const registryKeys = new Set(schools.map(registryKeyOf));
 
 /**
  * Schools allowed to have no SDN thread stem: no current-cycle thread exists for them on SDN (Drew/UCLA shares the
- * Drew thread; CUNY has a summary page only). This list may only shrink.
+ * Drew thread; CUNY and the two campuses that opened in 2026, LECOM Jacksonville and LMU-DCOM Orange Park, have a
+ * summary page only). This list may only shrink, except by a school that joins the registry without a thread.
  */
-const NO_THREAD_ALLOWED = ['Charles R. Drew-UCLA', 'City University of New York'];
+const NO_THREAD_ALLOWED = [
+  'Charles R. Drew-UCLA',
+  'City University of New York',
+  'Lake Erie - Jacksonville',
+  'Lincoln Memorial - Orange Park',
+];
 
 describe('sdn-aliases.json', () => {
   it('every cycletrackKey exists in schools.json', () => {

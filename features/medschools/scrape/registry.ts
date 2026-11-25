@@ -4,7 +4,10 @@
  * `buildRegistry` is pure: the script feeds it the sitemap keys, the
  * `/explorer/first` rows and each school page's HTML, and a human settles
  * whatever lands in `review` through `data/medschools/overrides.json`.
- * The seed functions load the committed, reviewed files into the database.
+ * Schools CycleTrack does not list (a new programme, a separately admitting
+ * campus) are hand-maintained in data/medschools/registry-extra.json and passed
+ * in as `extras`, so a re-run keeps them. The seed functions load the
+ * committed, reviewed files into the database.
  */
 import { isCanadianLocation, normalizeSchoolKey, slugify } from '../engine/names';
 import type { FirstRow } from './adapters/cycletrack';
@@ -44,6 +47,15 @@ export interface CycleSeed {
   dateEstimated: boolean;
 }
 
+/**
+ * The key the alias files (`cycletrackKey` in admit-aliases.json, sdn-aliases.json and their overrides) name a school
+ * by: its CycleTrack key, or its shortName when CycleTrack does not list it (an `extras` school). The Admit and SDN
+ * matchers already fall back the same way.
+ */
+export function registryKeyOf(s: Pick<RegistrySchool, 'aliases' | 'shortName'>): string {
+  return s.aliases.find((a) => a.source === 'CYCLETRACK')?.sourceKey ?? s.shortName;
+}
+
 export type ExcludeReason = 'canadian' | 'no-first-row' | 'no-title';
 
 const TITLE = /^(.*?)(?:\s+(MD|DO))?\s+Admissions Data(?:\s+\((.*)\))?\s*\|\s*CycleTrack$/s;
@@ -73,6 +85,8 @@ export function buildRegistry(input: {
   first: FirstRow[];
   titles: Record<string, string>;
   overrides: Record<string, Partial<RegistrySchool>>;
+  /** Hand-maintained schools CycleTrack does not list, slug set, no CYCLETRACK alias. */
+  extras?: RegistrySchool[];
 }): {
   schools: RegistrySchool[];
   excluded: Array<{
@@ -161,6 +175,16 @@ export function buildRegistry(input: {
     taken.add(slug);
     s.slug = slug;
   }
+  const keys = new Set(built.map((s) => registryKeyOf(s)));
+  for (const x of input.extras ?? []) {
+    // An extra that CycleTrack now lists belongs in overrides.json instead; a clash is a human decision.
+    if (!x.slug || taken.has(x.slug)) throw new Error(`registry extra ${x.slug || x.shortName}: slug missing or taken`);
+    if (x.aliases.some((a) => a.source === 'CYCLETRACK') || keys.has(x.shortName))
+      throw new Error(`registry extra ${x.slug}: CycleTrack lists it; move it to overrides.json`);
+    taken.add(x.slug);
+    keys.add(x.shortName);
+    built.push(x);
+  }
   built.sort((a, b) => a.slug.localeCompare(b.slug));
   return {
     schools: built,
@@ -170,6 +194,27 @@ export function buildRegistry(input: {
 }
 
 const aliasId = (source: string, key: string) => `${source}\u0000${key}`;
+
+/**
+ * Resolves an alias file's registry key (`registryKeyOf`) to a school id: the owner of that CYCLETRACK alias, else the
+ * one school with that shortName and no CYCLETRACK alias (a registry extra). Undefined when neither is found, or when
+ * two such schools share the shortName (never guessed).
+ */
+async function registryKeyResolver(
+  prisma: SeedPrisma,
+  existing: Array<{ schoolId: string; source: MedSource; sourceKey: string }>,
+): Promise<(key: string) => string | undefined> {
+  const byCycletrack = new Map(
+    existing.filter((a) => a.source === 'CYCLETRACK').map((a) => [a.sourceKey, a.schoolId] as const),
+  );
+  const withCycletrack = new Set(byCycletrack.values());
+  const byShortName = new Map<string, string | null>();
+  for (const row of await prisma.medSchool.findMany({ select: { id: true, shortName: true } })) {
+    if (withCycletrack.has(row.id) || !row.shortName) continue;
+    byShortName.set(row.shortName, byShortName.has(row.shortName) ? null : row.id);
+  }
+  return (key) => byCycletrack.get(key) ?? byShortName.get(key) ?? undefined;
+}
 
 /**
  * Seeds the registry and converges: every call creates whichever schools and
@@ -289,8 +334,9 @@ export interface AdmitAliasFile {
 }
 
 /**
- * Attaches the reviewed Admit slugs to schools through their CYCLETRACK alias.
- * `unmatched` lists the Admit slugs whose CycleTrack key has no school here.
+ * Attaches the reviewed Admit slugs to schools through their registry key (the
+ * CYCLETRACK alias, or a registry extra's shortName: `registryKeyResolver`).
+ * `unmatched` lists the Admit slugs whose key has no school here.
  * A pair that would break the one-key-per-source rule is skipped, never moved,
  * and reported in `skipped` for the caller to log: an existing alias is not
  * touched, so a second call creates nothing.
@@ -323,6 +369,7 @@ export async function seedAdmitAliases(
     });
     aliasesOf.set(a.schoolId, list);
   }
+  const schoolOf = await registryKeyResolver(prisma, existing);
   let created = 0;
   const unmatched: string[] = [];
   const skipped: Array<{
@@ -330,7 +377,7 @@ export async function seedAdmitAliases(
     admitSlug: string;
   }> = [];
   for (const pair of file.aliases) {
-    const schoolId = ownerOf.get(aliasId('CYCLETRACK', pair.cycletrackKey));
+    const schoolId = schoolOf(pair.cycletrackKey);
     if (schoolId === undefined) {
       unmatched.push(pair.admitSlug);
       continue;
@@ -425,10 +472,10 @@ export interface SdnAliasFile {
 }
 
 /**
- * Attaches the reviewed SDN keys (each thread stem and the summary key) to schools through their CYCLETRACK
- * alias. SDN is a multi-key source, so a school may hold several; a key owned by another school is skipped and
- * reported, never moved, and a second call creates nothing. `unmatched` lists the keys whose CycleTrack key has no
- * school here.
+ * Attaches the reviewed SDN keys (each thread stem and the summary key) to schools through their registry key (the
+ * CYCLETRACK alias, or a registry extra's shortName). SDN is a multi-key source, so a school may hold several; a key
+ * owned by another school is skipped and reported, never moved, and a second call creates nothing. `unmatched` lists
+ * the keys whose registry key has no school here.
  */
 export async function seedSdnAliases(
   prisma: SeedPrisma,
@@ -446,12 +493,13 @@ export async function seedSdnAliases(
     list.push({ source: a.source, sourceKey: a.sourceKey });
     aliasesOf.set(a.schoolId, list);
   }
+  const schoolOf = await registryKeyResolver(prisma, existing);
   let created = 0;
   const unmatched: string[] = [];
   const skipped: Array<{ cycletrackKey: string; key: string }> = [];
   for (const entry of file.aliases) {
     const keys = [...entry.threadStems, ...(entry.summary ? [summaryKey(entry.summary.code, entry.summary.slug)] : [])];
-    const schoolId = ownerOf.get(aliasId('CYCLETRACK', entry.cycletrackKey));
+    const schoolId = schoolOf(entry.cycletrackKey);
     if (schoolId === undefined) {
       unmatched.push(...keys);
       continue;

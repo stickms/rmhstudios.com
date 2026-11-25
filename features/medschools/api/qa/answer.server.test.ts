@@ -250,6 +250,7 @@ describe('my chance: the caller own estimate, never sent to the model', () => {
     program: 'REG',
     status: 'estimate',
     completeOn: '2026-08-02',
+    completeFrom: 'complete',
     invitedOn: null,
     asOf: '2026-11-22',
     basis: 40,

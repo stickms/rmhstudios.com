@@ -4,6 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { MedSelect } from './controls/MedSelect';
 import { ARRIVE } from '@/components/ui/arrive';
+import { mineOfSearch, mineToSearch, schoolsParam, type MineChoice } from '../engine/mine';
+import { pickFilter } from '../engine/saved-filters';
 import { parseLiveSearch } from '../engine/search';
 import type { MedEventTypeId } from '../medschools.contract';
 import {
@@ -23,6 +25,9 @@ import { useMedLabels } from './labels';
 import { PageHead } from './shell/PageHead';
 import { MedEmpty } from './MedEmpty';
 import { MedButton } from './controls/MedButton';
+import { MineSelect, MineSignedOutNote, useMineEmptyText } from './MineSelect';
+import { clearSavedFilters, saveFilters, useSavedFilters } from './useSavedFilters';
+import { useMineFilter } from './useMineFilter';
 
 const EVENT_TYPES: readonly MedEventTypeId[] = [
   'INTERVIEW',
@@ -42,30 +47,50 @@ export function LivePage() {
   const search = parseLiveSearch(useSearch({ strict: false }) as Record<string, unknown>);
 
   const schools = useQuery(schoolsQuery({}));
-  // The URL where it speaks, the viewer's preferences where it is silent (D13/D14).
+  // The URL where it speaks, then this device's saved filters (shared with the index), then the viewer's preferences.
   const { view, setSearch: setView } = useEffectiveView('live', search);
+  const saved = useSavedFilters().page;
+  const states = pickFilter(search.states, saved?.states, undefined, [] as string[]);
+  const mine = useMineFilter(mineOfSearch(search), saved?.mine);
   const schoolDegree = schoolDegreeOf(schools.data?.schools, search.school);
-  const filters = resolveLiveFilters(liveSearchOf(search, view), schoolDegree);
+  // "My schools" reaches the feed as the explicit public `schools=` list (sorted, capped): never a user.
+  const filters = resolveLiveFilters(
+    liveSearchOf({ ...search, states: states.value }, view, mine.slugs ? schoolsParam(mine.slugs) : undefined),
+    schoolDegree,
+  );
+  const mineEmpty = useMineEmptyText();
+  const fromDevice = view.fromDevice || states.from === 'device' || mine.fromDevice;
 
   const setSearch = (next: {
     type?: MedEventTypeId | undefined;
     school?: string | undefined;
     states?: string[] | undefined;
+    mine?: MineChoice | null;
   }) => {
-    const m = { ...search, ...next };
     holdScroll();
     void navigate({
       to: '/med/live',
-      // The preference key (`programs`) stays as the URL had them; only the page's own keys are rebuilt.
-      search: ((prev: Record<string, unknown>) => ({
-        ...prev,
-        type: m.type || undefined,
-        school: m.school || undefined,
-        state: m.states?.length ? m.states.join(',') : undefined,
-      })) as never,
+      // The preference key (`programs`) stays as the URL had it, and so does every key this change does not name.
+      search: ((prev: Record<string, unknown>) => {
+        const out: Record<string, unknown> = { ...prev };
+        if ('type' in next) out.type = next.type || undefined;
+        if ('school' in next) out.school = next.school || undefined;
+        if ('states' in next) out.state = next.states?.length ? next.states.join(',') : undefined;
+        if ('mine' in next) Object.assign(out, mineToSearch(next.mine ?? null));
+        return out;
+      }) as never,
       replace: true,
       resetScroll: false,
     });
+  };
+  // Changing a filter remembers it on this device (the same set as the index); "all" forgets it.
+  const setStates = (next: string[]) => {
+    saveFilters('page', { states: next });
+    setSearch({ states: next });
+  };
+  const setMine = (next: MineChoice | null) => {
+    saveFilters('page', { mine: next });
+    setSearch({ mine: next });
   };
 
   // One column at the index's 16px rhythm (owner 2026-11-24): title, filters and list read as one block.
@@ -86,30 +111,44 @@ export function LivePage() {
               </option>
             ))}
           </MedSelect>
-          <MedSelect
-            aria-label={t('live-school-label', { defaultValue: 'School' })}
-            value={search.school ?? ''}
-            onChange={(e) => setSearch({ school: e.target.value || undefined })}
-          >
-            <option value="">{t('live-school-all', { defaultValue: 'All schools' })}</option>
-            {(schools.data?.schools ?? []).map((s) => (
-              <option key={s.slug} value={s.slug}>
-                {s.shortName}
-              </option>
-            ))}
-          </MedSelect>
-          <StateMultiSelect
-            states={schools.data?.states ?? []}
-            value={search.states ?? []}
-            onChange={(states) => setSearch({ states })}
-          />
+          {mine.signedIn ? (
+            <MineSelect
+              value={mine.choice}
+              lists={mine.lists}
+              onChange={setMine}
+              schools={{
+                options: schools.data?.schools ?? [],
+                value: search.school,
+                onChange: (school) => setSearch({ school }),
+              }}
+            />
+          ) : (
+            <MedSelect
+              aria-label={t('live-school-label', { defaultValue: 'School' })}
+              value={search.school ?? ''}
+              onChange={(e) => setSearch({ school: e.target.value || undefined })}
+            >
+              <option value="">{t('live-school-all', { defaultValue: 'All schools' })}</option>
+              {(schools.data?.schools ?? []).map((s) => (
+                <option key={s.slug} value={s.slug}>
+                  {s.shortName}
+                </option>
+              ))}
+            </MedSelect>
+          )}
+          <StateMultiSelect states={schools.data?.states ?? []} value={states.value} onChange={setStates} />
           <ProgramMultiSelect value={view.programs} onChange={(programs) => setView({ programs })} />
         </div>
-        <PrefsNote fromPrefs={view.fromPrefs} />
+        {mine.signedIn ? null : <MineSignedOutNote search={search} />}
+        <PrefsNote fromPrefs={view.fromPrefs} fromDevice={fromDevice} onClearSaved={() => clearSavedFilters('page')} />
       </div>
       {/* One feed across filter changes: the old rows stay, dimmed, until the new filter's first page replaces them. */}
       <div className="medapp-fill">
-        <LiveList filters={filters} />
+        {mine.choice && mine.slugs?.size === 0 ? (
+          <MedEmpty title={mineEmpty(mine.choice)} />
+        ) : (
+          <LiveList filters={filters} />
+        )}
       </div>
     </div>
   );

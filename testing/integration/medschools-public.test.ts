@@ -415,6 +415,35 @@ describe('RMH Med Schools, public and anonymous', () => {
     }
   });
 
+  it('filters the live feed and the Today summary by an explicit schools= list (owner 2026-11-24: My cycle, My lists)', async () => {
+    const all = await anon.get(`/api/medschools/live?school=${SLUG}&limit=100`);
+    expect(all.body.events.length).toBeGreaterThan(0);
+    // The fixture school among others (any order, a repeat): exactly its events, the same pinned keys.
+    const listed = await anon.get(`/api/medschools/live?schools=zz-not-a-school,${SLUG},${SLUG}&limit=100`);
+    expect(listed.status).toBe(200);
+    expect(Object.keys(listed.body).sort()).toEqual(['asOf', 'events', 'nextCursor']);
+    for (const e of listed.body.events) expect(Object.keys(e).sort()).toEqual(LIVE_EVENT_KEYS);
+    expect(listed.body.events.map((e: { id: string }) => e.id)).toEqual(
+      all.body.events.map((e: { id: string }) => e.id),
+    );
+    expect(listed.headers.get('cache-control')).toMatch(/public/);
+    // An unknown slug matches nothing; with `school` the two intersect.
+    expect((await anon.get('/api/medschools/live?schools=zz-not-a-school')).body.events).toEqual([]);
+    expect((await anon.get(`/api/medschools/live?school=${SLUG}&schools=zz-not-a-school`)).body.events).toEqual([]);
+    const summary = await anon.get(`/api/medschools/live/summary?schools=${SLUG}`);
+    expect(summary.status).toBe(200);
+    expect(Object.keys(summary.body).sort()).toEqual(LIVE_SUMMARY_KEYS);
+    for (const a of summary.body.active as { school: { slug: string } }[]) expect(a.school.slug).toBe(SLUG);
+    // Validation: malformed, upper case, empty, more than 300.
+    const tooMany = Array.from({ length: 301 }, (_, i) => `s${i}`).join(',');
+    for (const bad of ['Duke', 'duke,', ',duke', 'a;b', tooMany]) {
+      expect((await anon.get(`/api/medschools/live?schools=${encodeURIComponent(bad)}`)).status, bad.slice(0, 12)).toBe(
+        400,
+      );
+      expect((await anon.get(`/api/medschools/live/summary?schools=${encodeURIComponent(bad)}`)).status).toBe(400);
+    }
+  });
+
   it('filters by several states at once (owner 2026-11-24): known codes only, at most ten, a single code still works', async () => {
     type School = { slug: string; state: string };
     const schools = async (state: string) => anon.get(`/api/medschools/schools?state=${state}`);

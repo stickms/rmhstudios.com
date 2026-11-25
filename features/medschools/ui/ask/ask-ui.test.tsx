@@ -326,6 +326,7 @@ describe('AnswerView', () => {
       program: 'REG',
       status: 'thin',
       completeOn: null,
+      completeFrom: null,
       invitedOn: null,
       asOf: null,
       basis: null,

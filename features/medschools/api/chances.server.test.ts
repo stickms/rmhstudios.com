@@ -198,6 +198,7 @@ describe('privacy', () => {
       'applicationId',
       'asOf',
       'basis',
+      'completeFrom',
       'completeOn',
       'invitedOn',
       'points',

@@ -357,6 +357,25 @@ only page components import `ui/charts`. Route files must not (`ui-rules.test.ts
 the lazy page chunk. `scripts/check-entry-composition.ts --strict` has tripwires for both; `validateSearch` is
 hand-rolled (`engine/search.ts`) because zod is forbidden in the entry.
 
+## The registry (`data/medschools/schools.json`)
+
+234 schools (167 MD, 67 DO), loaded by the medschools worker at start (`seedRegistryIfEmpty`, which creates what is
+missing and never overwrites an admin's edit). 221 come from CycleTrack (`scripts/medschools/build-registry.ts`, settled
+by `overrides.json`); the 13 CycleTrack does not list are hand-maintained in `registry-extra.json`, which the build
+carries into the output unchanged. Checked against the official lists on 2026-11-24 (`registry-extra.json`'s header):
+every programme in the LCME directory of accredited US MD programs (165 rows, Puerto Rico included; preliminary
+programmes count, they admit) is here, plus Cleveland Clinic Lerner and Charles R. Drew/UCLA, which admit separately but
+have no LCME row of their own; every COCA college is here except Niazee COM (no accreditation status in the September
+2026 directory), and a campus is its own entry when it admits its own class (PCOM, VCOM, LECOM, LMU-DCOM, KCU, Touro,
+Rocky Vista Montana, WesternU Northwest, NYITCOM Arkansas, Burrell Florida). Teaching sites of one programme are not
+schools (MSUCOM Detroit and Macomb, OU-HCOM Cleveland and Dublin, Rowan-Virtua Sewell, NSU-KPCOM Clearwater, RVUCOM
+Southern Utah, Mayo's Arizona and Florida campuses, UMN Duluth): their Admit and SDN keys stay in the ignored lists.
+Every school of one university that is separately accredited or admits separately is its own entry (Case Western and
+Cleveland Clinic Lerner, the two Rutgers schools, MSU's CHM and COM, Texas Tech Lubbock and El Paso, Nova's MD and DO
+colleges, the UC and UT schools). The alias files name a school by its registry key (`registryKeyOf`: the CycleTrack
+key, or an extra's shortName); a name that is not certain stays for the admin alias queue, never guessed. The curated
+files (school pages, class profiles, MD-PhD) predate the 13 extras and have no entry for them yet.
+
 ## School crests
 
 `public/images/medschools/crests/<slug>.webp` (96x96) are downloaded once from Admit's `crest_url` by
@@ -514,6 +533,12 @@ tab component in `ui/`. The Forecast tab is `ui/ForecastTab.tsx` with `ui/charts
   an addition: signed out, loading or failed, the page is whole without it.
 
 ## Timeline and silence check (roadmap item 4)
+
+**No complete date (owner 2026-11-24):** where a member entered no `COMPLETE` milestone, the secondary submitted date
+(`SECONDARY_SUBMITTED`) stands in, through one helper, `completeDateOf` in `engine/tracker.ts`: the chance line and
+silence check (`getChances`, which returns `completeFrom: 'complete' | 'secondary-submitted'` so the page says "since
+your secondary was submitted"), the timeline's waits (`MEASURED_FROM`) and the wait-curve observations
+(`loadObservationRows`: `COALESCE` of the two). The sharing row's wording says so (`share-wait-note-secondary`).
 
 Plan: `docs/superpowers/plans/2026-11-24-rmh-medschool-timeline-silence.md`. On the tracker page, no new endpoint.
 `engine/timeline.ts` (pure, client-safe): `buildTimeline` turns the caller's own `TrackerApplicationDto` rows into one
@@ -970,6 +995,24 @@ tracker dates; the member reviews a preview and presses "Add to my tracker". End
   prefetches the public queries with explicit parameters, so the public cache keys never carry a list, user or
   preference. `?list=<id>|all` on the index is a client filter over the returned schools. `/med/lists` holds the lists
   and the preferences (`#preferences`).
+- **Saved filters (owner 2026-11-24, `engine/saved-filters.ts`, `ui/useSavedFilters.ts`).** The program set, the states
+  and "My schools" are remembered on this device (`localStorage['rmh-medschool-filters']`, never the account; every
+  access through `lib/core/persist`). One precedence, `pickFilter`: an explicit URL value wins, else this device's
+  value, else the member's preferences (programs only, D13/D14), else the default. Two scopes: the index and the live
+  page share `page` (a state picked on one applies on the other); the rail keeps `rail` (programs, event types, "My
+  schools") so a change beside the page never moves it. A change saves; choosing "all" forgets that filter. The server
+  cannot read it, so the server HTML is the URL's view and the page moves to the saved filters right after hydration
+  through the in-place path (previous answer dimmed, no scroll change); the public cache keys stay user-free.
+  `PrefsNote` says "Showing your saved filters." with a Clear button while one is in effect (index and live).
+- **My schools (owner 2026-11-24, `engine/mine.ts`, `ui/MineSelect.tsx`, `ui/useMineFilter.ts`).** Signed in, the index,
+  the live page and the rail have one select: All schools, My cycle (the newest tracker cycle, `me/tracker`), All my
+  lists, or one list (`me/lists`). URL: `?mine=cycle`, `?list=all|<id>`; remembered like the other filters. The index
+  filters the public school list in the browser (as `?list=` always did); the live feed and the Today column pass the
+  slugs as the public `schools=` parameter (`GET /live`, `GET /live/summary`: 1 to 300 slugs, validated, deduped and
+  sorted by the reader, intersected with `school`; anyone can type it, so it is user-independent). An empty set asks for
+  nothing and says so. The loaders fetch the private answer only when the URL names a choice and the viewer is signed
+  in; the rail's private reads run only from 1280px. The old `?list=` select rendered only for a member who already had
+  a list and never on the live page or the rail, and there was no cycle choice.
 - **Activity rail.** `ui/shell/MedApp.tsx` mounts the lazy rail beside the page (>= 1280px only; neither rendered nor
   fetched below; it used to be the Steel shell's margin takeover). `ui/rail/ActivityRail.tsx` uses `useLiveFeed` (60 s
   head refetch, M9 fade) and one `IntersectionObserver` on the sentinel through `useSentinel` to load older pages: data

@@ -6,9 +6,11 @@ import { Bookmark, Clock3, TrendingUp, Waves } from 'lucide-react';
 import { useArrival } from '@/components/ui/arrive';
 import { useSession } from '@/components/session/session-context';
 import { cn } from '@/lib/utils';
+import { mineOfSearch, schoolsParam } from '../../engine/mine';
 import { programsQueryValue } from '../../engine/programs';
+import { pickFilter } from '../../engine/saved-filters';
 import { SCHOOL_SEARCH_DEFAULTS, parseLiveSearch } from '../../engine/search';
-import type { LiveSchoolDto, MedEventTypeId } from '../../medschools.contract';
+import type { LiveSchoolDto, MedEventTypeId, MedLiveSummaryRes } from '../../medschools.contract';
 import {
   indexQuery,
   listsQuery,
@@ -25,6 +27,8 @@ import { StatusIcon } from '../status/StatusIcon';
 import { StatusText } from '../status/StatusText';
 import { statusOfEvent } from '../status/status';
 import { useEffectiveView } from '../useEffectiveView';
+import { useMineFilter } from '../useMineFilter';
+import { useSavedFilters } from '../useSavedFilters';
 import { TodaySkeleton } from './TodaySkeleton';
 import { livePollInterval, useLiveSignal } from '../useLiveSignal';
 import { memberSlugs, yourSchools } from './your-schools';
@@ -36,25 +40,36 @@ import { memberSlugs, yourSchools } from './your-schools';
  * signed in only, the newest public status at the member's own schools. Every query here is `enabled` only while the
  * column shows, so nothing (an invalidation included) fetches them on a phone.
  */
+const NO_SUMMARY: MedLiveSummaryRes = { asOf: '', since: '', counts: [], waves: [], active: [] };
+
 export default function TodaySummary({ enabled }: { enabled: boolean }) {
   const { t } = useTranslation('medschools');
   const raw = useSearch({ strict: false }) as Record<string, unknown>;
   const search = parseLiveSearch(raw);
   const { view } = useEffectiveView('live', search);
+  // The page's own filters, resolved the same way (the URL, else this device's saved ones), so the column and the feed
+  // beside it always count the same events.
+  const saved = useSavedFilters().page;
+  const states = pickFilter(search.states, saved?.states, undefined, [] as string[]).value;
+  const mine = useMineFilter(mineOfSearch(search), saved?.mine, { enabled });
   const programs = programsQueryValue(view.programs);
+  const schools = mine.slugs ? schoolsParam(mine.slugs) : undefined;
   const filters: LiveSummaryFilters = {
     ...(programs ? { programs } : {}),
-    ...(search.states?.length ? { state: search.states.join(',') } : {}),
+    ...(states.length ? { state: states.join(',') } : {}),
+    ...(schools ? { schools } : {}),
   };
   // The live signal refreshes the summary (and "Your schools", through the school list); only from 1280px.
   const connected = useLiveSignal(enabled);
+  // A "My schools" set with no schools asks for nothing, as the feed beside it: every block reads empty.
+  const none = !!mine.slugs && mine.slugs.size === 0;
   const query = useQuery({
     ...liveSummaryQuery(filters),
-    enabled,
+    enabled: enabled && !none,
     refetchInterval: livePollInterval(connected),
     refetchIntervalInBackground: false,
   });
-  const data = query.data;
+  const data = none ? NO_SUMMARY : query.data;
   const arrived = useArrival(!!data);
 
   if (query.isError && !data) {
@@ -65,7 +80,7 @@ export default function TodaySummary({ enabled }: { enabled: boolean }) {
     );
   }
   if (!data) return <TodaySkeleton />;
-  const stale = query.isPlaceholderData;
+  const stale = !none && query.isPlaceholderData;
   return (
     <div
       className={cn('medapp-today__blocks medapp-swap', stale && 'medapp-stale', arrived)}

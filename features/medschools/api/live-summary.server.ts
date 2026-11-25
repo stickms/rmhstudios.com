@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma.server';
 import { utcDayOf } from '../engine/public-read';
+import { slugsOf } from '../engine/mine';
 import { parsePrograms } from '../engine/programs';
 import type { MedEventType } from '../engine/types';
 import type { LiveSchoolDto, MedLiveSummaryRes } from '../medschools.contract';
@@ -41,7 +42,12 @@ export async function getLiveSummary(q: LiveSummaryQuery, now: Date = new Date()
       // No cycle filter, as the live feed beside it has none: the 24-hour window is the bound, so the counts equal the
       // feed's rows across the June rollover. Waves (below) are per cycle and read the site cycle.
       occurredAt: { gte: since, lte: now },
-      school: { active: true, ...(states ? { state: { in: states } } : {}) },
+      school: {
+        active: true,
+        ...(states ? { state: { in: states } } : {}),
+        // "My cycle" / "My lists" on the live page: an explicit slug list, the same as the feed's.
+        ...(q.schools ? { slug: { in: slugsOf(q.schools) } } : {}),
+      },
       ...(and.length > 0 ? { AND: and } : {}),
     },
     _count: { _all: true },

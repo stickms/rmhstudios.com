@@ -3,13 +3,14 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { defaultDayZero } from '../engine/cycle';
 import { isCanadianLocation } from '../engine/names';
-import type { CycleSeed, RegistryFile } from './registry';
+import { registryKeyOf, type CycleSeed, type RegistryFile, type RegistrySchool } from './registry';
 
 const read = <T>(name: string): T =>
   JSON.parse(readFileSync(join(process.cwd(), 'data/medschools', name), 'utf8')) as T;
 
 const file = read<RegistryFile>('schools.json');
 const cycles = read<CycleSeed[]>('cycles.json');
+const extras = read<{ schools: RegistrySchool[] }>('registry-extra.json').schools;
 
 describe('data/medschools/schools.json', () => {
   it('holds only US MD/DO schools with a two-letter non-Canadian state', () => {
@@ -38,6 +39,23 @@ describe('data/medschools/schools.json', () => {
     // `/med/$slug` is a param route; `live` is a page now and `tracker`, `lists`, `ask` are coming.
     const reserved = new Set(['tracker', 'lists', 'live', 'ask']);
     expect(file.schools.filter((s) => reserved.has(s.slug)).map((s) => s.slug)).toEqual([]);
+  });
+
+  it('carries every hand-maintained extra verbatim, with no CycleTrack alias', () => {
+    const bySlug = new Map(file.schools.map((s) => [s.slug, s]));
+    for (const x of extras) {
+      expect(bySlug.get(x.slug), x.slug).toEqual(x);
+      expect(
+        x.aliases.filter((a) => a.source === 'CYCLETRACK'),
+        x.slug,
+      ).toEqual([]);
+      expect(x.website ?? '', x.slug).toMatch(/^https:\/\//);
+    }
+  });
+
+  it('gives every school a distinct registry key (the name the alias files use)', () => {
+    const keys = file.schools.map(registryKeyOf);
+    expect(keys.filter((k, i) => keys.indexOf(k) !== i)).toEqual([]);
   });
 
   it('is the expected size', () => {

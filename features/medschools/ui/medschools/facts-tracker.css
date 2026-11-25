@@ -190,6 +190,14 @@
   color: var(--app-text-muted);
 }
 /* A list school's note sits under its name, past the crest (40px and the 12px gap). */
+/* A saved school (the lists page): crest | the school's words | its menu on the row's centre line, as an index row. */
+.medapp-item__head--school {
+  align-items: center;
+}
+.medapp-item__head--school > .medapp-item__title {
+  padding-block-start: 0;
+  overflow-wrap: break-word;
+}
 .medapp-item__indent {
   inline-size: auto;
   margin-inline-start: 52px;

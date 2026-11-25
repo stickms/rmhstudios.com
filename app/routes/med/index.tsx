@@ -3,13 +3,7 @@ import { definePage } from '@/lib/route/define-page';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { resolveView } from '@features/medschools/engine/prefs';
 import { parseIndexSearch, validateIndexSearch } from '@features/medschools/engine/search';
-import {
-  indexQuery,
-  listsQuery,
-  loadPrefs,
-  schoolsQuery,
-  waitUnlessStay,
-} from '@features/medschools/medschools.queries';
+import { indexQuery, loadPrefs, schoolsQuery, waitUnlessStay } from '@features/medschools/medschools.queries';
 import { IndexPage } from '@features/medschools/ui/IndexPage';
 
 export const Route = createFileRoute('/med/')({
@@ -30,8 +24,13 @@ export const Route = createFileRoute('/med/')({
     const view = resolveView('index', search, prefs);
     // A filter change (`cause: 'stay'`) does not wait: the list stays on screen, dimmed, until the new one lands.
     await waitUnlessStay(cause, prefetchRouteQuery(context.queryClient, schoolsQuery(indexQuery(search, view))));
-    // The list filter needs the viewer's lists; the page shows the unfiltered index without them.
-    if (search.list && prefs) await prefetchRouteQuery(context.queryClient, listsQuery());
+    // "My schools" (`mine=cycle`, `list=`) needs the viewer's tracker or lists; the page shows every school without them.
+    // (A filter saved on this device is applied by the page after hydration: the server cannot read it.)
+    // Loaded only when the URL names one, so the mine filter stays out of every page's shared entry.
+    if (prefs !== null && (search.mine || search.list)) {
+      const m = await import('@features/medschools/load-mine');
+      await m.loadMine(context.queryClient, m.mineOfSearch(search), true, cause);
+    }
     return undefined;
   },
   component: IndexPage,

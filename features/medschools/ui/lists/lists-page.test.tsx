@@ -123,6 +123,25 @@ describe('ListsPage', () => {
       expect(html).toContain('1 school');
     });
 
+    it("each school row leads with the school's crest at the index's 40px, on the row's centre line (owner 2026-11-24)", () => {
+      h.session = { user: { id: 'u1' } };
+      const withCrest = item('i9', 'albany', {
+        school: { ...item('x', 'albany').school, name: 'Albany Medical College' },
+      });
+      const html = render({
+        lists: [{ id: 'c', name: 'Crests', position: 0, items: [withCrest, item('i8', 'duke')] }],
+      });
+      // A school with a crest file draws the picture; one without draws its initials in the same box.
+      expect(html).toMatch(/medapp-crest medapp-crest--40"><img src="\/images\/medschools\/crests\/albany\.webp"/);
+      expect(html.match(/class="medapp-crest medapp-crest--40"/g)).toHaveLength(2);
+      // Crest | words | menu, centred like `.medapp-schoolrow` (the head's modifier), on every width.
+      expect(html.match(/class="medapp-item__head medapp-item__head--school"/g)).toHaveLength(2);
+      const head = html.slice(html.indexOf('medapp-item__head--school'));
+      expect(head.indexOf('medapp-crest')).toBeLessThan(head.indexOf('Albany Medical College'));
+      const css = readFileSync(new URL('../medschools/facts-tracker.css', import.meta.url), 'utf8');
+      expect(css).toMatch(/\.medapp-item__head--school \{\s*align-items: center;/);
+    });
+
     it('an inactive school still lists, as text with a line saying so, and no link', () => {
       h.session = { user: { id: 'u1' } };
       const html = render();

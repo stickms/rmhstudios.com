@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { listSchoolsQuery, liveQuery } from './read-schemas';
+import { listSchoolsQuery, liveQuery, liveSummaryQuery } from './read-schemas';
 
 describe('the state filter on the public reads (owner 2026-11-24: several at once)', () => {
   it('takes one or several known codes, comma separated', () => {
@@ -13,5 +13,26 @@ describe('the state filter on the public reads (owner 2026-11-24: several at onc
       for (const bad of ['ZZ', 'NC,ZZ', 'nc', 'NC,', 'NC;TX', 'AL,AK,AZ,AR,CA,CO,CT,DE,FL,GA,HI'])
         expect(schema.safeParse({ state: bad }).success, bad).toBe(false);
     }
+  });
+});
+
+describe('the schools= filter on the live reads (owner 2026-11-24: My cycle, My lists)', () => {
+  it('takes one to 300 slugs, comma separated, on the feed and the Today summary', () => {
+    for (const schema of [liveQuery, liveSummaryQuery]) {
+      expect(schema.safeParse({ schools: 'duke' }).success).toBe(true);
+      expect(schema.safeParse({ schools: 'a-t-still-arizona,duke,wake-forest' }).success).toBe(true);
+      const max = Array.from({ length: 300 }, (_, i) => 'school-' + i).join(',');
+      expect(schema.safeParse({ schools: max }).success).toBe(true);
+    }
+  });
+  it('refuses an empty value, upper case, a malformed list, a long slug and more than 300', () => {
+    const tooMany = Array.from({ length: 301 }, (_, i) => 's' + i).join(',');
+    for (const schema of [liveQuery, liveSummaryQuery]) {
+      for (const bad of ['', 'Duke', 'duke,', ',duke', 'duke;wake', 'duke wake', 'x'.repeat(81), tooMany])
+        expect(schema.safeParse({ schools: bad }).success, bad.slice(0, 20)).toBe(false);
+    }
+  });
+  it('is not a parameter of the school list (the index filters in the browser)', () => {
+    expect(Object.keys(listSchoolsQuery.shape)).not.toContain('schools');
   });
 });

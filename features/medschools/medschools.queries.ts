@@ -250,18 +250,25 @@ export type LiveSearch = {
   school?: string;
   states?: readonly string[];
   programs: readonly ProgramKey[];
+  /** "My cycle" / "My lists" as the public `schools=` value (`schoolsParam`: sorted, capped). */
+  schools?: string;
 };
 
-/** The live loader's search from the parsed URL and the effective view. */
+/**
+ * The live loader's search from the parsed URL and the effective view. `states` and `schools` are the effective ones
+ * (the URL, else this device's saved filters), which the page resolves; the loader passes the URL's.
+ */
 export function liveSearchOf(
   search: { type?: LiveFilters['type']; school?: string | undefined; states?: readonly string[] | undefined },
   view: { programs: readonly ProgramKey[] },
+  schools?: string | undefined,
 ): LiveSearch {
   return {
     ...(search.type ? { type: search.type } : {}),
     ...(search.school ? { school: search.school } : {}),
     ...(search.states?.length ? { states: search.states } : {}),
     programs: view.programs,
+    ...(schools ? { schools } : {}),
   };
 }
 
@@ -277,6 +284,7 @@ export function resolveLiveFilters(search: LiveSearch, schoolDegree: MedDegreeId
     ...(search.type ? { type: search.type } : {}),
     ...(search.school ? { school: search.school } : {}),
     ...(search.states?.length ? { state: search.states.join(',') } : {}),
+    ...(search.schools ? { schools: search.schools } : {}),
     ...(programs ? { programs } : {}),
   };
 }

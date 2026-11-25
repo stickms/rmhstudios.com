@@ -50,14 +50,21 @@ export function ChanceLine({ chance }: { chance: ChanceDto | undefined }) {
       break;
     case 'no-complete':
       lines.push(
-        t('chance-no-complete', { defaultValue: 'Add the date your application was complete to see an estimate.' }),
+        t('chance-no-complete-or-secondary', {
+          defaultValue:
+            'Add the date your application was complete, or the date you submitted the secondary, to see an estimate.',
+        }),
       );
       break;
     case 'not-complete-yet':
       lines.push(
-        t('chance-not-complete-yet', {
-          defaultValue: 'The complete date is still ahead. The estimate starts once it has passed.',
-        }),
+        chance.completeFrom === 'secondary-submitted'
+          ? t('chance-not-complete-yet-secondary', {
+              defaultValue: 'The secondary submitted date is still ahead. The estimate starts once it has passed.',
+            })
+          : t('chance-not-complete-yet', {
+              defaultValue: 'The complete date is still ahead. The estimate starts once it has passed.',
+            }),
       );
       break;
     case 'invited':

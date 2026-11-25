@@ -121,6 +121,7 @@ const chance = (o: Partial<ChanceDto> & Pick<ChanceDto, 'applicationId'>): Chanc
   program: 'REG',
   status: 'thin',
   completeOn: null,
+  completeFrom: null,
   invitedOn: null,
   asOf: null,
   basis: null,
@@ -261,6 +262,7 @@ describe('TrackerPage timeline and silence check', () => {
     applicationId: 'a1',
     status: 'estimate',
     completeOn: '2026-10-09',
+    completeFrom: 'complete',
     waitingWeeks: 6,
     typical: { halfWeek: 4, mostWeek: 9, lastWeek: 13, basis: 20 },
   });
@@ -332,6 +334,7 @@ describe('TrackerPage invite chance', () => {
     applicationId: 'a1',
     status: 'estimate',
     completeOn: '2026-10-31',
+    completeFrom: 'complete',
     asOf: '2026-11-19',
     basis: 30,
     points: [
@@ -353,7 +356,7 @@ describe('TrackerPage invite chance', () => {
   it('each other status shows its line, and closed shows nothing', () => {
     const lines: [ChanceDto['status'], string][] = [
       ['thin', 'Not enough data yet for an estimate here. It needs at least 20 members at this school.'],
-      ['no-complete', 'Add the date your application was complete to see an estimate.'],
+      ['no-complete', 'Add the date your application was complete, or the date you submitted the secondary, to see an estimate.'],
       ['not-complete-yet', 'The complete date is still ahead. The estimate starts once it has passed.'],
       ['beyond', 'Too few comparable applications are still waiting at this point for an estimate.'],
     ];
