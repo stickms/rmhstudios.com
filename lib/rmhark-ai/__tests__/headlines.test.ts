@@ -10,6 +10,7 @@ import {
   fetchHeadlines,
   getFreshHeadlines,
   resetHeadlineCache,
+  resolveArticleUrl,
 } from '@/lib/rmhark-ai/headlines.server';
 
 const NOW = Date.parse('2026-11-13T12:00:00Z');
@@ -364,5 +365,33 @@ describe('getFreshHeadlines', () => {
       throw new Error('down');
     });
     await expect(getFreshHeadlines(NOW)).resolves.toEqual([]);
+  });
+});
+
+describe('resolveArticleUrl', () => {
+  const legacyId = Buffer.from(
+    Buffer.concat([
+      Buffer.from([0x08, 0x13, 0x22, 'https://example.com/story'.length]),
+      Buffer.from('https://example.com/story'),
+      Buffer.from([0xd2, 0x01, 0x00]),
+    ]),
+  )
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+
+  it('decodes an old-style Google News id without a request', async () => {
+    const fetchImpl = vi.fn();
+    const out = await resolveArticleUrl(`https://news.google.com/rss/articles/${legacyId}?oc=5`, fetchImpl as never);
+    expect(out).toBe('https://example.com/story');
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('leaves non-Google links and unresolvable ones alone', async () => {
+    const fetchImpl = vi.fn().mockRejectedValue(new Error('down'));
+    expect(await resolveArticleUrl('https://example.com/a', fetchImpl as never)).toBe('https://example.com/a');
+    const google = 'https://news.google.com/rss/articles/CBMiAU_yqLxxxx';
+    expect(await resolveArticleUrl(google, fetchImpl as never)).toBe(google);
   });
 });
