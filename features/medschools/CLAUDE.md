@@ -534,6 +534,12 @@ tab component in `ui/`. The Forecast tab is `ui/ForecastTab.tsx` with `ui/charts
 
 ## Timeline and silence check (roadmap item 4)
 
+**No complete date (owner 2026-11-24):** where a member entered no `COMPLETE` milestone, the secondary submitted date
+(`SECONDARY_SUBMITTED`) stands in, through one helper, `completeDateOf` in `engine/tracker.ts`: the chance line and
+silence check (`getChances`, which returns `completeFrom: 'complete' | 'secondary-submitted'` so the page says "since
+your secondary was submitted"), the timeline's waits (`MEASURED_FROM`) and the wait-curve observations
+(`loadObservationRows`: `COALESCE` of the two). The sharing row's wording says so (`share-wait-note-secondary`).
+
 Plan: `docs/superpowers/plans/2026-11-24-rmh-medschool-timeline-silence.md`. On the tracker page, no new endpoint.
 `engine/timeline.ts` (pure, client-safe): `buildTimeline` turns the caller's own `TrackerApplicationDto` rows into one
 dated line with each step's wait since the step before it; `silenceOf` reads a `ChanceDto`. `getChances` now also

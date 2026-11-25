@@ -97,9 +97,9 @@ export function SharingRow({
             })}
           </p>
           <p id={waitId} className="medapp-meta">
-            {t('share-wait-note', {
+            {t('share-wait-note-secondary', {
               defaultValue:
-                'When sharing is on, the time between your complete date and an invite also feeds an estimate shown for this school once at least 20 members contribute. Only the estimate is shown, never a date or a row.',
+                'When sharing is on, the time between your complete date (or, without one, the date you submitted the secondary) and an invite also feeds an estimate shown for this school once at least 20 members contribute. Only the estimate is shown, never a date or a row.',
             })}
           </p>
           <p className="medapp-meta">

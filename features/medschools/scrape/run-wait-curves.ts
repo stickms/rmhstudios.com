@@ -45,7 +45,8 @@ export interface WaitCurveResult {
 }
 
 /**
- * One statement. Sharing cycles only (`"shareAnonymously" = true`), active schools only; COMPLETE is required, the
+ * One statement. Sharing cycles only (`"shareAnonymously" = true`), active schools only; a complete date is required (COMPLETE, or SECONDARY_SUBMITTED
+ * when the member entered no COMPLETE, the chance line's rule, `completeDateOf`), the
  * INTERVIEW date is the event, and the earliest REJECTION, WITHDRAWN or ACCEPTANCE date is the censoring date.
  */
 export async function loadObservationRows(db: Pick<PrismaClient, '$queryRaw'>): Promise<TrackerObservationRow[]> {
@@ -54,14 +55,16 @@ export async function loadObservationRows(db: Pick<PrismaClient, '$queryRaw'>): 
       SELECT a."schoolId" AS "schoolId",
              a."program"::text AS "program",
              c."userId" AS "member",
-             to_char(comp."date", 'YYYY-MM-DD') AS "completeOn",
+             to_char(COALESCE(comp."date", sec."date"), 'YYYY-MM-DD') AS "completeOn",
              to_char(inv."date", 'YYYY-MM-DD') AS "inviteOn",
              to_char(en."endDate", 'YYYY-MM-DD') AS "endOn"
       FROM "med_tracker_cycle" c
       JOIN "med_tracker_application" a ON a."cycleId" = c."id"
       JOIN "med_school" s ON s."id" = a."schoolId" AND s."active" = true
-      JOIN "med_tracker_milestone" comp
+      LEFT JOIN "med_tracker_milestone" comp
         ON comp."applicationId" = a."id" AND comp."type" = 'COMPLETE'::"MedMilestoneType"
+      LEFT JOIN "med_tracker_milestone" sec
+        ON sec."applicationId" = a."id" AND sec."type" = 'SECONDARY_SUBMITTED'::"MedMilestoneType"
       LEFT JOIN "med_tracker_milestone" inv
         ON inv."applicationId" = a."id" AND inv."type" = 'INTERVIEW'::"MedMilestoneType"
       LEFT JOIN LATERAL (
@@ -70,7 +73,8 @@ export async function loadObservationRows(db: Pick<PrismaClient, '$queryRaw'>): 
         WHERE e."applicationId" = a."id"
           AND e."type" IN ('REJECTION'::"MedMilestoneType", 'WITHDRAWN'::"MedMilestoneType", 'ACCEPTANCE'::"MedMilestoneType")
       ) en ON true
-      WHERE c."shareAnonymously" = true`;
+      WHERE c."shareAnonymously" = true
+        AND COALESCE(comp."date", sec."date") IS NOT NULL`;
   } catch {
     // A database error can carry bound values; say nothing about them.
     throw new Error('wait-curve query failed');

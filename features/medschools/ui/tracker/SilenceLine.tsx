@@ -12,8 +12,21 @@ export function SilenceLine({ chance }: { chance: ChanceDto | undefined }) {
   const s = silenceOf(chance);
   if (!s) return null;
 
-  const waited =
-    s.weeks === 0
+  // Without a complete date the wait counts from the secondary submitted date (owner 2026-11-24), and says so.
+  const fromSecondary = chance?.completeFrom === 'secondary-submitted';
+  const waited = fromSecondary
+    ? s.weeks === 0
+      ? t('silence-waited-zero-secondary', {
+          defaultValue: 'No reply yet: less than a week since your secondary was submitted.',
+        })
+      : t('silence-waited-secondary', {
+          count: s.weeks,
+          n: s.weeks,
+          defaultValue_one: 'No reply yet: {{n}} week since your secondary was submitted.',
+          defaultValue_other: 'No reply yet: {{n}} weeks since your secondary was submitted.',
+          defaultValue: 'No reply yet: {{n}} weeks since your secondary was submitted.',
+        })
+    : s.weeks === 0
       ? t('silence-waited-zero', { defaultValue: 'No reply yet: less than a week since complete.' })
       : t('silence-waited', {
           count: s.weeks,

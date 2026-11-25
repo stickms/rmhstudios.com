@@ -201,3 +201,18 @@ export function cleanText(v: unknown, max: number): string | null {
   if (!s) return null;
   return [...s].length > max ? null : s;
 }
+
+/**
+ * The date a member's application counts as complete (owner 2026-11-24): the COMPLETE milestone, or, when the member
+ * did not enter one, the date they submitted the secondary (`SECONDARY_SUBMITTED`). `from` says which, so a page can
+ * say "since your secondary was submitted" rather than claim a complete date. Used by the chance line, the silence
+ * check, the timeline and the wait curves, so they agree.
+ */
+export function completeDateOf(
+  milestones: readonly { type: string; date: string }[],
+): { on: string; from: 'COMPLETE' | 'SECONDARY_SUBMITTED' } | null {
+  const complete = milestones.find((m) => m.type === 'COMPLETE');
+  if (complete) return { on: complete.date, from: 'COMPLETE' };
+  const secondary = milestones.find((m) => m.type === 'SECONDARY_SUBMITTED');
+  return secondary ? { on: secondary.date, from: 'SECONDARY_SUBMITTED' } : null;
+}

@@ -693,6 +693,7 @@ const CHANCE_KEYS = [
   'applicationId',
   'asOf',
   'basis',
+  'completeFrom',
   'completeOn',
   'invitedOn',
   'points',

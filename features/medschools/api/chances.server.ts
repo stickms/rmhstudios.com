@@ -12,6 +12,7 @@ import { CHANCE_HORIZONS } from '../engine/stats/constants';
 import { addDays, dayIndex } from '../engine/stats/days';
 import { inviteChance, typicalWait, type SurvivalCurve } from '../engine/stats/km';
 import { getTracker } from './tracker.server';
+import { completeDateOf } from '../engine/tracker';
 
 const day = (d: Date): string => d.toISOString().slice(0, 10);
 const CLOSING = new Set(['REJECTION', 'WITHDRAWN', 'ACCEPTANCE', 'MATRICULATED']);
@@ -46,8 +47,7 @@ export async function getChances(
   // Only applications that can still have an estimate need a curve.
   const waiting = apps.filter(
     (a) =>
-      a.milestones.some((m) => m.type === 'COMPLETE') &&
-      !a.milestones.some((m) => m.type === 'INTERVIEW' || CLOSING.has(m.type)),
+      completeDateOf(a.milestones) !== null && !a.milestones.some((m) => m.type === 'INTERVIEW' || CLOSING.has(m.type)),
   );
   const curves = new Map<string, { curve: SurvivalCurve; maxDay: number; members: number; asOf: string }>();
   if (waiting.length > 0) {
@@ -88,7 +88,9 @@ export async function getChances(
 
   const chances: ChanceDto[] = apps.map((a) => {
     const find = (type: string) => a.milestones.find((m) => m.type === type)?.date ?? null;
-    const completeOn = find('COMPLETE');
+    // COMPLETE, or the secondary submitted date when the member entered no COMPLETE (owner 2026-11-24).
+    const complete = completeDateOf(a.milestones);
+    const completeOn = complete?.on ?? null;
     const invitedOn = find('INTERVIEW');
     const dto = (status: ChanceStatus, extra: Partial<ChanceDto> = {}): ChanceDto => ({
       applicationId: a.id,
@@ -96,6 +98,7 @@ export async function getChances(
       program: a.program,
       status,
       completeOn,
+      completeFrom: complete ? (complete.from === 'COMPLETE' ? 'complete' : 'secondary-submitted') : null,
       invitedOn: status === 'invited' ? invitedOn : null,
       asOf: null,
       basis: null,

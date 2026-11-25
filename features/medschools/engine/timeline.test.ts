@@ -114,3 +114,28 @@ describe('silenceOf', () => {
     expect(silenceOf(undefined)).toBeNull();
   });
 });
+
+describe('no complete date: the secondary submitted date stands in (owner 2026-11-24)', () => {
+  it('measures the invite from the secondary submitted date when there is no complete date', () => {
+    const rows = buildTimeline([
+      app('a', 'duke', [
+        { type: 'SECONDARY', date: '2026-07-01' },
+        { type: 'SECONDARY_SUBMITTED', date: '2026-07-10' },
+        { type: 'INTERVIEW', date: '2026-08-21' },
+      ]),
+    ]);
+    const invite = rows.find((r) => r.type === 'INTERVIEW')!;
+    expect(invite.since).toBe('SECONDARY_SUBMITTED');
+    expect(invite.waitDays).toBe(42);
+  });
+  it('still prefers the complete date when there is one', () => {
+    const rows = buildTimeline([
+      app('a', 'duke', [
+        { type: 'SECONDARY_SUBMITTED', date: '2026-07-10' },
+        { type: 'COMPLETE', date: '2026-07-15' },
+        { type: 'INTERVIEW', date: '2026-08-21' },
+      ]),
+    ]);
+    expect(rows.find((r) => r.type === 'INTERVIEW')!.since).toBe('COMPLETE');
+  });
+});

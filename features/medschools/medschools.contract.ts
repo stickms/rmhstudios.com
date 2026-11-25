@@ -486,7 +486,10 @@ export interface ChanceDto {
   school: { slug: string; shortName: string; name: string; active: boolean };
   program: 'REG' | 'PHD';
   status: ChanceStatus;
+  /** The complete date, or the secondary submitted date when the member entered no complete date. */
   completeOn: string | null;
+  /** Which milestone `completeOn` is (owner 2026-11-24: no complete date means the secondary submitted date). */
+  completeFrom: 'complete' | 'secondary-submitted' | null;
   invitedOn: string | null;
   /** The curve's day, `estimate` only. */
   asOf: string | null;
