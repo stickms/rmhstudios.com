@@ -186,7 +186,7 @@ describe('upgrade envelope', () => {
 describe('membership page copy', () => {
   it('has a literal t() call for every feature, and no orphans', async () => {
     // The registry carries `labelKey`/`blurbKey`, but `t(feature.labelKey)` is a
-    // computed key and `i18next-parser` cannot see it — the keys never reach
+    // computed key and `i18next-cli` cannot see it — the keys never reach
     // `locales/` and every locale serves English forever. `featureCopy()` is the
     // literal-call workaround; this asserts it stays in step with the registry.
     const { featureCopy } = await import('@/components/membership/MemberFeatureGrid');

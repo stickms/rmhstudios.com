@@ -1,7 +1,7 @@
 /**
  * No translation key is built at run time (sprint 04, feature 15).
  *
- * `pnpm i18n:extract` (i18next-parser) reads only string-literal keys. A key
+ * `pnpm i18n:extract` (i18next-cli) reads only string-literal keys. A key
  * written as ``t(`notification-verb-${type}`)`` or `t('tab-' + id)` is
  * invisible to it, so the key never reaches `locales/en/<ns>.json`, the
  * translation pipeline never sends it, and every locale but English silently
@@ -35,12 +35,8 @@ import { describe, expect, it } from 'vitest';
 const ALLOWED: Record<string, number> = {};
 
 // The names the extractor follows (`t`, `ts`, `tn`, …): a computed key under any of them is invisible.
-// A variable specifier keeps the untyped plain-JS config out of the type graph.
-const PARSER_CONFIG_PATH = '../../i18next-parser.config.js';
-const parserConfig = (await import(/* @vite-ignore */ PARSER_CONFIG_PATH)) as {
-  default: { lexers: { tsx: { functions: string[] }[] } };
-};
-const TRANSLATE_FUNCTIONS: ReadonlySet<string> = new Set(parserConfig.default.lexers.tsx[0]!.functions);
+const extractorConfig = (await import('../../i18next.config')).default as { extract: { functions: string[] } };
+const TRANSLATE_FUNCTIONS: ReadonlySet<string> = new Set(extractorConfig.extract.functions);
 
 interface Computed {
   file: string;

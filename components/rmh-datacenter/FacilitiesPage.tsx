@@ -2,7 +2,7 @@
  * /rmh-datacenter/facilities — the estate, campus by campus.
  *
  * The numbers come from `lib/datacenter/campuses.ts`; the prose stays here,
- * keyed by campus id with literal keys, because `i18next-parser` cannot see
+ * keyed by campus id with literal keys, because `i18next-cli` cannot see
  * through a key read out of a catalog and a description stored beside the data
  * would never reach `locales/`.
  *

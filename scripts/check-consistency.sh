@@ -358,7 +358,7 @@ if scan '^(components|app)/.*\.tsx?$' '[^A-Za-z0-9_]t\(' | grep -q .; then
     printf '%s    → Run `pnpm i18n:extract` and check locales/en/<ns>.json. A new namespace must also be added to NAMESPACES in lib/i18n/config.ts or it is never loaded.%s\n' "$dim" "$off"
   fi
   if scan '^(components|app)/.*\.tsx$' '\{/\*' | grep -q .; then
-    warn "JSX comment near new strings — a {/* … */} immediately before a t() call makes i18next-parser skip it."
+    warn "JSX comment near new strings — a {/* … */} immediately before a t() call makes i18next-cli skip it."
     printf '%s    → Put the explanation above the component, then verify the key landed in locales/en/.%s\n' "$dim" "$off"
   fi
 fi

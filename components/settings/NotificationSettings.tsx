@@ -25,7 +25,7 @@ const CHANNELS: Channel[] = ['inapp', 'push'];
 const GRID_CATEGORIES: NotifyCategory[] = NOTIFY_CATEGORIES.filter((c) => c !== 'events');
 
 // Static-key label resolvers. The category rows and channel headers are dynamic
-// (driven by NOTIFY_CATEGORIES / CHANNELS), but i18next-parser can only extract
+// (driven by NOTIFY_CATEGORIES / CHANNELS), but i18next-cli can only extract
 // STRING-LITERAL t() keys — a `t(`category-${cat}`)` template is invisible to
 // `pnpm i18n:extract`, so those keys never reach locales/*/settings-notifications.json
 // and non-English users saw English labels. Resolving through these literal

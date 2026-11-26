@@ -1,6 +1,6 @@
 /**
  * s10-20 — the sentences of the refusal taxonomy, one literal translate call per code (key, the `errors` namespace and
- * the English default). A `switch` and not a lookup of `ERROR_CODES[code].i18n` because `i18next-parser` reads only
+ * the English default). A `switch` and not a lookup of `ERROR_CODES[code].i18n` because `i18next-cli` reads only
  * literal keys, and only under `app/`, `components/` and `features/`; this file is why every key reaches
  * `locales/en/errors.json`. The English defaults here equal `ERROR_CODES[code].text`
  * (`lib/errors/__tests__/error-codes-catalogue.test.ts` holds them equal).

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useReadingFollow } from '@/components/reading/useReadingFollow';
 import type { SubscriptionKind } from '@/lib/reading/subscriptions';
 
-// Literal t() keys per kind: i18next-parser cannot see a templated key. The name carries the target so a screen
+// Literal t() keys per kind: i18next-cli cannot see a templated key. The name carries the target so a screen
 // reader hears what the toggle follows ("Follow Science news"), and it stays the same when pressed (`aria-pressed`
 // says which state it is in).
 function followName(t: TFunction, kind: SubscriptionKind, target: string): string {

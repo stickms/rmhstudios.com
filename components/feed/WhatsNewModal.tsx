@@ -18,7 +18,7 @@ import { useSitewideAnnouncementStore } from '@/stores/sitewideAnnouncementStore
 /**
  * Card copy, as literal `t()` calls keyed by item id.
  *
- * `t(item.titleKey)` would be tidier and does not work: `i18next-parser` reads
+ * `t(item.titleKey)` would be tidier and does not work: `i18next-cli` reads
  * the source statically, so a computed key never lands in `locales/` and every
  * locale serves the English default forever (CLAUDE.md §5). Spelled out here
  * for the same reason `planCopy()` and `featureCopy()` are.

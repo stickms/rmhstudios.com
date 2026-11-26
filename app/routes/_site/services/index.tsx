@@ -181,7 +181,7 @@ function ServicesPage() {
  * strings the old panels shipped in every locale. A computed key is only safe
  * where the key already exists (the nav strings and the summaries'
  * `descKey`s); the ones new to this page are spelled out, because
- * `i18next-parser` cannot see through a computed key and it would never reach
+ * `i18next-cli` cannot see through a computed key and it would never reach
  * `locales/` otherwise.
  */
 function ServiceRow({ service }: { service: ServiceDef }) {

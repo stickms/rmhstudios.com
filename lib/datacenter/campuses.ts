@@ -3,7 +3,7 @@
  *
  * Everything here is a fact a facilities drawing would carry — hall counts,
  * contracted power, the trailing PUE, and the hall's own dimensions. Prose is
- * NOT here: the pages call `t()` with literal keys, and `i18next-parser` cannot
+ * NOT here: the pages call `t()` with literal keys, and `i18next-cli` cannot
  * see through a key read out of a catalog, so a description stored here would
  * never reach `locales/` and every locale would silently serve English.
  *

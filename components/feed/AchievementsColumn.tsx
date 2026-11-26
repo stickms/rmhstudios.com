@@ -176,7 +176,7 @@ export function AchievementsColumn({
  // because JSX drops the newline between the count and the following word the
  // page rendered "0 / 79unlocked" and "0earned" with no space at all. (Written
  // here rather than as a JSX comment beside the strings: a `{/* … */}` directly
- // before a `t()` call makes i18next-parser skip the key entirely.)
+ // before a `t()` call makes i18next-cli skip the key entirely.)
  const Stats = (
  <>
  <div className="flex items-center gap-3 text-sm text-site-text-muted">

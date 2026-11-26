@@ -55,7 +55,7 @@ export function BuddyChat({ initialQuestion }: { initialQuestion?: string }) {
   const abortRef = useRef<AbortController | null>(null);
   const asked = useRef<string | null>(null);
 
-  // Written out as literal t() calls so i18next-parser can extract them.
+  // Written out as literal t() calls so i18next-cli can extract them.
   const suggestions = [
     t('ask-tonight', {
       defaultValue: 'What’s on tonight?',

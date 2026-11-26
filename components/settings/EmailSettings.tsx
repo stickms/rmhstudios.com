@@ -10,7 +10,7 @@ import { setEmailPrefsApi } from '@/lib/preferences/preferences.contract';
 import { emailPrefsQuery } from '@/lib/settings/prefs.queries';
 import { api } from '@/lib/contract/client';
 
-// Literal t() keys per category: i18next-parser cannot see a templated key.
+// Literal t() keys per category: i18next-cli cannot see a templated key.
 function label(t: TFunction, cat: EmailCategory): string {
   switch (cat) {
     case 'security':

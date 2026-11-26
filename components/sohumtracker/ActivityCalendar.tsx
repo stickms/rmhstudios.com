@@ -75,7 +75,7 @@ export function ActivityCalendar({
   // Leading blanks so the 1st lands under its real weekday column.
   const leading = mondayIndex(firstKey);
 
-  // Literal keys: `i18next-parser` cannot see through `t(item.key)` over an
+  // Literal keys: `i18next-cli` cannot see through `t(item.key)` over an
   // array, so a mapped lookup would never reach `locales/`.
   const dayNames = [
     t('dow-mon', {

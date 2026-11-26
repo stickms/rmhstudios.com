@@ -9,7 +9,7 @@
  * The look lives in `sohumbum.css` and the storm in `StormCanvas.tsx`.
  *
  * Every `t()` below is called with a LITERAL key, even where a data table would
- * have read better. `i18next-parser` is a static scanner: `t(item.key, …)` over
+ * have read better. `i18next-cli` is a static scanner: `t(item.key, …)` over
  * an array of `{ key, label }` extracts nothing, the keys never reach
  * `locales/`, and every non-English locale silently serves the English
  * `defaultValue` forever. The tables hold structure; the copy stays inline.

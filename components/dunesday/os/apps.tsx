@@ -5,7 +5,7 @@
  * Components are `lazy()`: the desktop shell ships with the route, and each
  * app's code (a game, Paint, the browser) loads the first time it is opened.
  *
- * Titles are written as literal `t()` calls on purpose — i18next-parser reads
+ * Titles are written as literal `t()` calls on purpose — i18next-cli reads
  * source, so a lookup through a key table would never be extracted.
  */
 

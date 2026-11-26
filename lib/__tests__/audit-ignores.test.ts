@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
  * only way to let the deploy gate pass is `pnpm.auditConfig.ignoreGhsas`. An
  * ignore hides every copy of the package, though, not just the patched one: on
  * 2026-11-17 the picomatch ignore was also hiding an unpatched picomatch 2.3.2
- * that i18next-parser pulled in.
+ * that i18next-cli pulled in.
  *
  * So an ignore is allowed only for an advisory listed here, and only while
  * EVERY version of its package in the lockfile is a patched one. A new copy of

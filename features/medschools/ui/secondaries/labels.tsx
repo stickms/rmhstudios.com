@@ -3,7 +3,7 @@ import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import type { MedPromptLimitDto, MedPromptSourceId, MedPromptStatus } from '../../medschools.contract';
 
 /**
- * Every wording of the Secondaries tab and the overlap view, one switch per family so `i18next-parser` finds each key as a
+ * Every wording of the Secondaries tab and the overlap view, one switch per family so `i18next-cli` finds each key as a
  * literal. Source names are proper nouns and are not translated; the school's own page is named by the school.
  */
 export interface SecondaryLabels {
