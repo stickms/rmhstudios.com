@@ -22,7 +22,7 @@ const m = vi.hoisted(() => {
 });
 vi.mock('@/lib/prisma.server', () => ({ prisma: m }));
 
-import { activityQuery, listSchoolsQuery } from './read-schemas';
+import { activityQuery, arrivalsQuery, forecastQuery, listSchoolsQuery } from './read-schemas';
 import { getActivity, listSchools } from './read.server';
 
 const NOW = new Date('2027-11-21T00:30:00Z');
@@ -44,17 +44,20 @@ beforeEach(() => {
 
 describe('the source param (validation)', () => {
   it('takes cycletrack or admit on the list and the activity read', () => {
-    for (const schema of [listSchoolsQuery, activityQuery]) {
+    for (const schema of [listSchoolsQuery, activityQuery, forecastQuery]) {
       expect(schema.safeParse({ source: 'cycletrack' }).success).toBe(true);
       expect(schema.safeParse({ source: 'admit' }).success).toBe(true);
       expect(schema.safeParse({}).success).toBe(true);
     }
   });
   it('refuses anything else (a 400 through implement): other sources, upper case, junk', () => {
-    for (const schema of [listSchoolsQuery, activityQuery]) {
+    for (const schema of [listSchoolsQuery, activityQuery, forecastQuery]) {
       for (const bad of ['sdn', 'rmh', 'ADMIT', 'Admit', 'admit.org', 'cycletrack,admit', '', 'x'.repeat(100)])
         expect(schema.safeParse({ source: bad }).success, bad).toBe(false);
     }
+  });
+  it('the arrivals read takes no source (its schema is the history one)', () => {
+    expect(arrivalsQuery.safeParse({ source: 'admit' }).data).toEqual({});
   });
 });
 

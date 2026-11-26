@@ -669,8 +669,9 @@ export async function getForecast(
   const eventType: MedChartedTypeId = q.type ?? 'INTERVIEW';
   const cycleYear = await siteCycle(now);
   const today = utcDayOf(now);
-  const [row, cycle, counts] = await Promise.all([
-    prisma.medForecast.findFirst({
+  const prefer = preferOf(q.source);
+  const [rows, cycle, counts] = await Promise.all([
+    prisma.medForecast.findMany({
       where: { schoolId: school.id, program, cycleYear, eventType },
       select: { mode: true, source: true, asOf: true, curve: true, summary: true },
     }),
@@ -687,6 +688,12 @@ export async function getForecast(
       },
     }),
   ]);
+  // One stored forecast per source: the chosen source's where it has one, else the next in the primary order.
+  const chosen = pickPrimary(
+    rows.map((r) => r.source as MedSource),
+    prefer,
+  );
+  const row = rows.find((r) => r.source === chosen) ?? null;
   const stored = row ? (row.summary as StoredSummary | null) : null;
   const cycleDayZero = cycle ? day(cycle.dayZeroOn) : defaultDayZero(cycleYear);
   // The days of a stored band count from the day zero the job used, so that one names the dates.
@@ -695,7 +702,7 @@ export async function getForecast(
   const asOf = row ? day(row.asOf) : addDays(today, -1);
   const series = row?.source
     ? { source: row.source as MedSource, days: seriesOfSource(cells, today, row.source as MedSource) }
-    : primarySeriesOf(cells, today);
+    : primarySeriesOf(cells, today, prefer);
   const observed = toCumulativeByDay(
     (series?.days ?? []).filter((d) => d.date <= asOf),
     dayZeroOn,
