@@ -139,10 +139,11 @@
   .rule-cells > li > .row-hover::before {
     inset-inline: -0.25rem;
   }
-  /* A hub cell's hover fill takes the cell's full height: the li is a flex box so the link stretches to its
-     (row-equal) height, and the fill bleeds through the li's block padding up to the rule below. */
+  /* A hub cell's hover fill spans the cell's height: the li is a flex box so the link stretches to its
+     (row-equal) height. The fill bleeds 0.25rem past the text on every side, so it keeps the same 0.5rem
+     from the rules above and below as from the cell's sides (block padding 0.75rem - 0.25rem bleed). */
   .rule-cells > li > .hub-link-row::before {
-    inset-block: -0.75rem;
+    inset-block: -0.25rem;
   }
   .rule-cells > li::after {
     content: '';
