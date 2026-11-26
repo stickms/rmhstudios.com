@@ -311,8 +311,8 @@ Consequences:
   **Forecast job (phase 5).** `medschools.forecast` (daily at 06:40 UTC, `MEDSCHOOLS_FORECAST_CRON`, `exclusive`,
   `retryLimit: 0`, expires after 20 min, tick guarded with `maxRuntimeMs` equal to that expiry and a `shouldStop` one
   minute before it; cron owned by the `jobs` timekeeper through `startScheduledConsumer`; no flag, no secret and **no
-  model call**). `features/medschools/scrape/run-forecast.ts` fits `MedForecast` (REG and PHD, five charted event types)
-  from the floored public primary series (`engine/floor.ts` `floorWhere` plus `primarySeriesOf`, so an unpublished or
+  model call**). `features/medschools/scrape/run-forecast.ts` fits `MedForecast` (REG and PHD, five charted event types,
+  one row per source with data) from each floored public series (`engine/floor.ts` `floorWhere` plus `seriesBySource`, so an unpublished or
   sub-k RMH figure never moves a band), then `run-wait-curves.ts` rebuilds the aggregate `MedWaitCurve` rows (only where
   20 distinct sharing members and 10 invites contribute; weekly steps; a stored row is replaced only on a change of 3 or more, R13). Ledger `MedSourceRun` source `RMH`, job `forecast`; a non-manual run is
   skipped inside 20 h of an OK one; an ended cycle is not rewritten. Log lines carry counts only.

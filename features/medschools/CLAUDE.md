@@ -303,9 +303,11 @@ the facts query for it.
   `GET /schools` (`reported`) and `GET /schools/$slug/activity` (each type's `primary`, and the waves, read on the
   interview primary); response key sets are unchanged. History needs no param (the response has every source; the tab's
   automatic pick is `overlaySource(cycles, prefer)` and its own picker, the school's `source=`, still wins). The
-  Forecast is fitted per school on its primary source by the worker and is never fitted on request: when the choice
-  differs from the stored forecast's source the tab keeps it and says which source it is (`source-forecast-other`). The
-  live feed, the Today column and the link card are per event or fixed and do not follow it. Precedence: the URL
+  Forecast is fitted per school and per source by the worker and is never fitted on request: `GET .../forecast` takes
+  the same `source=` and returns that source's stored forecast, else the next source in the primary order, and the tab
+  says which source it is when that differs from the choice (`source-forecast-other`). An Admit MD-PhD / DO-PhD forecast
+  carries the `forecast-admit-phd-note` ("only began reporting {{program}} separately this cycle", owner 2026-11-26).
+  The live feed, the Today column and the link card are per event or fixed and do not follow it. Precedence: the URL
   (`?source=admit` on the index; on a school page the existing `source`, where `ADMIT` / `CYCLETRACK` is the choice and
   `SDN` is History's alone), else this device (`localStorage['rmh-medschool-source']`, registered in
   `lib/device-data/registry.ts`, only `admit` stored), else CycleTrack. The server renders the URL's view; a device
@@ -499,18 +501,19 @@ Model and privacy first, then the UI. The plan's decision numbers (D1-D12) and r
   public; the readers and the forecast job both import it, and `run-forecast.ts` is pinned to read counts only through
   it. A band fitted on a looser floor would publish an unpublished or sub-k RMH figure.
 - **The model (D3, D4; `engine/stats/`, pure, server-side only; `stats-boundary.test.ts` keeps it out of the client
-  graph).** Fitted **per program to the primary series, never summed** (REG and PHD; `ALL` on the page reads REG, D12).
-  Day `d` is days since the cycle's `dayZeroOn`; the fit sees counts through yesterday UTC (`asOf`, a partial day biases
-  the share down). For up to 4 earlier cycles of the same source with a season total of at least 10, the share of the
-  season reported by day `d` is weighted `0.5^k` (newest first, renormalised). FULL (weighted share at `asOf` at least
-  0.05): the implied total is the count so far over that share; 600 draws with a stratified cycle choice and a Poisson
+  graph).** Fitted **per program and per source on that source's own series, never summed** (REG and PHD; `ALL` on the
+  page reads REG, D12; every source with floored current data gets a fit, so an SDN-only school keeps one). Day `d` is
+  days since the cycle's `dayZeroOn`; the fit sees counts through yesterday UTC (`asOf`, a partial day biases the share
+  down). For up to 4 earlier cycles of the same source with a season total of at least 10, the share of the season
+  reported by day `d` is weighted `0.5^k` (newest first, renormalised). FULL (weighted share at `asOf` at least 0.05):
+  the implied total is the count so far over that share; 600 draws with a stratified cycle choice and a Poisson
   remainder, paths `C + R * q(d)`, per-day p10/p50/p90, a summary of the total and the day half of the invites are in
   (`halfDay`). EARLY: the same with the cycle's own total as the Poisson mean and p10/p90 widened 1.5x around the
   median. NONE: no band, the row still exists. A seeded `mulberry32` (`fnv1a` of school, program, type, cycle, `asOf`)
   makes a re-run the same day change nothing. Constants: `engine/stats/constants.ts`, `MODEL_VERSION` 1.
 - **The job** is the queue `medschools.forecast` (`FORECAST_CRON`, 06:40 UTC, `MEDSCHOOLS_FORECAST_CRON`; no flag, no
-  secret, no model call; detail `server/CLAUDE.md`). It writes `MedForecast` (one row per school, program, cycle and
-  type; rows for finished cycles stay, a record of what was predicted, D11) and then `MedWaitCurve`.
+  secret, no model call; detail `server/CLAUDE.md`). It writes `MedForecast` (one row per school, program, cycle, type
+  and source; rows for finished cycles stay, a record of what was predicted, D11) and then `MedWaitCurve`.
 - **`MedWaitCurve` is precomputed by the worker (D7).** A request that computed the curve would read other members'
   `COMPLETE` and `INTERVIEW` rows inside a per-user handler (one bad `where` and a stranger's row is on the wire), a
   member back-dating a milestone could move a curve a neighbour is looking at (the once-a-day publish closes only
@@ -559,9 +562,10 @@ label and a branch of the switch in `ui/SchoolPage.tsx` (the strip comes from `S
 tab component in `ui/`. The Forecast tab is `ui/ForecastTab.tsx` with `ui/charts/ForecastBand.tsx`.
 
 - **Endpoints.** Public `GET schools/$slug/forecast` (`getForecast` in `api/read.server.ts`: the stored `MedForecast`
-  row plus the floored observed series cumulated through the row's `asOf`; `ALL` reads REG; status
-  `ready | early | no-history | no-data | pending`). Private `GET me/chances` (`api/chances.server.ts`: the caller's own
-  applications from `getTracker`, one `MedWaitCurve` row per school x program, no id parameter, never cached).
+  row of the chosen `source` (else the next in the primary order) plus the floored observed series cumulated through the
+  row's `asOf`; `ALL` reads REG; status `ready | early | no-history | no-data | pending`). Private `GET me/chances`
+  (`api/chances.server.ts`: the caller's own applications from `getTracker`, one `MedWaitCurve` row per school x
+  program, no id parameter, never cached).
 - **Chart.** The observed line is the category's colour, solid 2px; the median is dashed 2px; the 10th and 90th
   percentiles are 1px dotted boundaries; nothing is filled or translucent (R1). The x axis is calendar dates, the y axis
   starts at 0 and tweens. `ui/charts/charts.test.tsx` holds the markup.
