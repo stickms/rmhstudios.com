@@ -1,3 +1,7 @@
+-- rmh:contract-ok Two rows per forecast key cannot coexist with the old unique index, so this swap is a contract step by
+-- nature. The previous release's only writer is the 06:40 forecast job (it always wrote a non-null source, so SET NOT NULL
+-- rejects nothing); on a rollback that job fails until the next forward deploy and its reader serves a stored row. The
+-- table is derived data, rebuilt in full by the next run.
 -- One stored forecast per source (the header's CycleTrack / Admit.org toggle picks which one the Forecast tab shows).
 -- The job never wrote a null source, so the delete is a guard; every existing row keeps its source and its key.
 DELETE FROM "med_forecast" WHERE "source" IS NULL;
