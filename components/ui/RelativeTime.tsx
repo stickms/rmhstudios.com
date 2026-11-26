@@ -78,10 +78,14 @@ export interface RelativeTimeProps {
   className?: string;
 }
 
+// In UTC, not the runtime's own zone: the server renders in UTC and the hydrating client in the viewer's zone, so a
+// local date of a timestamp near midnight differed across the two (React error #418, seen from Los Angeles on a
+// game thread). The live relative text replaces it after mount.
 function defaultFallback(ms: number, formatDay: (ms: number, opts: Intl.DateTimeFormatOptions) => string): string {
   return formatDay(ms, {
     month: 'short',
     day: 'numeric',
+    timeZone: 'UTC',
   });
 }
 

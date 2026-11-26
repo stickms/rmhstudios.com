@@ -12,6 +12,8 @@ import { randomBytes } from 'node:crypto';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
+import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { notBannedWhere, WORKSHOP_CONTENT_REMOVED } from '@/lib/moderation/workshop-moderation';
 import { slugify } from '@/lib/tf2-hud/zip/export';
 import {
   LOADOUT_LIMITS,
@@ -32,6 +34,11 @@ export class LoadoutError extends Error {
   ) {
     super(message);
     this.name = 'LoadoutError';
+  }
+
+  /** A write to a loadout a moderator removed; the route answers `GAME_CONTENT_REMOVED_BY_MODERATOR`. */
+  get removed(): boolean {
+    return this.message === WORKSHOP_CONTENT_REMOVED;
   }
 }
 
@@ -58,6 +65,7 @@ function summary(row: Row, liked: boolean): LoadoutSummary {
     description: row.description,
     tfClass: row.tfClass as TfClass,
     visibility: row.visibility,
+    removed: row.moderatedAt !== null,
     slots: (row.slots ?? {}) as unknown as LoadoutSlots,
     author: author(row),
     likeCount: row.likeCount,
@@ -69,8 +77,13 @@ function summary(row: Row, liked: boolean): LoadoutSummary {
   };
 }
 
-function canRead(row: { visibility: Visibility; ownerId: string }, userId: string | null): boolean {
-  return row.visibility !== 'PRIVATE' || row.ownerId === userId;
+/** The owner always (a removed loadout included, marked); anyone else only while it is not private and not removed. */
+function canRead(
+  row: { visibility: Visibility; ownerId: string; moderatedAt?: Date | null },
+  userId: string | null,
+): boolean {
+  if (row.ownerId === userId) return true;
+  return row.visibility !== 'PRIVATE' && !row.moderatedAt;
 }
 
 async function likedSet(userId: string | null, ids: string[]): Promise<Set<string>> {
@@ -162,9 +175,12 @@ export interface ListArgs {
 
 export async function listLoadouts(args: ListArgs): Promise<LoadoutListResponse> {
   if (args.mine && !args.userId) throw new LoadoutError('Sign in to see your loadouts', 403);
+  // The public list leaves out removed loadouts and those by banned authors and by members blocked either way; the
+  // owner's own list keeps a removed loadout (marked).
+  const hidden = args.mine ? [] : await getHiddenAuthorIds(args.userId);
   const where: Prisma.Tf2LoadoutWhereInput = args.mine
     ? { ownerId: args.userId! }
-    : { visibility: 'PUBLIC' };
+    : { visibility: 'PUBLIC', ownerId: { notIn: hidden }, owner: notBannedWhere(new Date()) };
   if (args.tfClass) where.tfClass = args.tfClass;
   if (args.q) {
     // Titles and descriptions, plus any loadout that uses an item whose name matches.
@@ -183,7 +199,8 @@ export async function listLoadouts(args: ListArgs): Promise<LoadoutListResponse>
     ];
   }
   const rows = await prisma.tf2Loadout.findMany({
-    where,
+    // The owner's own list keeps a removed loadout (marked); nobody else's does.
+    where: { ...where, ...(args.mine ? {} : { moderatedAt: null }) },
     orderBy:
       args.sort === 'new'
         ? [{ updatedAt: 'desc' }, { id: 'desc' }]
@@ -263,6 +280,15 @@ export interface UpdateArgs {
 
 export async function updateLoadout(a: UpdateArgs): Promise<LoadoutDetail> {
   const row = await ownedRow(a.id, a.userId);
+  // A removed loadout stays private and keeps its name and text: the owner can still change its items.
+  if (
+    row.moderatedAt &&
+    ((a.visibility !== undefined && a.visibility !== 'PRIVATE') ||
+      (a.title !== undefined && a.title !== row.title) ||
+      (a.description !== undefined && a.description !== row.description))
+  ) {
+    throw new LoadoutError(WORKSHOP_CONTENT_REMOVED, 403);
+  }
   const tfClass = a.tfClass ?? (row.tfClass as TfClass);
   const slots = a.slots ?? (row.slots as unknown as LoadoutSlots);
   // Re-check whenever the class or the items change.
@@ -299,6 +325,8 @@ export async function deleteLoadout(id: string, userId: string): Promise<void> {
 
 export async function forkLoadout(idOrSlug: string, userId: string): Promise<LoadoutDetail> {
   const src = await readableRow(idOrSlug, userId);
+  // Not even its owner copies a removed loadout.
+  if (src.moderatedAt) throw new LoadoutError(WORKSHOP_CONTENT_REMOVED, 403);
   return createLoadout({
     userId,
     title: `${src.title} (copy)`.slice(0, LOADOUT_LIMITS.maxTitle),
@@ -315,6 +343,7 @@ export async function toggleLike(
   userId: string,
 ): Promise<{ liked: boolean; likeCount: number }> {
   const row = await readableRow(idOrSlug, userId);
+  if (row.moderatedAt) throw new LoadoutError(WORKSHOP_CONTENT_REMOVED, 403);
   return prisma.$transaction(async (tx) => {
     const key = { userId_loadoutId: { userId, loadoutId: row.id } };
     if (await tx.tf2LoadoutLike.findUnique({ where: key })) {

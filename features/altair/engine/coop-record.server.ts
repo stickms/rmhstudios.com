@@ -4,8 +4,8 @@
  * member's `AltairMatchPlayer` rows now, never from the stored `favoriteClassId` (the first class ever played).
  *
  * The boards leave out the members `leaderboardHiddenUserIds()` names (opted out, banned now). `AltairCoopProfile.userId`
- * is required, so the where-fragment is `userNotHiddenWhere`, not the null-tolerant `notHiddenWhere`. A member's own
- * place is not computed.
+ * is required, so the where-fragment is `userNotHiddenWhere`, not the null-tolerant `notHiddenWhere`. A member outside the ten
+ * gets their own place from `coopOwnPlace` (a count of the rows ahead of them under the same filter and order).
  */
 import { prisma } from '@/lib/prisma.server';
 import { userChipSelect } from '@/lib/user-display';
@@ -17,6 +17,7 @@ import {
   type ClassCount,
   type CoopBoardEntry,
   type CoopBoardKind,
+  type CoopOwnPlace,
   type CoopRecord,
 } from './coop-record';
 
@@ -89,6 +90,33 @@ export async function coopBoard(kind: CoopBoardKind): Promise<CoopBoardEntry[]> 
     totalRevivesGiven: r.totalRevivesGiven,
     totalCoopRuns: r.totalCoopRuns,
   }));
+}
+
+/**
+ * The member's own place on a co-op board, only when it lies outside the top {@link COOP_BOARD_SIZE} the board lists.
+ * It is the number of listed rows ahead of them plus one, counted with the board's own filter (`userNotHiddenWhere`,
+ * a value above zero) and order (the board's column descending, then the row id ascending). A hidden member (opted out
+ * of boards, or banned now), a member with no profile or a zero value is not on the board, so has no place.
+ */
+export async function coopOwnPlace(userId: string, kind: CoopBoardKind): Promise<CoopOwnPlace | null> {
+  const hidden = await leaderboardHiddenUserIds();
+  if (hidden.has(userId)) return null;
+  const mine = await prisma.altairCoopProfile.findUnique({
+    where: { userId },
+    select: { id: true, totalCoopWins: true, totalRevivesGiven: true, totalCoopRuns: true },
+  });
+  if (!mine) return null;
+  const value = kind === 'coop-wins' ? mine.totalCoopWins : mine.totalRevivesGiven;
+  if (value <= 0) return null;
+  const column = kind === 'coop-wins' ? 'totalCoopWins' : 'totalRevivesGiven';
+  const visible = userNotHiddenWhere(hidden);
+  const [higher, tiedAhead] = await Promise.all([
+    prisma.altairCoopProfile.count({ where: { ...visible, [column]: { gt: value } } }),
+    prisma.altairCoopProfile.count({ where: { ...visible, [column]: value, id: { lt: mine.id } } }),
+  ]);
+  const place = higher + tiedAhead + 1;
+  if (place <= COOP_BOARD_SIZE) return null;
+  return { place, value, runs: mine.totalCoopRuns };
 }
 
 export interface AltairCoopExport extends CoopRecord {

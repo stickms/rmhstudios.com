@@ -47,6 +47,11 @@ export interface DeckAccessEntry {
  * Adding a file here is a decision a reviewer reads; the scan fails the file that is missing.
  */
 export const DECK_ACCESS_PATHS: Record<string, DeckAccessEntry> = {
+  'lib/moderation/removal-restore.server.ts': {
+    access: 'owner-only',
+    reason:
+      's15-16: the title of a deck a report removed, read for its author\'s own "Removed after a report" list (userId is the author; an editor has no part in it) and, by id, for an admin reading a requested review; a restore clears `moderatedAt` and leaves the deck private.',
+  },
   'lib/study.server.ts': {
     access: 'role',
     reason:

@@ -38,6 +38,7 @@ import {
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { CONVERSATION_PINS_CHANGED_EVENT } from '@/lib/messages/pins';
 
+import { Handle } from '@/components/ui/handle';
 export interface ConversationItem {
   id: string;
   otherUser: {
@@ -536,7 +537,7 @@ function ConversationRow({
               </span>
               {conv.otherUser.username && !isSelf && (
                 <span className="t-meta truncate" dir="ltr">
-                  @{conv.otherUser.username}
+                  <Handle handle={conv.otherUser.username} />
                 </span>
               )}
               {conv.otherUser.isBot && <AutomatedBadge />}
@@ -699,7 +700,7 @@ function NewChatDialog({
                       </p>
                       {(u.username || u.handle) && (
                         <p className="truncate text-xs text-site-text-muted">
-                          @{u.username ?? u.handle}
+                          <Handle handle={u.username ?? u.handle} />
                         </p>
                       )}
                     </div>

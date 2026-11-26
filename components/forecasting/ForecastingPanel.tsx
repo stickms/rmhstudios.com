@@ -398,13 +398,15 @@ function SeasonCard({
                         1}
                     </span>
                     <span className="flex-1 min-w-0 truncate">
-                      {r
-                        .user
-                        ?.name ??
-                        r
+                      <bdi>
+                        {r
                           .user
-                          ?.handle ??
-                        ''}
+                          ?.name ??
+                          r
+                            .user
+                            ?.handle ??
+                          ''}
+                      </bdi>
                     </span>
                     <span className="text-xs text-site-text-muted tabular-nums">
                       {t(

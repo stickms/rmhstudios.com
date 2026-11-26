@@ -71,8 +71,13 @@ export function otherPlayerView(
   return { kind: 'player', name: user.name };
 }
 
-/** The member's finished versus matches, newest first, 20 a page on `(lastUpdateAt, id)` of their own row. */
-export async function listMyMatches(userId: string, token?: string): Promise<MatchesPage> {
+/**
+ * The member's finished versus matches, newest first, 20 a page on `(lastUpdateAt, id)` of their own row.
+ *
+ * `rivalUserId` (sprint 15 15, already resolved from a rival key by `resolveRivalKey`) narrows the list to the matches
+ * the member and that account both finished, the ones the rival's record counts: same paging, no second list.
+ */
+export async function listMyMatches(userId: string, token?: string, rivalUserId?: string): Promise<MatchesPage> {
   let cursor: MatchesCursor | null = null;
   if (token) {
     cursor = decodeMatchesCursor(token);
@@ -80,7 +85,10 @@ export async function listMyMatches(userId: string, token?: string): Promise<Mat
   }
   const where = {
     userId,
-    match: { status: 'FINISHED' },
+    match: rivalUserId
+      ? { status: 'FINISHED', players: { some: { userId: rivalUserId, finishedAt: { not: null } } } }
+      : { status: 'FINISHED' },
+    ...(rivalUserId ? { finishedAt: { not: null } } : {}),
     ...(cursor
       ? {
           OR: [{ lastUpdateAt: { lt: cursor.at } }, { lastUpdateAt: cursor.at, id: { lt: cursor.id } }],

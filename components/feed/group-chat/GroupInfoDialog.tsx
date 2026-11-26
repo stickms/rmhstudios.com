@@ -33,6 +33,7 @@ import { ADD_BATCH_MAX, GROUP_NAME_MAX } from '@/lib/group-chat/manage';
 import type { Group, Sender } from '@/lib/group-chat/types';
 import type { ResolvedUser } from '@/lib/user-display';
 
+import { Handle } from '@/components/ui/handle';
 const label = (u: { name: string | null; handle: string | null }) => u.name || (u.handle ? `@${u.handle}` : null);
 
 /**
@@ -485,7 +486,11 @@ function AddPeople({ group, onChanged }: { group: Group; onChanged: () => void |
                       defaultValue: 'Member',
                     })}
                 </span>
-                {u.handle && <span className="t-meta truncate">@{u.handle}</span>}
+                {u.handle && (
+                  <span className="t-meta truncate">
+                    <Handle handle={u.handle} />
+                  </span>
+                )}
               </button>
             </li>
           ))}

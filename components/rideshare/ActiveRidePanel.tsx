@@ -17,7 +17,7 @@ import { rideClassName } from '@/lib/rideshare/classes';
 import { formatDistance, formatDuration, type LatLng } from '@/lib/rideshare/geo';
 import { useDriverLocationShare } from '@/lib/rideshare/useDriverLocationShare';
 import { Spinner } from '@/components/ui/spinner';
-import { withinRideReportWindow } from '@/lib/rideshare/report-window';
+import { rideReportable } from '@/lib/rideshare/report-window';
 import { api } from '@/lib/contract/client';
 import {
   rateRideApi,
@@ -65,6 +65,7 @@ interface SyncRide {
   ratingByDriver: number | null;
   acceptedAt: string | null;
   completedAt: string | null;
+  cancelledAt: string | null;
   chatClosed: boolean;
   rider: Person;
   driver: (Person & { rideshareDriver: Vehicle | null }) | null;
@@ -368,8 +369,13 @@ export function ActiveRidePanel({
         otherName={other?.name ?? undefined}
       />
 
-      {/* A trip with a matched driver can be reported by either party, for 30 days after it ends */}
-      {ride.driver && ride.acceptedAt && withinRideReportWindow(ride.completedAt) && (
+      {/* A trip with a matched driver can be reported by either party, for 30 days after it ends or is cancelled */}
+      {rideReportable({
+        hasDriver: !!ride.driver,
+        acceptedAt: ride.acceptedAt,
+        completedAt: ride.completedAt,
+        cancelledAt: ride.cancelledAt,
+      }) && (
         <ReportTripButton rideId={ride.id} />
       )}
 

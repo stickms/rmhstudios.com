@@ -148,7 +148,7 @@ The parties you run (`role` `gm`) or play in (`player`), most recently changed f
 
 ### `GET /api/v1/me/parties/{id}`
 
-One party as the site shows it to you: each member's name and the summary of the character they brought, the turn order and `turnIndex`, the line whose turn it is. A member's `summary` is `null` when the sheet cannot be read. Never another player's sheet or notes, and never the invite code. A party you are not in, or have left, is `404 not_found`. Never cached.
+One party as the site shows it to you: each member's name and the summary of the character they brought, the turn order and `turnIndex`, the line whose turn it is. A member's `summary` is `null` when the sheet cannot be read. A player you are blocked with (either way) has `name` `A player` and `nameHidden: true` (on the turn order too), and `summary` is `null`; `name` keeps that English text, so a client that translates reads `nameHidden`. Never another player's sheet or notes, and never the invite code. A party you are not in, or have left, is `404 not_found`. Never cached.
 
 **Scope:** `read:characters` · **Success:** `200` · **Operation id:** `getMyParty`
 
@@ -170,6 +170,7 @@ One party as the site shows it to you: each member's name and the summary of the
       {
         "userId": "cluser1",
         "name": "Ada",
+        "nameHidden": false,
         "joinedAt": "2026-11-01T18:00:00.000Z",
         "isGm": true,
         "summary": {
@@ -204,6 +205,7 @@ One party as the site shows it to you: each member's name and the summary of the
         "kind": "extra",
         "userId": null,
         "name": "Goblin",
+        "nameHidden": false,
         "value": 12
       },
       {
@@ -211,6 +213,7 @@ One party as the site shows it to you: each member's name and the summary of the
         "kind": "member",
         "userId": "cluser1",
         "name": "Ada",
+        "nameHidden": false,
         "value": 17
       }
     ],

@@ -10,6 +10,8 @@ import { RelativeTime } from '@/components/ui/RelativeTime';
 import { CommunityNav } from './CommunityNav';
 import { EmotePicker } from './EmotePicker';
 import { PersonAvatar } from './SteamPeople';
+import { MentionTextarea } from '@/components/feed/MentionTextarea';
+import { MentionHint } from './MentionHint';
 import { PostText } from './PostText';
 import { hubErrorText } from './hub-errors';
 import { ReportItemButton } from './ReportItem';
@@ -118,6 +120,7 @@ export function ThreadPage({ data }: { data: ThreadPageData }) {
               className="stm-post-text"
               text={th.body}
               ownedTitles={data.authorEmotes[th.author.userId] ?? []}
+              mentions={data.mentions}
             />
             <div className="stm-post-tools">
               {data.signedIn ? <ThreadMuteButton threadId={th.id} className="stm-btn" /> : null}
@@ -218,6 +221,7 @@ export function ThreadPage({ data }: { data: ThreadPageData }) {
                 className="stm-post-text"
                 text={p.body}
                 ownedTitles={data.authorEmotes[p.author.userId] ?? []}
+                mentions={data.mentions}
               />
               <div className="stm-post-tools">
                 <ReportItemButton
@@ -286,15 +290,18 @@ export function ThreadPage({ data }: { data: ThreadPageData }) {
                   defaultValue: 'Reply',
                 })}
               </span>
-              <textarea
+              <MentionTextarea
                 className="stm-textarea"
                 rows={4}
                 value={reply}
                 maxLength={MAX_POST}
-                onChange={(e) => setReply(e.target.value)}
+                onChange={setReply}
+                atOnly
+                aria-describedby="thread-reply-hint"
                 required
               />
             </label>
+            <MentionHint id="thread-reply-hint" />
             <div className="stm-write-actions">
               <button type="submit" className="stm-btn stm-btn-blue" disabled={busy || reply.trim().length === 0}>
                 {t('steam-hub-post', {

@@ -17,13 +17,24 @@
  * keeps one gzipped copy of the world here (IndexedDB stays the first copy) and sends `expectedUpdatedAt` so a second
  * device cannot overwrite a newer copy.
  *
+ * The House Always Wins and Nightrail are on the list because their progress now follows the account
+ * (`lib/house-always-wins/cloud.ts`, `features/nightrail/engine/cloud.ts`): the House's run is one row holding the
+ * classic slot, the New Game+ slot and the New Game+ record; Nightrail's row is the sorted list of opened lines. Both
+ * send `expectedUpdatedAt` (`lib/game-saves/cas-transport.ts`), so a stale device is refused rather than applied.
+ *
  * Games still on `localStorage` alone are absent too, and that is the point of
  * keeping this list short: an id here is a promise that something writes to it.
  * Velum 2099's story save, Lights Out's puzzle history, Dream Rift's high
  * scores and the Altair meta shop have not been moved yet —
  * add the id in the same commit that teaches the game to save, not before.
  */
-export const SHARED_SAVE_GAMES = ['void-breaker', 'neon-driftway', 'hearthworks'] as const;
+export const SHARED_SAVE_GAMES = [
+  'void-breaker',
+  'neon-driftway',
+  'hearthworks',
+  'house-always-wins',
+  'nightrail',
+] as const;
 
 /**
  * Games that save on the shared table but are not in the public catalog

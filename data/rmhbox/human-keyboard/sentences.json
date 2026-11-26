@@ -1,0 +1,1250 @@
+[
+  {
+    "id": "hk-proverb-01",
+    "text": "a stitch in time saves nine",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-02",
+    "text": "all that glitters is not gold",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-03",
+    "text": "actions speak louder than words",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-04",
+    "text": "better late than never",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-05",
+    "text": "birds of a feather flock together",
+    "difficulty": "medium",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-06",
+    "text": "good things come to those who wait",
+    "difficulty": "medium",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-07",
+    "text": "practice makes perfect",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-08",
+    "text": "the early bird catches the worm",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-09",
+    "text": "too many cooks spoil the broth",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-10",
+    "text": "every cloud has a silver lining",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-11",
+    "text": "fortune favors the bold",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-12",
+    "text": "honesty is the best policy",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-13",
+    "text": "look before you leap",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-14",
+    "text": "many hands make light work",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-15",
+    "text": "slow and steady wins the race",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-16",
+    "text": "two heads are better than one",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-17",
+    "text": "when in rome do as the romans do",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-18",
+    "text": "the pen is mightier than the sword",
+    "difficulty": "medium",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-19",
+    "text": "a rolling stone gathers no moss",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-20",
+    "text": "curiosity killed the cat",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-21",
+    "text": "dont count your chickens before they hatch",
+    "difficulty": "medium",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-22",
+    "text": "home is where the heart is",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-23",
+    "text": "beauty is in the eye of the beholder",
+    "difficulty": "medium",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-24",
+    "text": "necessity is the mother of invention",
+    "difficulty": "medium",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-25",
+    "text": "laughter is the best medicine",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-26",
+    "text": "you cannot judge a book by its cover",
+    "difficulty": "medium",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-27",
+    "text": "the grass is always greener on the other side",
+    "difficulty": "medium",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-28",
+    "text": "no pain no gain they always say",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-29",
+    "text": "easy come and easy go my friend",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-proverb-30",
+    "text": "out of sight out of mind",
+    "difficulty": "easy",
+    "category": "proverb"
+  },
+  {
+    "id": "hk-pangram-01",
+    "text": "the quick brown fox jumps over the lazy dog",
+    "difficulty": "hard",
+    "category": "pangram"
+  },
+  {
+    "id": "hk-pangram-02",
+    "text": "pack my box with five dozen liquor jugs",
+    "difficulty": "hard",
+    "category": "pangram"
+  },
+  {
+    "id": "hk-pangram-03",
+    "text": "how vexingly quick daft zebras jump",
+    "difficulty": "hard",
+    "category": "pangram"
+  },
+  {
+    "id": "hk-pangram-04",
+    "text": "sphinx of black quartz judge my vow",
+    "difficulty": "hard",
+    "category": "pangram"
+  },
+  {
+    "id": "hk-pangram-05",
+    "text": "the five boxing wizards jump quickly",
+    "difficulty": "hard",
+    "category": "pangram"
+  },
+  {
+    "id": "hk-pangram-06",
+    "text": "jackdaws love my big sphinx of quartz",
+    "difficulty": "hard",
+    "category": "pangram"
+  },
+  {
+    "id": "hk-pangram-07",
+    "text": "waltz bad nymph for quick jigs vex",
+    "difficulty": "hard",
+    "category": "pangram"
+  },
+  {
+    "id": "hk-pangram-08",
+    "text": "quick zephyrs blow vexing daft jim",
+    "difficulty": "hard",
+    "category": "pangram"
+  },
+  {
+    "id": "hk-pangram-09",
+    "text": "two driven jocks help fax my big quiz",
+    "difficulty": "hard",
+    "category": "pangram"
+  },
+  {
+    "id": "hk-pangram-10",
+    "text": "glib jocks quiz nymph to vex dwarf",
+    "difficulty": "hard",
+    "category": "pangram"
+  },
+  {
+    "id": "hk-everyday-01",
+    "text": "please close the door behind you",
+    "difficulty": "easy",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-02",
+    "text": "i would like a cup of tea",
+    "difficulty": "easy",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-03",
+    "text": "the bus leaves at half past seven",
+    "difficulty": "medium",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-04",
+    "text": "we are meeting for lunch tomorrow",
+    "difficulty": "medium",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-05",
+    "text": "turn left at the corner shop",
+    "difficulty": "easy",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-06",
+    "text": "my phone is almost out of battery",
+    "difficulty": "medium",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-07",
+    "text": "can you pass me the salt",
+    "difficulty": "easy",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-08",
+    "text": "it is going to rain this afternoon",
+    "difficulty": "medium",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-09",
+    "text": "remember to lock the front door",
+    "difficulty": "easy",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-10",
+    "text": "the dog needs a walk after dinner",
+    "difficulty": "medium",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-11",
+    "text": "put the kettle on and sit down",
+    "difficulty": "easy",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-12",
+    "text": "we ran out of milk this morning",
+    "difficulty": "easy",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-13",
+    "text": "the train was late again today",
+    "difficulty": "easy",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-14",
+    "text": "she left her umbrella on the bus",
+    "difficulty": "easy",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-15",
+    "text": "i will call you when i get home",
+    "difficulty": "easy",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-16",
+    "text": "dinner is ready so wash your hands",
+    "difficulty": "medium",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-17",
+    "text": "the meeting starts in ten minutes",
+    "difficulty": "medium",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-18",
+    "text": "bring a jacket because it is cold",
+    "difficulty": "medium",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-19",
+    "text": "he forgot where he parked the car",
+    "difficulty": "medium",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-20",
+    "text": "the shop closes at six tonight",
+    "difficulty": "medium",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-21",
+    "text": "could you water the plants for me",
+    "difficulty": "medium",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-22",
+    "text": "the wifi password is on the fridge",
+    "difficulty": "medium",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-23",
+    "text": "i need a nap before the party",
+    "difficulty": "easy",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-24",
+    "text": "where did i leave my keys",
+    "difficulty": "easy",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-25",
+    "text": "the cat sat on the warm windowsill",
+    "difficulty": "medium",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-26",
+    "text": "lets order a pizza for everyone",
+    "difficulty": "hard",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-27",
+    "text": "the movie starts at eight oclock",
+    "difficulty": "easy",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-28",
+    "text": "she plays the guitar every evening",
+    "difficulty": "medium",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-29",
+    "text": "the baby finally fell asleep",
+    "difficulty": "easy",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-everyday-30",
+    "text": "we should clean the kitchen soon",
+    "difficulty": "easy",
+    "category": "everyday"
+  },
+  {
+    "id": "hk-nature-01",
+    "text": "the river runs down to the sea",
+    "difficulty": "easy",
+    "category": "nature"
+  },
+  {
+    "id": "hk-nature-02",
+    "text": "tall pines sway in the morning wind",
+    "difficulty": "medium",
+    "category": "nature"
+  },
+  {
+    "id": "hk-nature-03",
+    "text": "a small frog sat on a lily pad",
+    "difficulty": "easy",
+    "category": "nature"
+  },
+  {
+    "id": "hk-nature-04",
+    "text": "the moon rose over the quiet hills",
+    "difficulty": "medium",
+    "category": "nature"
+  },
+  {
+    "id": "hk-nature-05",
+    "text": "snow fell softly on the sleeping town",
+    "difficulty": "medium",
+    "category": "nature"
+  },
+  {
+    "id": "hk-nature-06",
+    "text": "bees gather nectar from wild flowers",
+    "difficulty": "medium",
+    "category": "nature"
+  },
+  {
+    "id": "hk-nature-07",
+    "text": "the old oak tree shaded the garden",
+    "difficulty": "medium",
+    "category": "nature"
+  },
+  {
+    "id": "hk-nature-08",
+    "text": "waves crashed against the rocky shore",
+    "difficulty": "medium",
+    "category": "nature"
+  },
+  {
+    "id": "hk-nature-09",
+    "text": "a fox crossed the field at dawn",
+    "difficulty": "medium",
+    "category": "nature"
+  },
+  {
+    "id": "hk-nature-10",
+    "text": "the desert is cold at night",
+    "difficulty": "easy",
+    "category": "nature"
+  },
+  {
+    "id": "hk-nature-11",
+    "text": "fog drifted slowly across the lake",
+    "difficulty": "medium",
+    "category": "nature"
+  },
+  {
+    "id": "hk-nature-12",
+    "text": "geese flew south in a long line",
+    "difficulty": "easy",
+    "category": "nature"
+  },
+  {
+    "id": "hk-nature-13",
+    "text": "the mountain peak was covered in ice",
+    "difficulty": "medium",
+    "category": "nature"
+  },
+  {
+    "id": "hk-nature-14",
+    "text": "a gentle breeze moved the tall grass",
+    "difficulty": "medium",
+    "category": "nature"
+  },
+  {
+    "id": "hk-nature-15",
+    "text": "stars filled the sky above the camp",
+    "difficulty": "medium",
+    "category": "nature"
+  },
+  {
+    "id": "hk-nature-16",
+    "text": "rain tapped on the leaves all night",
+    "difficulty": "medium",
+    "category": "nature"
+  },
+  {
+    "id": "hk-nature-17",
+    "text": "the owl called from the dark forest",
+    "difficulty": "medium",
+    "category": "nature"
+  },
+  {
+    "id": "hk-nature-18",
+    "text": "a rainbow appeared after the storm",
+    "difficulty": "medium",
+    "category": "nature"
+  },
+  {
+    "id": "hk-nature-19",
+    "text": "the stream sparkled in the afternoon sun",
+    "difficulty": "medium",
+    "category": "nature"
+  },
+  {
+    "id": "hk-nature-20",
+    "text": "wild horses ran across the open plain",
+    "difficulty": "medium",
+    "category": "nature"
+  },
+  {
+    "id": "hk-food-01",
+    "text": "fresh bread smells wonderful in the morning",
+    "difficulty": "medium",
+    "category": "food"
+  },
+  {
+    "id": "hk-food-02",
+    "text": "she stirred the soup with a wooden spoon",
+    "difficulty": "medium",
+    "category": "food"
+  },
+  {
+    "id": "hk-food-03",
+    "text": "we baked a chocolate cake for his birthday",
+    "difficulty": "medium",
+    "category": "food"
+  },
+  {
+    "id": "hk-food-04",
+    "text": "the pasta needs two more minutes",
+    "difficulty": "easy",
+    "category": "food"
+  },
+  {
+    "id": "hk-food-05",
+    "text": "add a pinch of salt and some pepper",
+    "difficulty": "medium",
+    "category": "food"
+  },
+  {
+    "id": "hk-food-06",
+    "text": "he spread butter on the warm toast",
+    "difficulty": "medium",
+    "category": "food"
+  },
+  {
+    "id": "hk-food-07",
+    "text": "the market sells ripe peaches and plums",
+    "difficulty": "medium",
+    "category": "food"
+  },
+  {
+    "id": "hk-food-08",
+    "text": "a bowl of rice with steamed vegetables",
+    "difficulty": "medium",
+    "category": "food"
+  },
+  {
+    "id": "hk-food-09",
+    "text": "cold lemonade is perfect on a hot day",
+    "difficulty": "medium",
+    "category": "food"
+  },
+  {
+    "id": "hk-food-10",
+    "text": "grandma makes the best apple pie",
+    "difficulty": "easy",
+    "category": "food"
+  },
+  {
+    "id": "hk-food-11",
+    "text": "they shared a pizza with extra cheese",
+    "difficulty": "hard",
+    "category": "food"
+  },
+  {
+    "id": "hk-food-12",
+    "text": "the cook chopped onions and garlic",
+    "difficulty": "medium",
+    "category": "food"
+  },
+  {
+    "id": "hk-food-13",
+    "text": "pour the batter into the greased pan",
+    "difficulty": "medium",
+    "category": "food"
+  },
+  {
+    "id": "hk-food-14",
+    "text": "i love crunchy pickles on my sandwich",
+    "difficulty": "medium",
+    "category": "food"
+  },
+  {
+    "id": "hk-food-15",
+    "text": "the soup was too hot to eat",
+    "difficulty": "easy",
+    "category": "food"
+  },
+  {
+    "id": "hk-tech-01",
+    "text": "save your work before the computer restarts",
+    "difficulty": "medium",
+    "category": "tech"
+  },
+  {
+    "id": "hk-tech-02",
+    "text": "the server is down for maintenance",
+    "difficulty": "medium",
+    "category": "tech"
+  },
+  {
+    "id": "hk-tech-03",
+    "text": "type the password carefully on the keyboard",
+    "difficulty": "medium",
+    "category": "tech"
+  },
+  {
+    "id": "hk-tech-04",
+    "text": "the new update fixes several bugs",
+    "difficulty": "medium",
+    "category": "tech"
+  },
+  {
+    "id": "hk-tech-05",
+    "text": "please back up your files every week",
+    "difficulty": "medium",
+    "category": "tech"
+  },
+  {
+    "id": "hk-tech-06",
+    "text": "the program crashed without any warning",
+    "difficulty": "medium",
+    "category": "tech"
+  },
+  {
+    "id": "hk-tech-07",
+    "text": "click the button to start the game",
+    "difficulty": "medium",
+    "category": "tech"
+  },
+  {
+    "id": "hk-tech-08",
+    "text": "the screen froze for a few seconds",
+    "difficulty": "medium",
+    "category": "tech"
+  },
+  {
+    "id": "hk-tech-09",
+    "text": "download the file and open it later",
+    "difficulty": "medium",
+    "category": "tech"
+  },
+  {
+    "id": "hk-tech-10",
+    "text": "a faster router makes the stream smooth",
+    "difficulty": "medium",
+    "category": "tech"
+  },
+  {
+    "id": "hk-tech-11",
+    "text": "the robot followed the line on the floor",
+    "difficulty": "medium",
+    "category": "tech"
+  },
+  {
+    "id": "hk-tech-12",
+    "text": "turn it off and then on again",
+    "difficulty": "easy",
+    "category": "tech"
+  },
+  {
+    "id": "hk-tech-13",
+    "text": "the cursor blinked on the empty page",
+    "difficulty": "medium",
+    "category": "tech"
+  },
+  {
+    "id": "hk-tech-14",
+    "text": "every key on this board has a job",
+    "difficulty": "medium",
+    "category": "tech"
+  },
+  {
+    "id": "hk-tech-15",
+    "text": "code that is simple is easy to fix",
+    "difficulty": "medium",
+    "category": "tech"
+  },
+  {
+    "id": "hk-teamwork-01",
+    "text": "we win this one together or not at all",
+    "difficulty": "medium",
+    "category": "teamwork"
+  },
+  {
+    "id": "hk-teamwork-02",
+    "text": "everyone take your keys and stay calm",
+    "difficulty": "medium",
+    "category": "teamwork"
+  },
+  {
+    "id": "hk-teamwork-03",
+    "text": "watch the sentence and call out your letters",
+    "difficulty": "medium",
+    "category": "teamwork"
+  },
+  {
+    "id": "hk-teamwork-04",
+    "text": "no one person can type the whole line",
+    "difficulty": "medium",
+    "category": "teamwork"
+  },
+  {
+    "id": "hk-teamwork-05",
+    "text": "speak up when the next letter is yours",
+    "difficulty": "medium",
+    "category": "teamwork"
+  },
+  {
+    "id": "hk-teamwork-06",
+    "text": "steady hands finish the sentence first",
+    "difficulty": "medium",
+    "category": "teamwork"
+  },
+  {
+    "id": "hk-teamwork-07",
+    "text": "trust the table and press when ready",
+    "difficulty": "medium",
+    "category": "teamwork"
+  },
+  {
+    "id": "hk-teamwork-08",
+    "text": "listen to the others and type in turn",
+    "difficulty": "medium",
+    "category": "teamwork"
+  },
+  {
+    "id": "hk-teamwork-09",
+    "text": "a good team shares the work evenly",
+    "difficulty": "medium",
+    "category": "teamwork"
+  },
+  {
+    "id": "hk-teamwork-10",
+    "text": "count to three and press as one",
+    "difficulty": "easy",
+    "category": "teamwork"
+  },
+  {
+    "id": "hk-teamwork-11",
+    "text": "keep your eyes on the next letter",
+    "difficulty": "medium",
+    "category": "teamwork"
+  },
+  {
+    "id": "hk-teamwork-12",
+    "text": "slow down and do not mash the keys",
+    "difficulty": "medium",
+    "category": "teamwork"
+  },
+  {
+    "id": "hk-teamwork-13",
+    "text": "we need your letters so stay with us",
+    "difficulty": "medium",
+    "category": "teamwork"
+  },
+  {
+    "id": "hk-teamwork-14",
+    "text": "the alphabet is split between all of us",
+    "difficulty": "medium",
+    "category": "teamwork"
+  },
+  {
+    "id": "hk-teamwork-15",
+    "text": "pass the word and keep the rhythm going",
+    "difficulty": "medium",
+    "category": "teamwork"
+  },
+  {
+    "id": "hk-story-01",
+    "text": "the wizard lost his hat in the wind",
+    "difficulty": "medium",
+    "category": "story"
+  },
+  {
+    "id": "hk-story-02",
+    "text": "a small dragon guarded a pile of socks",
+    "difficulty": "medium",
+    "category": "story"
+  },
+  {
+    "id": "hk-story-03",
+    "text": "the pirate buried a chest of old coins",
+    "difficulty": "medium",
+    "category": "story"
+  },
+  {
+    "id": "hk-story-04",
+    "text": "an astronaut waved from the quiet moon",
+    "difficulty": "medium",
+    "category": "story"
+  },
+  {
+    "id": "hk-story-05",
+    "text": "the knight was afraid of a tiny mouse",
+    "difficulty": "medium",
+    "category": "story"
+  },
+  {
+    "id": "hk-story-06",
+    "text": "a clever fox tricked the hungry wolf",
+    "difficulty": "medium",
+    "category": "story"
+  },
+  {
+    "id": "hk-story-07",
+    "text": "the princess fixed the broken clock tower",
+    "difficulty": "medium",
+    "category": "story"
+  },
+  {
+    "id": "hk-story-08",
+    "text": "a lost robot searched for its owner",
+    "difficulty": "medium",
+    "category": "story"
+  },
+  {
+    "id": "hk-story-09",
+    "text": "the giant slept under a blanket of clouds",
+    "difficulty": "medium",
+    "category": "story"
+  },
+  {
+    "id": "hk-story-10",
+    "text": "the detective found a clue in the garden",
+    "difficulty": "medium",
+    "category": "story"
+  },
+  {
+    "id": "hk-story-11",
+    "text": "a ghost lived in the library attic",
+    "difficulty": "medium",
+    "category": "story"
+  },
+  {
+    "id": "hk-story-12",
+    "text": "the captain steered the ship through the storm",
+    "difficulty": "medium",
+    "category": "story"
+  },
+  {
+    "id": "hk-story-13",
+    "text": "a young witch brewed a pot of tea",
+    "difficulty": "medium",
+    "category": "story"
+  },
+  {
+    "id": "hk-story-14",
+    "text": "the monster under the bed was shy",
+    "difficulty": "medium",
+    "category": "story"
+  },
+  {
+    "id": "hk-story-15",
+    "text": "the king declared a holiday for cats",
+    "difficulty": "medium",
+    "category": "story"
+  },
+  {
+    "id": "hk-sport-01",
+    "text": "the striker scored in the last minute",
+    "difficulty": "medium",
+    "category": "sport"
+  },
+  {
+    "id": "hk-sport-02",
+    "text": "she swam two lengths without stopping",
+    "difficulty": "medium",
+    "category": "sport"
+  },
+  {
+    "id": "hk-sport-03",
+    "text": "the goalie jumped and caught the ball",
+    "difficulty": "medium",
+    "category": "sport"
+  },
+  {
+    "id": "hk-sport-04",
+    "text": "we lost the match but had great fun",
+    "difficulty": "medium",
+    "category": "sport"
+  },
+  {
+    "id": "hk-sport-05",
+    "text": "the runner crossed the line first",
+    "difficulty": "medium",
+    "category": "sport"
+  },
+  {
+    "id": "hk-sport-06",
+    "text": "he serves fast and plays near the net",
+    "difficulty": "medium",
+    "category": "sport"
+  },
+  {
+    "id": "hk-sport-07",
+    "text": "the crowd cheered when the team arrived",
+    "difficulty": "medium",
+    "category": "sport"
+  },
+  {
+    "id": "hk-sport-08",
+    "text": "a perfect pass led to the winning goal",
+    "difficulty": "medium",
+    "category": "sport"
+  },
+  {
+    "id": "hk-sport-09",
+    "text": "the cyclist climbed the steep hill",
+    "difficulty": "medium",
+    "category": "sport"
+  },
+  {
+    "id": "hk-sport-10",
+    "text": "practice every day to improve your swing",
+    "difficulty": "medium",
+    "category": "sport"
+  },
+  {
+    "id": "hk-music-01",
+    "text": "the band played until midnight",
+    "difficulty": "easy",
+    "category": "music"
+  },
+  {
+    "id": "hk-music-02",
+    "text": "she hummed a song while she worked",
+    "difficulty": "medium",
+    "category": "music"
+  },
+  {
+    "id": "hk-music-03",
+    "text": "turn up the radio and sing along",
+    "difficulty": "easy",
+    "category": "music"
+  },
+  {
+    "id": "hk-music-04",
+    "text": "the drummer kept a steady beat",
+    "difficulty": "easy",
+    "category": "music"
+  },
+  {
+    "id": "hk-music-05",
+    "text": "a violin solo filled the quiet hall",
+    "difficulty": "medium",
+    "category": "music"
+  },
+  {
+    "id": "hk-music-06",
+    "text": "he wrote a tune on his old piano",
+    "difficulty": "easy",
+    "category": "music"
+  },
+  {
+    "id": "hk-music-07",
+    "text": "the choir sang a gentle lullaby",
+    "difficulty": "easy",
+    "category": "music"
+  },
+  {
+    "id": "hk-music-08",
+    "text": "dance to the rhythm of the street band",
+    "difficulty": "medium",
+    "category": "music"
+  },
+  {
+    "id": "hk-school-01",
+    "text": "the teacher wrote the date on the board",
+    "difficulty": "medium",
+    "category": "school"
+  },
+  {
+    "id": "hk-school-02",
+    "text": "please open your books to page twelve",
+    "difficulty": "medium",
+    "category": "school"
+  },
+  {
+    "id": "hk-school-03",
+    "text": "we have a quiz on friday morning",
+    "difficulty": "hard",
+    "category": "school"
+  },
+  {
+    "id": "hk-school-04",
+    "text": "she finished her homework before dinner",
+    "difficulty": "medium",
+    "category": "school"
+  },
+  {
+    "id": "hk-school-05",
+    "text": "the bell rang and everyone went outside",
+    "difficulty": "medium",
+    "category": "school"
+  },
+  {
+    "id": "hk-school-06",
+    "text": "he raised his hand to ask a question",
+    "difficulty": "medium",
+    "category": "school"
+  },
+  {
+    "id": "hk-school-07",
+    "text": "the library is quiet during exams",
+    "difficulty": "hard",
+    "category": "school"
+  },
+  {
+    "id": "hk-school-08",
+    "text": "we studied the map of the old world",
+    "difficulty": "medium",
+    "category": "school"
+  },
+  {
+    "id": "hk-school-09",
+    "text": "the science fair starts next week",
+    "difficulty": "medium",
+    "category": "school"
+  },
+  {
+    "id": "hk-school-10",
+    "text": "write your name at the top of the page",
+    "difficulty": "medium",
+    "category": "school"
+  },
+  {
+    "id": "hk-travel-01",
+    "text": "the plane landed ten minutes early",
+    "difficulty": "medium",
+    "category": "travel"
+  },
+  {
+    "id": "hk-travel-02",
+    "text": "we packed our bags for the long trip",
+    "difficulty": "medium",
+    "category": "travel"
+  },
+  {
+    "id": "hk-travel-03",
+    "text": "the ferry crosses the bay every hour",
+    "difficulty": "medium",
+    "category": "travel"
+  },
+  {
+    "id": "hk-travel-04",
+    "text": "a map and a compass are all we need",
+    "difficulty": "medium",
+    "category": "travel"
+  },
+  {
+    "id": "hk-travel-05",
+    "text": "the hotel had a view of the harbor",
+    "difficulty": "medium",
+    "category": "travel"
+  },
+  {
+    "id": "hk-travel-06",
+    "text": "they hiked along the coast all day",
+    "difficulty": "medium",
+    "category": "travel"
+  },
+  {
+    "id": "hk-travel-07",
+    "text": "the tickets are in my left pocket",
+    "difficulty": "medium",
+    "category": "travel"
+  },
+  {
+    "id": "hk-travel-08",
+    "text": "the road wound through a sleepy village",
+    "difficulty": "medium",
+    "category": "travel"
+  },
+  {
+    "id": "hk-travel-09",
+    "text": "we watched the sunset from the train",
+    "difficulty": "medium",
+    "category": "travel"
+  },
+  {
+    "id": "hk-travel-10",
+    "text": "the guide told us a funny story",
+    "difficulty": "easy",
+    "category": "travel"
+  },
+  {
+    "id": "hk-home-01",
+    "text": "the lamp on the desk flickered twice",
+    "difficulty": "medium",
+    "category": "home"
+  },
+  {
+    "id": "hk-home-02",
+    "text": "she hung a new picture in the hall",
+    "difficulty": "medium",
+    "category": "home"
+  },
+  {
+    "id": "hk-home-03",
+    "text": "the garden gate squeaks in the wind",
+    "difficulty": "medium",
+    "category": "home"
+  },
+  {
+    "id": "hk-home-04",
+    "text": "we painted the fence a bright blue",
+    "difficulty": "medium",
+    "category": "home"
+  },
+  {
+    "id": "hk-home-05",
+    "text": "a warm blanket covers the old sofa",
+    "difficulty": "medium",
+    "category": "home"
+  },
+  {
+    "id": "hk-home-06",
+    "text": "the clock on the wall is five minutes fast",
+    "difficulty": "medium",
+    "category": "home"
+  },
+  {
+    "id": "hk-home-07",
+    "text": "he fixed the leaking tap with a wrench",
+    "difficulty": "medium",
+    "category": "home"
+  },
+  {
+    "id": "hk-home-08",
+    "text": "the neighbors waved from their porch",
+    "difficulty": "medium",
+    "category": "home"
+  },
+  {
+    "id": "hk-home-09",
+    "text": "a candle burned on the kitchen table",
+    "difficulty": "medium",
+    "category": "home"
+  },
+  {
+    "id": "hk-home-10",
+    "text": "the stairs creak when you walk at night",
+    "difficulty": "medium",
+    "category": "home"
+  },
+  {
+    "id": "hk-animals-01",
+    "text": "the parrot repeated every word we said",
+    "difficulty": "medium",
+    "category": "animals"
+  },
+  {
+    "id": "hk-animals-02",
+    "text": "a sleepy cat curled up by the fire",
+    "difficulty": "medium",
+    "category": "animals"
+  },
+  {
+    "id": "hk-animals-03",
+    "text": "the puppy chewed my favorite slipper",
+    "difficulty": "medium",
+    "category": "animals"
+  },
+  {
+    "id": "hk-animals-04",
+    "text": "a tiny mouse hid behind the cupboard",
+    "difficulty": "medium",
+    "category": "animals"
+  },
+  {
+    "id": "hk-animals-05",
+    "text": "the horse trotted along the muddy path",
+    "difficulty": "medium",
+    "category": "animals"
+  },
+  {
+    "id": "hk-animals-06",
+    "text": "ducks paddled across the quiet pond",
+    "difficulty": "medium",
+    "category": "animals"
+  },
+  {
+    "id": "hk-animals-07",
+    "text": "the lion yawned and stretched in the sun",
+    "difficulty": "medium",
+    "category": "animals"
+  },
+  {
+    "id": "hk-animals-08",
+    "text": "a turtle crossed the road very slowly",
+    "difficulty": "medium",
+    "category": "animals"
+  },
+  {
+    "id": "hk-animals-09",
+    "text": "the hens laid six eggs this morning",
+    "difficulty": "medium",
+    "category": "animals"
+  },
+  {
+    "id": "hk-animals-10",
+    "text": "dolphins jumped beside the little boat",
+    "difficulty": "medium",
+    "category": "animals"
+  }
+]

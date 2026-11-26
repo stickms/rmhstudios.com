@@ -145,6 +145,10 @@ export const DEVICE_STORES: readonly DeviceStore[] = [
       'velum2099_story_save',
       'neurodrive_best',
       'haw-meta',
+      // The House Always Wins run: the classic slot, the New Game+ slot, and the owner stamp beside the classic one
+      // (`haw-save-v2::meta`). They were never listed; `haw-meta` above covers `haw-meta-v1`.
+      'haw-save-v2',
+      'haw-ngplus-v1',
       'versecraft-save-',
       'rmh-globeset-run',
       'rmh-globeset-stats',

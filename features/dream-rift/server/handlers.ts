@@ -16,7 +16,9 @@ import type { Server, Socket } from 'socket.io';
 import { generateRoomCode, sanitizeUserName } from '../../../server/socket-server/utils';
 import { checkRateLimit } from '../../../server/socket-server/rate-limit';
 import { logger } from '../../../server/socket-server/logger';
+import { getPrismaClient } from '../../../server/socket-server/prisma-client';
 import { PEER_GRACE_MS } from '../../../lib/shared/realtime/types';
+import { memberIdsBySlot } from '../engine/coop-runs';
 import { C2S, S2C, ROOM_PREFIX, MAX_LOBBY_PLAYERS } from '../engine/net/events';
 import type {
   DrPlayerId,
@@ -57,6 +59,54 @@ export function __resetDreamRiftLobbies(): void {
   lobbies.clear();
   socketLobby.clear();
   resumeGraceMs = DR_RESUME_GRACE_MS;
+}
+
+/** How long the start waits for the co-op run's row before it goes ahead without one. */
+const COOP_RUN_INSERT_TIMEOUT_MS = 2_000;
+
+/**
+ * Record a co-op game at its start (sprint 15 09): one insert, with the lobby's accounts by slot. They come from the
+ * socket server's session (`socket.data.userId`, copied into `player.userId` when the seat was taken), never from a
+ * client payload. Returns the new run's id, or null when the insert fails or is slow: the game starts anyway, and a
+ * run with no id is simply never posted.
+ */
+async function recordCoopRun(lobby: Lobby): Promise<string | null> {
+  const host = lobby.players.find((p) => p.isHost);
+  const hostId = host && host.userId !== 'guest' ? host.userId : null;
+  const id = randomBytes(16)
+    .toString('hex')
+    .replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, '$1-$2-$3-$4-$5');
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const insert = getPrismaClient().dreamRiftCoopRun.create({
+      data: {
+        id,
+        difficulty: lobby.difficulty,
+        playerCount: lobby.players.length,
+        players: [],
+        hostUserId: hostId,
+        memberIds: memberIdsBySlot(lobby.players),
+        startedAt: new Date(),
+      },
+      select: { id: true },
+    });
+    // A slow insert must not hold the start; if it lands late the row is an unfinished run the nightly prune deletes.
+    const timeout = new Promise<never>((_resolve, reject) => {
+      timer = setTimeout(() => reject(new Error('co-op run insert timed out')), COOP_RUN_INSERT_TIMEOUT_MS);
+      timer.unref?.();
+    });
+    await Promise.race([insert, timeout]);
+    return id;
+  } catch (err) {
+    logger.warn({
+      event: 'dr_coop_run_failed',
+      code: lobby.code,
+      err: err instanceof Error ? err.message : String(err),
+    });
+    return null;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -540,7 +590,7 @@ export function registerDreamRiftHandlers(io: Server, socket: Socket): void {
   });
 
   // ── Host: start ──
-  socket.on(C2S.START, () => {
+  socket.on(C2S.START, async () => {
     const lobby = getSocketLobby(socket);
     if (!lobby || lobby.hostSocketId !== socket.id) return;
     if (lobby.state !== 'waiting') return;
@@ -554,6 +604,8 @@ export function registerDreamRiftHandlers(io: Server, socket: Socket): void {
     }
 
     lobby.state = 'playing';
+    // Co-op only: a lone player has nothing to post. Never throws; null means "start without a run".
+    const runId = lobby.players.length >= 2 ? await recordCoopRun(lobby) : null;
     const seed = (Math.random() * 0xffffffff) >>> 0;
     const roster = lobby.players.map((p) => ({
       slot: p.slot,
@@ -570,6 +622,7 @@ export function registerDreamRiftHandlers(io: Server, socket: Socket): void {
         stageIndex: 0,
         roster,
         yourSlot: p.slot,
+        runId,
       };
       io.to(p.socketId).emit(S2C.START, payload);
     }

@@ -72,8 +72,14 @@ export const MultiplayerMenu: React.FC<MultiplayerMenuProps> = ({ onBack }) => {
     return (
       <YourMatches
         state={matches.state}
+        rivals={matches.rivals}
+        view={matches.view}
         onMore={matches.more}
-        onRetry={matches.open}
+        onRetry={matches.retry}
+        onRetryRivals={matches.retryRivals}
+        onShowMatches={matches.showMatches}
+        onShowRivals={matches.showRivals}
+        onOpenRival={matches.openRival}
         onBack={() => setShowMatches(false)}
       />
     );

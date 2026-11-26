@@ -85,8 +85,11 @@ export async function dismiss(userId: string, ids: string[]): Promise<InboxChang
   };
 }
 
-/** Mark every unread notification read, limited to a filter's types when one is given. One `updateMany`. */
-export async function markAllRead(userId: string, filter?: NotificationFilter): Promise<number> {
+/**
+ * Mark every unread notification read, limited to a filter's types when one is given and, when `before` is given,
+ * to those created at or before it. One `updateMany`.
+ */
+export async function markAllRead(userId: string, filter?: NotificationFilter, before?: Date): Promise<number> {
   const types = typesFor(filter);
   const res = await prisma.notification.updateMany({
     where: {
@@ -99,6 +102,7 @@ export async function markAllRead(userId: string, filter?: NotificationFilter): 
             },
           }
         : {}),
+      ...(before ? { createdAt: { lte: before } } : {}),
     },
     data: {
       read: true,

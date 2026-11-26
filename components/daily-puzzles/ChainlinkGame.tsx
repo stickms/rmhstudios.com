@@ -20,6 +20,7 @@ import {
     saveResultWithSync,
     fetchResultFromServer,
 } from '@/lib/daily-puzzles/persistence';
+import { hasChainlinkResult, readChainlinkResult } from '@/lib/daily-puzzles/result-shapes';
 import { generateChainlinkShare } from '@/lib/daily-puzzles/share';
 import { fetchDailyPuzzle } from '@/lib/daily-puzzles/client';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ import {
     PuzzleSection,
     PuzzleResultCard,
     PuzzleResultStack,
+    PuzzlePlayedElsewhere,
     PuzzleShareRow,
     PuzzleFootnote,
 } from '@/components/daily-puzzles/PuzzleShell';
@@ -75,6 +77,7 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
     const [validationErrors, setValidationErrors] = useState<(string | null)[]>([]);
     const [completed, setCompleted] = useState(false);
     const [gaveUp, setGaveUp] = useState(false);
+    const [playedElsewhere, setPlayedElsewhere] = useState(false);
     const [score, setScore] = useState(0);
 
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -84,10 +87,15 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
         if (hasCompleted('chainlink', dateKey)) {
             const result = getResult('chainlink', dateKey);
             if (result) {
-                const data = result.resultJson;
-                setChain(data.chain ?? ['']);
-                setCompleted(data.completed ?? false);
-                setGaveUp(data.gaveUp ?? false);
+                if (hasChainlinkResult(result.resultJson)) {
+                    const data = readChainlinkResult(result.resultJson);
+                    setChain(data.chain);
+                    setCompleted(data.completed);
+                    setGaveUp(data.gaveUp);
+                } else {
+                    setPlayedElsewhere(true);
+                    setCompleted(true);
+                }
                 setScore(result.score);
             }
         }
@@ -100,10 +108,15 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
             fetchResultFromServer('chainlink', dateKey).then(serverResult => {
                 if (serverResult) {
                     saveResult('chainlink', dateKey, serverResult);
-                    const data = serverResult.resultJson;
-                    setChain(data.chain ?? ['']);
-                    setCompleted(data.completed ?? false);
-                    setGaveUp(data.gaveUp ?? false);
+                    if (hasChainlinkResult(serverResult.resultJson)) {
+                        const data = readChainlinkResult(serverResult.resultJson);
+                        setChain(data.chain);
+                        setCompleted(data.completed);
+                        setGaveUp(data.gaveUp);
+                    } else {
+                        setPlayedElsewhere(true);
+                        setCompleted(true);
+                    }
                     setScore(serverResult.score);
                 }
             });
@@ -363,7 +376,8 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
 
             {/* Result screen */}
             <AnimatePresence>
-                {isGameOver && (
+                {isGameOver && playedElsewhere && <PuzzlePlayedElsewhere score={score} />}
+                {isGameOver && !playedElsewhere && (
                     <motion.div
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -439,7 +453,7 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
                     dateKey={dateKey}
                     score={score}
                     completed={completed}
-                    resultJson={{ chain: chain.map(w => w.trim()), completed, gaveUp }}
+                    resultJson={playedElsewhere ? undefined : { chain: chain.map(w => w.trim()), completed, gaveUp }}
                 />
             )}
         </>

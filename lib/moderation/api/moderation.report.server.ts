@@ -163,6 +163,30 @@ async function resolveTargetUser(entityType: string, entityId: string): Promise<
         // checked in the report route (`roomReportable`).
         return await (await import('@/lib/rmhtube/room-reports.server')).roomReportAuthor(entityId);
 
+      // Sprint 15 (docs/autonomous/sprint-15/plan.md §Anchors)
+      // s15-04 workshop-reports
+      case 'tf2-hud':
+      case 'tf2-loadout':
+      case 'versecraft-seed':
+        // The owner; null for a missing item, a private HUD or loadout and anything a moderator already removed.
+        return await (
+          await import('@/lib/moderation/workshop-moderation.server')
+        ).workshopReportAuthor(entityType, entityId);
+
+      // s15-05 prediction-comments
+      case 'prediction-comment':
+        // The comment's author; null for a missing comment. Whether the reporter may see the market is checked in the
+        // report route (`predictionCommentReportable`).
+        return await (await import('@/lib/forecasting/comment-reports.server')).predictionCommentAuthor(entityId);
+
+      // s15-06 member-text-reports
+      case 'guestbook-entry':
+      case 'blog-comment':
+        // The author; null for a missing entry or comment, one the guestbook's owner hid and one already deleted.
+        return await (
+          await import('@/lib/moderation/member-text-reports.server')
+        ).memberTextAuthor(entityType, entityId);
+
       case 'music-score':
       case 'music-share':
         // RMH Music Phase 6: the learner whose Daily score (or shared result) it is.
@@ -356,6 +380,39 @@ export const route = apiRoute('/api/moderation/report', {
           });
         }
         memberItemAuthor = target.hostId;
+      }
+
+      // Sprint 15 (docs/autonomous/sprint-15/plan.md §Anchors)
+      // s15-04 workshop-reports
+      // A HUD, a loadout or a story is eligible through the member-item check above (`resolveTargetUser` answers null for a
+      // missing, a private or a removed item, and the reporter's own is refused there), so nothing more is needed here:
+      // all three get the same 404, so ids cannot be probed.
+
+      // s15-05 prediction-comments
+      // A comment on a market the reporter can see, by someone else they have not blocked. A hidden market, an unknown
+      // comment, a blocked author and anything not theirs to see all get the same 404, so comment ids cannot be probed.
+      if (entityType === 'prediction-comment') {
+        const target = await (
+          await import('@/lib/forecasting/comment-reports.server')
+        ).predictionCommentReportable(entityId, session.user.id);
+        if (!target.ok) {
+          return Response.json(refusalBody(target.reason === 'own' ? 'FORBIDDEN' : 'NOT_FOUND'), {
+            status: target.reason === 'own' ? 403 : 404,
+          });
+        }
+        memberItemAuthor = target.authorId;
+      }
+
+      // s15-06 member-text-reports
+      // The author is resolved above (missing, hidden and deleted give 404, one's own 403); here the reporter must also be
+      // able to read the text where it is shown: an open guestbook with no block between them, or a published
+      // announcement whose commenter they have not blocked or muted and who is not banned. The same 404 for all of
+      // them, so ids cannot be probed.
+      if (entityType === 'guestbook-entry' || entityType === 'blog-comment') {
+        const readable = await (
+          await import('@/lib/moderation/member-text-reports.server')
+        ).memberTextReadableBy(entityType, entityId, session.user.id);
+        if (!readable) return Response.json(refusalBody('NOT_FOUND'), { status: 404 });
       }
 
       // One open report per (reporter, entity) — silently succeed if it exists.

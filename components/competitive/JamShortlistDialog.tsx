@@ -27,6 +27,9 @@ import { api } from '@/lib/contract/client';
 import { toast } from '@/lib/toast';
 import { setJamThemeCandidatesApi } from '@/lib/competitive/jam-themes.contract';
 import { jamThemeVoteQuery } from '@/lib/competitive/jam-themes.queries';
+import { jamSuggestionsQuery } from '@/lib/competitive/jam-suggestions.queries';
+import type { AdminSuggestionGroup } from '@/lib/competitive/jam-suggestions.contract';
+import { suggestionKey } from '@/lib/competitive/jam-suggestions';
 import {
   MAX_THEME_CANDIDATES,
   MIN_THEME_CANDIDATES,
@@ -35,7 +38,18 @@ import {
   type CandidateProblem,
 } from '@/lib/competitive/jam-themes';
 
-function ShortlistForm({ slug, initial, onClose }: { slug: string; initial: string[]; onClose: () => void }) {
+function ShortlistForm({
+  slug,
+  initial,
+  suggestions,
+  onClose,
+}: {
+  slug: string;
+  initial: string[];
+  /** s15-13: members' suggestions, grouped by text (admins only; empty when none or unavailable). */
+  suggestions: AdminSuggestionGroup[];
+  onClose: () => void;
+}) {
   const { t } = useTranslation('jam-editing');
   const refusalText = useRefusalText();
   const queryClient = useQueryClient();
@@ -70,6 +84,14 @@ function ShortlistForm({ slug, initial, onClose }: { slug: string; initial: stri
     [next[i], next[j]] = [next[j]!, next[i]!];
     set(next);
   };
+
+  // s15-13: copy a suggestion into the list (the first empty row, else a new one); saving goes through the usual rules.
+  const addSuggestion = (text: string) => {
+    const blank = candidates.findIndex((c) => c.trim() === '');
+    if (blank >= 0) set(candidates.map((c, k) => (k === blank ? text : c)));
+    else set([...candidates, text]);
+  };
+  const listed = new Set(candidates.map(suggestionKey));
 
   const save = async () => {
     const valid = validateCandidates(candidates);
@@ -140,6 +162,49 @@ function ShortlistForm({ slug, initial, onClose }: { slug: string; initial: stri
           {t('add', { defaultValue: 'Add a theme' })}
         </Button>
       </div>
+      {suggestions.length > 0 && (
+        <section aria-labelledby={`${ids}-suggestions`}>
+          <h3 id={`${ids}-suggestions`} className="t-label">
+            {t('suggestions-title', { ns: 'jam-suggestions', defaultValue: 'Member suggestions' })}
+          </h3>
+          <ul>
+            {suggestions.map((g) => {
+              const onList = g.onShortlist || listed.has(suggestionKey(g.text));
+              return (
+                <li key={suggestionKey(g.text)} className="flex items-center gap-2 border-b border-site-border py-2">
+                  <div className="min-w-0 flex-1">
+                    <p dir="auto" className="t-body truncate">
+                      {g.text}
+                    </p>
+                    <p className="t-meta truncate">
+                      {t('suggestion-count', {
+                        ns: 'jam-suggestions',
+                        count: Number(g.count),
+                        defaultValue_one: '{{count}} member',
+                        defaultValue: '{{count}} members',
+                      })}
+                      {': '}
+                      <bdi>{g.suggesters.map((p) => p.name).join(', ')}</bdi>
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={
+                      onList || (candidates.length >= MAX_THEME_CANDIDATES && !candidates.some((c) => c.trim() === ''))
+                    }
+                    onClick={() => addSuggestion(g.text)}
+                  >
+                    {onList
+                      ? t('on-shortlist', { ns: 'jam-suggestions', defaultValue: 'On the shortlist' })
+                      : t('add-to-shortlist', { ns: 'jam-suggestions', defaultValue: 'Add to shortlist' })}
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
       <DialogFooter>
         <Button type="button" variant="default" onClick={onClose}>
           {t('cancel', { defaultValue: 'Cancel' })}
@@ -156,6 +221,9 @@ export function JamShortlistDialog({ slug, onClose }: { slug: string; onClose: (
   const { t } = useTranslation('jam-editing');
   const query = useQuery({ ...jamThemeVoteQuery(slug), retry: false });
   const view = query.data?.view;
+  // s15-13: the suggestions are optional (a failed load leaves the editor as it was).
+  const suggestionsQuery = useQuery({ ...jamSuggestionsQuery(slug), retry: false });
+  const suggestions = suggestionsQuery.data?.view.all ?? [];
   const arrival = useArrival(view !== undefined);
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -176,7 +244,12 @@ export function JamShortlistDialog({ slug, onClose }: { slug: string; onClose: (
           <Skeleton className="h-32 rounded-site" />
         ) : (
           <div className={cn('grid gap-5 sm:gap-6', arrival)}>
-            <ShortlistForm slug={slug} initial={view.candidates.map((c) => c.text)} onClose={onClose} />
+            <ShortlistForm
+              slug={slug}
+              initial={view.candidates.map((c) => c.text)}
+              suggestions={suggestions}
+              onClose={onClose}
+            />
           </div>
         )}
       </DialogContent>

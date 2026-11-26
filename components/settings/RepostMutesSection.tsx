@@ -17,6 +17,7 @@ import { listRepostMutesApi, setRepostMuteApi } from '@/lib/feed/repost-mutes.co
 import { REPOST_MUTE_SEARCH_THRESHOLD, type RepostMutePage, type RepostMuteRow } from '@/lib/feed/repost-mutes';
 import { toast } from '@/lib/toast';
 
+import { Handle } from '@/components/ui/handle';
 const listKey = (q: string) => ['feed', 'repost-mutes', q] as const;
 
 /**
@@ -180,7 +181,11 @@ export function RepostMutesSection() {
                       <span className="t-body block truncate font-semibold text-site-text">
                         <bdi>{name}</bdi>
                       </span>
-                      {row.handle && <span className="t-meta block truncate">@{row.handle}</span>}
+                      {row.handle && (
+                        <span className="t-meta block truncate">
+                          <Handle handle={row.handle} />
+                        </span>
+                      )}
                     </span>
                   </Link>
                 )}

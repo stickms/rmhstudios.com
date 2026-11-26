@@ -9,10 +9,11 @@ export default defineFeature({
   routes: [
     'features/synapse-storm/api/games.synapse-storm.leaderboard.server.ts',
     'features/synapse-storm/api/games.synapse-storm.matches.server.ts',
+    'features/synapse-storm/api/games.synapse-storm.rivals.server.ts',
     'features/synapse-storm/api/games.synapse-storm.save.server.ts',
     'lib/game/api/games.synapse-storm.score.server.ts',
     'app/routes/synapse-storm.tsx',
   ],
-  namespaces: ['c-synapse-storm', 'synapse-matches'],
+  namespaces: ['c-synapse-storm', 'synapse-matches', 'synapse-rivals'],
   catalog: 'features/synapse-storm/catalog.ts',
 });

@@ -7,6 +7,7 @@
  * and its own 30-day history); a day present in both is merged into its best run.
  */
 import { getCompletedDates, type PuzzleResult } from '@/lib/daily-puzzles/persistence';
+import { readGlobeSetResult, readLightsOutResult } from '@/lib/daily-puzzles/result-shapes';
 import { loadHistory, type PuzzleHistoryEntry } from '@/lib/lights-out/persistence';
 import { STAT_MODES, type DailyStatRow } from '@/lib/daily-puzzles/stats';
 
@@ -16,7 +17,7 @@ const GLOBESET = 'globeset';
 type Results = Record<string, Record<string, PuzzleResult>>;
 
 function movesOf(r: PuzzleResult): number | null {
-  const m = r.resultJson?.moves ?? r.score;
+  const m = readLightsOutResult(r.resultJson).moves ?? r.score;
   return typeof m === 'number' && Number.isFinite(m) ? m : null;
 }
 
@@ -33,7 +34,7 @@ export function buildLocalRows(results: Results, lightsOutHistory: readonly Puzz
         score: r.score,
         moves: null,
         // GlobeSet: the auto-solver was used (the server's `dnf`).
-        dnf: mode === GLOBESET ? r.resultJson?.solverUsed === true : null,
+        dnf: mode === GLOBESET ? readGlobeSetResult(r.resultJson).solverUsed : null,
         timeSeconds: r.timeSeconds ?? null,
       });
     }
@@ -58,7 +59,7 @@ export function buildLocalRows(results: Results, lightsOutHistory: readonly Puzz
     }
   };
   for (const [dateKey, r] of Object.entries(results[LIGHTS_OUT] ?? {})) {
-    addLights(dateKey, movesOf(r), r.resultJson?.dnf === true);
+    addLights(dateKey, movesOf(r), readLightsOutResult(r.resultJson).dnf);
   }
   for (const h of lightsOutHistory) addLights(h.dateKey, h.moves, h.dnf);
   rows.push(...lights.values());

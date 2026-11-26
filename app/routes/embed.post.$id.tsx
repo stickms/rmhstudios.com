@@ -18,6 +18,7 @@ import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { nullPostCounts } from '@/lib/feed/quiet-counts';
 import { ExternalLink, Heart, MessageCircle, Repeat } from 'lucide-react';
 
+import { Handle } from '@/components/ui/handle';
 const fetchEmbed = createServerFn({ method: 'GET' })
   .validator((id: string) => id)
   .handler(async ({ data: id }) => {
@@ -112,7 +113,7 @@ function EmbedPost() {
           )}
           <a href={profileHref} target="_blank" rel="noopener noreferrer" className="min-w-0">
             <p className="truncate text-sm font-bold text-site-text">{post.user.name || t("anonymous-user", { defaultValue: "Someone" })}</p>
-            {post.user.handle && <p className="truncate text-xs text-site-text-muted">@{post.user.handle}</p>}
+            {post.user.handle && <p className="truncate text-xs text-site-text-muted"><Handle handle={post.user.handle} /></p>}
           </a>
         </div>
 

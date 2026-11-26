@@ -5,7 +5,7 @@
  * per-subscriber item selection the daily email uses, and the email's own markup. The server half is
  * `subscriptions.server.ts`; the strings a member reads in the app are translated by the components.
  */
-import { isNewsCategory } from '@/lib/news-wire/categorize';
+import { isNewsCategory } from '@/lib/news-wire/categories';
 
 export const SUBSCRIPTION_KINDS = ['blog', 'blog_tag', 'news_category', 'news_story'] as const;
 export type SubscriptionKind = (typeof SUBSCRIPTION_KINDS)[number];

@@ -5,6 +5,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { cn } from '@/lib/utils';
 import { insertMention, mentionTrigger, rankMembers, type PickerMember } from '@/lib/group-chat/mentions';
 
+import { Handle } from '@/components/ui/handle';
 const LISTBOX_ID = 'group-mention-list';
 const optionId = (i: number) => `group-mention-option-${i}`;
 
@@ -120,8 +121,10 @@ export function useMentionPicker({
                   fallbackName={m.name ?? undefined}
                   className="rounded-full"
                 />
-                <span className="t-body min-w-0 flex-1 truncate">{m.name || `@${m.handle}`}</span>
-                <span className="t-meta truncate">@{m.handle}</span>
+                <span className="t-body min-w-0 flex-1 truncate">{m.name || <Handle handle={m.handle} />}</span>
+                <span className="t-meta truncate">
+                  <Handle handle={m.handle} />
+                </span>
               </li>
             ))}
           </ul>

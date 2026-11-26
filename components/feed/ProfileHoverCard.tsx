@@ -22,6 +22,7 @@ import { getProfileApi } from '@/lib/profile/profile.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
+import { Handle } from '@/components/ui/handle';
 interface HoverProfile {
  id: string;
  name: string | null;
@@ -149,7 +150,7 @@ export function ProfileHoverCard({
  {profile.isVerified && <BadgeCheck className="h-4 w-4 shrink-0 text-site-success"aria-hidden />}
  {profile.isAdmin && <ShieldCheck className="h-4 w-4 shrink-0 text-site-accent"aria-hidden />}
  </p>
- {profile.handle && <p className="text-sm text-site-text-muted">@{profile.handle}</p>}
+ {profile.handle && <p className="text-sm text-site-text-muted"><Handle handle={profile.handle} /></p>}
  </Link>
  {profile.bio && (
  <p dir="auto" className="mt-2 line-clamp-3 text-sm text-site-text-muted">{profile.bio}</p>

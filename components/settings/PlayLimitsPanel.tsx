@@ -15,7 +15,7 @@ import { MAX_COOL_OFF_DAYS, MAX_DAILY_CAP } from '@/lib/economy/play-limits';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { useArrival } from '@/components/ui/arrive';
 import { SpendBudgetSection } from '@/components/settings/SpendBudgetSection';
-import { setRiskSurfacesHidden } from '@/hooks/useRiskSurfacesHidden';
+import { announceRiskSurfaces, setRiskSurfacesHidden } from '@/hooks/useRiskSurfacesHidden';
 import { HiddenNote } from '@/components/settings/ExcludedNotice';
 
 /**
@@ -73,6 +73,7 @@ export function PlayLimitsPanel() {
         setCapDraft(null);
         // The menus and search follow the saved answer at once, without a refetch (W8).
         setRiskSurfacesHidden(queryClient, next.surfacesHidden);
+        announceRiskSurfaces(next.surfacesHidden);
         if (next.pendingCapAt) {
           toast.success(
             t('play-limits-deferred', {

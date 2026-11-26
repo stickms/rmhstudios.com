@@ -59,7 +59,9 @@ function useWhat() {
       case 'strike':
         return t('what.strike', { defaultValue: 'Strike, attack {{n}}', n: (parsed?.map ?? 0) + 1 });
       case 'free':
-        return roll.notation;
+        return roll.label === 'hitDie'
+          ? t('what.hitDie', { defaultValue: 'Hit Die, {{notation}}', notation: roll.notation })
+          : roll.notation;
     }
   };
 }

@@ -151,3 +151,13 @@ export const ROOM_CLOSED_CHANNEL = 'rmhtube:room:closed';
 /** Why a room was closed from outside the room. Only a moderator today. */
 export const ROOM_CLOSED_REASONS = ['moderator'] as const;
 export type RoomClosedReason = (typeof ROOM_CLOSED_REASONS)[number];
+
+/**
+ * s15-18 (S13-06): the Redis channel the web tier publishes `{ userId }` on once an account erasure has committed. The
+ * hub subscribes once and renames that member to `DELETED_MEMBER_NAME` in every running room (chat buffer, pin, reply
+ * quotes, presence, queue credits, ban list), telling each room with a `MEMBER_ERASED` action.
+ */
+export const MEMBER_ERASED_CHANNEL = 'rmhtube:member:erased';
+
+/** What an erased member's name becomes in every room, running or stored. */
+export const DELETED_MEMBER_NAME = 'Deleted user';

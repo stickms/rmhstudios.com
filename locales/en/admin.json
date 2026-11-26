@@ -58,6 +58,7 @@
   "appeals-pending": "Pending",
   "appeals-queue": "Strike Appeals",
   "appeals-queue-description": "Users contesting a strike. Overturning removes the strike and lifts any ban it triggered.",
+  "appeals-removal-reviews": "Removal reviews",
   "appeals-title": "Strike Appeals",
   "appeals-upheld": "Upheld",
   "application-rejected": "Application rejected.",

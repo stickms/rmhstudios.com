@@ -37,6 +37,7 @@ import './profile.css';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { useRiskSurfacesHidden } from '@/hooks/useRiskSurfacesHidden';
 
+import { Handle } from '@/components/ui/handle';
 const DEFAULT_AVATAR = '/images/social/default_avatar.png';
 
 function ProfileAvatar({
@@ -257,7 +258,7 @@ export function ProfileHero({
           </div>
           {profile.handle ? (
             <p className="t-meta mt-1" dir="ltr">
-              @{profile.handle}
+              <Handle handle={profile.handle} />
             </p>
           ) : null}
           {profile.isOwnProfile ? null : <AwayStatusLine userId={profile.id} context="profile" />}

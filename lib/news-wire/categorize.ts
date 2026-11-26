@@ -16,26 +16,9 @@
  * Client-safe and dependency-free (it is in the strict island, tsconfig.strict.json).
  */
 
-export const NEWS_CATEGORIES = [
-  'World',
-  'Politics',
-  'Business',
-  'Technology',
-  'AI',
-  'Science',
-  'Space',
-  'Health',
-  'Climate',
-  'Gaming',
-  'Entertainment',
-  'Sports',
-] as const;
+import { NEWS_CATEGORIES, type NewsCategory } from './categories';
 
-export type NewsCategory = (typeof NEWS_CATEGORIES)[number];
-
-export function isNewsCategory(value: unknown): value is NewsCategory {
-  return typeof value === 'string' && (NEWS_CATEGORIES as readonly string[]).includes(value);
-}
+export { NEWS_CATEGORIES, isNewsCategory, type NewsCategory } from './categories';
 
 /** A headline needs at least this score to leave its feed's hint (one headline word, or two excerpt words). */
 export const MIN_SCORE = 2;

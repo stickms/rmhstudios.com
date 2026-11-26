@@ -58,6 +58,7 @@ import { VERIFY_COOP_QUEUE } from '@features/altair/engine/verify/job';
 import { registerPostsPlusCrons } from '@/lib/posts-plus/jobs.server';
 import { SEND_SCHEDULED_QUEUE, registerSendScheduledMessagesCron } from '@/lib/messages/scheduled-jobs.server';
 import { EDIT_PRUNE_QUEUE, registerMessageEditPruneCron } from '@/lib/messages/edit-history.server';
+import { COOP_PRUNE_QUEUE, registerCoopPruneCron } from '@features/dream-rift/engine/coop-prune.server';
 import { PARTY_REMINDERS_QUEUE, registerPartyRemindersCron } from '@/lib/rmhtube/parties-jobs.server';
 import { CHAT_PRUNE_QUEUE, registerChatPruneCron } from '@/lib/rmhtube/chat-reports.server';
 import { PARTY_FANOUT_QUEUE, registerTubePartyFanoutWorker } from '@/lib/rmhtube/subscriptions.server';
@@ -384,6 +385,12 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   // s13-18 billing-hardening
   // s13-18: hourly at minute 23, queue the billing sync for every deletion hold whose sync has not finished (the queue was down), at most 500, oldest first.
   { queue: BILLING_RECONCILE_QUEUE, register: registerBillingReconcileCron },
+
+  // Sprint 15 (docs/autonomous/sprint-15/plan.md §Anchors)
+  // s15-09 dream-rift-coop
+  // s15-09: daily at 04:29 UTC, delete Dream Rift co-op runs the hub started more than 24 hours ago and the host never finished, in batches of 1,000.
+  { queue: COOP_PRUNE_QUEUE, register: registerCoopPruneCron },
+
 ];
 
 /**

@@ -3,6 +3,31 @@ import { persist } from 'zustand/middleware';
 import type { AbilityId, QuestState, RoomId } from '@/lib/house-always-wins/types';
 import { activeSlot, slotStorageName } from '@/lib/house-always-wins/ngplus';
 
+/**
+ * What happened that is worth carrying to the account (`lib/house-always-wins/cloud.ts` listens): a save point was
+ * reached, a room was entered, or the run was thrown away.
+ */
+export type HawSaveEvent = 'save-point' | 'room' | 'reset';
+
+let saveListener: ((event: HawSaveEvent) => void) | null = null;
+
+/** The one listener of {@link HawSaveEvent}s; the returned function removes it. The store imports nothing of the cloud. */
+export function setHawSaveListener(listener: (event: HawSaveEvent) => void): () => void {
+  saveListener = listener;
+  return () => {
+    if (saveListener === listener) saveListener = null;
+  };
+}
+
+/** Runs after the local copy was written. A listener that throws must never interrupt play. */
+function notifySave(event: HawSaveEvent): void {
+  try {
+    saveListener?.(event);
+  } catch {
+    // The local copy stands; the account copy catches up at the next save point.
+  }
+}
+
 interface HouseAlwaysWinsState {
   // Progression
   debt: number;
@@ -112,7 +137,7 @@ export const useHouseAlwaysWinsStore = create<HouseAlwaysWinsState>()(
 
       getFlag: (key) => get().flags[key] ?? false,
 
-      markVisited: (room) =>
+      markVisited: (room) => {
         set((s) =>
           s.visitedRooms[room]
             ? {}
@@ -122,18 +147,22 @@ export const useHouseAlwaysWinsStore = create<HouseAlwaysWinsState>()(
                   [room]: true,
                 },
               },
-        ),
+        );
+        notifySave('room');
+      },
 
       setIntroSeen: (v) =>
         set({
           introSeen: v,
         }),
 
-      setCheckpoint: (room, id) =>
+      setCheckpoint: (room, id) => {
         set({
           checkpointRoom: room,
           checkpointId: id,
-        }),
+        });
+        notifySave('save-point');
+      },
 
       registerDeath: () =>
         set((s) => ({
@@ -151,7 +180,7 @@ export const useHouseAlwaysWinsStore = create<HouseAlwaysWinsState>()(
         };
       },
 
-      resetRun: () =>
+      resetRun: () => {
         set({
           debt: 0,
           chips: 0,
@@ -163,7 +192,9 @@ export const useHouseAlwaysWinsStore = create<HouseAlwaysWinsState>()(
           checkpointId: 'spawn',
           deaths: 0,
           visitedRooms: {},
-        }),
+        });
+        notifySave('reset');
+      },
     }),
     {
       // Classic and New Game+ keep separate saves; the slot is chosen once per page load.

@@ -12,6 +12,7 @@ import Tf2Header from '@/components/tf2-hud/Tf2Header';
 import { SignInRequiredDialog } from '@/components/shared/SignInRequiredDialog';
 import { useSession } from '@/components/Providers';
 import { Btn, Pill } from '@/components/tf2-hud/ui';
+import { RemovedByModeratorLine, WorkshopReportButton } from '@/components/tf2-hud/WorkshopReport';
 import { useClipboard } from '@/hooks/useClipboard';
 import { ApiError } from '@/lib/tf2-hud/api';
 import { loadoutApi } from '@/lib/tf2-loadout/api';
@@ -143,7 +144,9 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
           <div className={cn('space-y-6', arrival)}>
             <header className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="tf2hud-title text-4xl">{detail.title}</h2>
+                <h2 dir="auto" className="tf2hud-title text-4xl">
+                  {detail.title}
+                </h2>
                 <Pill tone="accent">
                   {classLabels[detail.tfClass]}
                 </Pill>
@@ -167,10 +170,13 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
                 ) : null}
               </p>
               {detail.description ? (
-                <p className="max-w-prose text-sm text-app-text-muted">{detail.description}</p>
+                <p dir="auto" className="max-w-prose text-sm text-app-text-muted">
+                  {detail.description}
+                </p>
               ) : null}
+              {detail.removed && detail.isOwner ? <RemovedByModeratorLine kind="tf2-loadout" /> : null}
               <div className="flex flex-wrap items-center gap-2 pt-1">
-                <Btn size="md" icon={Heart} onClick={() => void like()} aria-pressed={liked}>
+                <Btn size="md" icon={Heart} disabled={detail.removed} onClick={() => void like()} aria-pressed={liked}>
                   {liked
                     ? t('liked', { defaultValue: 'Liked' })
                     : t('like', { defaultValue: 'Like' })}{' '}
@@ -207,6 +213,9 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
                 >
                   {t('copy-link', { defaultValue: 'Copy link' })}
                 </Btn>
+                {!detail.isOwner && detail.visibility !== 'PRIVATE' ? (
+                  <WorkshopReportButton entityType="tf2-loadout" entityId={detail.id} size="md" />
+                ) : null}
               </div>
             </header>
 

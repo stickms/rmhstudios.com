@@ -1,0 +1,18 @@
+{
+  "a-player": "A player",
+  "board-empty": "No co-op runs yet. Squad up!",
+  "board-error": "Could not load the co-op board.",
+  "deleted-user": "Deleted user",
+  "run-cleared": "cleared",
+  "run-meta": "{{difficulty}} · stage {{stage}} · {{time}}",
+  "run-score": "Score {{score}}",
+  "run-with": "With",
+  "runs-close": "Close",
+  "runs-empty": "No co-op runs yet",
+  "runs-honesty": "Scores are reported by the host's game",
+  "runs-loading": "Loading your runs",
+  "runs-more": "Show more",
+  "runs-retry": "Try again",
+  "runs-signed-out": "Sign in to see your co-op runs",
+  "your-runs": "Your co-op runs"
+}

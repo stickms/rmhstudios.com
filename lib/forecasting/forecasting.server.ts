@@ -3,6 +3,7 @@
  * calibration profile (G7) and devil's advocate (I3). Server-only.
  */
 import { z } from 'zod';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { cached } from '@/lib/cached.server';
 import { OVERFETCH_CAP } from '@/lib/game/leaderboard-privacy';
@@ -12,6 +13,9 @@ import { aiChat, isAITextConfigured } from '@/lib/ai/text.server';
 import { calibrate, type Calibration } from '@/lib/predictions/calibration';
 import { positionForecast, rankSeason, type SeasonScore } from './scoring';
 import { seasonDates } from './season-dates';
+import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { recordAdminActionIn } from '@/lib/admin-audit.server';
+import { COMMENT_PAGE_SIZE, decodeCommentCursor, encodeCommentCursor } from '@/lib/predictions/comment-cursor';
 
 export const MAX_SEASON_MARKETS = 30;
 const RESOLVED = ['RESOLVED_YES', 'RESOLVED_NO'] as const;
@@ -216,22 +220,89 @@ async function visibleMarket(id: string, viewerId?: string) {
   return m;
 }
 
-export async function listComments(predictionId: string, viewerId?: string) {
+const COMMENT_SELECT = {
+  id: true,
+  body: true,
+  side: true,
+  shares: true,
+  createdAt: true,
+  user: { select: userChipSelect },
+} as const;
+
+/**
+ * A market's discussion, newest first, one page at a time. A signed-in viewer does not see anyone they blocked, anyone
+ * who blocked them, or anyone they muted (`getHiddenAuthorIds`, one cached lookup); nobody sees a banned author. The
+ * cursor is the `(createdAt, id)` of the last comment of the previous page, compared with an `OR` because a plain
+ * `createdAt <` would drop the rows that share a time with it.
+ */
+export async function listComments(predictionId: string, viewerId?: string, cursor?: string) {
   if (!(await visibleMarket(predictionId, viewerId))) return null;
+  const now = new Date();
+  const hidden = await getHiddenAuthorIds(viewerId ?? null);
+  const at = decodeCommentCursor(cursor);
+  const where = {
+    predictionId,
+    ...(hidden.length ? { userId: { notIn: hidden } } : {}),
+    user: { OR: [{ bannedUntil: null }, { bannedUntil: { lte: now } }] },
+    ...(at
+      ? { OR: [{ createdAt: { lt: at.createdAt } }, { createdAt: at.createdAt, id: { lt: at.id } }] }
+      : {}),
+  } satisfies Prisma.PredictionCommentWhereInput;
   const rows = await prisma.predictionComment.findMany({
-    where: { predictionId },
-    orderBy: { createdAt: 'desc' },
-    take: 50,
-    select: {
-      id: true,
-      body: true,
-      side: true,
-      shares: true,
-      createdAt: true,
-      user: { select: userChipSelect },
-    },
+    where,
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    take: COMMENT_PAGE_SIZE + 1,
+    select: COMMENT_SELECT,
   });
-  return rows.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() }));
+  const page = rows.slice(0, COMMENT_PAGE_SIZE);
+  const last = page[page.length - 1];
+  return {
+    comments: page.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() })),
+    nextCursor: rows.length > COMMENT_PAGE_SIZE && last ? encodeCommentCursor(last) : null,
+  };
+}
+
+/**
+ * Delete a comment: its author, or an admin. The row is removed (nothing else points at it). Anyone else, and an
+ * unknown id, get the same `not_found`, so a comment id is never confirmed to someone who does not own it. An admin
+ * removing another member's comment is audited in the same transaction.
+ */
+export async function deleteComment(id: string, userId: string, isAdmin: boolean): Promise<'deleted' | 'not_found'> {
+  const row = await prisma.predictionComment.findUnique({
+    where: { id },
+    select: { id: true, userId: true, predictionId: true },
+  });
+  if (!row || (row.userId !== userId && !isAdmin)) return 'not_found';
+  const asAdmin = row.userId !== userId;
+  const removed = await prisma.$transaction(async (tx) => {
+    const res = await tx.predictionComment.deleteMany({ where: { id: row.id } });
+    if (res.count > 0 && asAdmin) {
+      await recordAdminActionIn(tx, userId, 'prediction-comment.delete', {
+        targetType: 'prediction-comment',
+        targetId: row.id,
+        detail: `market ${row.predictionId}`,
+      });
+    }
+    return res.count;
+  });
+  return removed > 0 ? 'deleted' : 'not_found';
+}
+
+/** The member's own comments for the account export: market title, words, the side held then, and when. */
+export async function exportPredictionComments(userId: string) {
+  const rows = await prisma.predictionComment.findMany({
+    where: { userId },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    select: { id: true, body: true, side: true, shares: true, createdAt: true, prediction: { select: { title: true } } },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    market: r.prediction.title,
+    body: r.body,
+    side: r.side,
+    shares: r.shares,
+    createdAt: r.createdAt.toISOString(),
+  }));
 }
 
 export async function addComment(predictionId: string, userId: string, body: string) {

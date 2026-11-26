@@ -69,6 +69,11 @@ export interface RollsApi {
   damage: (label: string, text: string, critical: boolean) => void;
   /** The free roll box; `null` when it rolled, otherwise what was wrong. */
   free: (input: string) => FreeRollError | null;
+  /**
+   * One Hit Die (`1d8+2`) for a short rest, logged under `label`. Rolled for the table while "Roll for the table" is on,
+   * so it shows in the party's rolls. The total, or `null` when it could not be rolled.
+   */
+  hitDie: (label: string, notation: string) => Promise<number | null>;
   /** Present only while the sheet is opened from a party. */
   table?: TableApi;
 }
@@ -145,6 +150,28 @@ export function useRolls(
     [record],
   );
 
+  const hitDie = useCallback(
+    async (label: string, notation: string) => {
+      if (tableOn && party) {
+        try {
+          const rolled = await sendRoll.mutateAsync({
+            roll: { kind: 'free', notation, as: 'hitDie' },
+            mode: 'normal',
+            visibility,
+          });
+          return rolled.total;
+        } catch {
+          return null;
+        }
+      }
+      const r = rollFree(notation);
+      if (!r.ok) return null;
+      record(label, r.outcome);
+      return r.outcome.total;
+    },
+    [tableOn, party, sendRoll, visibility, record],
+  );
+
   const clear = useCallback(() => {
     clearRollLog(characterId);
     setEntries([]);
@@ -195,6 +222,7 @@ export function useRolls(
     d20,
     damage,
     free,
+    hitDie,
     ...(table ? { table } : {}),
   };
 }

@@ -4,14 +4,19 @@
  * Owns the two things shared across both surfaces: the DeepSeek model choice
  * (persisted to localStorage) and the Scientific/Graphing tab. Every calculation
  * and every graph is produced by DeepSeek — this app performs no math of its own.
+ *
+ * A graph link (`?tab=graph&f=…`, s15-08) opens the Graphing tab with the link's functions and domain filled in. It
+ * never plots: the recipient presses Plot, which is their own model call under their own rate limit.
  */
 
-import { lazy, useEffect, useState } from 'react';
+import { lazy, useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { FunctionSquare, LineChart, Sigma } from 'lucide-react';
 import { Tabs } from '@/components/ui/tabs';
 import { CALC_MODELS, type CalcModel } from '@/lib/rmhcalculator/types';
+import { parseGraphLink, type GraphLinkContent } from '@/lib/rmhcalculator/graph-link';
+import { toast } from '@/lib/toast';
 import { ModelToggle } from '@/components/rmhcalculator/ModelToggle';
 import { ScientificCalculator } from '@/components/rmhcalculator/ScientificCalculator';
 import { GraphingCalculator } from '@/components/rmhcalculator/GraphingCalculator';
@@ -28,10 +33,11 @@ function isCalcModel(v: unknown): v is CalcModel {
 }
 
 export function RmhCalculatorApp() {
-  const { t } = useTranslation('c-rmhcalculator');
+  const { t } = useTranslation(['c-rmhcalculator', 'calc-graphs']);
   const goBack = useBackOrFallback();
   const [mode, setMode] = useState<Mode>('scientific');
   const [model, setModel] = useState<CalcModel>('reasoner');
+  const [linkInit, setLinkInit] = useState<GraphLinkContent | undefined>(undefined);
 
   // Restore the persisted model choice after mount (SSR-safe).
   useEffect(() => {
@@ -42,6 +48,25 @@ export function RmhCalculatorApp() {
       /* ignore */
     }
   }, []);
+
+  // A graph link fills the Graphing tab after mount (the server never sees the viewer's query string).
+  const linkRead = useRef(false);
+  useEffect(() => {
+    if (linkRead.current) return;
+    linkRead.current = true;
+    const link = parseGraphLink(window.location.search);
+    if (link.ok) {
+      setLinkInit({ functions: link.functions, domain: link.domain });
+      setMode('graphing');
+    } else if (link.reason !== 'none') {
+      toast.error(
+        t('link-invalid', {
+          ns: 'calc-graphs',
+          defaultValue: 'That graph link could not be read, so nothing was filled in.',
+        }),
+      );
+    }
+  }, [t]);
 
   const changeModel = (next: CalcModel) => {
     setModel(next);
@@ -102,7 +127,10 @@ export function RmhCalculatorApp() {
             defaultValue: 'Calculator mode',
           })}
           value={mode}
-          onChange={(id) => setMode(id as Mode)}
+          onChange={(id) => {
+            setMode(id as Mode);
+            if (id !== 'graphing') setLinkInit(undefined);
+          }}
           tabs={tabs}
           idBase="rmhcalc-mode"
         />
@@ -124,7 +152,7 @@ export function RmhCalculatorApp() {
         aria-labelledby="rmhcalc-mode-tab-graphing"
         hidden={mode !== 'graphing'}
       >
-        {mode === 'graphing' && <GraphingCalculator model={model} />}
+        {mode === 'graphing' && <GraphingCalculator model={model} initial={linkInit} />}
       </main>
       <main
         className="rmhcalc__content"

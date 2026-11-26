@@ -59,6 +59,7 @@ import { useSession } from '@/components/Providers';
 import { apiQuery } from '@/lib/contract/client';
 import { getDailyFollowingSummaryApi, type FollowingSummaryMode } from '@/lib/daily-puzzles/following.contract';
 import { FollowingSummaryLine } from '@/components/daily-puzzles/FollowingBoard';
+import { readLightsOutResult } from '@/lib/daily-puzzles/result-shapes';
 import { getDailyStatsApi } from '@/lib/daily-puzzles/stats.contract';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
@@ -131,8 +132,9 @@ function readStatus(modeId: string, dateKey: string): ModeStatus {
     // Fall through to the generic store (populated by a server sync on other devices).
     const g = getResult(LIGHTS_OUT, dateKey);
     if (g) {
-      const moves = g.resultJson?.moves ?? g.score;
-      return { completed: true, label: g.resultJson?.dnf ? 'DNF' : `${moves}` };
+      const shape = readLightsOutResult(g.resultJson);
+      const moves = shape.moves ?? g.score;
+      return { completed: true, label: shape.dnf ? 'DNF' : `${moves}` };
     }
     return { completed: false, label: null };
   }

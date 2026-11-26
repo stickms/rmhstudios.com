@@ -358,6 +358,26 @@ export const SCOPES: ScopeDetail[] = [
       'Save a home, change your note and price alert on it, and unsave it. Not included in `*` or `write:*`: a key must list it itself.',
     explicit: true,
   },
+
+  // Sprint 15
+  // s15-03 slice-api
+  {
+    id: 'read:slice-it-runs',
+    action: 'read',
+    group: 'Games',
+    description:
+      'Read your own Slice It! runs: score, accuracy, combo, difficulty and lamp, newest first. Not included in `*` or `read:*`, and not in a new key’s default grant: a key must list it itself.',
+    explicit: true,
+  },
+
+  // s15-10 notifications-api
+  {
+    id: 'write:notifications',
+    action: 'write',
+    group: 'Account',
+    description: 'Mark your notifications read. Not included in `*` or `write:*`: a key must list it itself.',
+    explicit: true,
+  },
 ];
 
 export const ALL_SCOPES: string[] = SCOPES.map((s) => s.id);

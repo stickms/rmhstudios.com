@@ -386,9 +386,14 @@ export async function editDirectMessage(args: {
   if (!bodyOk.ok) return failure(bodyOk.reason);
 
   // Snapshot BEFORE the overwrite, exactly as `RMHarkEdit` does for posts, and in the same transaction: the edit
-  // cannot land without its prior text, and a failed edit leaves no stray version. The text is re-read inside the
-  // transaction so two edits racing each other each snapshot what they actually replaced.
+  // cannot land without its prior text, and a failed edit leaves no stray version. The message row is locked first
+  // (s15-18, S13-17): under READ COMMITTED two concurrent edits could otherwise both read the same prior text and both
+  // snapshot it, losing one earlier version. The second edit waits for the first to commit, then re-reads the text the
+  // first one wrote, so each snapshot is exactly the text its edit replaced, and both edits succeed. `NO KEY UPDATE` is
+  // the lock the UPDATE below takes anyway, so it serialises edits without holding up a reaction or thread reply, whose
+  // foreign key only needs `KEY SHARE` on this row (checked on Postgres 16: no wait, no deadlock either way round).
   const updated = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT "id" FROM "chat_message" WHERE "id" = ${existing.id} FOR NO KEY UPDATE`;
     const current = await tx.chatMessage.findUnique({ where: { id: existing.id }, select: { content: true } });
     await recordPriorRevision(tx, existing.id, current?.content ?? existing.content, now);
     return tx.chatMessage.update({

@@ -130,6 +130,14 @@ export const BOARD_PRIVACY_READ_PATHS = [
   // s14-04 altair-coop
   'features/altair/engine/coop-record.server.ts',
 
+  // Sprint 15
+  // s15-03 slice-api
+  'lib/api/v1/slice-it.server.ts',
+  // s15-15 synapse-rivals (integration: a per-member win/loss record is a ranking)
+  'features/synapse-storm/engine/rivals.server.ts',
+
+  // s15-09 dream-rift-coop
+  'features/dream-rift/engine/coop-runs.server.ts',
 ] as const;
 
 /**
@@ -149,6 +157,11 @@ export const BOARD_PRIVACY_EXEMPT: Readonly<Record<string, BoardPrivacyExemption
   'features/cursed-logic/api/cursed-logic.leaderboard.server.ts': {
     reason: 'The HTTP shape of the Cursed Logic board, read by its adapter module.',
     via: 'features/cursed-logic/api/score-adapter.server.ts',
+  },
+  // s15-20 s14-gaps: the caller's own place on a co-op board ("You: 34th"), counted under the board's filter.
+  'features/altair/api/altair.coop-place.server.ts': {
+    reason: 'The HTTP shape of the co-op own place only: the count and the hidden-member filter are in coop-record.',
+    via: 'features/altair/engine/coop-record.server.ts',
   },
   'lib/game/api/games.$id.leaderboard.server.ts': {
     reason: 'The HTTP shape only: every row comes from the game adapters.',

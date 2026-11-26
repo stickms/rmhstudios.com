@@ -9,6 +9,7 @@ import { getPremiumTheme } from '@/lib/shop/themes';
 import { OFFICIAL_SITE_THEMES } from '@/lib/themes/official';
 import { ThemeMiniShell } from '@/components/themes/ThemeMiniShell';
 import { ItemPicture, type ItemArt } from './ItemPicture';
+import { Handle } from '@/components/ui/handle';
 
 /** The kinds a profile head shows. Post flair is drawn on posts, not on a profile, so it gets the picture alone. */
 const ON_PROFILE: ReadonlySet<ShopItemKind> = new Set([
@@ -127,7 +128,7 @@ export function ItemStage({
           </p>
           {handle ? (
             <p className="t-meta truncate" dir="ltr">
-              @{handle}
+              <Handle handle={handle} />
             </p>
           ) : null}
         </div>

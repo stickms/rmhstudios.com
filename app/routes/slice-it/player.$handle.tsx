@@ -9,6 +9,7 @@ import { gradeFor } from '@features/slice-it/engine/scoring';
 import type { Lamp } from '@features/slice-it/engine/types';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
+import { Handle } from '@/components/ui/handle';
 /**
  * A Slice It player page — where every leaderboard row now goes (`X11`/`X12`).
  *
@@ -148,7 +149,7 @@ function PlayerHeader({ profile }: { profile: PlayerProfile }) { const fmt = use
           <span className="truncate">{user.name}</span>
           {user.isVerified && <BadgeCheck className="h-5 w-5 shrink-0 text-(--slice-primary)" aria-hidden />}
         </h1>
-        {user.handle && <p className="text-sm font-bold text-slice-text-light">@{user.handle}</p>}
+        {user.handle && <p className="text-sm font-bold text-slice-text-light"><Handle handle={user.handle} /></p>}
         <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold text-slice-text-muted">
           <span className="inline-flex items-center gap-1">
             <Music4 className="h-3.5 w-3.5" aria-hidden />

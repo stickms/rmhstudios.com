@@ -106,6 +106,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/tournaments/:id/seeding` | `GET` `PUT` | `lib/tournaments/api/tournaments.$id.seeding.server.ts` |
 | `/api/tournaments/:id/start` | `POST` | `app/routes/api/tournaments/$id/start.ts` |
 | `/api/tournaments/:id/withdraw` | `POST` | `app/routes/api/tournaments/$id/withdraw.ts` |
+| `/api/tournaments/mine` | `GET` | `lib/tournaments/api/tournaments.mine.server.ts` |
 
 ## `/api/translate`
 

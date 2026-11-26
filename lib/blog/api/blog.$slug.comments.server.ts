@@ -1,6 +1,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
+import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import { screenNewContent } from '@/lib/moderation/auto-moderate.server';
 import { createBlogCommentApi, listBlogCommentsApi } from '@/lib/blog/blog-comments.contract';
 import { BLOG_COMMENTS_PAGE_SIZE, createBlogCommentSchema } from '@/lib/blog/blog-comments-schema';
@@ -9,6 +10,7 @@ import {
   commentInclude,
   findAnnouncementPost,
   toCommentView,
+  visibleCommentsWhere,
 } from '@/lib/blog/blog-comments.server';
 
 // Per-viewer (`canDelete`), so a shared cache must never hold it.
@@ -39,10 +41,9 @@ export const route = apiRoute('/api/blog/$slug/comments', {
             status: 404,
           },
         );
-      const where = {
-        postId: post.id,
-        deletedAt: null,
-      };
+      // A signed-in viewer does not see comments by anyone they blocked, were blocked by or muted; a banned author's
+      // comments are hidden from everyone. The count uses the same filter, so `total` is what this viewer can see.
+      const where = visibleCommentsWhere(post.id, await getHiddenAuthorIds(userId));
       const [rows, total] = await Promise.all([
         prisma.blogComment.findMany({
           where,

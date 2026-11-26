@@ -50,6 +50,9 @@ vi.mock('@/lib/moderation/restrictions.server', () => ({
 vi.mock('@/lib/moderation/auto-moderate.server', () => ({
   screenNewContent: vi.fn(),
 }));
+vi.mock('@/lib/moderation.server', () => ({
+  getHiddenAuthorIds: vi.fn(async () => []),
+}));
 
 import { route as listRoute } from '@/lib/blog/api/blog.$slug.comments.server';
 import { route as deleteRoute } from '@/lib/blog/api/blog.comments.$id.server';
@@ -227,9 +230,14 @@ describe('GET /api/blog/$slug/comments', () => {
     ]);
     expect(m.commentMany).toHaveBeenCalledWith(
       expect.objectContaining({
+        // s15-06: the same live-comment filter, plus the banned-author filter (the hidden-author filter and its
+        // `total` are pinned in blog-comment-hidden.test.ts); this viewer hides no one, so there is no `userId` key.
         where: {
           postId: 'bp1',
           deletedAt: null,
+          user: {
+            OR: [{ bannedUntil: null }, { bannedUntil: { lte: expect.any(Date) } }],
+          },
         },
         orderBy: [
           {
@@ -242,6 +250,8 @@ describe('GET /api/blog/$slug/comments', () => {
         take: 200,
       }),
     );
+    // `total` counts with the very filter the list used.
+    expect(m.commentCount).toHaveBeenCalledWith({ where: m.commentMany.mock.calls[0]?.[0]?.where });
   });
 
   it('lets a signed-out viewer read, with nothing deletable', async () => {

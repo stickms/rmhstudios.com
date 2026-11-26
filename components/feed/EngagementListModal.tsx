@@ -6,6 +6,7 @@ import { UserAvatar } from'./UserAvatar';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
+import { Handle } from '@/components/ui/handle';
 interface EngagementUser {
  id: string;
  name: string | null;
@@ -79,7 +80,7 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
  {user.name || user.username ||'Unknown'}
  </p>
  {user.handle && (
- <p className="text-xs text-site-text-muted truncate">@{user.handle}</p>
+ <p className="text-xs text-site-text-muted truncate"><Handle handle={user.handle} /></p>
  )}
  </div>
  </Link>

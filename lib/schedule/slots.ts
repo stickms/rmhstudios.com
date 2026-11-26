@@ -23,6 +23,8 @@
  * the window being viewed.
  */
 
+import { dayOf } from '@/lib/calendar/tz';
+
 /** What kind of thing is on. Drives the icon, the colour and the link. */
 export const SLOT_KINDS = [
   'daily-puzzle',
@@ -66,6 +68,12 @@ export interface Occurrence {
   endsAt: Date;
   /** A whole-day entry (an RMHLadder follow-up or deadline): shown as its day, never as a time. */
   allDay?: boolean;
+  /**
+   * s15-18 (S13-09): the calendar day (`YYYY-MM-DD`) a whole-day entry belongs to, as its owner's zone saw it. The grid
+   * places the entry by this key, never by `startsAt` (which is only a noon-UTC bucket instant), so a viewer at
+   * UTC+14 or UTC-12 sees it on its own day.
+   */
+  allDayKey?: string;
 }
 
 const DAY_MS = 86_400_000;
@@ -126,8 +134,73 @@ export function startOfDay(at: Date): Date {
   return new Date(Date.UTC(at.getUTCFullYear(), at.getUTCMonth(), at.getUTCDate()));
 }
 
+const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** The UTC midnight of the bucket an occurrence belongs in: its day key when it is a whole-day entry, else its UTC day. */
+function bucketDayStart(o: Pick<Occurrence, 'startsAt' | 'allDayKey'>): Date {
+  if (o.allDayKey && DAY_KEY.test(o.allDayKey)) {
+    const [y, m, d] = o.allDayKey.split('-').map(Number);
+    return new Date(Date.UTC(y!, m! - 1, d!));
+  }
+  return startOfDay(o.startsAt);
+}
+
 /**
- * Group occurrences by UTC day, for the week view.
+ * The heading of a grid day: the bucket's own calendar date. A bucket is a UTC day (its `day` is UTC midnight), so it
+ * is named in UTC: formatting it in the viewer's zone would call 3 March "2 March" west of UTC.
+ */
+export function gridDayLabel(dayIso: string, locale: string): string {
+  return new Date(dayIso).toLocaleDateString(locale, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  });
+}
+
+/** The ISO instant (UTC midnight) of a whole-day entry's day key, to name its day with `gridDayLabel`. */
+export function allDayKeyToDayIso(key: string): string {
+  return `${key}T00:00:00.000Z`;
+}
+
+/**
+ * The calendar day (`YYYY-MM-DD`) an occurrence is shown on for a viewer in `timeZone`: a whole-day entry's own key,
+ * else the day its start falls on in that zone (a timed entry at 23:00 in New York is on that day, not the next UTC
+ * one).
+ */
+export function viewerDayKey(o: { startsAt: string; allDayKey?: string | undefined }, timeZone: string): string {
+  return o.allDayKey && DAY_KEY.test(o.allDayKey) ? o.allDayKey : dayOf(Date.parse(o.startsAt), timeZone);
+}
+
+/**
+ * The server's UTC-day buckets regrouped into the viewer's calendar days (s15-18, S13-09). A timed entry moves to
+ * the day it starts on in `timeZone`; a whole-day entry stays on its key. Every bucket the server sent is kept, quiet
+ * ones included, and a timed entry whose local day falls just outside the window gets its own bucket at that edge
+ * rather than being dropped. Each `day` is the UTC midnight of its key, to be named with `gridDayLabel`. With
+ * `timeZone` `'UTC'` the result is the server's grouping, which is what the page renders before it knows the zone.
+ */
+export function regroupByViewerDay<O extends { startsAt: string; allDayKey?: string | undefined }>(
+  byDay: readonly { day: string; occurrences: readonly O[] }[],
+  timeZone: string,
+): { day: string; occurrences: O[] }[] {
+  const buckets = new Map<string, O[]>();
+  for (const b of byDay) buckets.set(b.day.slice(0, 10), []);
+  for (const b of byDay) {
+    for (const o of b.occurrences) {
+      const key = viewerDayKey(o, timeZone);
+      const list = buckets.get(key);
+      if (list) list.push(o);
+      else buckets.set(key, [o]);
+    }
+  }
+  return [...buckets.keys()].sort().map((key) => ({
+    day: allDayKeyToDayIso(key),
+    occurrences: buckets.get(key)!.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)),
+  }));
+}
+
+/**
+ * Group occurrences by UTC day, for the week view. A whole-day entry goes in the bucket of its `allDayKey`.
  *
  * Every day in the window gets a bucket, including empty ones — a grid that
  * silently omits quiet days is a grid whose columns move, and a member reading
@@ -153,7 +226,7 @@ export function groupByDay(
   );
 
   for (const o of occurrences) {
-    const index = Math.floor((startOfDay(o.startsAt).getTime() - base.getTime()) / DAY_MS);
+    const index = Math.floor((bucketDayStart(o).getTime() - base.getTime()) / DAY_MS);
     if (index >= 0 && index < days) buckets[index].occurrences.push(o);
   }
   return buckets;

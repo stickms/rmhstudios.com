@@ -1,0 +1,21 @@
+{
+  "cancelled-refunded": "Cancelled — entry fees were refunded",
+  "pool": "Prize pool: {{n}} coins",
+  "pool-rake": "Prize pool: {{n}} coins, rake {{pct}}%",
+  "prize-none": "—",
+  "prize-won_one": "{{n}} coin",
+  "prize-won_other": "{{n}} coins",
+  "tab-yours": "Yours",
+  "yours-empty": "You have not entered or hosted a tournament yet.",
+  "yours-entered": "Entered",
+  "yours-error": "Could not load your tournaments.",
+  "yours-host": "Host",
+  "yours-more": "Show more",
+  "yours-place-few": "{{n}}rd of {{total}}",
+  "yours-place-one": "{{n}}st of {{total}}",
+  "yours-place-other": "{{n}}th of {{total}}",
+  "yours-place-two": "{{n}}nd of {{total}}",
+  "yours-retry": "Try again",
+  "yours-won_one": "Won {{n}} coin",
+  "yours-won_other": "Won {{n}} coins"
+}

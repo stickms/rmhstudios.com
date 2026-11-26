@@ -19,3 +19,4 @@ sprint directory holds its index, its plan, one specification per feature and a 
 | 12     | Members' work, made trustworthy and findable: twenty features                                   | [sprint-12/README.md](sprint-12/README.md), [summary](sprint-12/summary.md) |
 | 13     | Halves that never met, in the games and apps the last sprints passed by                         | [sprint-13/README.md](sprint-13/README.md), [summary](sprint-13/summary.md) |
 | 14     | Doors nobody built, in the games, apps and safety tools members already use                     | [sprint-14/README.md](sprint-14/README.md), [summary](sprint-14/summary.md) |
+| 15     | Shelves members fill, games that keep their word, and the doors back from a removal             | [sprint-15/README.md](sprint-15/README.md), [summary](sprint-15/summary.md) |

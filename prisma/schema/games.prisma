@@ -113,6 +113,12 @@ model DailyPuzzleReport {
   note      String? // up to 300 characters
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  /// s15-07: when an admin reviewed this report; null while it is open. A conditional update on null claims it once.
+  reviewedAt    DateTime?
+  /// s15-07: fault | stands. The one outcome the admin gave the day's reports.
+  reviewOutcome String? @db.VarChar(8)
+  /// s15-07: the admin's note to the reporters (up to 300 characters).
+  reviewNote    String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -353,9 +359,16 @@ model DreamRiftCoopRun {
   hostUserId    String?
   hostUser      User?    @relation(fields: [hostUserId], references: [id], onDelete: SetNull)
   createdAt     DateTime @default(now())
+  // s15-09: the hub starts the run and the host finishes it once. `startedAt` is null on rows written before the
+  // feature; `finishedAt` is null until the host posts. `memberIds` holds the signed-in members' ids by lobby slot
+  // (a guest or an empty slot is ''), taken from the hub's session, never from a client.
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  memberIds     String[] @default([])
 
   @@index([difficulty, combinedScore(sort: Desc)], map: "idx_dream_rift_coop_score")
   @@index([difficulty, timeSurvived(sort: Desc)], map: "idx_dream_rift_coop_time")
+  @@index([memberIds], type: Gin)
 }
 
 // ─── Gabriel's Horn ───────────────────────────────────────────────

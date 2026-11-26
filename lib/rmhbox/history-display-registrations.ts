@@ -60,6 +60,9 @@ const SequenceSamHistoryDetail = lazy(
 const IdentityCrisisHistoryDetail = lazy(
   () => import('@/components/rmhbox/minigames/identity-crisis/IdentityCrisisHistoryDetail'),
 );
+const HumanKeyboardHistoryDetail = lazy(
+  () => import('@/components/rmhbox/minigames/human-keyboard/HumanKeyboardHistoryDetail'),
+);
 
 // ─── Rhyme Time ──────────────────────────────────────────────────
 
@@ -613,5 +616,29 @@ registerHistoryDisplay({
       (a) => a.type === 'identity_reveal' && (a.payload as Record<string, unknown>).outcome !== 'missed',
     ).length;
     return `${questions} questions, ${solved} of ${log.players.length} identified — Deduction`;
+  },
+});
+
+// ─── Human Keyboard ──────────────────────────────────────────────
+
+registerHistoryDisplay({
+  minigameId: 'human-keyboard',
+  DetailComponent: HumanKeyboardHistoryDetail,
+  searchableFields: [
+    {
+      key: 'targetSentence',
+      label: 'Target Sentence',
+      extract: (log: GameLog) =>
+        log.actions
+          .filter((a) => a.type === 'round_result')
+          .map((a) => (a.payload as Record<string, unknown>).sentence as string)
+          .filter(Boolean),
+    },
+  ],
+  filterableFields: [],
+  getSummary: (log: GameLog) => {
+    const rounds = log.actions.filter((a) => a.type === 'round_result');
+    const finished = rounds.filter((a) => (a.payload as Record<string, unknown>).completed === true).length;
+    return `${finished} of ${rounds.length} sentences finished — Cooperative`;
   },
 });

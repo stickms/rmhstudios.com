@@ -44,6 +44,7 @@ import {
   saveResultWithSync,
   type PuzzleResult,
 } from '@/lib/daily-puzzles/persistence';
+import { readGlobeSetResult } from '@/lib/daily-puzzles/result-shapes';
 import { BOARD_SIZE, xorAll, type Card } from '@/lib/globeset/cards';
 import { findSmallestGlobeSet, selectionIsViable } from '@/lib/globeset/solver';
 import {
@@ -508,12 +509,7 @@ export function GlobeSetGame() {
   /** A run stored earlier, rebuilt into the shape the results panel renders. */
   const storedSummary = useMemo<RunSummary | null>(() => {
     if (!savedResult) return null;
-    const json = (savedResult.resultJson ?? {}) as {
-      sizes?: number[];
-      misses?: number;
-      hints?: number;
-      solverUsed?: boolean;
-    };
+    const json = readGlobeSetResult(savedResult.resultJson);
     if (!Array.isArray(json.sizes)) return null;
     return {
       dateKey,
@@ -531,7 +527,7 @@ export function GlobeSetGame() {
   const solverFrom =
     finished || !savedResult
       ? solverFromRef.current
-      : ((savedResult.resultJson as { solverFrom?: number } | null)?.solverFrom ?? undefined);
+      : readGlobeSetResult(savedResult.resultJson).solverFrom;
 
   useEffect(() => {
     if (!finished || completedRef.current) return;

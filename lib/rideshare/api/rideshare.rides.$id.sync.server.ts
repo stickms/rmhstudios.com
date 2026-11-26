@@ -32,6 +32,7 @@ export const route = apiRoute('/api/rideshare/rides/$id/sync', {
         requestedAt: true,
         acceptedAt: true,
         completedAt: true,
+        cancelledAt: true,
         ratingByRider: true,
         ratingByDriver: true,
         riderId: true,

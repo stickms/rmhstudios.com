@@ -18,6 +18,7 @@ import {
 } from'@/lib/emoji/shortcode-matcher';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 
+import { Handle } from '@/components/ui/handle';
 interface UserSuggestion {
  id: string;
  name: string | null;
@@ -77,9 +78,11 @@ interface MentionTextareaProps
  priorityUsers?: UserSuggestion[];
  /** True when something else offers `@` members (the group composer's picker); `#` and `:` still work here. */
  skipAtTrigger?: boolean;
+ /** Offer `@` members only: no `#` tags and no `:` emoji (a game discussion has neither). */
+ atOnly?: boolean;
 }
 
-export const MentionTextarea = function MentionTextarea({ value, onChange, onKeyDown, priorityUsers, skipAtTrigger, ref: forwardedRef, ...props }: MentionTextareaProps & { ref?: React.Ref<HTMLTextAreaElement> }) {
+export const MentionTextarea = function MentionTextarea({ value, onChange, onKeyDown, priorityUsers, skipAtTrigger, atOnly, ref: forwardedRef, ...props }: MentionTextareaProps & { ref?: React.Ref<HTMLTextAreaElement> }) {
  const { t: tl } = useTranslation('feed');
  const innerRef = useRef<HTMLTextAreaElement>(null);
  useImperativeHandle(forwardedRef, () => innerRef.current as HTMLTextAreaElement, []);
@@ -107,8 +110,8 @@ export const MentionTextarea = function MentionTextarea({ value, onChange, onKey
  const caret = el.selectionStart ?? 0;
  const before = el.value.slice(0, caret);
  const match = before.match(TRIGGER_REGEX);
- if (!match) {
- const emojiTrigger = findShortcodeTrigger(el.value, caret);
+ if (!match || (atOnly && match[1] ==='#')) {
+ const emojiTrigger = atOnly ? null : findShortcodeTrigger(el.value, caret);
  if (emojiTrigger) {
  setTrigger({ type:':', query: emojiTrigger.query, start: emojiTrigger.start });
  const caretCoords = getCaretCoordinates(el, emojiTrigger.start);
@@ -131,7 +134,7 @@ export const MentionTextarea = function MentionTextarea({ value, onChange, onKey
  top: caretCoords.top + caretCoords.height + 2,
  left: caretCoords.left,
  });
- }, [close, skipAtTrigger]);
+ }, [close, skipAtTrigger, atOnly]);
 
  // Fetch suggestions whenever the trigger/query changes (debounced).
  useEffect(() => {
@@ -261,7 +264,7 @@ export const MentionTextarea = function MentionTextarea({ value, onChange, onKey
  onChange={(e) => {
  const el = e.target;
  const caret = el.selectionStart ?? el.value.length;
- const map = getShortcodesSync();
+ const map = atOnly ? null : getShortcodesSync();
  const converted = map ? replaceCompletedShortcode(el.value, caret, map) : null;
  if (converted) {
  onChange(converted.next);
@@ -285,7 +288,7 @@ export const MentionTextarea = function MentionTextarea({ value, onChange, onKey
  onFocus={(e) => {
  // Warm the shortcode dataset so getShortcodesSync() is ready by the
  // time anyone finishes typing a code.
- void loadShortcodes();
+ if (!atOnly) void loadShortcodes();
  props.onFocus?.(e);
  }}
  />
@@ -362,7 +365,7 @@ export const MentionTextarea = function MentionTextarea({ value, onChange, onKey
  {u.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-site-accent shrink-0"/>}
  </span>
  <span className="block text-xs text-site-text-muted truncate">
- @{highlightMatch(u.handle ?? u.username, query)}
+ <Handle handle={highlightMatch(u.handle ?? u.username, query)} />
  </span>
  </span>
  </button>

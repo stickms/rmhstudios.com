@@ -116,6 +116,13 @@ export const RESTRICTION_ENFORCEMENT_PATHS: readonly RestrictionPath[] = [
   { path: 'lib/spaces/api/spaces.server.ts', feature: 'space' },
   { path: 'app/routes/api/vibe/stream.ts', feature: 'vibe' },
   { path: 'lib/personas/api/personas.server.ts', feature: 'persona' },
+
+  // Sprint 15 (docs/autonomous/sprint-15/plan.md §Anchors)
+  // s15-13 jam-suggestions
+  { path: 'lib/competitive/api/jams.$slug.suggestions.server.ts', feature: 'comment' },
+
+  // s15-17 more-packs
+  { path: 'lib/rmhbox/api/rmhbox.packs.server.ts', feature: 'comment' },
 ];
 
 /** The Prisma client accessors of rows that hold text one member wrote for others to read. */
@@ -144,6 +151,12 @@ export const MEMBER_TEXT_MODELS: readonly string[] = [
   'rmhTubeCommentaryTrack',
   'rmhTubeTimedComment',
   'songComment',
+
+  // Sprint 15 (docs/autonomous/sprint-15/plan.md §Anchors)
+  // s15-13 jam-suggestions
+  'gameJamThemeSuggestion',
+
+  // s15-17 more-packs
 ];
 
 export interface RestrictionWriter {
@@ -305,4 +318,14 @@ export const RESTRICTION_WRITERS: readonly RestrictionWriter[] = [
     models: ['rMHarkComment', 'chatMessage'],
     enforcedBy: { exempt: 'The RMHark bot accounts reply, not a member; there is no member to time out.' },
   },
+
+  // Sprint 15 (docs/autonomous/sprint-15/plan.md §Anchors)
+  // s15-13 jam-suggestions
+  {
+    path: 'lib/competitive/jam-suggestions.server.ts',
+    models: ['gameJamThemeSuggestion'],
+    enforcedBy: { paths: ['lib/competitive/api/jams.$slug.suggestions.server.ts'] },
+  },
+
+  // s15-17 more-packs
 ];

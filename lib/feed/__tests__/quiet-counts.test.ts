@@ -622,6 +622,11 @@ const EXEMPT: Record<string, string> = {
   // s14-20 s13-gaps
   'lib/messages/dm-reports.server.ts':
     'A group thread reply takedown lowers the parent chat message replyCount (a chat message, never a post); it serialises no count.',
+
+  // Sprint 15 (docs/autonomous/sprint-15/plan.md §Anchors)
+  // s15-05 prediction-comments
+
+  // s15-06 member-text-reports
 };
 
 const V1_SERIALISER = /serializePublicPost\(.*, (?:input\.)?(?:userId|viewerId)\)/;

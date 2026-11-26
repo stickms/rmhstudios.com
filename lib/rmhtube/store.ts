@@ -402,6 +402,32 @@ export function applyRoomAction(room: ClientRoomState, action: RoomAction, store
         members: room.members.filter((m) => m.userId !== data.userId),
       };
 
+    // s15-18: the member's account was erased; their name leaves the member list, the chat, the pin, reply quotes,
+    // the queue credits and the ban list, and their typing state goes (the hub renames the same fields).
+    case 'MEMBER_ERASED': {
+      const userId = data.userId as string;
+      const name = (data.userName as string) ?? 'Deleted user';
+      const rename = <T extends { userId: string; userName: string }>(m: T): T =>
+        m.userId === userId ? { ...m, userName: name } : m;
+      const credit = <T extends { addedBy: string; addedByName: string }>(q: T): T =>
+        q.addedBy === userId ? { ...q, addedByName: name } : q;
+      return {
+        ...room,
+        members: room.members.map((m) => (m.userId === userId ? { ...m, userName: name, avatarUrl: null } : m)),
+        chat: room.chat.map((m) => {
+          const named = rename(m);
+          const quotes = m.replyToId ? room.chat.find((c) => c.id === m.replyToId) : undefined;
+          return quotes?.userId === userId && m.replyToUserName ? { ...named, replyToUserName: name } : named;
+        }),
+        pinnedMessage: room.pinnedMessage ? rename(room.pinnedMessage) : room.pinnedMessage,
+        queue: room.queue.map(credit),
+        currentItem: room.currentItem ? credit(room.currentItem) : room.currentItem,
+        playedItems: room.playedItems.map(credit),
+        bannedUsers: room.bannedUsers.map(rename),
+        typingUsers: room.typingUsers.filter((id) => id !== userId),
+      };
+    }
+
     case 'HOST_TRANSFERRED': {
       const newHostId = data.newHostUserId as string;
       const newLeaderId = (data.newLeaderUserId as string) ?? newHostId;

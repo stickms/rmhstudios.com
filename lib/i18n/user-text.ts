@@ -271,6 +271,49 @@ export const USER_TEXT_RENDERERS: readonly UserTextRenderer[] = [
   { file: 'components/competitive/JamShortlistDialog.tsx', kind: 'input' },
 
   // s14-16 exclusion-hides
+
+  // Sprint 15 (docs/autonomous/sprint-15/plan.md §Anchors)
+  // s15-01 human-keyboard
+
+  // s15-04 workshop-reports
+
+  // s15-05 prediction-comments
+  { file: 'components/forecasting/MarketPanel.tsx', kind: 'block' },
+  // The season leaderboard names members.
+  { file: 'components/forecasting/ForecastingPanel.tsx', kind: 'inline' },
+
+  // s15-06 member-text-reports
+
+  // s15-09 dream-rift-coop
+  { file: 'features/dream-rift/ui/Leaderboard.tsx', kind: 'inline' },
+  { file: 'features/dream-rift/ui/YourCoopRuns.tsx', kind: 'inline' },
+
+  // s15-12 thread-mentions
+  // No entry: `components/steam/PostText.tsx` (a discussion's text, `@handle` links as inline `<bdi>` inside the
+  // `dir="auto"` body) is in the games library, which USER_TEXT_EXEMPT lists whole as the app tier; the registry holds
+  // that a file is never both listed and exempt.
+
+  // s15-13 jam-suggestions
+  { file: 'components/competitive/JamSuggestions.tsx', kind: 'block' },
+
+  // s15-14 tournament-prizes
+  { file: 'components/compete/YoursList.tsx', kind: 'block' },
+
+  // s15-15 synapse-rivals
+  { file: 'features/synapse-storm/ui/RivalsList.tsx', kind: 'inline' },
+
+  // s15-16 removal-appeals
+  // The panel shows the removed item's own title (the admin tab is a staff-only screen and exempt).
+  { file: 'components/moderation/RemovalsPanel.tsx', kind: 'inline' },
+
+  // s15-17 more-packs
+
+  // s15-19 integration-finds
+
+  // s15-08 calc-graphs (the calculator folder's exemption came out: these are the files in it that show member text)
+  { file: 'components/rmhcalculator/SavedGraphs.tsx', kind: 'inline' },
+  { file: 'components/rmhcalculator/NotebookTab.tsx', kind: 'input' },
+  { file: 'components/rmhcalculator/ScientificCalculator.tsx', kind: 'input' },
 ];
 
 /**
@@ -340,7 +383,9 @@ export const USER_TEXT_EXEMPT: Readonly<Record<string, string>> = {
   'components/rmh-research/': 'page copy is written by the site',
   'components/rmh-pmc/': 'page copy is written by the site',
   'components/optimization/': 'page copy is written by the site',
-  'components/forecasting/': 'market copy is written by the site',
+  // Not the whole folder (s15-05): MarketPanel (members' comments) and ForecastingPanel (leaderboard names) are listed above.
+  'components/forecasting/MarketExtras.tsx': 'market copy is written by the site',
+  'components/forecasting/SeasonAdminForm.tsx': 'staff-only season form',
   'components/wallet/': 'shop and goal copy is written by the site',
   'components/shop/': 'shop copy is written by the site',
   // `components/settings/` is not exempt as a whole: ProfilePreview renders other members' words and is listed above.
@@ -390,7 +435,6 @@ export const USER_TEXT_EXEMPT: Readonly<Record<string, string>> = {
   'components/rmhbox/': 'app tier',
   'components/rmhvibe/': 'app tier',
   'components/rmhmusic/': 'app tier',
-  'components/rmhcalculator/': 'app tier',
   'components/studio/': 'app tier',
   'components/canvas/': 'staff-only canvas notes',
 };

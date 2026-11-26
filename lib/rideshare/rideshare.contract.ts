@@ -159,6 +159,8 @@ export interface RideSyncView {
   requestedAt: string;
   acceptedAt: string | null;
   completedAt: string | null;
+  /** s15-18: set when the trip was cancelled; the report window counts from it when there is no completion. */
+  cancelledAt: string | null;
   ratingByRider: number | null;
   ratingByDriver: number | null;
   rider: RidePersonView;

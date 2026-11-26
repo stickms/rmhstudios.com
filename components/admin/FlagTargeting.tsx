@@ -20,6 +20,7 @@ import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { currentDocumentLocale, formatDateTime } from '@/lib/core/format';
 
+import { Handle } from '@/components/ui/handle';
 const memberName = (m: TargetMember) => m.name ?? (m.handle ? `@${m.handle}` : m.id);
 
 /**
@@ -210,7 +211,11 @@ function MemberList({
               <UserAvatar src={m.image} alt="" size={28} fallbackName={memberName(m)} />
               <div className="min-w-0 flex-1">
                 <p className="t-body truncate font-medium text-site-text">{memberName(m)}</p>
-                {m.handle ? <p className="t-meta truncate">@{m.handle}</p> : null}
+                {m.handle ? (
+                  <p className="t-meta truncate">
+                    <Handle handle={m.handle} />
+                  </p>
+                ) : null}
               </div>
               <IconButton
                 icon={X}
@@ -335,7 +340,9 @@ function AddMember({
               >
                 <UserAvatar src={u.image} alt="" size={24} fallbackName={u.name ?? u.handle ?? ''} />
                 <span className="t-body min-w-0 flex-1 truncate">{u.name ?? u.handle}</span>
-                <span className="t-meta">@{u.handle}</span>
+                <span className="t-meta">
+                  <Handle handle={u.handle} />
+                </span>
               </button>
             </li>
           ))}

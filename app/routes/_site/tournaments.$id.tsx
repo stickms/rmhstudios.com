@@ -192,6 +192,8 @@ function TournamentDetailPage() {
   const canReport = (isHost || isAdmin) && tourney.status === 'LIVE';
   const full = tourney.playerCount >= tourney.maxPlayers;
   const winner = tourney.entrants?.find((e) => e.placement === 1);
+  // What each paid place won, by member (the payouts `getTournament` already returns).
+  const prizeOf = new Map((tourney.payouts ?? []).map((p) => [p.userId, p.amountCoins]));
 
   return (
     <PageLayout
@@ -381,11 +383,36 @@ function TournamentDetailPage() {
           <PickemPanel tournament={tourney} signedIn={!!viewerId} />
         )}
 
+        {tourney.status === 'CANCELLED' && (
+          <p className="t-body border-b border-site-border py-4">
+            {t('cancelled-refunded', {
+              ns: 'tournament-prizes',
+              defaultValue: 'Cancelled — entry fees were refunded',
+            })}
+          </p>
+        )}
+
         {/* Entrants */}
         <div>
           <h2 className="site-section-label mb-3">
             {t('entrants', { defaultValue: 'Entrants' })} ({tourney.playerCount})
           </h2>
+          {tourney.status === 'COMPLETE' && tourney.prizePoolCoins > 0 && (
+            <p className="t-meta mb-3">
+              {tourney.rakeBps
+                ? t('pool-rake', {
+                    ns: 'tournament-prizes',
+                    defaultValue: 'Prize pool: {{n}} coins, rake {{pct}}%',
+                    n: tourney.prizePoolCoins,
+                    pct: tourney.rakeBps / 100,
+                  })
+                : t('pool', {
+                    ns: 'tournament-prizes',
+                    defaultValue: 'Prize pool: {{n}} coins',
+                    n: tourney.prizePoolCoins,
+                  })}
+            </p>
+          )}
           <div className="grid gap-3 sm:grid-cols-2">
             {(tourney.entrants ?? []).map((e) => (
               <div key={e.id} className="rule-row flex items-center gap-2 py-3">
@@ -417,8 +444,21 @@ function TournamentDetailPage() {
                   </span>
                 )}
                 <EntrantCheckIn tourney={tourney} entrant={e} canManage={canManage} onChanged={load} />
+                {tourney.status === 'COMPLETE' && (
+                  <span className="t-meta ml-auto shrink-0">
+                    {prizeOf.get(e.user?.id ?? '') != null
+                      ? t('prize-won', {
+                          ns: 'tournament-prizes',
+                          count: prizeOf.get(e.user?.id ?? '') ?? 0,
+                          n: prizeOf.get(e.user?.id ?? '') ?? 0,
+                          defaultValue_one: '{{n}} coin',
+                          defaultValue: '{{n}} coins',
+                        })
+                      : t('prize-none', { ns: 'tournament-prizes', defaultValue: '—' })}
+                  </span>
+                )}
                 {(tourney.status === 'LIVE' || tourney.status === 'COMPLETE') && (
-                  <span className="ml-auto text-xs text-site-text-muted">
+                  <span className={cn('text-xs text-site-text-muted', tourney.status === 'COMPLETE' ? 'shrink-0' : 'ml-auto')}>
                     {e.wins}–{e.losses}
                   </span>
                 )}

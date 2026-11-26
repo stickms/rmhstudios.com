@@ -25,6 +25,7 @@ import {
 } from '@/lib/moderation/blocked-muted.contract';
 import { BLOCKED_MUTED_QUERY_MAX, type BlockedMutedTab } from '@/lib/moderation/blocked-muted-schema';
 
+import { Handle } from '@/components/ui/handle';
 const KEY = 'blocked-muted';
 
 /**
@@ -381,7 +382,11 @@ export function BlockedMutedPage() {
                           <UserAvatar src={row.image ?? undefined} alt="" size={40} fallbackName={name} />
                           <span className="min-w-0">
                             <span className="t-body block truncate font-semibold text-site-text">{name}</span>
-                            {row.handle && <span className="t-meta block truncate">@{row.handle}</span>}
+                            {row.handle && (
+                              <span className="t-meta block truncate">
+                                <Handle handle={row.handle} />
+                              </span>
+                            )}
                           </span>
                         </Link>
                       )}

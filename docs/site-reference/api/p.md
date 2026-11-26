@@ -53,6 +53,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/predictions/:id/devils-advocate` | `POST` | `lib/predictions/api/predictions.$id.devils-advocate.server.ts` |
 | `/api/predictions/:id/sell` | `POST` | `lib/predictions/api/predictions.$id.sell.server.ts` |
 | `/api/predictions/:id/trade` | `POST` | `lib/predictions/api/predictions.$id.trade.server.ts` |
+| `/api/predictions/comments/:id` | `DELETE` | `lib/predictions/api/predictions.comments.$id.server.ts` |
 
 ## `/api/preferences`
 

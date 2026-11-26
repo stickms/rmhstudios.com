@@ -49,6 +49,11 @@ export interface DrawOptions {
   gameNumber: number;
   hardIdentities: boolean;
   rng?: Rng;
+  /**
+   * The pool is a member's pack: its identities have no category or difficulty, so every one is a candidate and the
+   * category spread rule is skipped (a pack's identities all share the one placeholder category).
+   */
+  pack?: boolean;
 }
 
 /**
@@ -65,14 +70,14 @@ export function drawIdentities(
 ): Identity[] {
   const rng = options.rng ?? Math.random;
   const tiers = difficultiesFor(options.gameNumber, options.hardIdentities);
-  let candidates = pool.filter((identity) => tiers.includes(identity.difficulty));
+  let candidates = options.pack ? [...pool] : pool.filter((identity) => tiers.includes(identity.difficulty));
   if (candidates.length < playerIds.length) candidates = [...pool];
 
   const remaining = shuffle(candidates, rng);
   const usedCategories = new Set<string>();
   const drawn: Identity[] = [];
   for (let i = 0; i < playerIds.length; i++) {
-    let at = remaining.findIndex((identity) => !usedCategories.has(identity.category));
+    let at = options.pack ? 0 : remaining.findIndex((identity) => !usedCategories.has(identity.category));
     if (at === -1) at = 0;
     const [picked] = remaining.splice(at, 1);
     if (!picked) break;

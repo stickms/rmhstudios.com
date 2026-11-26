@@ -32,6 +32,8 @@ model Tf2Hud {
   likeCount     Int              @default(0)
   forkCount     Int              @default(0)
   downloadCount Int              @default(0)
+  /// s15-04: set when a moderator removes the HUD (it is made PRIVATE in the same write); the owner cannot undo it.
+  moderatedAt   DateTime?
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 
@@ -146,6 +148,8 @@ model Tf2Loadout {
   forks       Tf2Loadout[]     @relation("Tf2LoadoutForks")
   likeCount   Int              @default(0)
   forkCount   Int              @default(0)
+  /// s15-04: set when a moderator removes the loadout (it is made PRIVATE in the same write); the owner cannot undo it.
+  moderatedAt DateTime?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 

@@ -15,7 +15,8 @@ export interface ICOther {
 }
 
 export type ICPhase = 'WAITING' | 'ASSIGN' | 'ASK' | 'VOTE' | 'RESULT' | 'FINAL' | 'REVEAL' | 'GAME_OVER';
-export type ICStatus = 'asking' | 'solved' | 'stopped';
+/** `'final'`: what the others read for a finalist until the reveal, whatever their final guess did (s15-20). */
+export type ICStatus = 'asking' | 'solved' | 'stopped' | 'final';
 export type ICVote = 'yes' | 'no' | 'maybe';
 export type ICPlurality = ICVote | 'split';
 

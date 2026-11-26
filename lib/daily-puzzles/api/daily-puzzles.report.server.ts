@@ -19,7 +19,7 @@ export const route = apiRoute('/api/daily-puzzles/report', {
     async ({ userId, body }) => {
       const out = await fileReport(userId, body);
       if (!out.ok) return Response.json({ ...refusalBody(out.code) }, { status: ERROR_CODES[out.code].http });
-      return { ok: true as const };
+      return out.review ? { ok: true as const, review: out.review } : { ok: true as const };
     },
   ),
 });

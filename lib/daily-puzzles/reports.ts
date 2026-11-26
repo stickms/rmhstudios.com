@@ -25,6 +25,18 @@ export type ReportKind = (typeof REPORT_KINDS)[number];
 
 export const REPORT_NOTE_MAX = 300;
 
+/**
+ * What an admin concluded about a day's reports (s15-07): `fault` (the reporters were right) or `stands` (the puzzle
+ * and its answer stand). One outcome and one optional note cover every open report of the mode and day.
+ */
+export const REVIEW_OUTCOMES = ['fault', 'stands'] as const;
+export type ReviewOutcome = (typeof REVIEW_OUTCOMES)[number];
+export const REVIEW_NOTE_MAX = 300;
+
+export function isReviewOutcome(value: unknown): value is ReviewOutcome {
+  return typeof value === 'string' && (REVIEW_OUTCOMES as readonly string[]).includes(value);
+}
+
 /** A report is accepted for today and the previous 13 days: the archive the hub shows. */
 export const REPORT_WINDOW_DAYS = 13;
 

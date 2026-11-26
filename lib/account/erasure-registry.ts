@@ -192,6 +192,7 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     decision: 'erase',
     reason: 'Bulk clean-up operations (sprint 07 bulk-durable); a run in progress stops at its next chunk.',
   },
+  CalcGraph: { decision: 'erase', reason: "Rule 1: the member's own saved calculator graphs." },
   CalcNotebook: { decision: 'erase', reason: "Rule 1: the member's own calculator notebooks." },
   CalendarFeed: {
     decision: 'erase',
@@ -390,6 +391,11 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     decision: 'keep',
     reason: "Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record.",
   },
+  ContentRemoval: {
+    decision: 'erase',
+    reason:
+      "The member's own record of an item a report took down, with their request for a second look. `reviewedById` (a moderator, a plain column) is nulled in the same step when the moderator's account is erased. It holds no reporter.",
+  },
   ContentReport: {
     decision: 'deidentify',
     reason: "The report stays as the moderators' record; the reporter's free-text details are nulled.",
@@ -513,7 +519,8 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
   },
   DreamRiftCoopRun: {
     decision: 'deidentify',
-    reason: 'A co-op run loses its host (hostUserId nulled); the run stays for its other players.',
+    reason:
+      'A co-op run loses its host (hostUserId nulled), the member\'s id leaves memberIds and their slot\'s name becomes "Deleted user", in new rows and in rows that hold an old account snapshot; the run stays for its other players (sprint 15 09).',
   },
   DreamRiftPlayer: {
     decision: 'erase',
@@ -660,6 +667,10 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       "Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity.",
   },
   GameJamTeamMember: { decision: 'erase', reason: "The member's team rows and pending invitations on their entries." },
+  GameJamThemeSuggestion: {
+    decision: 'erase',
+    reason: "The member's suggested jam themes (sprint 15 jam-suggestions).",
+  },
   GameJamThemeVote: { decision: 'erase', reason: "The member's theme votes (sprint 07 jam-themes)." },
   GamePersonalBest: { decision: 'erase', reason: "The member's own record history." },
   GamePlayStatus: {

@@ -10,6 +10,7 @@ import { inviteCohostApi } from '@/lib/events/cohosts.contract';
 import type { CohostEntryDTO, CohostRefusal } from '@/lib/events/cohosts';
 import { MAX_COHOSTS } from '@/lib/events/cohosts';
 
+import { Handle } from '@/components/ui/handle';
 interface Suggestion {
   id: string;
   name: string | null;
@@ -130,7 +131,11 @@ export function CohostInvite({ eventId, excludeIds, onInvited, onAnnounce }: Coh
             >
               <UserAvatar src={u.image} alt="" size={24} />
               <span className="t-body min-w-0 flex-1 truncate text-site-text">{u.name ?? u.handle}</span>
-              {u.handle && <span className="t-meta truncate">@{u.handle}</span>}
+              {u.handle && (
+                <span className="t-meta truncate">
+                  <Handle handle={u.handle} />
+                </span>
+              )}
             </button>
           </li>
         ))}

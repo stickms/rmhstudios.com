@@ -12,6 +12,7 @@ import {
 import { formatDateKey, getTodayEST, getPuzzleNumber } from '@/lib/daily-puzzles/seed';
 import { getResult, saveResult, hasCompleted } from '@/lib/daily-puzzles/persistence';
 import { saveResultWithSync, fetchResultFromServer } from '@/lib/daily-puzzles/persistence';
+import { hasOutcastResult, readOutcastResult } from '@/lib/daily-puzzles/result-shapes';
 import { generateOutcastShare } from '@/lib/daily-puzzles/share';
 import { fetchDailyPuzzle } from '@/lib/daily-puzzles/client';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ import {
   PuzzleSection,
   PuzzleResultCard,
   PuzzleResultStack,
+  PuzzlePlayedElsewhere,
   PuzzleShareRow,
   TONE_TINT,
 } from '@/components/daily-puzzles/PuzzleShell';
@@ -84,13 +86,20 @@ function OutcastGameContent({
   const [roundRevealed, setRoundRevealed] = useState(false);
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const [completed, setCompleted] = useState(false);
+  // A score saved with no answers (another device): the score and nothing to replay.
+  const [elsewhereScore, setElsewhereScore] = useState<number | null>(null);
 
   // Check persistence on mount
   useEffect(() => {
     const existing = getResult('outcast', dateKey);
     if (existing) {
-      setCorrectRounds(existing.resultJson.correctRounds);
-      setSelectedNames(existing.resultJson.selectedNames ?? []);
+      if (hasOutcastResult(existing.resultJson)) {
+        const data = readOutcastResult(existing.resultJson);
+        setCorrectRounds(data.correctRounds);
+        setSelectedNames(data.selectedNames);
+      } else {
+        setElsewhereScore(existing.score);
+      }
       setCurrentRound(5);
       setCompleted(true);
       return;
@@ -146,8 +155,13 @@ function OutcastGameContent({
       fetchResultFromServer('outcast', dateKey).then((serverResult) => {
         if (serverResult) {
           saveResult('outcast', dateKey, serverResult);
-          setCorrectRounds(serverResult.resultJson.correctRounds);
-          setSelectedNames(serverResult.resultJson.selectedNames ?? []);
+          if (hasOutcastResult(serverResult.resultJson)) {
+            const data = readOutcastResult(serverResult.resultJson);
+            setCorrectRounds(data.correctRounds);
+            setSelectedNames(data.selectedNames);
+          } else {
+            setElsewhereScore(serverResult.score);
+          }
           setCurrentRound(5);
           setCompleted(true);
         }
@@ -202,7 +216,7 @@ function OutcastGameContent({
     }
   }, [currentRound, correctRounds, selectedNames, dateKey]);
 
-  const score = computeOutcastScore(correctRounds);
+  const score = elsewhereScore ?? computeOutcastScore(correctRounds);
   const round = currentRound < 5 ? puzzle.rounds[currentRound] : null;
   const shareText = completed ? generateOutcastShare(puzzleNumber, correctRounds, score, MAX_SCORE) : '';
 
@@ -404,6 +418,8 @@ function OutcastGameContent({
               )}
             </AnimatePresence>
           </motion.div>
+        ) : elsewhereScore !== null ? (
+          <PuzzlePlayedElsewhere key="played-elsewhere" score={elsewhereScore} />
         ) : (
           <motion.div
             key="results"
@@ -543,10 +559,7 @@ function OutcastGameContent({
           dateKey={dateKey}
           score={score}
           completed={completed}
-          resultJson={{
-            correctRounds,
-            selectedNames,
-          }}
+          resultJson={elsewhereScore !== null ? undefined : { correctRounds, selectedNames }}
         />
       )}
     </>

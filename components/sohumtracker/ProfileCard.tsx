@@ -20,6 +20,7 @@ import { formatAgo, formatClock, formatDuration, STATUS_COLORS } from '@/lib/soh
 import type { WatchLiveDTO } from '@/lib/sohumtracker/types';
 import { agedSeconds, useTicker } from './live';
 
+import { Handle } from '@/components/ui/handle';
 interface ProfileCardProps {
   live: WatchLiveDTO;
   /** When the server measured the figures, so live counters can age from it. */
@@ -96,7 +97,11 @@ export function ProfileCard({ live, generatedAt }: ProfileCardProps) {
 
         <div className="stk-profile__ident">
           <h2 className="stk-profile__name">{live.displayName}</h2>
-          {live.username ? <p className="stk-profile__handle">@{live.username}</p> : null}
+          {live.username ? (
+            <p className="stk-profile__handle">
+              <Handle handle={live.username} />
+            </p>
+          ) : null}
           {live.customStatus ? (
             <p className="stk-bubble">
               {live.customStatus.emoji ? (

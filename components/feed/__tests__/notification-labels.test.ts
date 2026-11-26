@@ -189,6 +189,15 @@ describe('system notification labels', () => {
       game_thread: 'Game discussion',
       song: 'Slice It',
 
+      // Sprint 15 system labels (docs/autonomous/sprint-15/plan.md §Anchors)
+      // s15-07 fix-notices
+      puzzle_report: 'Daily puzzles',
+      jam_deadline: 'Game jams',
+
+      // s15-12 thread-mentions
+
+      // s15-16 removal-appeals
+
       default: 'RMH Studios',
     });
   });

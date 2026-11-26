@@ -175,6 +175,8 @@ See the [API inventory](../api.md) for how to read the tables.
 | ----- | ------- | ------ |
 | `/api/rmhcalculator/compute` | `POST` | `app/routes/api/rmhcalculator/compute.ts` |
 | `/api/rmhcalculator/graph` | `POST` | `app/routes/api/rmhcalculator/graph.ts` |
+| `/api/rmhcalculator/graphs` | `GET` `POST` | `lib/rmhcalculator/api/rmhcalculator.graphs.server.ts` |
+| `/api/rmhcalculator/graphs/:id` | `DELETE` `GET` `PUT` | `lib/rmhcalculator/api/rmhcalculator.graphs.$id.server.ts` |
 
 ## `/api/rmhcharacters`
 

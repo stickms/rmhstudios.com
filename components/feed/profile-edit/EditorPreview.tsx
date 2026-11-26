@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { ProfileBanner } from '@/components/profile/ProfileBanner';
 import { cn } from '@/lib/utils';
+import { Handle } from '@/components/ui/handle';
 
 export function EditorPreview({
   name,
@@ -36,7 +37,7 @@ export function EditorPreview({
           {name || t('display-name-placeholder', { defaultValue: 'Your display name' })}
         </p>
         <p className="truncate text-xs text-site-text-muted">
-          @{handle || t('handle-placeholder', { defaultValue: '@handle' })}
+          <Handle handle={handle || t('handle-placeholder', { defaultValue: '@handle' })} />
         </p>
         <p
           className={cn(

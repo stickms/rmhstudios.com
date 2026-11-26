@@ -5,7 +5,7 @@
 
 # Account
 
-6 endpoints. Paths are relative to `https://rmhstudios.com`.
+8 endpoints. Paths are relative to `https://rmhstudios.com`.
 
 | Endpoint | Scope | Summary |
 | -------- | ----- | ------- |
@@ -15,6 +15,8 @@
 | `GET /api/v1/me/following` | `read:profile` | List who you follow |
 | `GET /api/v1/me/followers` | `read:profile` | List your followers |
 | `GET /api/v1/me/deleted` | `read:reading` | List what you deleted |
+| `GET /api/v1/me/notifications/unread-count` | `read:notifications` | Get your unread notification count |
+| `POST /api/v1/me/notifications/read` | `write:notifications` | Mark your notifications read |
 
 ## Reference
 
@@ -47,7 +49,7 @@ The authenticated key owner’s account summary, tier, and stats.
 
 ### `GET /api/v1/me/notifications`
 
-Your notifications, newest first.
+Your notifications, newest first. A notice the site wrote carries its translation `key` and `params` so a client can show it in your language; `preview` stays the English text. Both are `null` on a plain notification. The cursor is `<createdAt>|<id>`, so notifications created at the same instant are never skipped; the older bare-time cursor is still accepted.
 
 **Scope:** `read:notifications` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation id:** `listMyNotifications`
 
@@ -55,6 +57,7 @@ Your notifications, newest first.
 | --------- | -- | ---- | -------- | ----------- |
 | `limit` | query | integer | no | Page size, 1–50 (default 20). |
 | `cursor` | query | string | no | Opaque cursor from a previous `nextCursor` to fetch the next page. |
+| `unread` | query | boolean | no | When `true`, only unread notifications. |
 
 **Example response** (`200`)
 
@@ -71,9 +74,24 @@ Your notifications, newest first.
         "image": "https://…"
       },
       "preview": null,
+      "key": null,
+      "params": null,
       "link": "/u/ada",
       "read": false,
       "createdAt": "2026-06-30T09:00:00.000Z"
+    },
+    {
+      "id": "ck_n0",
+      "type": "SYSTEM",
+      "actor": null,
+      "preview": "Achievement unlocked: First post",
+      "key": "achievement-unlocked",
+      "params": {
+        "name": "First post"
+      },
+      "link": "/achievements",
+      "read": true,
+      "createdAt": "2026-06-29T09:00:00.000Z"
     }
   ],
   "nextCursor": null
@@ -202,5 +220,48 @@ Deletions of one `kind` after `since`, oldest first, so an app keeping a copy of
     }
   ],
   "nextCursor": null
+}
+```
+
+### `GET /api/v1/me/notifications/unread-count`
+
+How many notifications you have not read: the number on the site’s badge.
+
+**Scope:** `read:notifications` · **Success:** `200` · **Operation id:** `getMyUnreadNotificationCount`
+
+**Example response** (`200`)
+
+```json
+{
+  "count": 3
+}
+```
+
+### `POST /api/v1/me/notifications/read`
+
+Mark notifications read, as the site’s inbox does. Send `ids` (1–100 of your own notification ids; ids that are not yours are ignored) or `before` (every unread notification created at or before that time), not both. Answers how many changed; marking a read notification read again changes nothing. Needs the explicit `write:notifications` scope.
+
+**Scope:** `write:notifications` · **Success:** `200` · **Idempotent:** accepts `Idempotency-Key` · **Operation id:** `markMyNotificationsRead`
+
+**Request body** (`application/json`)
+
+| Field | Type | Required | Description |
+| ----- | ---- | -------- | ----------- |
+| `ids` | `string[]` | no | 1–100 notification ids. Use this or `before`. |
+| `before` | `string` | no | An ISO 8601 time. Every unread notification created at or before it is marked read. Use this or `ids`. |
+
+```json
+{
+  "ids": [
+    "ck_n1"
+  ]
+}
+```
+
+**Example response** (`200`)
+
+```json
+{
+  "updated": 1
 }
 ```

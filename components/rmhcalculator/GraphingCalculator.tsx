@@ -5,9 +5,13 @@
  * every sample point (and the view window, ticks, and discontinuity breaks). The
  * app never evaluates the functions — it only renders the returned points via
  * <GraphPlot>. Reasoning streams live while the model works.
+ *
+ * s15-08: a plotted graph can be saved (with its validated result) and reopened from "Saved graphs" with no model
+ * call, and the functions and domain can be copied as a link. A link opens here with the form filled in and waits
+ * for Plot (`initial`); nothing is plotted until the member presses it.
  */
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LineChart, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,22 +20,47 @@ import { graphStream, CalcStreamError } from '@/lib/rmhcalculator/client';
 import { GRAPH_SERIES_COLORS, type CalcModel, type GraphResult } from '@/lib/rmhcalculator/types';
 import { ReasoningStream } from '@/components/rmhcalculator/ReasoningStream';
 import { GraphPlot } from '@/components/rmhcalculator/GraphPlot';
+import { GraphActions, GraphReplotNotice, type PlottedGraph } from '@/components/rmhcalculator/GraphActions';
+import { SavedGraphs } from '@/components/rmhcalculator/SavedGraphs';
+import { useCalcGraphActions } from '@/components/rmhcalculator/useCalcGraphs';
+import { compactGraphResult } from '@/lib/rmhcalculator/graph-compact';
+import type { GraphLinkContent, GraphLinkDomain } from '@/lib/rmhcalculator/graph-link';
+import type { CalcGraphFull } from '@/lib/rmhcalculator/graphs-schema';
+import { toast } from '@/lib/toast';
 
 const EXAMPLES = ['sin(x)', 'x^2 - 3', '1/x', 'e^x', 'x^3 - 2x', 'tan(x)', 'ln(x)', 'cos(x)/x'];
 const MAX_FUNCTIONS = 4;
 
-export function GraphingCalculator({ model }: { model: CalcModel }) {
-  const { t } = useTranslation('c-rmhcalculator');
-  const abortRef = useRef<AbortController | null>(null);
+/** A saved graph on screen: the row, and the functions and domain it holds. */
+interface SavedRef extends GraphLinkContent {
+  id: string;
+}
 
-  const [functions, setFunctions] = useState<string[]>(['sin(x)']);
-  const [autoDomain, setAutoDomain] = useState(true);
-  const [xMin, setXMin] = useState('-10');
-  const [xMax, setXMax] = useState('10');
+const sameDomain = (a: GraphLinkDomain | null, b: GraphLinkDomain | null) =>
+  a === null || b === null ? a === b : a.min === b.min && a.max === b.max;
+const sameRequest = (a: GraphLinkContent, b: GraphLinkContent) =>
+  a.functions.length === b.functions.length &&
+  a.functions.every((f, i) => f === b.functions[i]) &&
+  sameDomain(a.domain, b.domain);
+
+export function GraphingCalculator({ model, initial }: { model: CalcModel; initial?: GraphLinkContent }) {
+  const { t } = useTranslation(['c-rmhcalculator', 'calc-graphs']);
+  const abortRef = useRef<AbortController | null>(null);
+  const { update } = useCalcGraphActions();
+
+  const [functions, setFunctions] = useState<string[]>(initial?.functions ?? ['sin(x)']);
+  const [autoDomain, setAutoDomain] = useState(!initial?.domain);
+  const [xMin, setXMin] = useState(initial?.domain ? String(initial.domain.min) : '-10');
+  const [xMax, setXMax] = useState(initial?.domain ? String(initial.domain.max) : '10');
   const [computing, setComputing] = useState(false);
   const [reasoning, setReasoning] = useState('');
   const [graph, setGraph] = useState<GraphResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // What the graph on screen was plotted from, and the saved graph (if any) it belongs to.
+  const [plotted, setPlotted] = useState<GraphLinkContent | null>(null);
+  const [saved, setSaved] = useState<SavedRef | null>(null);
+  // A saved graph whose stored points no longer read: its functions are back, the graph is not drawn.
+  const [needsReplot, setNeedsReplot] = useState(false);
 
   const setFunctionAt = (i: number, value: string) =>
     setFunctions((prev) => prev.map((f, idx) => (idx === i ? value : f)));
@@ -65,11 +94,13 @@ export function GraphingCalculator({ model }: { model: CalcModel }) {
         max,
       };
     }
+    const request: GraphLinkContent = { functions: fns, domain: domain ?? null };
 
     abortRef.current?.abort();
     setComputing(true);
     setReasoning('');
     setError(null);
+    setNeedsReplot(false);
 
     const { promise, controller } = graphStream(
       {
@@ -80,7 +111,35 @@ export function GraphingCalculator({ model }: { model: CalcModel }) {
       },
       {
         onThinking: (d) => setReasoning((r) => r + d),
-        onGraph: (g) => setGraph(g),
+        onGraph: (g) => {
+          setGraph(g);
+          setPlotted(request);
+          // Plotting a saved graph again stores the new result in its row; plotting anything else leaves the row alone.
+          if (saved && sameRequest(saved, request)) {
+            update.mutate(
+              {
+                id: saved.id,
+                body: {
+                  functions: request.functions,
+                  domainMin: request.domain?.min ?? null,
+                  domainMax: request.domain?.max ?? null,
+                  result: compactGraphResult(g),
+                },
+              },
+              {
+                onError: () =>
+                  toast.error(
+                    t('update-failed', {
+                      ns: 'calc-graphs',
+                      defaultValue: 'Could not update the saved graph',
+                    }),
+                  ),
+              },
+            );
+          } else {
+            setSaved(null);
+          }
+        },
       },
     );
     abortRef.current = controller;
@@ -101,7 +160,40 @@ export function GraphingCalculator({ model }: { model: CalcModel }) {
           abortRef.current = null;
         }
       });
-  }, [functions, computing, autoDomain, xMin, xMax, model, t]);
+  }, [functions, computing, autoDomain, xMin, xMax, model, t, saved, update]);
+
+  // A saved graph opened from the list: its stored result is drawn at once and no model call is made.
+  const openSaved = (g: CalcGraphFull) => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    const domain = g.domainMin !== null && g.domainMax !== null ? { min: g.domainMin, max: g.domainMax } : null;
+    setComputing(false);
+    setReasoning('');
+    setError(null);
+    setFunctions(g.functions);
+    setAutoDomain(domain === null);
+    setXMin(domain ? String(domain.min) : '-10');
+    setXMax(domain ? String(domain.max) : '10');
+    setGraph(g.result);
+    setNeedsReplot(g.result === null);
+    setPlotted(g.result ? { functions: g.functions, domain } : null);
+    setSaved({ id: g.id, functions: g.functions, domain });
+  };
+
+  // The form's own functions and domain, for the link: null when they could not make one.
+  const linkContent = useMemo((): GraphLinkContent | null => {
+    const fns = functions.map((f) => f.trim()).filter(Boolean);
+    if (fns.length === 0) return null;
+    if (autoDomain) return { functions: fns, domain: null };
+    const min = Number(xMin);
+    const max = Number(xMax);
+    if (xMin.trim() === '' || xMax.trim() === '' || !Number.isFinite(min) || !Number.isFinite(max) || max <= min) {
+      return null;
+    }
+    return { functions: fns, domain: { min, max } };
+  }, [functions, autoDomain, xMin, xMax]);
+
+  const plottedGraph: PlottedGraph | null = plotted && graph ? { ...plotted, result: graph } : null;
 
   return (
     <div className="rmhcalc-graph">
@@ -241,12 +333,30 @@ export function GraphingCalculator({ model }: { model: CalcModel }) {
           })}
         </Button>
 
+        <GraphActions
+          plotted={plottedGraph}
+          saved={saved !== null && plotted !== null && sameRequest(saved, plotted)}
+          linkContent={linkContent}
+          busy={computing}
+          onSaved={(id) => plotted && setSaved({ id, ...plotted })}
+        />
+
         <ReasoningStream text={reasoning} active={computing} />
+
+        <SavedGraphs
+          activeId={saved?.id ?? null}
+          onOpen={openSaved}
+          onDeleted={(id) => {
+            if (saved?.id === id) setSaved(null);
+          }}
+        />
       </div>
 
       <div className="rmhcalc-graph__canvas">
         {error ? (
           <div className="rmhcalc-graph__error">{error}</div>
+        ) : needsReplot ? (
+          <GraphReplotNotice onReplot={plot} busy={computing} />
         ) : graph ? (
           <>
             <GraphPlot graph={graph} />

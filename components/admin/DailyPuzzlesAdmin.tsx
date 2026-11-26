@@ -2,6 +2,15 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs } from '@/components/ui/tabs';
@@ -13,11 +22,19 @@ import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { toast } from '@/lib/toast';
 import { api, apiQuery } from '@/lib/contract/client';
 import type { DailyPuzzleMode } from '@/lib/daily-puzzles/generate-core';
-import { REPORTABLE_MODES, REPORT_KINDS, type ReportKind } from '@/lib/daily-puzzles/reports';
+import {
+  REPORTABLE_MODES,
+  REPORT_KINDS,
+  REVIEW_NOTE_MAX,
+  REVIEW_OUTCOMES,
+  type ReportKind,
+  type ReviewOutcome,
+} from '@/lib/daily-puzzles/reports';
 import {
   generatePuzzleApi,
   getAdminPuzzlesApi,
   replacePuzzleApi,
+  reviewReportsApi,
   type AdminPuzzleDay,
 } from '@/lib/daily-puzzles/reports.contract';
 
@@ -208,6 +225,7 @@ export function DailyPuzzlesAdmin() {
                       <p className="t-meta text-site-text-muted">{lockedNote(d)}</p>
                     ) : null}
                   </div>
+                  <DayReview day={d} mode={mode} onDone={refresh} />
 
                   <div className="space-y-2">
                     <h3 className="t-label">{t('reports-heading', { defaultValue: 'Reports' })}</h3>
@@ -245,6 +263,147 @@ export function DailyPuzzlesAdmin() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * A day's review (s15-07): what was concluded, how many reports are still open, and "Mark reviewed" while any are. One
+ * outcome and an optional note cover every open report of the day; each reporter is told once. The note reaches only
+ * members who finished the puzzle (a report needs a score row), and it must still never quote the answer.
+ */
+function DayReview({
+  day,
+  mode,
+  onDone,
+}: {
+  day: AdminPuzzleDay;
+  mode: DailyPuzzleMode;
+  onDone: () => Promise<unknown>;
+}) {
+  const { t } = useTranslation('fix-notices');
+  const fmt = useLocaleFormat();
+  const refusalText = useRefusalText();
+  const [open, setOpen] = useState(false);
+  const [outcome, setOutcome] = useState<ReviewOutcome>('stands');
+  const [note, setNote] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const outcomeLabel: Record<ReviewOutcome, string> = {
+    fault: t('outcome-fault', { defaultValue: 'You were right: the puzzle had a fault. Thank you.' }),
+    stands: t('outcome-stands', { defaultValue: 'We checked the puzzle and its answer stands.' }),
+  };
+
+  const submit = async () => {
+    if (sending) return;
+    setSending(true);
+    try {
+      const out = await api(reviewReportsApi, {
+        body: { gameMode: mode, dateKey: day.dateKey, outcome, ...(note.trim() ? { note: note.trim() } : {}) },
+      });
+      toast.success(
+        out.reviewed > 0
+          ? t('review-done', { defaultValue: 'The reports were marked reviewed.' })
+          : t('review-none', { defaultValue: 'Nothing to review: another admin already did.' }),
+      );
+      setOpen(false);
+      setNote('');
+    } catch (error) {
+      toast.error(
+        refusalText.maybe(error) ??
+          t('review-failed', { defaultValue: 'The reports were not marked reviewed. Try again.' }),
+      );
+    } finally {
+      setSending(false);
+      await onDone();
+    }
+  };
+
+  if (day.openReportCount === 0 && !day.review) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      {day.review ? (
+        <p className="t-meta text-site-text-muted">
+          {day.review.outcome === 'fault'
+            ? t('review-state-fault', { defaultValue: 'Reviewed: the puzzle had a fault' })
+            : t('review-state-stands', { defaultValue: 'Reviewed: the answer stands' })}
+          {day.openReportCount > 0
+            ? ` · ${t('review-open-count', { defaultValue: '{{n}} still open', n: fmt.number(day.openReportCount) })}`
+            : ''}
+        </p>
+      ) : null}
+      {day.openReportCount > 0 ? (
+        <Button variant="default" onClick={() => setOpen(true)}>
+          {t('review-open', { defaultValue: 'Mark reviewed' })}
+        </Button>
+      ) : null}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('review-title', { defaultValue: 'Mark these reports reviewed' })}</DialogTitle>
+            <DialogDescription>
+              {t('review-description', {
+                defaultValue:
+                  'Each member with an open report on this day is told the outcome once. The puzzle and the scores do not change. The action is recorded in the audit log.',
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          <fieldset className="space-y-1.5">
+            <legend className="sr-only">{t('review-outcome-legend', { defaultValue: 'Outcome' })}</legend>
+            {REVIEW_OUTCOMES.map((value) => (
+              <label
+                key={value}
+                className={`flex cursor-pointer items-center gap-3 rounded-site-sm border px-3 py-2 t-body ${
+                  outcome === value
+                    ? 'border-site-text text-site-text'
+                    : 'border-site-border text-site-text-muted hover:bg-site-surface-hover'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name={`review-outcome-${day.dateKey}`}
+                  value={value}
+                  checked={outcome === value}
+                  onChange={() => setOutcome(value)}
+                  className="accent-(--site-accent)"
+                />
+                {outcomeLabel[value]}
+              </label>
+            ))}
+          </fieldset>
+          <div className="space-y-1.5">
+            <label htmlFor={`review-note-${day.dateKey}`} className="t-label block">
+              {t('review-note-label', { defaultValue: 'Note to the reporters (optional)' })}
+            </label>
+            <p id={`review-note-hint-${day.dateKey}`} className="t-meta text-site-text-muted">
+              {t('review-note-hint', {
+                defaultValue: 'Each reporter is shown this note, as plain text, with the outcome.',
+              })}
+            </p>
+            <Textarea
+              id={`review-note-${day.dateKey}`}
+              aria-describedby={`review-note-hint-${day.dateKey}`}
+              placeholder={t('review-note-placeholder', {
+                defaultValue: 'Reporters have played this puzzle. Add a note (optional)',
+              })}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              maxLength={REVIEW_NOTE_MAX}
+              rows={3}
+              dir="auto"
+              className="min-h-0 resize-none px-3 py-2"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setOpen(false)} disabled={sending}>
+              {t('review-cancel', { defaultValue: 'Cancel' })}
+            </Button>
+            <Button variant="primary" onClick={() => void submit()} disabled={sending}>
+              {t('review-submit', { defaultValue: 'Mark reviewed' })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

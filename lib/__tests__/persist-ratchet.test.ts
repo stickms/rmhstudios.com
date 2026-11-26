@@ -24,7 +24,6 @@ const ALLOW: Record<string, string> = {
   'features/void-breaker/ui/VoidBreakerGame.tsx': 'Island under construction (B1); migrates with it.',
   'features/void-breaker/engine/metaProgression.ts': 'Island under construction (B1); migrates with it.',
   'features/void-breaker/engine/saveSystem.ts': 'Island under construction (B1); migrates with it.',
-  'features/nightrail/ui/NightrailGame.tsx': 'Island under construction (B1); migrates with it.',
 };
 
 const GET = /\b(?:local|session)Storage\s*\.\s*getItem\s*\(/;

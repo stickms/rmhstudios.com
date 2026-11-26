@@ -17,6 +17,7 @@ import { useJson } from '../useJson';
 import { api } from '@/lib/contract/client';
 import { closeRingApi, joinRingApi, leaveRingApi } from '@/lib/profile/webrings.contract';
 
+import { Handle } from '@/components/ui/handle';
 const ReportDialog = lazy(() =>
   import('@/components/moderation/ReportDialog').then((m) => ({
     default: m.ReportDialog,
@@ -199,7 +200,11 @@ export default function RingPage({ slug }: { slug: string }) {
                   <UserAvatar src={m.image} alt="" size={32} fallbackName={m.name ?? undefined} />
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold text-site-text">{m.name ?? m.handle}</span>
-                    {m.handle ? <span className="block truncate text-xs text-site-text-muted">@{m.handle}</span> : null}
+                    {m.handle ? (
+                      <span className="block truncate text-xs text-site-text-muted">
+                        <Handle handle={m.handle} />
+                      </span>
+                    ) : null}
                   </span>
                 </Link>
               </li>

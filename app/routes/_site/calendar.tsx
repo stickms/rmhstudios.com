@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,7 @@ import { buildMeta, buildCanonical } from '@/lib/seo';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { myScheduleQuery, scheduleQuery } from '@/lib/schedule/schedule.queries';
 import type { ScheduleGrid } from '@/lib/schedule/schedule.contract';
+import { allDayKeyToDayIso, gridDayLabel, regroupByViewerDay, viewerDayKey } from '@/lib/schedule/slots';
 
 /**
  * `/calendar` — what's on, and what you're coming to.
@@ -53,16 +54,29 @@ function AllDayLabel() {
   return <>{t('grid.allDay', { defaultValue: 'All day' })}</>;
 }
 
-/** One week as rows on rules, a day per section. */
+const noSubscription = () => () => {};
+/** The viewer's time zone; `'UTC'` on the server and during hydration, so the first client render matches the HTML. */
+function useViewerTimeZone(): string {
+  return useSyncExternalStore(
+    noSubscription,
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+    () => 'UTC',
+  );
+}
+
+/**
+ * One week as rows on rules, a day per section. A timed entry sits on the day it starts in the viewer's zone and a
+ * whole-day entry on its own day key (s15-18, S13-09); each day is named from its key, so the heading is that day.
+ */
 function Week({ grid }: { grid: ScheduleGrid }) {
   const { t, i18n } = useTranslation('site');
-  const time = (iso: string) => new Date(iso).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' });
-  const dayLabel = (iso: string) =>
-    new Date(iso).toLocaleDateString(i18n.language, {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'short',
-    });
+  const timeZone = useViewerTimeZone();
+  const time = (iso: string) =>
+    new Date(iso).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit', timeZone });
+  const dayLabel = (iso: string) => gridDayLabel(iso, i18n.language);
+  const days = regroupByViewerDay(grid.byDay, timeZone);
+  const nextDay = (o: ScheduleGrid['byDay'][number]['occurrences'][number]) =>
+    gridDayLabel(allDayKeyToDayIso(viewerDayKey(o, timeZone)), i18n.language);
 
   return (
     <>
@@ -79,12 +93,12 @@ function Week({ grid }: { grid: ScheduleGrid }) {
             )}
           </p>
           <p className="t-meta mt-1">
-            {dayLabel(grid.next.startsAt)}
+            {nextDay(grid.next)}
             {grid.next.allDay ? '' : ` · ${time(grid.next.startsAt)}`}
           </p>
         </section>
       )}
-      {grid.byDay.map((bucket) => (
+      {days.map((bucket) => (
         <section key={bucket.day}>
           <h2 className="t-label">{dayLabel(bucket.day)}</h2>
           {bucket.occurrences.length === 0 ? (

@@ -35,6 +35,7 @@ const DOCUMENTED_GROUPS: ReadonlySet<string> = new Set([
   'rmhtube',
   'scheduled',
   'search',
+  'slice-it',
   'study',
   'tournaments',
   'users',

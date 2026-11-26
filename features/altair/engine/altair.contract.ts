@@ -8,7 +8,7 @@
 import { endpoint } from '@/lib/contract/endpoint';
 import type { IssuedRun } from '@features/altair/engine/solo/issue.server';
 import type { RunsPage } from '@features/altair/engine/runs';
-import type { CoopBoardEntry } from '@features/altair/engine/coop-record';
+import type { CoopBoardEntry, CoopBoardKind, CoopOwnPlace } from '@features/altair/engine/coop-record';
 
 export interface AltairLeaderboardEntry {
   username: string;
@@ -32,6 +32,20 @@ export const getAltairLeaderboardApi = endpoint<{
 }>()({
   method: 'GET',
   path: '/api/altair/leaderboard',
+});
+
+/**
+ * The caller's own place on a co-op board (`type` is `coop-wins` or `coop-revives`), or `null` when they are signed
+ * out, hidden from boards, unranked, or already inside the ten the board lists. Not cached: it differs per caller.
+ */
+export const getAltairCoopPlaceApi = endpoint<{
+  query: {
+    type: CoopBoardKind;
+  };
+  res: CoopOwnPlace | null;
+}>()({
+  method: 'GET',
+  path: '/api/altair/coop-place',
 });
 
 /** The highest Heat tier the caller may start (0 when signed out). */

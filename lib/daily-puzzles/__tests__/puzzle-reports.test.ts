@@ -41,6 +41,8 @@ vi.mock('@/lib/prisma.server', async () => {
     ),
   };
   const dailyPuzzleReport = {
+    // s15-07: the day's latest review. Nothing in this file reviews a day, so there is none.
+    findFirst: vi.fn(async () => null),
     upsert: vi.fn(async (a: { where: { userId_gameMode_dateKey: Key }; create: Row; update: Row }) => {
       h.upserts.push(a);
       const hit = h.reports.find((r) => sameKey(r, a.where.userId_gameMode_dateKey));

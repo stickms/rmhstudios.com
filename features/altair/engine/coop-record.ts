@@ -23,6 +23,17 @@ export interface CoopBoardEntry {
   totalCoopRuns: number;
 }
 
+/**
+ * The signed-in member's own place on a co-op board when it is outside the rows the board lists (S14, s15-20).
+ * `place` counts from 1 under the board's own order and privacy filter; `value` is the board's column (wins, or
+ * revives given); `runs` is their co-op runs, as a listed row shows.
+ */
+export interface CoopOwnPlace {
+  place: number;
+  value: number;
+  runs: number;
+}
+
 /** The two co-op boards `GET /api/altair/leaderboard?type=` adds. */
 export const COOP_BOARD_KINDS = ['coop-wins', 'coop-revives'] as const;
 export type CoopBoardKind = (typeof COOP_BOARD_KINDS)[number];

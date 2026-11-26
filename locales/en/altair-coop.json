@@ -1,4 +1,8 @@
 {
+  "own-place-few": "You: {{place}}rd",
+  "own-place-one": "You: {{place}}st",
+  "own-place-other": "You: {{place}}th",
+  "own-place-two": "You: {{place}}nd",
   "record-favourite": "Most played: {{class}}",
   "record-kills_one": "{{count}} kill",
   "record-kills_other": "{{count}} kills",

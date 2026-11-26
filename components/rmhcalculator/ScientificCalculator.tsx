@@ -274,6 +274,7 @@ export function ScientificCalculator({ model }: { model: CalcModel }) {
             inputMode="text"
             autoComplete="off"
             spellCheck={false}
+            dir="auto"
             className="rmhcalc-display__input field-bare"
             placeholder={t('expr-placeholder', { defaultValue: 'Enter an expression…' })}
             aria-label={t('expr-label', { defaultValue: 'Expression' })}

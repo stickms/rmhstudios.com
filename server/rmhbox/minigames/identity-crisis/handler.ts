@@ -62,6 +62,8 @@ import {
   IC_VOTE_SECONDS,
 } from '@/lib/rmhbox/identity-crisis/settings';
 import { loadIdentities } from '@/lib/rmhbox/identity-crisis/data-loader';
+import { parseIdentityLine } from '@/lib/party/pack-games';
+import { loadPackLines } from '../../pack-loader';
 import { S2C } from '@/lib/rmhbox/events';
 import { loadMessageRestriction, peekMessageRestriction } from '../../restrictions';
 import { restrictedChatError } from '../../../shared/member-restrictions';
@@ -84,14 +86,20 @@ const ACTION_EVENT = 'rmhbox:game:action';
 // ─── The guess matcher (fuse.js, server only) ────────────────────
 
 const fuseByIdentity = new Map<string, Fuse<{ names: string[] }>>();
+/** The bundled identities and a few packs' worth; past this the cache starts again. */
+const FUSE_CACHE_MAX = 2000;
 
 /** Fuzzy match against the name and every alias; the text arrives normalised. */
 export const fuseMatcher: GuessMatcher = (normalizedGuess, identity) => {
-  let fuse = fuseByIdentity.get(identity.id);
+  // Keyed by the names as well as the id: a pack's identities are numbered per pack, so two packs share ids.
+  const names = [identity.name, ...identity.aliases].map(normalizeForMatch).filter(Boolean);
+  const cacheKey = `${identity.id}\u0000${names.join('\u0001')}`;
+  let fuse = fuseByIdentity.get(cacheKey);
   if (!fuse) {
-    const names = [identity.name, ...identity.aliases].map(normalizeForMatch).filter(Boolean);
+    // Packs make the key space open-ended; the cache only saves rebuilding an index, so it is dropped when it grows.
+    if (fuseByIdentity.size >= FUSE_CACHE_MAX) fuseByIdentity.clear();
     fuse = new Fuse([{ names }], { keys: ['names'], threshold: IC_GUESS_MATCH_THRESHOLD, ignoreLocation: true });
-    fuseByIdentity.set(identity.id, fuse);
+    fuseByIdentity.set(cacheKey, fuse);
   }
   return fuse.search(normalizedGuess).length > 0;
 };
@@ -110,6 +118,20 @@ function identityView(identity: Identity): IdentityView {
 /** The reveal's outcome for one player. */
 type Outcome = 'early' | 'final' | 'missed';
 
+/**
+ * A community pack's lines as identities for the draw. Each line is read again with the pack rules, one that fails is
+ * dropped, and the numbering is per pack; a pack's identities have no category or difficulty.
+ */
+export function packIdentities(lines: readonly string[]): Identity[] {
+  const out: Identity[] = [];
+  lines.forEach((line, i) => {
+    const parsed = parseIdentityLine(line);
+    if (parsed)
+      out.push({ id: `pack-${i + 1}`, name: parsed.name, aliases: parsed.aliases, category: '', difficulty: 'easy' });
+  });
+  return out;
+}
+
 export class IdentityCrisisGame extends BaseMinigame {
   private state!: IdentityCrisisState;
   private startedAt = 0;
@@ -118,6 +140,11 @@ export class IdentityCrisisGame extends BaseMinigame {
   private settingsUsed: Record<string, unknown> = {};
   private pausedAt = 0;
   private matcher: GuessMatcher = fuseMatcher;
+  /**
+   * Points a final guess earned that the table has not been told about yet (s15-20). A final guess is private until
+   * the reveal: the guesser's own view includes these at once, everyone else's scores leave them out until REVEAL.
+   */
+  private hiddenFinalPoints = new Map<string, number>();
 
   /** Players are on unequal footing (own identity hidden), so spectators get the one omniscient view. */
   get spectatorMode(): 'shared-privileged' {
@@ -137,7 +164,33 @@ export class IdentityCrisisGame extends BaseMinigame {
     const gameNumber = (this.context.priorGamesOfThisMinigame ?? 0) + 1;
 
     const participants = [...this.context.players.keys()];
-    const identities = drawIdentities(loadIdentities(), participants, { gameNumber, hardIdentities });
+    const packCode = this.getSetting<string>('packCode', '');
+    if (!packCode) {
+      this.deal(participants, loadIdentities(), { questionsPerPlayer, askSeconds, hardIdentities, gameNumber }, false);
+      return;
+    }
+    // Optional community pack: resolve it before the deal; any failure falls back to the bundled identities.
+    void loadPackLines(packCode, 'identity-crisis').then((lines) => {
+      if (!this.isRunning) return;
+      const own = lines ? packIdentities(lines) : [];
+      // A pack with enough identities for the table is the whole pool; a small one has bundled identities mixed in.
+      const usePack = own.length >= participants.length;
+      const pool = usePack ? own : own.concat(loadIdentities());
+      this.deal(participants, pool, { questionsPerPlayer, askSeconds, hardIdentities, gameNumber }, usePack);
+      // The coordinator's first snapshot went out before the deal existed; send it again now that it does.
+      if (this.isRunning && this.state) this.broadcastInitialState('rmhbox:game:state_snapshot');
+    });
+  }
+
+  /** Draw the identities and open the first phase. `fromPack`: the draw is the pack's alone (no category spread). */
+  private deal(
+    participants: string[],
+    pool: readonly Identity[],
+    settings: { questionsPerPlayer: number; askSeconds: number; hardIdentities: boolean; gameNumber: number },
+    fromPack: boolean,
+  ): void {
+    const { questionsPerPlayer, askSeconds, hardIdentities, gameNumber } = settings;
+    const identities = drawIdentities(pool, participants, { gameNumber, hardIdentities, pack: fromPack });
     if (identities.length < participants.length) {
       this.isRunning = false;
       this.context.onError(new Error('identity-crisis: not enough identities for the lobby'));
@@ -508,6 +561,7 @@ export class IdentityCrisisGame extends BaseMinigame {
     } else {
       points = judged.correct ? FINAL_CORRECT_POINTS + efficiencyPoints(slotsLeft) : 0;
       this.state.finalGuessed.add(userId);
+      if (points > 0) this.hiddenFinalPoints.set(userId, (this.hiddenFinalPoints.get(userId) ?? 0) + points);
       if (judged.correct) record.status = 'solved';
     }
     if (judged.correct) this.state.solvedOrder.push(userId);
@@ -543,20 +597,22 @@ export class IdentityCrisisGame extends BaseMinigame {
       points,
       newTotalScore: total,
     });
-    // The others: that a guess was made, and for an early one whether it was right. Never the text.
+    // The others: that a guess was made, and for an early one whether it was right. Never the text. A final guess
+    // carries no status either (it would say whether it was right); the table learns it at the reveal.
     this.emitPerViewer((viewerId) => {
       if (viewerId === userId) return null;
       return {
         type: 'IC_PLAYER_GUESSED',
         userId,
         kind,
-        ...(kind === 'early' ? { correct: guess.correct } : {}),
-        status: record.status,
-        // Spectators see what was guessed.
-        ...(viewerId === null ? { text: guess.text, correct: guess.correct } : {}),
+        ...(kind === 'early' ? { correct: guess.correct, status: record.status } : {}),
+        // Spectators see what was guessed (and, for a final guess, how it went).
+        ...(viewerId === null
+          ? { text: guess.text, correct: guess.correct, ...(kind === 'final' ? { status: record.status } : {}) }
+          : {}),
       };
     });
-    this.broadcastGameAction({ type: 'IC_SCORE_UPDATE', scores: this.scoresRecord() });
+    this.emitPerViewer((viewerId) => ({ type: 'IC_SCORE_UPDATE', scores: this.scoresFor(viewerId) }));
 
     if (this.allSolved()) {
       this.startReveal();
@@ -600,10 +656,27 @@ export class IdentityCrisisGame extends BaseMinigame {
     return out;
   }
 
-  private statusRecord(): Record<string, string> {
+  /**
+   * What `viewerId` may read as each player's status. During FINAL a finalist reads `'final'` to everyone but
+   * themselves and spectators, whatever their guess did; the real status comes out at REVEAL.
+   */
+  private statusRecord(viewerId: string | null): Record<string, string> {
     const out: Record<string, string> = {};
-    for (const [userId, record] of this.state.players) out[userId] = record.status;
+    const masked = this.state.phase === 'FINAL' && viewerId !== null;
+    for (const [userId, record] of this.state.players) {
+      out[userId] = masked && userId !== viewerId && this.state.finalists.has(userId) ? 'final' : record.status;
+    }
     return out;
+  }
+
+  /** The scores `viewerId` may read: before REVEAL a final guess's points are in the guesser's own total only. */
+  private scoresFor(viewerId: string | null): Record<string, number> {
+    const scores = this.scoresRecord();
+    if (this.state.phase === 'REVEAL' || viewerId === null) return scores;
+    for (const [userId, hidden] of this.hiddenFinalPoints) {
+      if (userId !== viewerId && scores[userId] !== undefined) scores[userId] -= hidden;
+    }
+    return scores;
   }
 
   private slotsRecord(): Record<string, number> {
@@ -626,7 +699,7 @@ export class IdentityCrisisGame extends BaseMinigame {
   }
 
   /** The fields every viewer gets. Built field by field; nothing here is a copy of the full state. */
-  private baseState(): Record<string, unknown> {
+  private baseState(viewerId: string | null): Record<string, unknown> {
     const s = this.state;
     const timer = this.getPhaseTimerSnapshot();
     const fallback = Math.max(0, Math.ceil((s.phaseEndsAt - Date.now()) / 1000));
@@ -647,11 +720,11 @@ export class IdentityCrisisGame extends BaseMinigame {
       result:
         s.phase === 'RESULT' && question?.counts ? { counts: question.counts, plurality: question.plurality } : null,
       questionHistory: this.history(),
-      statuses: this.statusRecord(),
+      statuses: this.statusRecord(viewerId),
       slotsLeft: this.slotsRecord(),
       finalists: [...s.finalists],
       finalGuessedIds: [...s.finalGuessed],
-      scores: this.scoresRecord(),
+      scores: this.scoresFor(viewerId),
       phaseStartedAt: s.phaseStartedAt,
       phaseEndsAt: s.phaseEndsAt,
       timeRemaining: timer && !timer.infinite ? timer.remaining : fallback,
@@ -660,6 +733,9 @@ export class IdentityCrisisGame extends BaseMinigame {
   }
 
   getStateForPlayer(userId: string): unknown {
+    // A pack is still loading (the deal waits on it): a snapshot asked for now has no phase, which the client ignores;
+    // the deal's own snapshot follows.
+    if (!this.state) return { viewer: 'player' };
     const s = this.state;
     const mine = s.players.get(userId);
     const question = s.current;
@@ -668,7 +744,7 @@ export class IdentityCrisisGame extends BaseMinigame {
       s.askerId !== null && !isAsker && (s.phase === 'ASK' || s.phase === 'VOTE' || s.phase === 'RESULT');
     const asker = showAsker ? s.players.get(s.askerId!) : undefined;
     return {
-      ...this.baseState(),
+      ...this.baseState(userId),
       viewer: 'player',
       // Everyone's identity but the viewer's own, in every play phase
       others: this.othersView(userId),
@@ -683,11 +759,12 @@ export class IdentityCrisisGame extends BaseMinigame {
   }
 
   getStateForSpectator(): unknown {
+    if (!this.state) return { viewer: 'spectator' };
     const s = this.state;
     const question = s.current;
     const asker = s.askerId ? s.players.get(s.askerId) : undefined;
     return {
-      ...this.baseState(),
+      ...this.baseState(null),
       viewer: 'spectator',
       others: this.othersView(null),
       askerIdentity: asker ? identityView(asker.identity) : null,
@@ -781,6 +858,8 @@ export class IdentityCrisisGame extends BaseMinigame {
   // ─── Results & Awards ────────────────────────────────────────
 
   computeResults(): MinigameResults {
+    // Ended (a host skip) while a pack was still loading: nobody played, so nobody placed.
+    if (!this.state) return { rankings: [], awards: [], gameSpecificData: {}, duration: Date.now() - this.startedAt };
     return {
       rankings: this.computeRankings(),
       awards: this.computeAwards(),

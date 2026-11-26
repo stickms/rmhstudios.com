@@ -4,6 +4,7 @@
  */
 import { getPrismaClient } from './prisma-client';
 import { logger } from './logger';
+import { isPackGame, usablePackLines } from '@/lib/party/pack-games';
 
 export async function loadPackPrompts(rawCode: string, game: string): Promise<string[] | null> {
   // Codes are issued in upper case; accept what a host types (case, stray spaces)
@@ -32,4 +33,16 @@ export async function loadPackPrompts(rawCode: string, game: string): Promise<st
     });
     return null;
   }
+}
+
+/**
+ * A pack's lines for a minigame about to start, for any pack game. The stored lines are never trusted: each is read
+ * again with the game's rules (`lib/party/pack-games.ts`), the ones that fail are dropped, and a pack left with fewer
+ * than the game's minimum is null, as is an unknown, hidden, removed or wrong-game code. Wit War's own path
+ * (`loadPackPrompts`) is unchanged.
+ */
+export async function loadPackLines(rawCode: string, game: string): Promise<string[] | null> {
+  if (!isPackGame(game)) return null;
+  const stored = await loadPackPrompts(rawCode, game);
+  return stored ? usablePackLines(game, stored) : null;
 }

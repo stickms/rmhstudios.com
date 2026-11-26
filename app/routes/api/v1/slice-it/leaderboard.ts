@@ -4,6 +4,7 @@ import { apiOptions, withDeveloperApi } from '@/lib/api/with-developer-api.serve
 import { prisma } from '@/lib/prisma.server';
 import { userNotHiddenWhere } from '@/lib/game/leaderboard-privacy';
 import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
+import { SLICE_CACHE } from '@/lib/api/v1/slice-it.server';
 import { DIFFICULTIES } from '@features/slice-it/engine/constants';
 import { MOD_POOLS } from '@features/slice-it/engine/pools';
 
@@ -79,21 +80,25 @@ export const Route = createFileRoute('/api/v1/slice-it/leaderboard')({
               },
             });
 
-            return json({
-              song: { id: song.id, title: song.title, artist: song.artist },
-              difficulty,
-              modPool,
-              data: rows.map((row, index) => ({
-                rank: index + 1,
-                // A handle, or the username, or nothing — never the id.
-                player: row.user.handle ?? row.user.username ?? null,
-                score: row.score,
-                maxCombo: row.maxCombo,
-                accuracy: row.accuracy,
-                cleared: row.cleared,
-                achievedAt: row.createdAt.toISOString(),
-              })),
-            });
+            return json(
+              {
+                song: { id: song.id, title: song.title, artist: song.artist },
+                difficulty,
+                modPool,
+                data: rows.map((row, index) => ({
+                  rank: index + 1,
+                  // A handle, or the username, or nothing — never the id.
+                  player: row.user.handle ?? row.user.username ?? null,
+                  score: row.score,
+                  maxCombo: row.maxCombo,
+                  accuracy: row.accuracy,
+                  cleared: row.cleared,
+                  achievedAt: row.createdAt.toISOString(),
+                })),
+              },
+              200,
+              SLICE_CACHE,
+            );
           },
           { scope: 'read:slice-it' },
         ),

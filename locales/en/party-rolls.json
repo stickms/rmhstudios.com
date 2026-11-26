@@ -37,6 +37,7 @@
   "what.check": "{{name}} check",
   "what.criticalDamage": "Critical damage",
   "what.damage": "Damage",
+  "what.hitDie": "Hit Die, {{notation}}",
   "what.initiative": "Initiative",
   "what.lore": "Lore",
   "what.perception": "Perception",

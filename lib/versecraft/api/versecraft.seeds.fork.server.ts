@@ -12,7 +12,7 @@ export const route = apiRoute('/api/versecraft/seeds/fork', {
     async ({ body }) => {
       const row = await prisma.versecraftSeedListing
         .update({
-          where: { id: body.listingId },
+          where: { id: body.listingId, moderatedAt: null },
           data: { forks: { increment: 1 } },
           select: { seed: true },
         })

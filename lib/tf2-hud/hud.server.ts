@@ -17,6 +17,8 @@ import { prisma } from '@/lib/prisma.server';
 import { contentTypeForFilename } from '@/lib/storage/keys';
 import { getObject, putObject } from '@/lib/storage/s3.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
+import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { notBannedWhere, WORKSHOP_CONTENT_REMOVED } from '@/lib/moderation/workshop-moderation';
 import {
   HUD_LIMITS,
   type HudAuthor,
@@ -43,6 +45,11 @@ export class HudError extends Error {
   ) {
     super(message);
     this.name = 'HudError';
+  }
+
+  /** A write to a HUD a moderator removed; the route answers `GAME_CONTENT_REMOVED_BY_MODERATOR`. */
+  get removed(): boolean {
+    return this.message === WORKSHOP_CONTENT_REMOVED;
   }
 }
 
@@ -73,6 +80,7 @@ function summary(row: HudRow, liked: boolean): HudSummary {
     description: row.description,
     tags: row.tags,
     visibility: row.visibility,
+    removed: row.moderatedAt !== null,
     author: author(row),
     likeCount: row.likeCount,
     forkCount: row.forkCount,
@@ -87,11 +95,16 @@ function summary(row: HudRow, liked: boolean): HudSummary {
   };
 }
 
+/**
+ * Whether `userId` may read the HUD: its owner always (a removed HUD included, marked), anyone else only while it is
+ * not private and a moderator has not removed it.
+ */
 export function canRead(
-  row: { visibility: Visibility; ownerId: string },
+  row: { visibility: Visibility; ownerId: string; moderatedAt?: Date | null },
   userId: string | null,
 ): boolean {
-  return row.visibility !== 'PRIVATE' || row.ownerId === userId;
+  if (row.ownerId === userId) return true;
+  return row.visibility !== 'PRIVATE' && !row.moderatedAt;
 }
 
 async function likedSet(userId: string | null, ids: string[]): Promise<Set<string>> {
@@ -273,9 +286,17 @@ export async function listHuds(
   args: ListArgs,
 ): Promise<{ items: HudSummary[]; nextCursor: string | null }> {
   if (args.mine && !args.userId) throw new HudError('Sign in to see your HUDs', 403);
+  // The public list leaves out removed HUDs and those by banned authors and by members blocked either way; the
+  // owner's own list keeps a removed HUD (marked).
+  const hidden = args.mine ? [] : await getHiddenAuthorIds(args.userId);
   const where: Prisma.Tf2HudWhereInput = args.mine
     ? { ownerId: args.userId! }
-    : { visibility: 'PUBLIC', latestVersion: { gt: 0 } };
+    : {
+        visibility: 'PUBLIC',
+        latestVersion: { gt: 0 },
+        ownerId: { notIn: hidden },
+        owner: notBannedWhere(new Date()),
+      };
   const and: Prisma.Tf2HudWhereInput[] = [];
   if (args.q) {
     and.push({
@@ -297,7 +318,8 @@ export async function listHuds(
         : [{ likeCount: 'desc' }, { updatedAt: 'desc' }, { id: 'desc' }];
 
   const rows = await prisma.tf2Hud.findMany({
-    where,
+    // The owner's own list keeps a removed HUD (marked); nobody else's does.
+    where: { ...where, ...(args.mine ? {} : { moderatedAt: null }) },
     orderBy,
     take: args.limit + 1,
     ...(args.cursor ? { cursor: { id: args.cursor }, skip: 1 } : {}),
@@ -358,7 +380,8 @@ export async function getHud(idOrSlug: string, userId: string | null): Promise<H
 export async function getHudByShare(token: string, userId: string | null): Promise<HudDetail> {
   const share = await prisma.tf2HudShare.findUnique({ where: { token }, select: { hudId: true } });
   const row = share ? await findRow(share.hudId) : null;
-  if (!row) throw new HudError('Not found', 404);
+  // A share link outlives a private HUD on purpose, but not a moderator's removal: only the owner still opens it.
+  if (!row || (row.moderatedAt && row.ownerId !== userId)) throw new HudError('Not found', 404);
   return detail(row, userId, true);
 }
 
@@ -405,7 +428,8 @@ export async function readFile(
 export async function readSharedFile(token: string, path: string, version?: number) {
   const share = await prisma.tf2HudShare.findUnique({ where: { token }, select: { hudId: true } });
   const row = share ? await findRow(share.hudId) : null;
-  if (!row) throw new HudError('Not found', 404);
+  // The file route carries no session, so a removed HUD's shared files are not served to anyone.
+  if (!row || row.moderatedAt) throw new HudError('Not found', 404);
   return serve(row, path, version);
 }
 
@@ -491,9 +515,9 @@ export async function createHud(a: CreateArgs): Promise<HudDetail> {
   if (a.forkOfId) {
     const src = await prisma.tf2Hud.findUnique({
       where: { id: a.forkOfId },
-      select: { id: true, ownerId: true, visibility: true },
+      select: { id: true, ownerId: true, visibility: true, moderatedAt: true },
     });
-    if (src && canRead(src, a.userId)) forkOfId = src.id;
+    if (src && !src.moderatedAt && canRead(src, a.userId)) forkOfId = src.id;
   }
   const slug = await uniqueSlug(a.title);
   const hud = await prisma.tf2Hud.create({
@@ -528,7 +552,17 @@ export interface UpdateArgs {
 }
 
 export async function updateHud(a: UpdateArgs): Promise<HudDetail> {
-  await ownedRow(a.id, a.userId);
+  const current = await ownedRow(a.id, a.userId);
+  // A removed HUD stays private and keeps its name and text: the owner can still edit its files.
+  if (
+    current.moderatedAt &&
+    ((a.visibility !== undefined && a.visibility !== 'PRIVATE') ||
+      (a.title !== undefined && a.title !== current.title) ||
+      (a.description !== undefined && a.description !== current.description) ||
+      (a.tags !== undefined && a.tags.join('\n') !== current.tags.join('\n')))
+  ) {
+    throw new HudError(WORKSHOP_CONTENT_REMOVED, 409);
+  }
   const checked = a.manifest ? await checkManifest(a.userId, a.manifest) : null;
   const meta: Prisma.Tf2HudUpdateInput = {};
   if (a.title !== undefined) meta.title = a.title;
@@ -561,6 +595,8 @@ export async function deleteHud(id: string, userId: string): Promise<void> {
 
 export async function forkHud(idOrSlug: string, userId: string): Promise<HudDetail> {
   const src = await readableRow(idOrSlug, userId);
+  // Not even its owner copies a removed HUD.
+  if (src.moderatedAt) throw new HudError(WORKSHOP_CONTENT_REMOVED, 409);
   await assertHudQuota(userId);
   const manifest = await latestManifest(src.id);
   const hashes = [...new Set(manifest.flatMap((e) => (e.sha1 ? [e.sha1] : [])))];
@@ -589,6 +625,7 @@ export async function toggleLike(
   userId: string,
 ): Promise<{ liked: boolean; likeCount: number }> {
   const row = await readableRow(idOrSlug, userId);
+  if (row.moderatedAt) throw new HudError(WORKSHOP_CONTENT_REMOVED, 409);
   return prisma.$transaction(async (tx) => {
     const existing = await tx.tf2HudLike.findUnique({
       where: { userId_hudId: { userId, hudId: row.id } },
@@ -614,7 +651,7 @@ export async function toggleLike(
 
 export async function countDownload(idOrSlug: string, userId: string | null): Promise<void> {
   const row = await readableRow(idOrSlug, userId);
-  if (row.visibility === 'PRIVATE') return;
+  if (row.visibility === 'PRIVATE' || row.moderatedAt) return;
   await prisma.tf2Hud.update({ where: { id: row.id }, data: { downloadCount: { increment: 1 } } });
 }
 

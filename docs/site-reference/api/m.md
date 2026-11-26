@@ -111,6 +111,8 @@ See the [API inventory](../api.md) for how to read the tables.
 | ----- | ------- | ------ |
 | `/api/moderation/block` | `GET` `POST` | `lib/moderation/api/moderation.block.server.ts` |
 | `/api/moderation/mute` | `GET` `POST` | `lib/moderation/api/moderation.mute.server.ts` |
+| `/api/moderation/removals` | `GET` | `lib/moderation/api/moderation.removals.server.ts` |
+| `/api/moderation/removals/:id/review` | `POST` | `lib/moderation/api/moderation.removals.$id.review.server.ts` |
 | `/api/moderation/report` | `POST` | `lib/moderation/api/moderation.report.server.ts` |
 
 ## `/api/moments`

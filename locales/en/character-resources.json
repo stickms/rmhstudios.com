@@ -1,0 +1,17 @@
+{
+  "res.left": "{{left}} of {{max}} left",
+  "res.stepper": "Uses of {{name}} left",
+  "res.title": "Class resources",
+  "rest.cancel": "Cancel",
+  "rest.close": "Close",
+  "rest.description": "Spend Hit Dice to heal. Each die rolls with your Constitution modifier and gives at least 1. Short-rest resources and pact slots come back.",
+  "rest.healed": "You healed {{hp}} hit points.",
+  "rest.hitDie": "Hit Die",
+  "rest.modifier": "Constitution modifier: {{mod}}",
+  "rest.pool": "d{{die}}: {{left}} of {{total}} left",
+  "rest.rested": "You took a short rest.",
+  "rest.roll": "Roll {{n}} and rest",
+  "rest.spend": "Spend d{{die}} Hit Dice",
+  "rest.take": "Rest without rolling",
+  "rest.title": "Short Rest"
+}

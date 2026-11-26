@@ -1,12 +1,19 @@
-/** Games a community pack can target. Prompt format = one plain-text prompt per line. */
+/** Games a community pack can target. A pack is one line per entry; `pack-games.ts` says what a line is for each game. */
+
+import type { PackGame } from './pack-games';
 
 export type { CreatePackInput } from './packs-schema';
-export const PACK_GAMES = ['wit-war'] as const;
+export const PACK_GAMES = ['wit-war', 'identity-crisis', 'human-keyboard'] as const satisfies readonly PackGame[];
 export const PACK_MIN_PROMPTS = 12;
 export const PACK_MAX_PROMPTS = 60;
 export const PACK_CODE_LEN = 6;
 /** Hidden automatically once this many distinct members report it. */
 export const PACK_AUTOHIDE_REPORTS = 3;
+/**
+ * Only a reporter whose account is at least this old (and verified or linked, and not banned) counts toward that
+ * auto-hide, so three throwaway accounts cannot hide a pack. Their reports still reach the moderators' queue.
+ */
+export const PACK_AUTOHIDE_MIN_ACCOUNT_DAYS = 7;
 export const MAX_PACKS_PER_MEMBER = 10;
 /** No 0/O/1/I so a code read off a screen is unambiguous. */
 export const PACK_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Plus, Save, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { evaluateNotebook } from '@/lib/rmhcalculator/notebook';
-import { toolsApi } from '@/lib/tools/client';
+import { useNotebookActions, useNotebookList } from '@/components/rmhcalculator/useCalcNotebooks';
 
 interface Notebook {
   id: string | null;
@@ -17,38 +17,31 @@ const STARTER =
 
 export default function NotebookTab() {
   const { t } = useTranslation('f-tools');
-  const [saved, setSaved] = useState<Array<Notebook & { id: string }>>([]);
-  const [nb, setNb] = useState<Notebook>({ id: null, title: '', body: STARTER });
+  const list = useNotebookList();
+  const { create, update, remove: removeRow } = useNotebookActions();
+  const saved = useMemo(() => list.data?.notebooks ?? [], [list.data]);
+  // Until the member picks, edits or starts one, the tab shows their newest notebook (the starter before one loads).
+  const [picked, setPicked] = useState<Notebook | null>(null);
+  const nb = useMemo<Notebook>(
+    () => picked ?? saved[0] ?? { id: null, title: '', body: STARTER },
+    [picked, saved],
+  );
   const [dirty, setDirty] = useState(false);
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    toolsApi<{ notebooks: Array<Notebook & { id: string }> }>('GET', '/api/calc-notebooks')
-      .then((d) => {
-        setSaved(d.notebooks);
-        if (d.notebooks[0]) setNb(d.notebooks[0]);
-      })
-      .catch(() =>
-        toast.error(t('calc-load-failed', { defaultValue: 'Could not load your notebooks' })),
-      );
-  }, [t]);
+  const busy = create.isPending || update.isPending || removeRow.isPending;
 
   const results = useMemo(() => evaluateNotebook(nb.body), [nb.body]);
   const lines = nb.body.split('\n').length;
 
   const save = useCallback(async () => {
-    setBusy(true);
     try {
       const title = nb.title.trim() || t('calc-untitled', { defaultValue: 'Untitled notebook' });
       const payload = { title, body: nb.body };
       if (nb.id) {
-        await toolsApi('PUT', `/api/calc-notebooks/${nb.id}`, payload);
-        setSaved((s) => s.map((x) => (x.id === nb.id ? { ...x, ...payload } : x)));
-        setNb((n) => ({ ...n, title }));
+        await update.mutateAsync({ id: nb.id, body: payload });
+        setPicked({ ...nb, title });
       } else {
-        const { id } = await toolsApi<{ id: string }>('POST', '/api/calc-notebooks', payload);
-        setSaved((s) => [{ id, ...payload }, ...s]);
-        setNb({ id, ...payload });
+        const { id } = await create.mutateAsync(payload);
+        setPicked({ id, ...payload });
       }
       setDirty(false);
       toast.success(t('calc-saved', { defaultValue: 'Notebook saved' }));
@@ -58,29 +51,23 @@ export default function NotebookTab() {
           ? err.message
           : t('calc-save-failed', { defaultValue: 'Could not save' }),
       );
-    } finally {
-      setBusy(false);
     }
-  }, [nb, t]);
+  }, [nb, t, create, update]);
 
   const remove = useCallback(async () => {
     if (!nb.id) return;
-    setBusy(true);
     try {
-      await toolsApi('DELETE', `/api/calc-notebooks/${nb.id}`);
+      await removeRow.mutateAsync(nb.id);
       const rest = saved.filter((x) => x.id !== nb.id);
-      setSaved(rest);
-      setNb(rest[0] ?? { id: null, title: '', body: '' });
+      setPicked(rest[0] ?? { id: null, title: '', body: '' });
       setDirty(false);
     } catch {
       toast.error(t('calc-delete-failed', { defaultValue: 'Could not delete' }));
-    } finally {
-      setBusy(false);
     }
-  }, [nb.id, saved, t]);
+  }, [nb.id, saved, t, removeRow]);
 
   const edit = (patch: Partial<Notebook>) => {
-    setNb((n) => ({ ...n, ...patch }));
+    setPicked({ ...nb, ...patch });
     setDirty(true);
   };
 
@@ -93,7 +80,7 @@ export default function NotebookTab() {
           onChange={(e) => {
             const next = saved.find((x) => x.id === e.target.value);
             if (next) {
-              setNb(next);
+              setPicked({ id: next.id, title: next.title, body: next.body });
               setDirty(false);
             }
           }}
@@ -112,6 +99,7 @@ export default function NotebookTab() {
           value={nb.title}
           onChange={(e) => edit({ title: e.target.value })}
           maxLength={120}
+          dir="auto"
           aria-label={t('calc-title', { defaultValue: 'Notebook title' })}
           placeholder={t('calc-title', { defaultValue: 'Notebook title' })}
           className="surface-field h-9 min-w-0 flex-1 rounded-site-sm px-3 text-sm text-site-text"
@@ -120,7 +108,7 @@ export default function NotebookTab() {
           variant="default"
           size="sm"
           onClick={() => {
-            setNb({ id: null, title: '', body: '' });
+            setPicked({ id: null, title: '', body: '' });
             setDirty(false);
           }}
         >
@@ -142,6 +130,12 @@ export default function NotebookTab() {
         )}
       </div>
 
+      {list.isError && (
+        <p role="alert" className="text-xs text-site-text-muted">
+          {t('calc-load-failed', { defaultValue: 'Could not load your notebooks' })}
+        </p>
+      )}
+
       <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-0 overflow-hidden rounded-site font-mono text-sm leading-6">
         <textarea
           value={nb.body}
@@ -150,6 +144,7 @@ export default function NotebookTab() {
           wrap="off"
           spellCheck={false}
           maxLength={10_000}
+          dir="auto"
           aria-label={t('calc-editor', { defaultValue: 'Notebook lines' })}
           className="resize-none overflow-x-auto overflow-y-hidden bg-transparent p-3 leading-6 text-site-text outline-none"
         />

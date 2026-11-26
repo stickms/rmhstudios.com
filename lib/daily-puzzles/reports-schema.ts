@@ -4,7 +4,7 @@
  */
 import { z } from 'zod';
 import { AI_PUZZLE_MODES } from '@/lib/daily-puzzles/generate-core';
-import { REPORT_KINDS, REPORT_NOTE_MAX } from '@/lib/daily-puzzles/reports';
+import { REPORT_KINDS, REPORT_NOTE_MAX, REVIEW_OUTCOMES, REVIEW_NOTE_MAX } from '@/lib/daily-puzzles/reports';
 
 export const puzzleModeSchema = z.enum(
   AI_PUZZLE_MODES as [(typeof AI_PUZZLE_MODES)[number], ...(typeof AI_PUZZLE_MODES)[number][]],
@@ -31,4 +31,11 @@ export const replacePuzzleBody = z.object({
 export const generatePuzzleBody = z.object({
   gameMode: puzzleModeSchema,
   dateKey: dateKeySchema,
+});
+
+export const reviewReportsBody = z.object({
+  gameMode: puzzleModeSchema,
+  dateKey: dateKeySchema,
+  outcome: z.enum(REVIEW_OUTCOMES),
+  note: z.string().max(REVIEW_NOTE_MAX).optional(),
 });

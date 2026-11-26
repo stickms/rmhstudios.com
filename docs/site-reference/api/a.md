@@ -72,6 +72,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/admin/daily-puzzles` | `GET` | `lib/admin/api/admin.daily-puzzles.server.ts` |
 | `/api/admin/daily-puzzles/generate` | `POST` | `lib/admin/api/admin.daily-puzzles.generate.server.ts` |
 | `/api/admin/daily-puzzles/replace` | `POST` | `lib/admin/api/admin.daily-puzzles.replace.server.ts` |
+| `/api/admin/daily-puzzles/review` | `POST` | `lib/admin/api/admin.daily-puzzles.review.server.ts` |
 | `/api/admin/deepseek/balance` | `GET` | `lib/ai/api/admin.deepseek.balance.server.ts` |
 | `/api/admin/deepseek/history` | `GET` | `lib/ai/api/admin.deepseek.history.server.ts` |
 | `/api/admin/deepseek/refresh` | `POST` | `lib/ai/api/admin.deepseek.refresh.server.ts` |
@@ -168,6 +169,8 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/admin/release-notes` | `GET` `POST` | `lib/developer/api/admin.release-notes.server.ts` |
 | `/api/admin/release-notes/:id` | `DELETE` `PATCH` | `lib/developer/api/admin.release-notes.$id.server.ts` |
 | `/api/admin/release-notes/draft` | `POST` | `lib/developer/api/admin.release-notes.draft.server.ts` |
+| `/api/admin/removal-reviews` | `GET` | `lib/admin/api/admin.removal-reviews.server.ts` |
+| `/api/admin/removal-reviews/:id` | `POST` | `lib/admin/api/admin.removal-reviews.$id.server.ts` |
 | `/api/admin/reports` | `GET` | `lib/admin/api/admin.reports.server.ts` |
 | `/api/admin/reports/:id` | `POST` | `lib/admin/api/admin.reports.$id.server.ts` |
 | `/api/admin/reports/claims` | `GET` | `lib/admin/api/admin.reports.claims.server.ts` |
@@ -232,6 +235,7 @@ See the [API inventory](../api.md) for how to read the tables.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
+| `/api/altair/coop-place` | `GET` | `features/altair/api/altair.coop-place.server.ts` |
 | `/api/altair/heat` | `GET` | `features/altair/api/altair.heat.server.ts` |
 | `/api/altair/leaderboard` | `GET` | `features/altair/api/altair.leaderboard.server.ts` |
 | `/api/altair/match` | `POST` | `features/altair/api/altair.match.server.ts` |

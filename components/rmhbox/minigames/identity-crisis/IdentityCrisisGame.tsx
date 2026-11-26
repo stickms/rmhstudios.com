@@ -43,6 +43,12 @@ import type {
   ICVote,
 } from './ic-types';
 
+/**
+ * An identity can be a member's pack line, so where one is put inside a translated sentence it is wrapped in a first
+ * strong isolate (U+2068 ... U+2069): the sentence keeps its order whatever direction the name is written in.
+ */
+const isolate = (text: string) => `\u2068${text}\u2069`;
+
 const SNAPSHOT_PHASES: readonly string[] = ['ASSIGN', 'ASK', 'VOTE', 'RESULT', 'FINAL', 'REVEAL'];
 
 interface IdentityCrisisGameProps {
@@ -452,7 +458,7 @@ export default function IdentityCrisisGame({ playerId, playerName }: IdentityCri
                 ? t('ask-wait-identity', {
                     defaultValue: '{{name}} is {{identity}}. Wait for their question.',
                     name: askerName,
-                    identity: askerIdentity.name,
+                    identity: isolate(askerIdentity.name),
                   })
                 : t('ask-wait', { defaultValue: 'Waiting for the question.' })}
             </p>
@@ -468,7 +474,7 @@ export default function IdentityCrisisGame({ playerId, playerName }: IdentityCri
               name: nameOf(question.askerId) || askerName,
             })}
             {askerIdentity && !isAsker
-              ? ` · ${t('question-as', { defaultValue: 'who is {{identity}}', identity: askerIdentity.name })}`
+              ? ` · ${t('question-as', { defaultValue: 'who is {{identity}}', identity: isolate(askerIdentity.name) })}`
               : ''}
           </p>
           <p className="text-base font-semibold text-app-text" dir="auto">

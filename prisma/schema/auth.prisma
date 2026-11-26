@@ -774,6 +774,16 @@ model User {
   // s14-06 puzzle-reports
   dailyPuzzleReports DailyPuzzleReport[]
 
+  // Sprint 15 back-relations (one block per feature, docs/autonomous/sprint-15/plan.md)
+  // s15-08 calc-graphs
+  calcGraphs CalcGraph[]
+
+  // s15-13 jam-suggestions
+  gameJamThemeSuggestions GameJamThemeSuggestion[]
+
+  // s15-16 removal-appeals
+  contentRemovals ContentRemoval[] @relation("ContentRemovalAuthor")
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the nightly finalize-deletion sweep; partial in effect since the

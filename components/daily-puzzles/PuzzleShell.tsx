@@ -234,6 +234,35 @@ export function PuzzleResultCard({
   );
 }
 
+/**
+ * The result for a score that was saved with no replay data (another device, an
+ * older client): the score and the time only, since there are no guesses to show.
+ */
+export function PuzzlePlayedElsewhere({ score, timeSeconds }: { score: number; timeSeconds?: number | null }) {
+  const { t } = useTranslation('c-daily-puzzles');
+  const stats: PuzzleStatItem[] = [
+    { key: 'points', value: score, label: t('points', { defaultValue: 'points' }), tone: 'warning' },
+  ];
+  if (typeof timeSeconds === 'number' && timeSeconds > 0) {
+    const m = Math.floor(timeSeconds / 60);
+    const sec = String(timeSeconds % 60).padStart(2, '0');
+    stats.push({ key: 'time', value: `${m}:${sec}`, label: t('time', { defaultValue: 'time' }) });
+  }
+  return (
+    <PuzzleResultStack>
+      <PuzzleResultCard
+        tone="neutral"
+        title={t('played-elsewhere', { defaultValue: 'Played on another device' })}
+        description={t('played-elsewhere-detail', {
+          defaultValue:
+            'Your score for this puzzle was saved, but not your answers. Only the score and time are shown.',
+        })}
+        stats={stats}
+      />
+    </PuzzleResultStack>
+  );
+}
+
 /** A detail card under the result (explanations, example chain, fun fact…). */
 export function PuzzleSection({
   icon,

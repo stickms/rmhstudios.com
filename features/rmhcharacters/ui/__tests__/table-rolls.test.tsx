@@ -88,6 +88,17 @@ describe('TableRollRow', () => {
     expect(html).toContain('2d6+3 (2, 5) +3');
   });
 
+  it('names a short rest Hit Die', () => {
+    const html = render(
+      <ul>
+        <TableRollRow
+          roll={roll({ kind: 'free', label: 'hitDie', notation: '1d10+2', dice: [7], modifier: 2, total: 9 })}
+        />
+      </ul>,
+    );
+    expect(html).toContain('Hit Die, 1d10+2');
+  });
+
   it('says who is let in on a private roll, in words, and the degree and DC', () => {
     expect(
       render(

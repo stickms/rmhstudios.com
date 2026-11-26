@@ -15,6 +15,7 @@ import { useRiskSurfacesHidden } from '@/hooks/useRiskSurfacesHidden';
 import { isRiskSurfacePath } from '@/lib/economy/risk-surfaces';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { Handle } from '@/components/ui/handle';
 
 /** The handle's menu is a lazy chunk: nothing in it is needed until it is opened. */
 const AccountMenu = lazy(() =>
@@ -268,7 +269,7 @@ export function Sidebar() {
               aria-current={isViewerPath(pathname, viewerPath) ? 'page' : undefined}
             >
               <UserAvatar src={resolved?.image || user.image} alt="" size={28} fallbackName={name} />
-              <span className="site-sidebar__handle-text">{handle ? `@${handle}` : name}</span>
+              <span className="site-sidebar__handle-text">{handle ? <Handle handle={handle} /> : name}</span>
             </Link>
             <Button
               ref={menuAnchor}

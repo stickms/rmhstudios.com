@@ -66,6 +66,22 @@ export const MUTE_READ_PATHS: readonly string[] = [
   // A game thread's reply notices skip members who muted the poster.
   'lib/games/thread-notices.server.ts',
 
+  // Sprint 15
+  // s15-05 prediction-comments
+  // No entry: a market's discussion (`listComments`, lib/forecasting/forecasting.server.ts) never reads `userMute`;
+  // it takes its hidden set from `getHiddenAuthorIds`, so `lib/moderation.server.ts` above is the path that applies
+  // the predicate for it. Listing the caller would fail the registry's scan, which holds that each entry reads the table.
+
+  // s15-06 member-text-reports
+  // No entry: the announcement discussion (`GET /api/blog/$slug/comments`, lib/blog/api/blog.$slug.comments.server.ts)
+  // and the report eligibility check (lib/moderation/member-text-reports.server.ts) never read `userMute`; they take
+  // their hidden set from `getHiddenAuthorIds`, so `lib/moderation.server.ts` above is the path that applies the
+  // predicate for them. Listing the callers would fail the registry's scan, which holds that each entry reads the table.
+
+  // s15-12 thread-mentions
+  // No entry: `notifyThreadMentions` (lib/games/thread-mentions.server.ts) never reads `userMute`; it takes its reachable
+  // members from `reachableRecipients`, so 'lib/games/thread-notices.server.ts' above is the path that applies the
+  // predicate for it. Listing the caller would fail the registry's scan, which holds that each entry reads the table.
 ];
 
 /** Files that touch `userMute` without being a reader that filters, each with the reason. */

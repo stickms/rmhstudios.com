@@ -32,7 +32,7 @@ import { AdSlot } from '@/components/ads/AdSlot';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { categoryLabel, NewsMeta, NewsPicture } from '@/components/news/NewsParts';
-import { isNewsCategory } from '@/lib/news-wire/categorize';
+import { isNewsCategory } from '@/lib/news-wire/categories';
 import { NewsStoryRow } from '@/components/news/NewsStoryRow';
 import { NewsSummary } from '@/components/news/NewsSummary';
 import { NewsDiscussion } from '@/components/news/NewsDiscussion';

@@ -114,7 +114,7 @@ export function labelFor(req: SheetRequest): string {
     case 'perception':
       return req.kind;
     case 'free':
-      return '';
+      return req.as ?? '';
   }
 }
 

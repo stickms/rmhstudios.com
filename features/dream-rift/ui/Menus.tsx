@@ -33,6 +33,7 @@ import {
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { useFocusReturn } from '@/components/shared/useFocusReturn';
 import { SheetPortrait } from './SheetPortrait';
+import { YourCoopRunsEntry } from './YourCoopRuns';
 import { MenuBackdrop } from './MenuBackdrop';
 import { useRuntime } from './runtime';
 import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
@@ -367,7 +368,9 @@ export function LobbyBrowser({ onBack }: { onBack: () => void }) {
                     )}
                 </div>
 
-                <Btn variant="ghost" onClick={() => { leaveLobby(); onBack(); }} className="mt-7">
+                <YourCoopRunsEntry />
+
+                <Btn variant="ghost" onClick={() => { leaveLobby(); onBack(); }} className="mt-3">
                     {t('menu-back', { defaultValue: 'Back' })}
                 </Btn>
             </div>

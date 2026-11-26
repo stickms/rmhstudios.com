@@ -367,8 +367,8 @@ describe('GET /me/parties/{id}', () => {
     const pip = data.members.find((m: Row) => m.userId === 'p2');
     expect(pip.summary).toEqual(partySummary(normalizeCharacter(h.characters[3]!.data) as never, await loadDnd5e()));
     expect(data.order).toEqual([
-      { id: 'l1', kind: 'member', userId: 'p2', name: 'Name p2', value: 18 },
-      { id: 'l2', kind: 'extra', userId: null, name: 'Goblin', value: 9 },
+      { id: 'l1', kind: 'member', userId: 'p2', name: 'Name p2', nameHidden: false, value: 18 },
+      { id: 'l2', kind: 'extra', userId: null, name: 'Goblin', nameHidden: false, value: 9 },
     ]);
     const text = JSON.stringify(data);
     for (const leak of ['pip notes', 'my secret', 'base64', 'invite-code', 'orderVersion'])
@@ -376,7 +376,7 @@ describe('GET /me/parties/{id}', () => {
     for (const m of data.members) {
       expect(m).not.toHaveProperty('sheet');
       expect(m).not.toHaveProperty('notes');
-      expect(Object.keys(m).sort()).toEqual(['isGm', 'joinedAt', 'name', 'summary', 'userId']);
+      expect(Object.keys(m).sort()).toEqual(['isGm', 'joinedAt', 'name', 'nameHidden', 'summary', 'userId']);
     }
   });
 

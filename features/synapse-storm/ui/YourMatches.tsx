@@ -5,6 +5,9 @@
  * The game's UI uses no React Query (it stays ready to become a real island), so the read is a hook the menu owns:
  * `open()` and `more()` are called from click handlers and call `api()`; nothing fetches from an effect.
  * Scores in versus matches are reported by each player's game and are never verified, which the list says once.
+ *
+ * Sprint 15 15 adds a "Rivals" view beside "Matches": the member's record against each named player, and a row opens
+ * the matches the pair shared through the same list (`with=<rival key>`, the same cursor), so there is one list.
  */
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,10 +18,28 @@ import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import { cn } from '@/lib/utils';
 import { MenuBackdrop } from './MenuBackdrop';
-import { getSynapseStormMatchesApi } from '@features/synapse-storm/engine/matches.contract';
+import { RivalWith, RivalsList, RivalsLoading, RivalsSignedOut, RivalsSwitch } from './RivalsList';
+import { getSynapseStormMatchesApi, getSynapseStormRivalsApi } from '@features/synapse-storm/engine/matches.contract';
 import type { MatchView, OtherPlayerView } from '@features/synapse-storm/engine/matches';
+import type { RivalView } from '@features/synapse-storm/engine/rivals';
 
 type LoadStatus = 'idle' | 'loading' | 'ready' | 'error' | 'signed-out';
+
+/** The rival whose shared matches the list shows, or null for all of the member's matches. */
+export interface RivalFilter {
+  key: string;
+  name: string;
+}
+
+export type MatchesView = 'matches' | 'rivals';
+
+export interface RivalsState {
+  status: LoadStatus;
+  rivals: RivalView[];
+  error: unknown;
+}
+
+const RIVALS_IDLE: RivalsState = { status: 'idle', rivals: [], error: null };
 
 export interface YourMatchesState {
   status: LoadStatus;
@@ -28,6 +49,7 @@ export interface YourMatchesState {
   /** A failed "Show more": the rows already shown stay. */
   moreFailed: boolean;
   error: unknown;
+  rival: RivalFilter | null;
 }
 
 const IDLE: YourMatchesState = {
@@ -37,43 +59,87 @@ const IDLE: YourMatchesState = {
   loadingMore: false,
   moreFailed: false,
   error: null,
+  rival: null,
 };
 
-/** The matches read. `open()` starts over from the newest page; `more()` appends the next one. */
+/**
+ * The matches and rivals reads. `open()` starts over from the newest page of all matches; `more()` appends the next
+ * one; `showRivals()` loads the rival records; `openRival()` lists the matches one rival shared with the member.
+ */
 export function useYourMatches() {
   const [state, setStateRaw] = useState<YourMatchesState>(IDLE);
+  const [rivals, setRivalsRaw] = useState<RivalsState>(RIVALS_IDLE);
+  const [view, setView] = useState<MatchesView>('matches');
   // The latest state, readable from a click handler without a side effect inside a state updater.
   const latest = useRef<YourMatchesState>(IDLE);
-  // A reply that arrives after a newer `open()` is dropped.
+  const latestRivals = useRef<RivalsState>(RIVALS_IDLE);
+  // A reply that arrives after a newer load is dropped.
   const generation = useRef(0);
+  const rivalsGeneration = useRef(0);
 
   const setState = useCallback((next: (prev: YourMatchesState) => YourMatchesState) => {
     latest.current = next(latest.current);
     setStateRaw(latest.current);
   }, []);
 
-  const open = useCallback(() => {
-    const mine = ++generation.current;
-    setState(() => ({ ...IDLE, status: 'loading' }));
-    api(getSynapseStormMatchesApi, { query: {} }).then(
+  const setRivals = useCallback((next: RivalsState) => {
+    latestRivals.current = next;
+    setRivalsRaw(next);
+  }, []);
+
+  const load = useCallback(
+    (rival: RivalFilter | null) => {
+      const mine = ++generation.current;
+      setState(() => ({ ...IDLE, status: 'loading', rival }));
+      api(getSynapseStormMatchesApi, { query: rival ? { with: rival.key } : {} }).then(
+        (page) => {
+          if (generation.current !== mine) return;
+          setState(() => ({ ...IDLE, status: 'ready', matches: page.matches, nextCursor: page.nextCursor, rival }));
+        },
+        (error: unknown) => {
+          if (generation.current !== mine) return;
+          const signedOut = error instanceof HttpError && error.status === 401;
+          setState(() => ({ ...IDLE, status: signedOut ? 'signed-out' : 'error', error, rival }));
+        },
+      );
+    },
+    [setState],
+  );
+
+  const loadRivals = useCallback(() => {
+    const mine = ++rivalsGeneration.current;
+    setRivals({ ...RIVALS_IDLE, status: 'loading' });
+    api(getSynapseStormRivalsApi, {}).then(
       (page) => {
-        if (generation.current !== mine) return;
-        setState(() => ({ ...IDLE, status: 'ready', matches: page.matches, nextCursor: page.nextCursor }));
+        if (rivalsGeneration.current !== mine) return;
+        setRivals({ ...RIVALS_IDLE, status: 'ready', rivals: page.rivals });
       },
       (error: unknown) => {
-        if (generation.current !== mine) return;
+        if (rivalsGeneration.current !== mine) return;
         const signedOut = error instanceof HttpError && error.status === 401;
-        setState(() => ({ ...IDLE, status: signedOut ? 'signed-out' : 'error', error }));
+        setRivals({ ...RIVALS_IDLE, status: signedOut ? 'signed-out' : 'error', error });
       },
     );
-  }, [setState]);
+  }, [setRivals]);
+
+  /** Opens the screen: all of the member's matches, newest first. */
+  const open = useCallback(() => {
+    setView('matches');
+    setRivals(RIVALS_IDLE);
+    rivalsGeneration.current++;
+    load(null);
+  }, [load, setRivals]);
+
+  /** Retries the matches read the screen is on (a rival's, when one is open). */
+  const retry = useCallback(() => load(latest.current.rival), [load]);
 
   const more = useCallback(() => {
     const mine = generation.current;
     const cursor = latest.current.nextCursor;
     if (latest.current.status !== 'ready' || !cursor || latest.current.loadingMore) return;
+    const rival = latest.current.rival;
     setState((prev) => ({ ...prev, loadingMore: true, moreFailed: false }));
-    api(getSynapseStormMatchesApi, { query: { cursor } }).then(
+    api(getSynapseStormMatchesApi, { query: rival ? { cursor, with: rival.key } : { cursor } }).then(
       (page) => {
         if (generation.current !== mine) return;
         setState((cur) => ({
@@ -91,7 +157,27 @@ export function useYourMatches() {
     );
   }, [setState]);
 
-  return { state, open, more };
+  /** The "Matches" half of the switch: every match, whatever rival was open. */
+  const showMatches = useCallback(() => {
+    setView('matches');
+    if (latest.current.rival || latest.current.status !== 'ready') load(null);
+  }, [load]);
+
+  /** The "Rivals" half of the switch: loads the records the first time, and after a failure. */
+  const showRivals = useCallback(() => {
+    setView('rivals');
+    if (latestRivals.current.status !== 'ready' && latestRivals.current.status !== 'loading') loadRivals();
+  }, [loadRivals]);
+
+  const openRival = useCallback(
+    (rival: RivalView) => {
+      setView('matches');
+      load({ key: rival.key, name: rival.name });
+    },
+    [load],
+  );
+
+  return { state, rivals, view, open, retry, more, showMatches, showRivals, openRival, retryRivals: loadRivals };
 }
 
 /** The menu's entry: one ghost button that opens the list. */
@@ -172,16 +258,38 @@ function MatchRow({ match }: { match: MatchView }) {
 
 interface YourMatchesProps {
   state: YourMatchesState;
+  rivals: RivalsState;
+  view: MatchesView;
   onMore: () => void;
   onRetry: () => void;
+  onRetryRivals: () => void;
+  onShowMatches: () => void;
+  onShowRivals: () => void;
+  onOpenRival: (rival: RivalView) => void;
   onBack: () => void;
 }
 
-export function YourMatches({ state, onMore, onRetry, onBack }: YourMatchesProps) {
+export function YourMatches({
+  state,
+  rivals,
+  view,
+  onMore,
+  onRetry,
+  onRetryRivals,
+  onShowMatches,
+  onShowRivals,
+  onOpenRival,
+  onBack,
+}: YourMatchesProps) {
   const { t } = useTranslation('synapse-matches');
   const refusalText = useRefusalText();
-  const arrival = useArrival(state.status === 'ready');
-  const loading = state.status === 'idle' || state.status === 'loading';
+  const showingRivals = view === 'rivals';
+  const arrival = useArrival(showingRivals ? rivals.status === 'ready' : state.status === 'ready');
+  const loading = showingRivals
+    ? rivals.status === 'idle' || rivals.status === 'loading'
+    : state.status === 'idle' || state.status === 'loading';
+  const signedOut = showingRivals ? rivals.status === 'signed-out' : state.status === 'signed-out';
+  const failed = showingRivals ? rivals.status === 'error' : state.status === 'error';
   return (
     <div className="ssm-screen">
       <MenuBackdrop />
@@ -192,27 +300,40 @@ export function YourMatches({ state, onMore, onRetry, onBack }: YourMatchesProps
             {t('honesty', { defaultValue: "Scores in versus matches are reported by each player's game" })}
           </p>
           <div className="ssm-panel ssm-panel--cyan ssm-card ssm-matches">
-            {loading && (
+            <RivalsSwitch showingRivals={showingRivals} onShowMatches={onShowMatches} onShowRivals={onShowRivals} />
+            {!showingRivals && state.rival && <RivalWith name={state.rival.name} onAllRivals={onShowRivals} />}
+            {loading && showingRivals && <RivalsLoading />}
+            {loading && !showingRivals && (
               <p className="ssm-matches__note" role="status">
                 {t('loading', { defaultValue: 'Loading your matches' })}
               </p>
             )}
-            {state.status === 'signed-out' && (
+            {signedOut && showingRivals && <RivalsSignedOut className={arrival} />}
+            {signedOut && !showingRivals && (
               <p className={cn('ssm-matches__note', arrival)}>
                 {t('signed-out', { defaultValue: 'Sign in to see your matches' })}
               </p>
             )}
-            {state.status === 'error' && (
+            {failed && (
               <div className="ssm-matches__note">
                 <p className="ss-mp-error" role="alert">
-                  {refusalText(state.error)}
+                  {refusalText(showingRivals ? rivals.error : state.error)}
                 </p>
-                <button type="button" className="ssm-btn ssm-btn--secondary" onClick={onRetry}>
+                <button
+                  type="button"
+                  className="ssm-btn ssm-btn--secondary"
+                  onClick={showingRivals ? onRetryRivals : onRetry}
+                >
                   {t('retry', { defaultValue: 'Try again' })}
                 </button>
               </div>
             )}
-            {state.status === 'ready' && (
+            {showingRivals && rivals.status === 'ready' && (
+              <div className={arrival}>
+                <RivalsList rivals={rivals.rivals} onOpen={onOpenRival} />
+              </div>
+            )}
+            {!showingRivals && state.status === 'ready' && (
               <div className={arrival}>
                 <MatchesList matches={state.matches} />
                 {state.moreFailed && (

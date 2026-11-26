@@ -19,6 +19,7 @@ import { reviewRedemptionApi } from '@/lib/admin/admin-tools.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { Handle } from '@/components/ui/handle';
 export const Route = createFileRoute('/_site/admin/redemptions')({
   head: () => ({ meta: [{ title: 'Redemption Queue | RMH Studios' }] }),
   loader: ({ context }) => prefetchRouteQuery(context.queryClient, adminRedemptionsQuery()),
@@ -113,7 +114,7 @@ function AdminRedemptionsPage() { const fmt = useLocaleFormat();
                               : t('payout', { defaultValue: 'Cash payout' })}
                         </div>
                         <div className="t-body text-site-text-muted">
-                          @{r.user.handle ?? r.user.name ?? r.user.id.slice(0, 6)}
+                          <Handle handle={r.user.handle ?? r.user.name ?? r.user.id.slice(0, 6)} />
                           {' · '}
                           {fmt.relative(new Date(r.createdAt))}
                         </div>

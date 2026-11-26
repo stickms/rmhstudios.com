@@ -296,6 +296,21 @@ export const NOTICE_TEMPLATES = {
   // s14-11 thread-replies
   'game-thread-reply': '{{name}} replied in {{title}}',
   'song-comment': '{{name}} commented on {{title}}',
+
+  // Sprint 15 notices (docs/autonomous/sprint-15/plan.md §Anchors)
+  // s15-07 fix-notices
+  'puzzle-report-reviewed': 'Your report on the {{mode}} puzzle for {{dateKey}} was reviewed. {{outcome}} {{note}}',
+  'jam-deadline-moved':
+    '{{title}} moved its deadlines: submissions close {{submitEndsAt}}, ratings close {{ratingEndsAt}}',
+
+  // s15-12 thread-mentions
+  'game-thread-mention': '{{name}} mentioned you in {{title}}',
+
+  // s15-16 removal-appeals
+  'content-removed-after-report': 'Your {{kind}} was removed after a report.',
+  'content-removed-after-report-message': 'Your {{kind}} was removed after a report: {{message}}',
+  'removal-review-restored': 'A moderator looked again at your {{kind}} and restored it.',
+  'removal-review-upheld': 'A moderator looked again at your {{kind}}. The removal stands.',
 } as const;
 
 export type NoticeKey = keyof typeof NOTICE_TEMPLATES;
@@ -597,6 +612,20 @@ export interface NoticeParamTypes {
   // s14-11 thread-replies
   'game-thread-reply': { name: string | number; title: string | number };
   'song-comment': { name: string | number; title: string | number };
+
+  // Sprint 15 notices (docs/autonomous/sprint-15/plan.md §Anchors)
+  // s15-07 fix-notices
+  'puzzle-report-reviewed': { mode: string; dateKey: string; outcome: 'fault' | 'stands'; note: string };
+  'jam-deadline-moved': { title: string | number; submitEndsAt: string | Date; ratingEndsAt: string | Date };
+
+  // s15-12 thread-mentions
+  'game-thread-mention': { name: string | number; title: string | number };
+
+  // s15-16 removal-appeals
+  'content-removed-after-report': { kind: string | number };
+  'content-removed-after-report-message': { kind: string | number; message: string | number };
+  'removal-review-restored': { kind: string | number };
+  'removal-review-upheld': { kind: string | number };
 }
 
 export type NoticeParamValue = string | number;

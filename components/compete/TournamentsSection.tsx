@@ -18,15 +18,25 @@ import { Badge } from '@/components/ui/badge';
 import { useSession } from '@/components/Providers';
 import { Cells } from '@/components/ui/rules';
 import { CreateTournamentDialog } from '@/components/tournaments/CreateTournamentDialog';
+import { YoursPanel } from '@/components/compete/YoursPanel';
 import { tournamentsQuery, type TournamentStatus } from '@/lib/tournaments/tournaments.queries';
+
+type SectionTab = TournamentStatus | 'YOURS';
 
 export function TournamentsSection() {
   const { t } = useTranslation('c-tournaments');
   const { data: session } = useSession();
   const viewerId = session?.user?.id ?? null;
-  const [status, setStatus] = useState<TournamentStatus>('REGISTRATION');
+  const [status, setStatus] = useState<SectionTab>('REGISTRATION');
   const [creating, setCreating] = useState(false);
-  const list = useQuery({ ...tournamentsQuery(status), retry: false });
+  // "Yours" is signed-in only: after signing out the section falls back to Open rather than a tab that is gone.
+  const active: SectionTab = status === 'YOURS' && viewerId == null ? 'REGISTRATION' : status;
+  const yours = active === 'YOURS';
+  const list = useQuery({
+    ...tournamentsQuery(active === 'YOURS' ? 'REGISTRATION' : active),
+    enabled: !yours,
+    retry: false,
+  });
   const loading = list.isPending;
   const items = list.data?.tournaments ?? [];
   const arrival = useArrival(!loading);
@@ -50,17 +60,22 @@ export function TournamentsSection() {
       <div>
         <Tabs
           aria-label={t('title', { defaultValue: 'Tournaments' })}
-          value={status}
-          onChange={(id) => setStatus(id as TournamentStatus)}
+          value={active}
+          onChange={(id) => setStatus(id as SectionTab)}
           tabs={[
             { id: 'REGISTRATION', label: t('tab-open', { defaultValue: 'Open' }) },
             { id: 'LIVE', label: t('tab-live', { defaultValue: 'Live' }) },
             { id: 'COMPLETE', label: t('tab-done', { defaultValue: 'Finished' }) },
+            ...(viewerId
+              ? [{ id: 'YOURS', label: t('tab-yours', { ns: 'tournament-prizes', defaultValue: 'Yours' }) }]
+              : []),
           ]}
         />
       </div>
 
-      {loading ? (
+      {yours ? (
+        <YoursPanel />
+      ) : loading ? (
         <div className="grid gap-3 sm:grid-cols-2">
           {[0, 1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-32 rounded-site" />

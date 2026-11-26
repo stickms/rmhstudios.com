@@ -1,12 +1,12 @@
 import { randomInt } from 'node:crypto';
 import { prisma } from '@/lib/prisma.server';
 import { filePackReport } from '@/lib/party/pack-moderation.server';
+import { parsePackLines } from '@/lib/party/pack-games';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import {
   MAX_PACKS_PER_MEMBER,
   PACK_CODE_ALPHABET,
   PACK_CODE_LEN,
-  normalizePrompts,
   type CreatePackInput,
   type PackView,
 } from '@/lib/party/packs';
@@ -91,7 +91,9 @@ export async function listPacks(userId: string | null, isAdmin: boolean) {
 }
 
 export async function createPack(userId: string, input: CreatePackInput) {
-  const prompts = normalizePrompts(input.prompts);
+  // The same rules the page's preview and the hub's loader apply; duplicates drop out and the minimum is the game's.
+  const parsed = parsePackLines(input.game, input.prompts);
+  const prompts = parsed.ok ? parsed.lines : null;
   if (!prompts) return { ok: false as const, status: 400, error: 'Not enough distinct prompts' };
   const owned = await prisma.rmhboxPack.count({ where: { ownerId: userId } });
   if (owned >= MAX_PACKS_PER_MEMBER) {

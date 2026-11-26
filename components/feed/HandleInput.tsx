@@ -5,6 +5,7 @@ import { AnchoredMenu } from '@/components/ui/anchored-menu';
 
 import { api } from '@/lib/contract/client';
 import { mentionSearchApi } from '@/lib/feed/feed-reads.contract';
+import { Handle } from '@/components/ui/handle';
 interface UserSuggestion {
  id: string;
  name: string | null;
@@ -219,7 +220,7 @@ export function HandleInput({ value, onChange, multiple = false, placeholder, cl
  {highlight(u.name || u.handle, token)}
  {u.isVerified && <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-site-accent"/>}
  </span>
- <span className="block truncate text-xs text-site-text-muted">@{highlight(u.handle ?? u.username, token)}</span>
+ <span className="block truncate text-xs text-site-text-muted"><Handle handle={highlight(u.handle ?? u.username, token)} /></span>
  </span>
  </button>
  ))

@@ -22,11 +22,11 @@ The `User` row is anonymised in place, never removed, so `onDelete: Cascade` fro
 
 The clearly private leaf tables (birthday, reminders, drafts, saves, history, settings, notifications, and private reading highlights) are erased by `coverageErasureOps` in `lib/account/erasure-coverage.server.ts`.
 
-414 models are classified.
+417 models are classified.
 
 ## Erased
 
-Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row stays with its member reference replaced or nulled; a `cascade` row goes with its parent in the database. 258 models.
+Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row stays with its member reference replaced or nulled; a `cascade` row goes with its parent in the database. 261 models.
 
 | Model | Decision | Reason |
 | --- | --- | --- |
@@ -51,6 +51,7 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `BuildIssueVote` | erase | The member's "I see this too" marks are their own: deleted, and each issue's voteCount is decremented in the same transaction. |
 | `BuildView` | deidentify | A first view is a count on the creator's insights; the row stays without its viewer. |
 | `BulkOperation` | erase | Bulk clean-up operations (sprint 07 bulk-durable); a run in progress stops at its next chunk. |
+| `CalcGraph` | erase | Rule 1: the member's own saved calculator graphs. |
 | `CalcNotebook` | erase | Rule 1: the member's own calculator notebooks. |
 | `CalendarFeed` | erase | The private calendar URL token is a credential that calendar apps send. |
 | `CallMute` | erase | Both directions: the member's own mutes, and rows naming them as the muted user. `mutedUserId` is unindexed; the small table is scanned once per deletion. |
@@ -74,6 +75,7 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `CommunityRecurringThread` | deidentify | Thread templates the member authored are handed to the community owner and paused (nothing posts under their name until a moderator saves one); when the member owned the community, or it has no owner, they are deleted. |
 | `ConnectionsGrid` | erase | Drafts were never published, so nobody else uses them and they go with the account. A published grid stays under "Deleted user" (rule 3: published content others use). Scope: draft rows only (draft = true); published grids stay under "Deleted user" (rule 3). |
 | `ConnectionsPlay` | erase | The member's own plays; no board. No children: it is the child of `ConnectionsGrid`, whose anonymous play and rating tallies stay (counter rule). |
+| `ContentRemoval` | erase | The member's own record of an item a report took down, with their request for a second look. `reviewedById` (a moderator, a plain column) is nulled in the same step when the moderator's account is erased. It holds no reporter. |
 | `ContentReport` | deidentify | The report stays as the moderators' record; the reporter's free-text details are nulled. |
 | `ConversationPref` | erase | Per-conversation notification choices (muted posts and chats). |
 | `CustomFeed` | erase | Only feeds where isPublic is false and visibility is not PUBLIC (private and by-link): the member's tools, with members and subscribers going by the cascade. Public feeds (either flag) have subscribers and stay under the tombstone as published content. |
@@ -93,7 +95,7 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `DoctrinePuzzleSubmission` | erase | Rule 1: the member's per-puzzle results; the puzzle keeps no solve counter, so nothing is left to correct. |
 | `DoctrineRecruitmentCode` | erase | Recruitment codes the member issued (recruiterId). |
 | `DoctrineReputation` | erase | Rule 1: the member's Doctrine reputation (totalXp is what the board reads); the ledger rows go with it by the database cascade. |
-| `DreamRiftCoopRun` | deidentify | A co-op run loses its host (hostUserId nulled); the run stays for its other players. |
+| `DreamRiftCoopRun` | deidentify | A co-op run loses its host (hostUserId nulled), the member's id leaves memberIds and their slot's name becomes "Deleted user", in new rows and in rows that hold an old account snapshot; the run stays for its other players (sprint 15 09). |
 | `DreamRiftPlayer` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
 | `EloRating` | erase | Rule 1: the member's ratings on ranked boards; opponents' ratings are not recomputed (their gains and losses happened). |
 | `EmailCampaignRecipient` | deidentify | The row stays as the campaign's delivery record; queued mail (pending or claimed) is set to skipped so no later send picks it up. |
@@ -115,6 +117,7 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `GameFollow` | erase | Games the member follows would keep notifying the erased account. |
 | `GameJamFeedback` | erase | Feedback the member wrote on jam entries. |
 | `GameJamTeamMember` | erase | The member's team rows and pending invitations on their entries. |
+| `GameJamThemeSuggestion` | erase | The member's suggested jam themes (sprint 15 jam-suggestions). |
 | `GameJamThemeVote` | erase | The member's theme votes (sprint 07 jam-themes). |
 | `GamePersonalBest` | erase | The member's own record history. |
 | `GamePlayStatus` | erase | The member's own play statuses; counts by status are computed at read, no board. |

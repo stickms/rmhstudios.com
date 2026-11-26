@@ -54,6 +54,19 @@ export function reportKindLabel(t: TFunction, kind: unknown): string {
 
     // s14-10 tube-room-reports
     'tube-room': t('kind-tube-room', { ns: 'my-reports', defaultValue: 'Room' }),
+
+    // Sprint 15 (docs/autonomous/sprint-15/plan.md §Anchors)
+    // s15-04 workshop-reports
+    'tf2-hud': t('kind-tf2-hud', { ns: 'my-reports', defaultValue: 'TF2 HUD' }),
+    'tf2-loadout': t('kind-tf2-loadout', { ns: 'my-reports', defaultValue: 'TF2 loadout' }),
+    'versecraft-seed': t('kind-versecraft-seed', { ns: 'my-reports', defaultValue: 'Versecraft story' }),
+
+    // s15-05 prediction-comments
+    'prediction-comment': t('kind-prediction-comment', { ns: 'my-reports', defaultValue: 'Market comment' }),
+
+    // s15-06 member-text-reports
+    'guestbook-entry': t('kind-guestbook-entry', { ns: 'my-reports', defaultValue: 'Guestbook entry' }),
+    'blog-comment': t('kind-blog-comment', { ns: 'my-reports', defaultValue: 'Announcement comment' }),
   };
   return Object.prototype.hasOwnProperty.call(labels, k) ? (labels[k] ?? k) : k;
 }
