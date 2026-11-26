@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { CHARTED_TYPES, formatUtcDay } from '../engine/public-read';
 import { cycleLabelIsolated } from '../engine/cycle';
-import { forecastQuery } from '../medschools.queries';
+import { forecastQuery, sourceParamOf } from '../medschools.queries';
 import type { MedChartedTypeId, MedSchoolDetailDto } from '../medschools.contract';
 import { ForecastBand } from './charts/ForecastBand';
 import { useChartLabels } from './chartLabels';
@@ -21,6 +21,9 @@ import { useSourcePref } from './useSourcePref';
  * with the observed line up to the day the model saw. "All programs" is not a forecast of its own (never summed): it
  * shows the school's regular program and says so (D12). The forecast is computed once a day, so every figure carries
  * its date ("Forecast as of ...").
+ *
+ * One forecast is stored per source and the header's source choice picks which is shown. Admit.org only began
+ * separating MD-PhD this cycle, so its MD-PhD forecast carries a note saying it is not accurate.
  */
 export function ForecastTab({
   slug,
@@ -45,11 +48,11 @@ export function ForecastTab({
   // WITHDRAWN and HOLD are never charted: they read as Interview here (the loader prefetches the same key).
   const type: MedChartedTypeId = CHARTED_TYPES.includes(search.type) ? (search.type as MedChartedTypeId) : 'INTERVIEW';
   const program = search.program === 'PHD' ? 'PHD' : 'REG';
-  const query = useQuery(forecastQuery(slug, { program, type }));
-  const data = query.data;
-  // The worker fits one forecast per school, on its primary source; a different choice in the header keeps that one
-  // (never fitted on request) and says which source it is.
+  // The worker fits one forecast per source (never on request); the header's CycleTrack / Admit.org choice picks which
+  // one is shown. A source with none for this school keeps the other's and says which source it is.
   const pref = useSourcePref();
+  const query = useQuery(forecastQuery(slug, { program, type, ...sourceParamOf(pref.value) }));
+  const data = query.data;
 
   const controls = (
     <div className="flex flex-wrap gap-x-6 gap-y-3">
@@ -136,6 +139,15 @@ export function ForecastTab({
               <p className="medapp-meta">
                 {t('forecast-program-note', {
                   defaultValue: 'A forecast is made for one program at a time. Showing {{program}}.',
+                  program: programFilterLabel(program, detail.school.degree),
+                })}
+              </p>
+            ) : null}
+            {data.source === 'ADMIT' && program === 'PHD' ? (
+              <p className="medapp-meta">
+                {t('forecast-admit-phd-note', {
+                  defaultValue:
+                    'Admit.org only began reporting {{program}} separately this cycle, so this forecast is not accurate for {{program}}.',
                   program: programFilterLabel(program, detail.school.degree),
                 })}
               </p>

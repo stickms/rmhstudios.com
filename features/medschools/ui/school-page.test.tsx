@@ -570,11 +570,42 @@ describe('Forecast tab', () => {
     ...o,
   });
   const seed =
-    (f: MedSchoolForecastRes, program: 'REG' | 'PHD' = 'REG', type: MedChartedTypeId = 'INTERVIEW') =>
+    (f: MedSchoolForecastRes, program: 'REG' | 'PHD' = 'REG', type: MedChartedTypeId = 'INTERVIEW', source?: 'admit') =>
     (qc: QueryClient) => {
       qc.setQueryData(schoolQuery('duke').queryKey, detail());
-      qc.setQueryData(forecastQuery('duke', { program, type }).queryKey, f);
+      qc.setQueryData(forecastQuery('duke', { program, type, ...(source ? { source } : {}) }).queryKey, f);
     };
+
+  describe('the source choice', () => {
+    const note =
+      'Admit.org only began reporting MD-PhD separately this cycle, so this forecast is not accurate for MD-PhD.';
+    it('Admit selected on MD-PhD shows the note', () => {
+      h.search = { tab: 'forecast', program: 'PHD', source: 'ADMIT' };
+      expect(render(seed(forecast({ program: 'PHD', source: 'ADMIT' }), 'PHD', 'INTERVIEW', 'admit'))).toContain(note);
+    });
+    it('Admit selected on MD (REG) shows no note', () => {
+      h.search = { tab: 'forecast', program: 'REG', source: 'ADMIT' };
+      expect(render(seed(forecast({ source: 'ADMIT' }), 'REG', 'INTERVIEW', 'admit'))).not.toContain('only began');
+    });
+    it('CycleTrack on MD-PhD shows no note', () => {
+      h.search = { tab: 'forecast', program: 'PHD' };
+      expect(render(seed(forecast({ program: 'PHD', source: 'CYCLETRACK' }), 'PHD'))).not.toContain('only began');
+    });
+    it('Admit selected but only a CycleTrack forecast exists: the made-from note, not the MD-PhD note', () => {
+      h.search = { tab: 'forecast', program: 'PHD', source: 'ADMIT' };
+      const html = render(seed(forecast({ program: 'PHD', source: 'CYCLETRACK' }), 'PHD', 'INTERVIEW', 'admit'));
+      expect(html).toContain('This forecast is made from CycleTrack');
+      expect(html).not.toContain('only began');
+    });
+    it('the query key carries source only for admit', () => {
+      const key = (source?: 'admit') =>
+        JSON.stringify(
+          forecastQuery('duke', { program: 'REG', type: 'INTERVIEW', ...(source ? { source } : {}) }).queryKey,
+        );
+      expect(key()).not.toContain('source');
+      expect(key('admit')).toContain('"source":"admit"');
+    });
+  });
 
   it('a ready forecast server-renders the chart and the summary rows, with calendar dates and no day count', () => {
     h.search = { tab: 'forecast' };
