@@ -289,21 +289,21 @@ func TestBuildTargetsURLsFlowThrough(t *testing.T) {
 		}
 	}
 
-	// Overrides (e.g. probing a staging origin) flow through unchanged.
+	// Overrides (e.g. probing another origin) flow through unchanged.
 	overridden := buildTargets(probeURLs{
-		Website: "https://staging.rmhstudios.com/",
-		Ready:   "https://staging.rmhstudios.com/api/ready",
-		Feed:    "https://staging.rmhstudios.com/blog/rss.xml",
-		Sitemap: "https://staging.rmhstudios.com/sitemap.xml",
+		Website: "https://preview.rmhstudios.com/",
+		Ready:   "https://preview.rmhstudios.com/api/ready",
+		Feed:    "https://preview.rmhstudios.com/blog/rss.xml",
+		Sitemap: "https://preview.rmhstudios.com/sitemap.xml",
 		Socket:  "http://socket-server:7001/health",
-		RMHBox:  "http://rmhbox-staging:7676/health",
-		RMHTube: "http://rmhtube-staging:7003/health",
+		RMHBox:  "http://rmhbox-preview:7676/health",
+		RMHTube: "http://rmhtube-preview:7003/health",
 	}, 4*time.Second)
 	for _, c := range []struct{ name, want string }{
-		{"Website", "https://staging.rmhstudios.com/"},
+		{"Website", "https://preview.rmhstudios.com/"},
 		{"Realtime / Games", "http://socket-server:7001/health"},
-		{"RMHbox", "http://rmhbox-staging:7676/health"},
-		{"RMHtube", "http://rmhtube-staging:7003/health"},
+		{"RMHbox", "http://rmhbox-preview:7676/health"},
+		{"RMHtube", "http://rmhtube-preview:7003/health"},
 	} {
 		if tg := findTarget(overridden, c.name); tg == nil || tg.URL != c.want {
 			t.Fatalf("override %q URL = %+v, want %q", c.name, tg, c.want)
@@ -317,7 +317,7 @@ func TestOriginOf(t *testing.T) {
 	cases := []struct{ in, want string }{
 		{"https://rmhstudios.com/", "https://rmhstudios.com"},
 		{"https://rmhstudios.com", "https://rmhstudios.com"},
-		{"https://staging.rmhstudios.com/some/path", "https://staging.rmhstudios.com"},
+		{"https://preview.rmhstudios.com/some/path", "https://preview.rmhstudios.com"},
 		{"http://localhost:7005/", "http://localhost:7005"},
 		// Not a parseable scheme+host → trimmed as-is.
 		{"rmhstudios.com/", "rmhstudios.com"},

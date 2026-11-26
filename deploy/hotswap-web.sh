@@ -52,7 +52,7 @@ DRAIN_SECONDS="${DRAIN_SECONDS:-8}"
 # bounds how long we wait for that proof before rolling back.
 FLIP_VERIFY_TIMEOUT="${FLIP_VERIFY_TIMEOUT:-15}"
 # Host header used when probing Apache (:80) so the request hits this vhost
-# (ProxyPreserveHost is on). Override for staging/other origins.
+# (ProxyPreserveHost is on). Override for other origins.
 ORIGIN_HOST="${ORIGIN_HOST:-rmhstudios.com}"
 # Post-deploy BAKE: after the flip, the old container is kept STOPPED (not
 # deleted) for BAKE_SECONDS while deploy/smoke-test.sh probes the real user path

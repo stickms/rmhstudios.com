@@ -30,7 +30,7 @@ func main() {
 	// reflects the real user path (DNS → CDN → edge proxy → service), not just
 	// internal container reachability. STATUS_PUBLIC_ORIGIN names that origin;
 	// unset, it's derived from STATUS_WEBSITE_URL so a single env configures every
-	// public probe (prod → rmhstudios.com, staging → its own host).
+	// public probe (prod → rmhstudios.com).
 	websiteURL := config.GetString("STATUS_WEBSITE_URL", "https://rmhstudios.com/")
 	publicOrigin := config.GetString("STATUS_PUBLIC_ORIGIN", "")
 	if publicOrigin == "" {

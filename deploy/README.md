@@ -1,6 +1,6 @@
 # rmhstudios deploy — Docker Compose (VPS)
 
-Production and staging both run as **Docker Compose** stacks on a VPS behind
+Production runs as a **Docker Compose** stack on a VPS behind
 **Apache** (TLS terminated at **Cloudflare**). The web tier deploys **blue/green**
 with a health-gated Apache port flip. This directory holds the Apache vhosts,
 the blue/green hotswap script, Postgres/backup helpers, systemd units, and the
@@ -43,7 +43,7 @@ Terraform DNS config.
    --scale web=0` (everything except web) → **blue/green web hotswap**
    (`hotswap-web.sh`) → health checks → prune stale/rollback images.
 
-`deploy.sh` takes `production` or `staging` and an optional SHA (no SHA deploys
+`deploy.sh` takes `production` and an optional SHA (no SHA deploys
 the branch tip). It can also be run directly on the VPS.
 
 ## Automated deploys — CI build → GHCR → VPS pull

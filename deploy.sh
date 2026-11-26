@@ -4,7 +4,6 @@
 #
 # Usage:
 #   ./deploy.sh production [SHA]  — deploy main branch to production containers
-#   ./deploy.sh staging    [SHA]  — deploy staging branch to staging containers
 #
 # The optional SHA is the exact commit whose images GitHub Actions built and
 # pushed to GHCR (the webhook listener passes it through). When omitted (a manual
@@ -59,22 +58,8 @@ case "$ENVIRONMENT" in
         PORT_STATUS=7008
         COMPOSE_PROFILES=""
         ;;
-    staging)
-        # DISABLED: staging environment is temporarily suspended.
-        # To re-enable, remove the two lines below and restore the original block.
-        echo "INFO: Staging environment is disabled. Deploy skipped."
-        exit 0
-        # BRANCH="staging"
-        # ENV_FILE=".env.staging"
-        # PROJECT_NAME="rmhstudios-staging"
-        # PORT_WEB=8005
-        # PORT_SOCKET=8001
-        # PORT_RMHBOX=8676
-        # PORT_RMHTUBE=8003
-        # COMPOSE_PROFILES=""
-        ;;
     *)
-        echo "FATAL: Unknown environment '$ENVIRONMENT'. Use 'production' or 'staging'."
+        echo "FATAL: Unknown environment '$ENVIRONMENT'. Use 'production'."
         exit 1
         ;;
 esac
@@ -984,45 +969,6 @@ else
     log "VITE_CDN_BASE_URL not set — skipping R2 static asset sync (assets served from origin/public)."
 fi
 
-# ── Step 2b (staging only): Connect DBLab clone to compose network ───────────
-# The DBLab thin-clone container ("staging") runs on its own network. The
-# compose services live on ${PROJECT_NAME}_default. Bridge them so the app
-# can reach the DB by container name. Idempotent — a no-op if already connected.
-if [ "$ENVIRONMENT" = "staging" ]; then
-    step_start "Ensuring staging DB is on compose network..."
-
-    # Verify the staging DB container exists and is running
-    if ! "$DOCKER_BIN" inspect --format='{{.State.Running}}' staging 2>/dev/null | grep -q true; then
-        log "ERROR: 'staging' container is not running."
-        log "  Current state: $("$DOCKER_BIN" inspect --format='{{.State.Status}}' staging 2>/dev/null || echo 'not found')"
-        update_deploy_status fail "staging DB container not running"
-        exit 1
-    fi
-
-    COMPOSE_NETWORK="${PROJECT_NAME}_default"
-    "$DOCKER_BIN" network create "$COMPOSE_NETWORK" 2>/dev/null || true
-
-    if ! "$DOCKER_BIN" network connect "$COMPOSE_NETWORK" staging 2>/dev/null; then
-        # Already connected is fine — verify it's actually on the network
-        if ! "$DOCKER_BIN" inspect --format='{{json .NetworkSettings.Networks}}' staging 2>/dev/null | grep -q "$COMPOSE_NETWORK"; then
-            log "ERROR: Failed to connect 'staging' container to network '$COMPOSE_NETWORK'."
-            update_deploy_status fail "DB network connect failed"
-            exit 1
-        fi
-    fi
-
-    # Verify DNS resolution: the web container must be able to resolve the DB hostname
-    DB_HOST=$(grep -oP '(?<=@)[^:/@]+(?=[:\/])' "$ENV_FILE" | head -1)
-    if [ -n "$DB_HOST" ] && [ "$DB_HOST" != "localhost" ] && [ "$DB_HOST" != "127.0.0.1" ]; then
-        log "  DB host from $ENV_FILE: $DB_HOST"
-    elif [ -n "$DB_HOST" ]; then
-        log "WARNING: DATABASE_URL uses '$DB_HOST' — this won't work between containers."
-        log "  Change it to the DB container name (e.g., 'staging') in $ENV_FILE."
-    fi
-
-    step_done
-fi
-
 # ── Step 3: Run database migrations ───────────────────────────────────────────
 stage migrate
 step_start "Running database migrations..."
@@ -1114,7 +1060,7 @@ step_done
 # db/avatars can later be reclaimed (scripts/reclaim-db.sh). Runs INSIDE the fresh
 # image (node + prod deps + the self-contained script) with the host db/ volume
 # bind-mounted. Idempotent: a no-op once everything is migrated (one DB query).
-# Runs only after staging DB attachment and successful schema migrations.
+# Runs only after successful schema migrations.
 # Compose supplies the web service network, host mappings and environment.
 # Best-effort + CDN-gated, exactly like the R2 asset sync above.
 if grep -qE '^VITE_CDN_BASE_URL=.+' "$ENV_FILE" 2>/dev/null; then

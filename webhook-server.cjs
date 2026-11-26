@@ -15,7 +15,6 @@ const LOG_FILE = process.env.WEBHOOK_LOG_FILE || '/home/rmhstudios/webhook.log';
 /* Map git refs to deploy environments */
 const BRANCH_ENV_MAP = {
   'refs/heads/main': 'production',
-  'refs/heads/staging': 'staging',
 };
 
 const fs = require('fs');
