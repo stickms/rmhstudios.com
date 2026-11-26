@@ -70,6 +70,8 @@ A request whose key lacks the required scope fails with `403 insufficient_scope`
 | `write:ladder` | RMHLadder | Change an application’s status, dates and notes, and add a job you found yourself. Not included in `*` or `write:*`: a key must list it itself. |
 | `read:homes` | RMH Homes | Read your saved homes with your notes and their last price changes, and your saved searches. Never an address or a search’s coordinates. Not included in `*` or `read:*`, and not in a new key’s default grant: a key must list it itself. |
 | `write:homes` | RMH Homes | Save a home, change your note and price alert on it, and unsave it. Not included in `*` or `write:*`: a key must list it itself. |
+| `read:slice-it-runs` | Games | Read your own Slice It! runs: score, accuracy, combo, difficulty and lamp, newest first. Not included in `*` or `read:*`, and not in a new key’s default grant: a key must list it itself. |
+| `write:notifications` | Account | Mark your notifications read. Not included in `*` or `write:*`: a key must list it itself. |
 
 <!-- END GENERATED: scopes -->
 

@@ -4,13 +4,17 @@
  */
 
 import { apiError } from '@/lib/api/handler.server';
+import { refusalBody } from '@/lib/errors/codes';
 import { HudError, type ServedFile } from './hud.server';
 
 export async function guard(run: () => Promise<Response>): Promise<Response> {
   try {
     return await run();
   } catch (e) {
-    if (e instanceof HudError) return apiError(e.message, e.status);
+    if (e instanceof HudError) {
+      if (e.removed) return Response.json(refusalBody('GAME_CONTENT_REMOVED_BY_MODERATOR'), { status: 409 });
+      return apiError(e.message, e.status);
+    }
     throw e;
   }
 }

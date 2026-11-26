@@ -11,7 +11,7 @@
  * Quit goes through `useQuitGame` and is the only exit to /games.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Music, Music2, Volume2, VolumeX } from 'lucide-react';
 import { useQuitGame } from '@/hooks/useQuitGame';
@@ -19,6 +19,12 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { MusicManager } from '@/lib/house-always-wins/music';
 import { SfxManager } from '@/lib/house-always-wins/sfx';
 import { useHouseAlwaysWinsStore } from '@/lib/store/houseAlwaysWinsStore';
+import {
+  getHawSyncStatus,
+  houseAlwaysWinsSave,
+  reresolveHawIfStale,
+  subscribeHawSyncStatus,
+} from '@/lib/house-always-wins/cloud';
 import './haw-menu.css';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
@@ -393,8 +399,14 @@ interface MainMenuProps {
 }
 
 export function MainMenu({ hasSave, onPlay }: MainMenuProps) {
-  const { t } = useTranslation('c-house-always-wins');
+  const { t } = useTranslation(['c-house-always-wins', 'haw-saves']);
   const quit = useQuitGame();
+  // Where the run is saved: this device only (signed out), the account, or not on the account yet.
+  const saveStatus = useSyncExternalStore(subscribeHawSyncStatus, getHawSyncStatus, () => 'guest' as const);
+  // The account copy moved on elsewhere since this device read it: opening the menu reads both again (and asks).
+  useEffect(() => {
+    reresolveHawIfStale();
+  }, []);
   const confirm = useConfirm();
   const debt = useHouseAlwaysWinsStore((s) => s.debt);
   const resetRun = useHouseAlwaysWinsStore((s) => s.resetRun);
@@ -479,12 +491,22 @@ export function MainMenu({ hasSave, onPlay }: MainMenuProps) {
   const newGame = async () => {
     const ok = await confirm({
       title: t('menu-abandon-confirm', {
+        ns: 'c-house-always-wins',
         defaultValue: 'Abandon this run? All progress, keys and chips are lost.',
       }),
+      description:
+        saveStatus === 'guest'
+          ? undefined
+          : t('new-run-account-note', {
+              ns: 'haw-saves',
+              defaultValue: 'The run saved on your account is replaced by the empty one, on every device.',
+            }),
       danger: true,
     });
     if (ok) {
       resetRun();
+      // The empty run goes to the account before the page reloads (a short wait: the local copy has already landed).
+      await Promise.race([houseAlwaysWinsSave.syncNow(), new Promise((resolve) => window.setTimeout(resolve, 3000))]);
       window.location.reload();
     }
   };
@@ -858,6 +880,15 @@ export function MainMenu({ hasSave, onPlay }: MainMenuProps) {
                 defaultValue: '↑ ↓ to choose · Enter to select',
               })}
             </p>
+            {hasSave && (
+              <p className="haw-hint" role="status" data-haw-save-status={saveStatus}>
+                {saveStatus === 'account'
+                  ? t('save-status-account', { ns: 'haw-saves', defaultValue: 'Saved to your account' })
+                  : saveStatus === 'pending'
+                    ? t('save-status-pending', { ns: 'haw-saves', defaultValue: 'Not saved to your account yet' })
+                    : t('save-status-device', { ns: 'haw-saves', defaultValue: 'Saved on this device' })}
+              </p>
+            )}
           </nav>
         </div>
 

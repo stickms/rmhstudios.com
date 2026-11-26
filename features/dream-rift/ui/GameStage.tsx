@@ -29,6 +29,8 @@ export interface StartInfo {
   roster: RosterEntry[];
   difficulty: Difficulty;
   seed: number;
+  /** The co-op run the hub recorded (`StartPayload.runId`); absent for solo and practice. */
+  runId?: string | null;
   /** Spell practice target; the run is solo, unscored and ends with the card. */
   practice?: PracticeTarget & {
     onEnd: (o: PracticeOutcome) => void;
@@ -63,6 +65,7 @@ export function GameStage({ start, onExit }: { start: StartInfo; onExit: () => v
       transport: start.transport,
       difficulty: start.difficulty,
       seed: start.seed,
+      runId: start.runId ?? null,
       roster: start.roster,
       canvas,
       music,

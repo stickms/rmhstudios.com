@@ -26,6 +26,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/contract/client';
 import { decideAdminAppealApi, getAdminAppealsApi } from '@/lib/admin/admin-ops.contract';
 import { useArrival } from '@/components/ui/arrive';
+import { RemovalReviewsPanel } from '@/components/admin/RemovalReviewsPanel';
 import { cn } from '@/lib/utils';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
@@ -35,6 +36,8 @@ export const Route = createFileRoute('/_site/admin/appeals')({
 });
 
 type View = 'PENDING' | 'UPHELD' | 'OVERTURNED';
+/** The strike views plus s15-16's "Removal reviews" tab, which has its own panel and queries. */
+type Tab = View | 'REMOVALS';
 
 interface QueueUser {
   id: string;
@@ -63,7 +66,8 @@ interface Appeal {
 function AdminAppealsPage() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('admin');
   const refusalText = useRefusalText();
-  const [view, setView] = useState<View>('PENDING');
+  const [tab, setTab] = useState<Tab>('PENDING');
+  const view: View = tab === 'REMOVALS' ? 'PENDING' : tab;
   const [items, setItems] = useState<Appeal[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
@@ -85,8 +89,8 @@ function AdminAppealsPage() { const fmt = useLocaleFormat();
   }, []);
 
   useEffect(() => {
-    load(view);
-  }, [view, load]);
+    if (tab !== 'REMOVALS') load(view);
+  }, [tab, view, load]);
 
   const decide = async (id: string, action: 'uphold' | 'overturn') => {
     setBusyId(id);
@@ -136,6 +140,11 @@ function AdminAppealsPage() { const fmt = useLocaleFormat();
       icon: ShieldX,
       count: counts.UPHELD || undefined,
     },
+    {
+      id: 'REMOVALS',
+      label: t('appeals-removal-reviews', { defaultValue: 'Removal reviews' }),
+      icon: Gavel,
+    },
   ];
 
   return (
@@ -150,13 +159,15 @@ function AdminAppealsPage() { const fmt = useLocaleFormat();
     >
       <PageTabs
           tabs={tabs}
-          value={view}
-          onChange={(id) => setView(id as View)}
+          value={tab}
+          onChange={(id) => setTab(id as Tab)}
           aria-label={t('appeals-queue', { defaultValue: 'Strike Appeals' })}
         />
       <AdminBody>
 
-        {loading ? (
+        {tab === 'REMOVALS' ? (
+          <RemovalReviewsPanel />
+        ) : loading ? (
           <div className="flex justify-center py-20">
             <Spinner />
           </div>

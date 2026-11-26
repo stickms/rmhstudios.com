@@ -5,6 +5,7 @@ import { Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { UserAvatar } from '@/components/feed/UserAvatar';
 import { useSession } from '@/components/Providers';
+import { MemberTextReportButton } from '@/components/moderation/MemberTextReportButton';
 import { useArrival } from '@/components/ui/arrive';
 import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
@@ -145,19 +146,23 @@ export function AnnouncementDiscussion({ slug }: { slug: string }) {
                     <div className="flex items-center gap-2">
                       <span className="t-label truncate text-site-text">{c.user.name ?? c.user.username}</span>
                       <RelativeTime date={c.createdAt} format={relativeTimeShort} className="t-meta" />
-                      {c.canDelete ? (
-                        <IconButton
-                          icon={Trash2}
-                          label={t('discussion-delete', {
-                            defaultValue: 'Delete comment',
-                          })}
-                          variant="ghost"
-                          size="icon-sm"
-                          className="ms-auto -my-2"
-                          disabled={remove.isPending}
-                          onClick={() => remove.mutate(c.id)}
-                        />
-                      ) : null}
+                      <span className="ms-auto -my-2 flex shrink-0">
+                        {session && c.user.id !== session.user.id ? (
+                          <MemberTextReportButton entityType="blog-comment" entityId={c.id} />
+                        ) : null}
+                        {c.canDelete ? (
+                          <IconButton
+                            icon={Trash2}
+                            label={t('discussion-delete', {
+                              defaultValue: 'Delete comment',
+                            })}
+                            variant="ghost"
+                            size="icon-sm"
+                            disabled={remove.isPending}
+                            onClick={() => remove.mutate(c.id)}
+                          />
+                        ) : null}
+                      </span>
                     </div>
                     <p dir="auto" className="t-post mt-1 break-words whitespace-pre-wrap">
                       {c.content}

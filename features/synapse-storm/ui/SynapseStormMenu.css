@@ -1378,3 +1378,72 @@
 .ssm-matches__more {
     margin-top: 0.9rem;
 }
+
+/* ---------------------------------------------------------------------------
+   Rivals (s15-15)
+   ------------------------------------------------------------------------- */
+.ssm-matches__switch {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.ssm-matches__switch .ssm-btn {
+    flex: 1;
+}
+
+.ssm-matches__with {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin: 0 0 0.5rem;
+    min-width: 0;
+}
+
+.ssm-matches__with-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--ssm-ink);
+    font-weight: 700;
+}
+
+.ssm-rival {
+    display: grid;
+    gap: 0.25rem;
+    width: 100%;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+}
+
+.ssm-rival__name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--ssm-ink);
+    font-weight: 700;
+}
+
+.ssm-rival__record {
+    color: var(--ssm-ink);
+    font-variant-numeric: tabular-nums;
+}
+
+.ssm-rival__last {
+    color: var(--ssm-ink-muted);
+    font-size: 0.85rem;
+}
+
+.ssm-rival:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 3px;
+}

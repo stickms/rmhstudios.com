@@ -68,6 +68,8 @@ export interface SessionOpts {
   sfx: Sfx;
   input: InputManager;
   hiScore: number;
+  /** The co-op run the hub recorded for this game; the host posts the result to it. Null or absent: nothing is posted. */
+  runId?: string | null;
   spriteAssets?: LoadedSpriteAssets | null;
   /** Spell practice: start straight at one boss card, alone. Never scores or submits. */
   practice?: PracticeTarget & {
@@ -86,6 +88,7 @@ export class GameSession {
   private hiScore: number;
 
   private isHost: boolean;
+  private runId: string | null;
   private localSlot: number;
   private coop: boolean;
 
@@ -130,6 +133,7 @@ export class GameSession {
     this.hiScore = opts.hiScore;
     this.practice = opts.practice;
     this.isHost = opts.transport.isHost;
+    this.runId = opts.runId ?? null;
     this.localSlot = opts.transport.localSlot;
     this.coop = opts.roster.length > 1;
 
@@ -822,6 +826,7 @@ export class GameSession {
       character: lp?.charId ?? 'bllm',
       difficulty: this.difficulty,
       perPlayer: joined.map((p) => ({
+        slot: p.slot,
         name: p.name,
         score: Math.floor(p.score),
         charId: p.charId,
@@ -832,6 +837,7 @@ export class GameSession {
       timeSurvived: Math.round(this.runFrames / FPS),
       playerCount: joined.length,
       isHost: this.isHost,
+      runId: this.runId,
     };
     useDreamRift.getState().setResult(result);
     useDreamRift.getState().setScreen(cleared ? 'victory' : 'game-over');

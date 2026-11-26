@@ -1,0 +1,10 @@
+{
+  "comment-actions": "Comment actions",
+  "delete": "Delete",
+  "delete-body": "It is removed for everyone and cannot be brought back.",
+  "delete-failed": "Could not delete the comment",
+  "delete-title": "Delete this comment?",
+  "load-more-failed": "Could not load earlier comments",
+  "report": "Report",
+  "show-earlier": "Show earlier comments"
+}

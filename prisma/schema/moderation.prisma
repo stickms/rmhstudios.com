@@ -93,6 +93,34 @@ model ContentReport {
   @@map("content_report")
 }
 
+/// s15-16: one row per report takedown of a member's item, written once the takedown has succeeded. It carries no
+/// reporter, no reason and no report count, so what the author sees cannot name who reported. `reversible` is true for
+/// the types whose takedown is a `moderatedAt` stamp (`REVERSIBLE_REMOVAL_TYPES`); the author may ask once, within 14
+/// days of `removedAt`, for a second look, and an admin decides it. Erased with the account.
+model ContentRemoval {
+  id                String    @id @default(cuid())
+  /// The report that caused the takedown; unique so a repeated decision writes no second row.
+  reportId          String    @unique
+  entityType        String    @db.VarChar(32)
+  entityId          String    @db.VarChar(64)
+  authorId          String
+  removedAt         DateTime  @default(now())
+  reversible        Boolean
+  reviewRequestedAt DateTime?
+  reviewNote        String?   @db.VarChar(500)
+  reviewDecidedAt   DateTime?
+  /// 'upheld' | 'restored'
+  reviewOutcome     String?   @db.VarChar(8)
+  /// A plain column (no relation): erasure nulls it when the moderator's account is erased.
+  reviewedById      String?
+
+  author User @relation("ContentRemovalAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId, removedAt(sort: Desc)])
+  @@index([reviewDecidedAt, reviewRequestedAt])
+  @@map("content_removal")
+}
+
 /// A per-feature timeout: an admin bars one user from one feature (posting,
 /// replying, creating communities, hosting spaces, building vibes, …) for a
 /// while or for good, without banning the whole account. Active =

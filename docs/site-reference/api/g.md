@@ -69,6 +69,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/games/showcase` | `POST` | `lib/cards/api/games.showcase.server.ts` |
 | `/api/games/synapse-storm/leaderboard` | `GET` | `features/synapse-storm/api/games.synapse-storm.leaderboard.server.ts` |
 | `/api/games/synapse-storm/matches` | `GET` | `features/synapse-storm/api/games.synapse-storm.matches.server.ts` |
+| `/api/games/synapse-storm/rivals` | `GET` | `features/synapse-storm/api/games.synapse-storm.rivals.server.ts` |
 | `/api/games/synapse-storm/save` | `GET` | `features/synapse-storm/api/games.synapse-storm.save.server.ts` |
 | `/api/games/synapse-storm/score` | `POST` | `lib/game/api/games.synapse-storm.score.server.ts` |
 | `/api/games/trades/accept` | `POST` | `lib/cards/api/games.trades.accept.server.ts` |

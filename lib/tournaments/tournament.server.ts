@@ -912,6 +912,8 @@ export interface SerializedTournament {
     proposedByUserId: string | null;
   }[];
   payouts?: { userId: string; placement: number; amountCoins: number }[];
+  /** The house's cut of the pool in basis points (100 = 1%); on the detail read only. */
+  rakeBps?: number;
   viewerEntered?: boolean;
   viewerCheckedIn?: boolean;
 }
@@ -1025,6 +1027,7 @@ export async function getTournament(
       placement: p.placement,
       amountCoins: p.amountCoins,
     })),
+    rakeBps: t.rakeBps,
     viewerEntered: viewerId ? t.entrants.some((e) => e.userId === viewerId) : false,
     viewerCheckedIn: viewerId
       ? t.entrants.some((e) => e.userId === viewerId && e.checkedInAt != null)

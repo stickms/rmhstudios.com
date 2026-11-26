@@ -65,4 +65,12 @@ export const IDENTITY_CRISIS_SETTINGS: GameSettingsSchema = [
     description: 'Include lesser-known people and characters',
     default: false,
   },
+  {
+    key: 'packCode',
+    type: 'text',
+    label: 'Custom Pack',
+    description: 'Optional 6-character community pack code (leave empty for the built-in identities)',
+    default: '',
+    maxLength: 6,
+  },
 ];

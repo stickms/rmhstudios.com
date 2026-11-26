@@ -24,6 +24,7 @@ import { SceneProvider } from './scene-context';
 import { api as contractApi } from '@/lib/contract/client';
 import { countTf2HudDownloadApi } from '@/lib/tf2-hud/hud.contract';
 import { Btn, Pill } from './ui';
+import { RemovedByModeratorLine, WorkshopReportButton } from './WorkshopReport';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
@@ -210,7 +211,14 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
       <main className="mx-auto w-full max-w-6xl px-4 pb-16">
         <div className="flex flex-wrap items-start justify-between gap-4 py-6">
           <div className="min-w-0">
-            <h1 className="tf2hud-title text-4xl sm:text-5xl">{detail?.title ?? '…'}</h1>
+            <h1 dir="auto" className="tf2hud-title text-4xl sm:text-5xl">
+              {detail?.title ?? '…'}
+            </h1>
+            {detail?.removed && detail.isOwner ? (
+              <div className={cn('mt-2', detailArrival)}>
+                <RemovedByModeratorLine kind="tf2-hud" />
+              </div>
+            ) : null}
             {detail ? (
               <p className={cn('mt-1 text-sm text-app-text-muted', detailArrival)}>
                 {detail.author
@@ -247,7 +255,7 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
               </p>
             ) : null}
             {detail?.description ? (
-              <p className={cn('mt-3 max-w-2xl whitespace-pre-line text-sm text-app-text', detailArrival)}>
+              <p dir="auto" className={cn('mt-3 max-w-2xl whitespace-pre-line text-sm text-app-text', detailArrival)}>
                 {detail.description}
               </p>
             ) : null}
@@ -265,6 +273,7 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
             {!token ? (
               <Btn
                 icon={Heart}
+                disabled={detail?.removed}
                 onClick={() => void toggleLike()}
                 aria-pressed={liked}
                 variant={liked ? 'primary' : 'secondary'}
@@ -286,7 +295,10 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
                 })}
               </Link>
             ) : null}
-            <Btn icon={GitFork} disabled={!overlay} onClick={editCopy}>
+            {detail && !detail.isOwner && detail.visibility !== 'PRIVATE' ? (
+              <WorkshopReportButton entityType="tf2-hud" entityId={detail.id} />
+            ) : null}
+            <Btn icon={GitFork} disabled={!overlay || detail?.removed} onClick={editCopy}>
               {t('edit-copy', {
                 defaultValue: 'Edit a copy',
               })}

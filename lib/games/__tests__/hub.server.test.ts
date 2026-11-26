@@ -229,6 +229,14 @@ const reply = vi.hoisted(() => ({
 vi.mock('@/lib/games/thread-notices.server', () => ({
   notifyThreadReply: reply.fn,
 }));
+const mentions = vi.hoisted(() => ({
+  notify: vi.fn(async (_post: { postId: string | null; body: string }): Promise<string[]> => []),
+  resolve: vi.fn(async (_bodies: readonly string[]) => ({})),
+}));
+vi.mock('@/lib/games/thread-mentions.server', () => ({
+  notifyThreadMentions: mentions.notify,
+  resolveThreadMentions: mentions.resolve,
+}));
 
 import { createPost, createThread, deletePost, deleteThread, moderateThread, HubError } from '@/lib/games/hub.server';
 
@@ -304,6 +312,54 @@ describe('createThread', () => {
         }),
       ),
     ).toBeNull();
+  });
+});
+
+describe('mentions (s15-12)', () => {
+  beforeEach(() => {
+    mentions.notify.mockClear();
+    reply.fn.mockClear();
+  });
+
+  it('a new discussion tells the members its text names, with no post anchor', async () => {
+    const { id } = await thread({ body: 'Anyone seen @sam around?' });
+    expect(mentions.notify).toHaveBeenCalledTimes(1);
+    expect(mentions.notify).toHaveBeenCalledWith(
+      expect.objectContaining({
+        postId: null,
+        threadId: id,
+        gameId: 'altair',
+        threadTitle: 'Best build?',
+        body: 'Anyone seen @sam around?',
+        writerId: 'u1',
+      }),
+    );
+  });
+
+  it('a reply tells the mentioned members, then skips them in the reply notice', async () => {
+    const { id } = await thread();
+    mentions.notify.mockResolvedValueOnce(['m1', 'm2']);
+    const made = await createPost({ userId: 'u2', threadId: id, body: '@sam can you check this' });
+    expect(mentions.notify).toHaveBeenLastCalledWith(
+      expect.objectContaining({ postId: made.id, threadId: id, body: '@sam can you check this', writerId: 'u2' }),
+    );
+    const call = reply.fn.mock.calls[reply.fn.mock.calls.length - 1] as unknown as [unknown, ReadonlySet<string>];
+    expect([...call[1]].sort()).toEqual(['m1', 'm2']);
+  });
+
+  it('a reply nobody is mentioned in skips nobody', async () => {
+    const { id } = await thread();
+    await createPost({ userId: 'u2', threadId: id, body: 'No names here' });
+    const call = reply.fn.mock.calls[reply.fn.mock.calls.length - 1] as unknown as [unknown, ReadonlySet<string>];
+    expect(call[1].size).toBe(0);
+  });
+
+  it('a refused reply tells nobody', async () => {
+    const { id } = await thread();
+    mentions.notify.mockClear();
+    await moderateThread({ threadId: id, action: 'lock' });
+    expect(await code(createPost({ userId: 'u2', threadId: id, body: '@sam hi' }))).toBe('LOCKED');
+    expect(mentions.notify).not.toHaveBeenCalled();
   });
 });
 
@@ -527,14 +583,18 @@ describe('reply notification', () => {
       threadId: id,
       body: 'Try the shield',
     });
-    expect(reply.fn).toHaveBeenCalledWith({
-      id: post.id,
-      threadAuthorId: 'u1',
-      posterId: 'u2',
-      gameId: 'altair',
-      threadId: id,
-      threadTitle: 'Best build?',
-    });
+    expect(reply.fn).toHaveBeenCalledWith(
+      {
+        id: post.id,
+        threadAuthorId: 'u1',
+        posterId: 'u2',
+        gameId: 'altair',
+        threadId: id,
+        threadTitle: 'Best build?',
+      },
+      // Nobody was mentioned, so the skip set is empty.
+      new Set(),
+    );
     reply.fn.mockClear();
     await code(
       createPost({

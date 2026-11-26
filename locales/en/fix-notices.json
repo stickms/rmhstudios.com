@@ -1,0 +1,22 @@
+{
+  "dialog-reviewed-close": "Close",
+  "dialog-reviewed-saved": "Your report was saved with the others for this day.",
+  "dialog-reviewed-title": "We have looked at this puzzle",
+  "outcome-fault": "You were right: the puzzle had a fault. Thank you.",
+  "outcome-stands": "We checked the puzzle and its answer stands.",
+  "review-cancel": "Cancel",
+  "review-description": "Each member with an open report on this day is told the outcome once. The puzzle and the scores do not change. The action is recorded in the audit log.",
+  "review-done": "The reports were marked reviewed.",
+  "review-failed": "The reports were not marked reviewed. Try again.",
+  "review-none": "Nothing to review: another admin already did.",
+  "review-note-hint": "Each reporter is shown this note, as plain text, with the outcome.",
+  "review-note-label": "Note to the reporters (optional)",
+  "review-note-placeholder": "Reporters have played this puzzle. Add a note (optional)",
+  "review-open": "Mark reviewed",
+  "review-open-count": "{{n}} still open",
+  "review-outcome-legend": "Outcome",
+  "review-state-fault": "Reviewed: the puzzle had a fault",
+  "review-state-stands": "Reviewed: the answer stands",
+  "review-submit": "Mark reviewed",
+  "review-title": "Mark these reports reviewed"
+}

@@ -1,0 +1,16 @@
+{
+  "new-run-account-note": "The run saved on your account is replaced by the empty one, on every device.",
+  "save-failed": "Your saved run could not be read.",
+  "save-game-name": "The House Always Wins",
+  "save-retry": "Try again",
+  "save-status-account": "Saved to your account",
+  "save-status-device": "Saved on this device",
+  "save-status-pending": "Not saved to your account yet",
+  "save-summary-abilities": "Abilities",
+  "save-summary-chips": "Chips",
+  "save-summary-cycles": "New Game+ runs",
+  "save-summary-debt": "Debt",
+  "save-summary-keys": "Vault keys",
+  "save-summary-rooms": "Rooms visited: {{rooms}}",
+  "save-summary-rooms-ngplus": "New Game+, rooms visited: {{rooms}}"
+}

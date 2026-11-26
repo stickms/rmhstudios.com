@@ -25,6 +25,9 @@ export const JAM_THEME_READ_PATHS = [
   'lib/competitive/jam-themes.server.ts',
   'lib/competitive/api/jams.$slug.theme-vote.server.ts',
   'lib/competitive/api/jams.$slug.theme-candidates.server.ts',
+  // s15-13: the suggestions list reads the shortlist's texts to mark a suggestion "On the shortlist": a member is told
+  // only once the vote has opened (`mayShowShortlisted`); an admin already sees the shortlist.
+  'lib/competitive/jam-suggestions.server.ts',
   // Admin lookup resolves a jam by slug and selects no theme column.
   'lib/admin/lookup.server.ts',
 ] as const;

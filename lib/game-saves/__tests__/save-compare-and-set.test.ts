@@ -265,3 +265,31 @@ describe('POST /api/game-saves/$gameId expectedUpdatedAt', () => {
     expect(stored().saveData).toEqual({ v: 'old' });
   });
 });
+
+describe('the House Always Wins and Nightrail on the shared table', () => {
+  it.each(['house-always-wins', 'nightrail'])(
+    '%s: a first save with null, then a stale time is refused',
+    async (gameId) => {
+      const first = await post(gameId, { saveData: { v: 1 }, expectedUpdatedAt: null });
+      expect(first.status).toBe(200);
+      const row = h.saves.find((s) => s.userId === 'me' && s.gameId === gameId);
+      expect(row?.saveData).toEqual({ v: 1 });
+
+      const stale = await post(gameId, { saveData: { v: 2 }, expectedUpdatedAt: T1.toISOString() });
+      expect(stale.status).toBe(409);
+      expect(h.saves.find((s) => s.userId === 'me' && s.gameId === gameId)?.saveData).toEqual({ v: 1 });
+
+      const next = await post(gameId, { saveData: { v: 3 }, expectedUpdatedAt: first.json.updatedAt });
+      expect(next.status).toBe(200);
+    },
+  );
+
+  it.each(['house-always-wins', 'nightrail'])(
+    '%s: a list or object is accepted, and the 500 KB cap applies',
+    async (gameId) => {
+      expect((await post(gameId, { saveData: [1, 2, 3] })).status).toBe(200);
+      const big = await post(gameId, { saveData: { data: 'x'.repeat(500_001) } });
+      expect(big.status).toBe(413);
+    },
+  );
+});

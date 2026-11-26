@@ -4,22 +4,29 @@
  * name and cast, their world.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
-import { BookOpen, Share2 } from 'lucide-react';
+import { BookOpen, Flag, Share2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs } from '@/components/ui/tabs';
+import { useConfirm } from '@/components/ui/confirm-dialog';
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { StarRating } from '@/components/games/StarRating';
 import { api } from '@/lib/contract/client';
 import { fetchWithTimeout } from '@/lib/versecraft/gen/client';
-import { forkVersecraftSeedApi } from '@/lib/versecraft/versecraft.contract';
+import { deleteVersecraftSeedApi, forkVersecraftSeedApi } from '@/lib/versecraft/versecraft.contract';
 import { useGameStore } from '@/lib/versecraft/store';
 import type { SeedListingView } from '@/lib/versecraft/seed-gallery';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+
+// The report dialog carries the report schema (zod), so it loads when a member opens it and not with the game.
+const ReportDialog = lazy(() =>
+  import('@/components/moderation/ReportDialog').then((m) => ({ default: m.ReportDialog })),
+);
 
 type Sort = 'top' | 'new';
 
@@ -30,6 +37,9 @@ export function SeedGalleryButton() {
   const [rows, setRows] = useState<SeedListingView[] | null>(null);
   const [failed, setFailed] = useState(false);
   const arrival = useArrival(rows !== null || failed);
+  const [reportId, setReportId] = useState<string | null>(null);
+  const confirm = useConfirm();
+  const refusalText = useRefusalText();
   const isLoggedIn = useGameStore((s) => s.isLoggedIn);
   const startGeneratedGame = useGameStore((s) => s.startGeneratedGame);
 
@@ -99,6 +109,32 @@ export function SeedGalleryButton() {
             : r,
         ) ?? cur,
     );
+  };
+
+  // The author takes their own story down (s15-04): the listing and its ratings go, the world stays.
+  const takeDown = async (row: SeedListingView) => {
+    const ok = await confirm({
+      title: t('takedown-title', { ns: 'workshop-reports', defaultValue: 'Take this story down?' }),
+      description: t('takedown-help', {
+        ns: 'workshop-reports',
+        defaultValue: 'It leaves the gallery with its ratings. Players who already continued it keep their copy.',
+      }),
+      confirmLabel: t('takedown-confirm', { ns: 'workshop-reports', defaultValue: 'Take down' }),
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await api(deleteVersecraftSeedApi, { params: { id: row.id } });
+      setRows((cur) => cur?.filter((r) => r.id !== row.id) ?? cur);
+      toast.success(
+        t('takedown-done', { ns: 'workshop-reports', defaultValue: 'Taken down. You can publish another.' }),
+      );
+    } catch (error) {
+      toast.error(
+        refusalText.maybe(error) ??
+          t('takedown-error', { ns: 'workshop-reports', defaultValue: 'Could not take this story down.' }),
+      );
+    }
   };
 
   const fork = (row: SeedListingView) => {
@@ -189,7 +225,9 @@ export function SeedGalleryButton() {
                 <li key={row.id} className="surface-card space-y-2 rounded-site p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-site-text">{row.title}</p>
+                      <p dir="auto" className="truncate text-sm font-semibold text-site-text">
+                        {row.title}
+                      </p>
                       <p className="truncate text-xs text-site-text-muted">
                         {t('gallery-by', {
                           defaultValue: 'by {{name}}',
@@ -229,6 +267,17 @@ export function SeedGalleryButton() {
                             defaultValue: 'No ratings yet',
                           })}
                     </span>
+                    {row.mine ? (
+                      <Button size="xs" variant="ghost" onClick={() => void takeDown(row)}>
+                        <Trash2 aria-hidden />
+                        {t('takedown-open', { ns: 'workshop-reports', defaultValue: 'Take down' })}
+                      </Button>
+                    ) : isLoggedIn ? (
+                      <Button size="xs" variant="ghost" onClick={() => setReportId(row.id)}>
+                        <Flag aria-hidden />
+                        {t('report-story', { ns: 'workshop-reports', defaultValue: 'Report' })}
+                      </Button>
+                    ) : null}
                   </div>
                 </li>
               ))}
@@ -236,6 +285,18 @@ export function SeedGalleryButton() {
           )}
         </DialogContent>
       </Dialog>
+      {reportId !== null && (
+        <Suspense fallback={null}>
+          <ReportDialog
+            open
+            onOpenChange={(next) => {
+              if (!next) setReportId(null);
+            }}
+            entityType="versecraft-seed"
+            entityId={reportId}
+          />
+        </Suspense>
+      )}
     </>
   );
 }

@@ -20,6 +20,7 @@ import { apiJson } from '@/components/wallet/api';
 import { KUDOS_REASON_MAX, type KudosPage } from '@/lib/gifting/kudos';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
+import { Handle } from '@/components/ui/handle';
 export default function KudosPanel({ ownerId, isOwner }: { ownerId: string; isOwner: boolean }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-gifting');
   const { data: session } = useSession();
@@ -145,7 +146,7 @@ export default function KudosPanel({ ownerId, isOwner }: { ownerId: string; isOw
                       params={{ userid: k.from.handle }}
                       className="hover:underline"
                     >
-                      @{k.from.handle}
+                      <Handle handle={k.from.handle} />
                     </Link>
                   ) : (
                     (k.from.name ?? '')

@@ -82,8 +82,20 @@ function fakeClient() {
         async ({ where }: { where: Record<string, unknown> }) =>
           h.reports.find((r) => matches(r as unknown as Record<string, unknown>, where)) ?? null,
       ),
+      // s15-17: the auto-hide counts only trusted reporters, so every reporter here is a week-old verified account
+      // (the trust gate itself is held by pack-trust-gate.test.ts).
       findMany: vi.fn(async ({ where }: { where: Record<string, unknown> }) =>
-        h.reports.filter((r) => matches(r as unknown as Record<string, unknown>, where)),
+        h.reports
+          .filter((r) => matches(r as unknown as Record<string, unknown>, where))
+          .map((r) => ({
+            ...r,
+            reporter: {
+              createdAt: new Date('2020-01-01T00:00:00Z'),
+              emailVerified: true,
+              bannedUntil: null,
+              accounts: [],
+            },
+          })),
       ),
       count: vi.fn(
         async ({ where }: { where: Record<string, unknown> }) =>

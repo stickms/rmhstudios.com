@@ -56,3 +56,17 @@ export const forkVersecraftSeedApi = endpoint<{
   method: 'POST',
   path: '/api/versecraft/seeds/fork',
 });
+
+/**
+ * The author takes their own story down: the listing and its ratings go, the world stays (other players' saves may be
+ * on it). 404 `NOT_FOUND` for a listing that is missing or not yours; 409 `GAME_CONTENT_REMOVED_BY_MODERATOR` for one a
+ * moderator removed (the record stays).
+ */
+export const deleteVersecraftSeedApi = endpoint<{
+  res: {
+    success: true;
+  };
+}>()({
+  method: 'DELETE',
+  path: '/api/versecraft/seeds/$id',
+});

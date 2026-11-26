@@ -8,6 +8,7 @@ import { formatRelativeTime } from '@/lib/i18n/relative-time';
 import type { FollowRowData, FollowTab } from '@/lib/social/follow-filters';
 import { cn } from '@/lib/utils';
 
+import { Handle } from '@/components/ui/handle';
 interface FollowRowProps {
   row: FollowRowData;
   tab: FollowTab;
@@ -51,7 +52,11 @@ export const FollowRow = memo(function FollowRow({
         <span className="min-w-0">
           <span className="t-body block truncate font-semibold text-site-text">{name}</span>
           <span className="t-meta flex flex-wrap items-center gap-x-2">
-            {row.handle && <span className="truncate">@{row.handle}</span>}
+            {row.handle && (
+              <span className="truncate">
+                <Handle handle={row.handle} />
+              </span>
+            )}
             {row.followsYou && <span>{t('follows-you', { defaultValue: 'Follows you' })}</span>}
             {row.youFollow && <span>{t('you-follow', { defaultValue: 'You follow' })}</span>}
           </span>

@@ -33,6 +33,7 @@ import {
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { Handle } from '@/components/ui/handle';
 
 export const Route = createFileRoute('/_site/admin/rideshare')({
   head: () => ({ meta: [{ title: 'Rideshare Applications | RMH Studios' }] }),
@@ -258,7 +259,7 @@ function AdminRidesharePage() { const fmt = useLocaleFormat();
                     <div>
                       <p className="t-body font-semibold text-site-text">{app.user.name ?? t('unknown', { defaultValue: 'Unknown' })}</p>
                       <p className="t-body text-site-text-muted">
-                        {app.user.handle ? `@${app.user.handle}` : app.user.email ?? app.user.id}
+                        {app.user.handle ? <Handle handle={app.user.handle} /> : app.user.email ?? app.user.id}
                       </p>
                     </div>
                   </div>
@@ -405,7 +406,7 @@ function RideHistory({
                     <div className="min-w-0">
                       <p className="t-body font-semibold text-site-text">{ride.rider?.name ?? t('unknown-rider', { defaultValue: 'Unknown rider' })}</p>
                       <p className="t-body text-site-text-muted">
-                        {ride.rider?.handle ? `@${ride.rider.handle}` : ride.rider?.email ?? '—'}
+                        {ride.rider?.handle ? <Handle handle={ride.rider.handle} /> : ride.rider?.email ?? '—'}
                       </p>
                     </div>
                   </div>

@@ -8,6 +8,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import type { CalPerson } from '@/lib/calendar/types';
 import { api } from './api';
 
+import { Handle } from '@/components/ui/handle';
 interface SearchUser {
   id: string;
   name: string | null;
@@ -93,7 +94,11 @@ export function PersonPicker({
               >
                 <UserAvatar src={u.image} alt="" size={24} />
                 <span className="truncate">{u.name ?? u.handle}</span>
-                {u.handle && <span className="text-xs text-site-text-muted">@{u.handle}</span>}
+                {u.handle && (
+                  <span className="text-xs text-site-text-muted">
+                    <Handle handle={u.handle} />
+                  </span>
+                )}
               </button>
             </li>
           ))}

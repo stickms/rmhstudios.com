@@ -331,6 +331,55 @@ async function targetsFor(viewerId: string, rows: Row[]): Promise<Map<string, Re
     }
   }
 
+  // Sprint 15 (docs/autonomous/sprint-15/plan.md §Anchors)
+  // s15-04 workshop-reports
+  // A reported HUD, loadout or story shows its title (and links to its page, for a HUD or a loadout) until a moderator
+  // removes it or it goes private; one by an author the reporter blocked, or a banned one, is left out.
+  const workshopIds = {
+    'tf2-hud': ids(rows, 'tf2-hud'),
+    'tf2-loadout': ids(rows, 'tf2-loadout'),
+    'versecraft-seed': ids(rows, 'versecraft-seed'),
+  };
+  if (workshopIds['tf2-hud'].length || workshopIds['tf2-loadout'].length || workshopIds['versecraft-seed'].length) {
+    const hiddenAuthors = [...new Set(await getBlockedAuthorIds(viewerId))];
+    const items = await (
+      await import('@/lib/moderation/workshop-moderation.server')
+    ).workshopTargets(workshopIds, hiddenAuthors);
+    for (const item of items) {
+      set(item.type, item.id, { kind: item.type, available: true, name: snippet(item.title) || null, href: item.href });
+    }
+  }
+
+  // s15-05 prediction-comments
+  // A reported market comment shows its words while the reporter may still see it (the market is visible to them and
+  // the author is not blocked either way); a deleted comment reads as "no longer available".
+  const predictionCommentIds = ids(rows, 'prediction-comment');
+  if (predictionCommentIds.length) {
+    const { predictionCommentTargets } = await import('@/lib/forecasting/comment-reports.server');
+    for (const c of await predictionCommentTargets(viewerId, predictionCommentIds)) {
+      set('prediction-comment', c.id, {
+        kind: 'prediction-comment',
+        available: true,
+        name: snippet(c.body),
+        href: null,
+      });
+    }
+  }
+
+  // s15-06 member-text-reports
+  // A reported guestbook entry or announcement comment shows its words (and links to where it is shown) until it is
+  // hidden, deleted or taken down; one by an author the reporter blocked, or a banned commenter, is left out.
+  const memberTextIds = { 'guestbook-entry': ids(rows, 'guestbook-entry'), 'blog-comment': ids(rows, 'blog-comment') };
+  if (memberTextIds['guestbook-entry'].length || memberTextIds['blog-comment'].length) {
+    const hiddenAuthors = [...new Set(await getBlockedAuthorIds(viewerId))];
+    const items = await (
+      await import('@/lib/moderation/member-text-reports.server')
+    ).memberTextTargets(memberTextIds, hiddenAuthors);
+    for (const item of items) {
+      set(item.type, item.id, { kind: item.type, available: true, name: snippet(item.text) || null, href: item.href });
+    }
+  }
+
   return out;
 }
 
@@ -376,6 +425,19 @@ const LOOKED_UP: ReadonlySet<string> = new Set([
 
   // s14-10 tube-room-reports
   'tube-room',
+
+  // Sprint 15 (docs/autonomous/sprint-15/plan.md §Anchors)
+  // s15-04 workshop-reports
+  'tf2-hud',
+  'tf2-loadout',
+  'versecraft-seed',
+
+  // s15-05 prediction-comments
+  'prediction-comment',
+
+  // s15-06 member-text-reports
+  'guestbook-entry',
+  'blog-comment',
 ]);
 
 export async function listMyReports(

@@ -108,7 +108,8 @@ export async function readGuestbook(
   };
 }
 
-export type SignResult = { ok: true; id: string } | { ok: false; status: number; error: string };
+/** A refusal is a taxonomy code (`lib/errors/codes.ts`); the route answers `refusalBody(code)`, the panel renders it. */
+export type SignResult = { ok: true; id: string } | { ok: false; code: 'GUESTBOOK_CLOSED' | 'GUESTBOOK_DAILY_LIMIT' };
 
 export async function signGuestbook(
   ownerId: string,
@@ -118,14 +119,14 @@ export async function signGuestbook(
 ): Promise<SignResult> {
   const mode = await modeOf(ownerId);
   if (!(await maySign(ownerId, authorId, mode))) {
-    return { ok: false, status: 403, error: 'This guestbook is not open to you' };
+    return { ok: false, code: 'GUESTBOOK_CLOSED' };
   }
   const recent = await prisma.guestbookEntry.findFirst({
     where: { authorId, ownerId, createdAt: { gt: new Date(now.getTime() - DAY_MS) } },
     select: { id: true },
   });
   if (recent) {
-    return { ok: false, status: 429, error: 'You can sign this guestbook once a day' };
+    return { ok: false, code: 'GUESTBOOK_DAILY_LIMIT' };
   }
   const row = await prisma.guestbookEntry.create({
     data: { ownerId, authorId, body },

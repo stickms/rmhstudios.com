@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
 import { useRefusalText } from '@/components/errors/useRefusalText';
-import { fileReportApi } from '@/lib/daily-puzzles/reports.contract';
+import { fileReportApi, type ReportReview } from '@/lib/daily-puzzles/reports.contract';
 import { REPORT_KINDS, REPORT_NOTE_MAX, type ReportKind } from '@/lib/daily-puzzles/reports';
 import type { DailyPuzzleMode } from '@/lib/daily-puzzles/generate-core';
 
@@ -38,6 +38,8 @@ export function ReportPuzzleDialog({
   const [kind, setKind] = useState<ReportKind | null>(null);
   const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);
+  // Set when the day was already reviewed: the dialog then shows what the team concluded instead of closing.
+  const [review, setReview] = useState<ReportReview | null>(null);
 
   const labels: Record<ReportKind, string> = {
     'two-answers': t('kind-two-answers', { defaultValue: 'Two answers fit' }),
@@ -50,9 +52,15 @@ export function ReportPuzzleDialog({
     if (!kind || sending) return;
     setSending(true);
     try {
-      await api(fileReportApi, { body: { gameMode, dateKey, kind, ...(note.trim() ? { note: note.trim() } : {}) } });
-      toast.success(t('sent', { defaultValue: 'Thanks. The report was sent.' }));
-      onOpenChange(false);
+      const out = await api(fileReportApi, {
+        body: { gameMode, dateKey, kind, ...(note.trim() ? { note: note.trim() } : {}) },
+      });
+      if (out.review) {
+        setReview(out.review);
+      } else {
+        toast.success(t('sent', { defaultValue: 'Thanks. The report was sent.' }));
+        onOpenChange(false);
+      }
     } catch (error) {
       toast.error(
         refusalText.maybe(error) ?? t('send-failed', { defaultValue: 'The report did not send. Try again.' }),
@@ -62,8 +70,23 @@ export function ReportPuzzleDialog({
     }
   };
 
+  const close = (next: boolean) => {
+    if (!next) setReview(null);
+    onOpenChange(next);
+  };
+
+  if (review) {
+    return (
+      <Dialog open={open} onOpenChange={close}>
+        <DialogContent className="sm:max-w-md">
+          <ReportReviewedView review={review} onClose={() => close(false)} />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={close}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t('dialog-title', { defaultValue: 'Something wrong with this puzzle?' })}</DialogTitle>
@@ -119,5 +142,35 @@ export function ReportPuzzleDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** What the team concluded about this day's reports, shown at once to a member who reports a reviewed day. */
+function ReportReviewedView({ review, onClose }: { review: ReportReview; onClose: () => void }) {
+  const { t } = useTranslation('fix-notices');
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>{t('dialog-reviewed-title', { defaultValue: 'We have looked at this puzzle' })}</DialogTitle>
+        <DialogDescription>
+          {review.outcome === 'fault'
+            ? t('outcome-fault', { defaultValue: 'You were right: the puzzle had a fault. Thank you.' })
+            : t('outcome-stands', { defaultValue: 'We checked the puzzle and its answer stands.' })}
+        </DialogDescription>
+      </DialogHeader>
+      {review.note ? (
+        <p dir="auto" className="t-body whitespace-pre-wrap break-words text-site-text">
+          {review.note}
+        </p>
+      ) : null}
+      <p className="t-meta text-site-text-muted">
+        {t('dialog-reviewed-saved', { defaultValue: 'Your report was saved with the others for this day.' })}
+      </p>
+      <DialogFooter>
+        <Button variant="primary" onClick={onClose}>
+          {t('dialog-reviewed-close', { defaultValue: 'Close' })}
+        </Button>
+      </DialogFooter>
+    </>
   );
 }

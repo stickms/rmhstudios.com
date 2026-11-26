@@ -36,6 +36,7 @@ import { useArrival } from '@/components/ui/arrive';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { formatDate as formatDateLocale } from '@/lib/core/format';
 
+import { Handle } from '@/components/ui/handle';
 interface BuildDetailProps {
   build: Build;
 }
@@ -230,7 +231,11 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
                     defaultValue: 'Anonymous',
                   })}
               </p>
-              {build.user.username && <p className="text-sm text-site-text-muted">@{build.user.username}</p>}
+              {build.user.username && (
+                <p className="text-sm text-site-text-muted">
+                  <Handle handle={build.user.username} />
+                </p>
+              )}
             </div>
           </Link>
 

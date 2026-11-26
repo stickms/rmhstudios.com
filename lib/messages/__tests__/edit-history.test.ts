@@ -56,6 +56,10 @@ vi.mock('@/lib/prisma.server', () => {
     const log: string[] = [];
     h.txCalls = log;
     return {
+      $queryRaw: vi.fn(async () => {
+        log.push('message.lock');
+        return [];
+      }),
       chatMessageEdit: editModel(log),
       chatMessage: {
         findUnique: vi.fn(async () => ({ content: h.message?.content })),
@@ -150,7 +154,7 @@ describe('an edit writes a version in its own transaction', () => {
       now: NOW,
     });
     expect(result.ok).toBe(true);
-    expect(h.txCalls).toEqual(['edit.create', 'message.update']);
+    expect(h.txCalls).toEqual(['message.lock', 'edit.create', 'message.update']);
     expect(h.edits).toHaveLength(1);
     expect(h.edits[0]).toMatchObject({ messageId: 'm1', content: 'the original words', replacedAt: NOW });
     expect(h.message?.content).toBe('something milder');

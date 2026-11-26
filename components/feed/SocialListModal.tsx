@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { PrivateListNotice } from './PrivateListNotice';
 import { ManageFollowsLink } from '@/components/follows/ManageFollowsLink';
 
+import { Handle } from '@/components/ui/handle';
 interface SocialUser {
  id: string;
  name: string | null;
@@ -194,7 +195,7 @@ export function SocialListModal({ open, onClose, userId, type, canManage, ownerN
  {user.name || user.username || t('unknown-user', { defaultValue:'Unknown'})}
  </p>
  {user.handle && (
- <p className="text-xs text-site-text-muted truncate">@{user.handle}</p>
+ <p className="text-xs text-site-text-muted truncate"><Handle handle={user.handle} /></p>
  )}
  </div>
  </Link>

@@ -368,6 +368,26 @@ model CalcNotebook {
   @@map("calc_notebook")
 }
 
+/// s15-08 — a graph a member saved from RMHCalculator's Graphing tab: the functions and domain they plotted and the
+/// validated `GraphResult` the model returned, so reopening it needs no model call. `result` is stored only after
+/// `graphResultSchema.safeParse` on the server and is never filtered on. At most 50 per member (`CALC_GRAPH_LIMIT`).
+model CalcGraph {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   @db.VarChar(80)
+  functions String[]
+  domainMin Float?
+  domainMax Float?
+  result    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("calc_graph")
+}
+
 /// s10-01 — the reading highlight a flashcard was made from. Private bookkeeping for the card's owner: it names a
 /// private highlight, so deck copies never carry it. Deleting either side removes the link (the card stays).
 /// No `User` relation: both sides already belong to the member.

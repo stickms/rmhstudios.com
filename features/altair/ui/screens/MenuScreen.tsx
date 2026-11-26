@@ -13,9 +13,11 @@ import { CodexBadge } from '../CodexPanel';
 import { useAltairMetaStore } from '@features/altair/engine/stores/meta-store';
 import { useKeyboardNav } from '@features/altair/engine/hooks/use-keyboard-nav';
 import { useQuitGame } from '@/hooks/useQuitGame';
-import { api } from '@/lib/contract/client';
-import { getAltairLeaderboardApi } from '@features/altair/engine/altair.contract';
+import { useQuery } from '@tanstack/react-query';
+import { api, apiQuery } from '@/lib/contract/client';
+import { getAltairCoopPlaceApi, getAltairLeaderboardApi } from '@features/altair/engine/altair.contract';
 import type { CoopBoardEntry } from '@features/altair/engine/coop-record';
+import { ordinalCategory } from '@/lib/rmhbox/player-stats';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { currentDocumentLocale, formatNumber } from '@/lib/core/format';
@@ -277,6 +279,29 @@ function LeaderboardModal({ onClose }: { onClose: () => void }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const arrival = useArrival(!loading);
+  const coopKind = category === 'coop-wins' || category === 'coop-revives' ? category : null;
+  const coopCategory = coopKind !== null;
+  // The member's own place, when they are outside the ten the co-op board lists (null otherwise, and signed out).
+  const { data: ownPlace } = useQuery({
+    ...apiQuery(getAltairCoopPlaceApi, { query: { type: coopKind ?? 'coop-wins' } }),
+    enabled: coopKind !== null && !loading,
+    staleTime: 30_000,
+    retry: false,
+  });
+  const locale = currentDocumentLocale();
+  const placeLabel = (place: number): string => {
+    const vars = { place: formatNumber(place, locale) };
+    switch (ordinalCategory(place, locale)) {
+      case 'one':
+        return t('own-place-one', { ns: 'altair-coop', defaultValue: 'You: {{place}}st', ...vars });
+      case 'two':
+        return t('own-place-two', { ns: 'altair-coop', defaultValue: 'You: {{place}}nd', ...vars });
+      case 'few':
+        return t('own-place-few', { ns: 'altair-coop', defaultValue: 'You: {{place}}rd', ...vars });
+      default:
+        return t('own-place-other', { ns: 'altair-coop', defaultValue: 'You: {{place}}th', ...vars });
+    }
+  };
 
   const fetchLeaderboard = useCallback(async (cat: LeaderboardCategory) => {
     setLoading(true);
@@ -407,6 +432,25 @@ function LeaderboardModal({ onClose }: { onClose: () => void }) {
                   </span>
                 </div>
               ))}
+              {coopCategory && ownPlace ? (
+                <div
+                  data-testid="altair-own-place"
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2.5 rounded-(--altair-radius) bg-(--altair-bg) border border-(--altair-accent)',
+                    arrival,
+                  )}
+                >
+                  <span className="flex-1 text-sm font-semibold text-(--altair-text) truncate">
+                    {placeLabel(ownPlace.place)}
+                  </span>
+                  <span className="text-sm font-bold text-(--altair-accent) tabular-nums">
+                    {formatNumber(ownPlace.value, locale)}
+                  </span>
+                  <span className="text-xs text-(--altair-text-dim) w-10 text-right">
+                    {ownPlace.runs} {t("run-label", { defaultValue: "run", defaultValue_other: "runs", count: ownPlace.runs })}
+                  </span>
+                </div>
+              ) : null}
             </div>
           )}
         </div>

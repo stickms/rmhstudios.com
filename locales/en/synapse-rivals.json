@@ -1,0 +1,19 @@
+{
+  "all-rivals": "All rivals",
+  "empty": "No rivals yet. Finish a versus match with another player to start a record.",
+  "last-match": "Last match {{date}}",
+  "loading": "Loading your rivals",
+  "matches-tab": "Matches",
+  "record-losses_one": "{{count}} loss",
+  "record-losses_other": "{{count}} losses",
+  "record-matches_one": "{{count}} match",
+  "record-matches_other": "{{count}} matches",
+  "record-ties_one": "{{count}} tie",
+  "record-ties_other": "{{count}} ties",
+  "record-wins_one": "{{count}} win",
+  "record-wins_other": "{{count}} wins",
+  "rivals-tab": "Rivals",
+  "signed-out": "Sign in to see your rivals",
+  "switch": "View",
+  "with-heading": "Matches with {{name}}"
+}

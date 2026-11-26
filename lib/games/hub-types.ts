@@ -52,6 +52,9 @@ export type ThreadPostView = {
   isMine: boolean;
 };
 
+/** The members a page's `@handles` belong to: lower-cased handle to the handle as stored and the member's name. */
+export type ThreadMentions = Record<string, { handle: string; name: string }>;
+
 export type ThreadPage = {
   gameId: string;
   gameTitle: string;
@@ -73,4 +76,6 @@ export type ThreadPage = {
   /** For each author on the page, the titles whose emoticons they own (others' tokens stay text). */
   authorEmotes: Record<string, string[]>;
   myEmoteTitles: string[];
+  /** Handles written in the discussion's text that belong to a member (an unknown `@word` stays plain text). */
+  mentions: ThreadMentions;
 };

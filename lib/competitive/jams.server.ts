@@ -23,6 +23,7 @@ import {
 import { memberLockName, placementsOf } from './jam-teams.server';
 import { FEEDBACK_MAX, FEEDBACK_MIN, feedbackIntent } from './jam-feedback';
 import { datesInOrder, validateJamEdit, type JamEditField, type JamPatch } from './jam-edit';
+import { notifyJamDeadlineMoved, type JamDeadlineMove } from './jam-notices.server';
 import { candidatesLockKey, effectiveThemes } from './jam-themes.server';
 import { resolveVoteOpensAt, themeVotingPhase, validateCandidates, CANDIDATE_PROBLEM_MESSAGE } from './jam-themes';
 import { feedbackCounts, myFeedbackFor, notifyTeamOfFeedback, saveFeedback, type FeedbackSaveOutcome } from './jam-feedback.server';
@@ -102,7 +103,9 @@ export type JamUpdateOutcome =
 export async function updateJam(adminId: string, slug: string, patch: JamPatch): Promise<JamUpdateOutcome> {
   const found = await prisma.gameJam.findUnique({ where: { slug }, select: { id: true } });
   if (!found) return { ok: false, code: 'NOT_FOUND', status: 404 };
-  return prisma.$transaction(async (tx): Promise<JamUpdateOutcome> => {
+  // Set inside the transaction when the save moved a deadline of a jam that had started (s15-07).
+  const moved: { move: JamDeadlineMove | null } = { move: null };
+  const outcome = await prisma.$transaction(async (tx): Promise<JamUpdateOutcome> => {
     await lockKey(tx, jamLockKey(found.id));
     // The vote-opening time races with members' marks, which hold the shortlist lock.
     await lockKey(tx, candidatesLockKey(found.id));
@@ -121,7 +124,8 @@ export async function updateJam(adminId: string, slug: string, patch: JamPatch):
       },
     });
     if (!jam) return { ok: false, code: 'NOT_FOUND', status: 404 };
-    const checked = validateJamEdit(jam, patch, new Date());
+    const now = new Date();
+    const checked = validateJamEdit(jam, patch, now);
     if (!checked.ok) return { ok: false, code: checked.code, status: ERROR_CODES[checked.code].http };
     if (checked.changed.length === 0) return { ok: true, changed: [] };
     await tx.gameJam.update({ where: { id: jam.id }, data: checked.data });
@@ -130,7 +134,48 @@ export async function updateJam(adminId: string, slug: string, patch: JamPatch):
       targetId: jam.id,
       detail: checked.changed.join(','),
     });
+    moved.move = {
+      id: jam.id,
+      slug,
+      title: checked.data.title ?? jam.title,
+      submitEndsAt: checked.data.submitEndsAt ?? jam.submitEndsAt,
+      ratingEndsAt: checked.data.ratingEndsAt ?? jam.ratingEndsAt,
+      started: jam.startsAt.getTime() <= now.getTime(),
+      changed: checked.changed,
+    };
     return { ok: true, changed: checked.changed };
+  });
+  // After the commit: entrants and accepted teammates hear that a deadline moved. Logged, never failing the save.
+  if (outcome.ok && moved.move) await notifyJamDeadlineMoved(adminId, moved.move);
+  return outcome;
+}
+
+export type JamDeleteOutcome = { ok: true } | { ok: false; code: ErrorCode; status: number };
+
+/**
+ * Admin: delete a jam that has not started and has no entries (s15-13). One transaction takes the jam's lock (an entry
+ * takes the same one), then a single conditional `deleteMany` repeats both conditions, so a count of 0 is the refusal
+ * and a jam that started or got an entry in between survives. Candidates, votes and suggestions cascade (every relation
+ * to `GameJam` is `onDelete: Cascade`). The audit row names the slug and title and is written in the same transaction.
+ */
+export async function deleteJam(adminId: string, slug: string, now: Date = new Date()): Promise<JamDeleteOutcome> {
+  const found = await prisma.gameJam.findUnique({ where: { slug }, select: { id: true } });
+  if (!found) return { ok: false, code: 'NOT_FOUND', status: 404 };
+  return prisma.$transaction(async (tx): Promise<JamDeleteOutcome> => {
+    await lockKey(tx, jamLockKey(found.id));
+    await lockKey(tx, candidatesLockKey(found.id));
+    const jam = await tx.gameJam.findUnique({ where: { id: found.id }, select: { id: true, slug: true, title: true } });
+    if (!jam) return { ok: false, code: 'NOT_FOUND', status: 404 };
+    const { count } = await tx.gameJam.deleteMany({
+      where: { id: jam.id, startsAt: { gt: now }, entries: { none: {} } },
+    });
+    if (count !== 1) return { ok: false, code: 'JAM_DELETE_STARTED', status: ERROR_CODES.JAM_DELETE_STARTED.http };
+    await recordAdminActionIn(tx, adminId, 'game-jam-delete', {
+      targetType: 'game_jam',
+      targetId: jam.id,
+      detail: `${jam.slug}: ${jam.title}`,
+    });
+    return { ok: true };
   });
 }
 
@@ -324,6 +369,8 @@ export async function getJam(slug: string, viewerId: string | null) {
   };
 }
 
+const JAM_GONE = Symbol('jam-gone');
+
 export async function submitEntry(slug: string, userId: string, buildId: string) {
   const jam = await prisma.gameJam.findUnique({ where: { slug } });
   if (!jam) return { ok: false as const, error: 'Jam not found', status: 404 };
@@ -345,6 +392,9 @@ export async function submitEntry(slug: string, userId: string, buildId: string)
   }
   try {
     const placed = await prisma.$transaction(async (tx) => {
+      // The jam's lock first (an admin's delete takes it too), then the member's; the jam must still exist.
+      await lockKey(tx, jamLockKey(jam.id));
+      if (!(await tx.gameJam.findUnique({ where: { id: jam.id }, select: { id: true } }))) return JAM_GONE;
       await lockKey(tx, memberLockName(jam.id, userId));
       const mine = await tx.gameJamEntry.findUnique({
         where: { jamId_userId: { jamId: jam.id, userId } },
@@ -364,6 +414,7 @@ export async function submitEntry(slug: string, userId: string, buildId: string)
       }
       return null;
     });
+    if (placed === JAM_GONE) return { ok: false as const, error: 'Jam not found', status: 404 };
     if (placed !== null) {
       return { ok: false as const, error: alreadyOnEntryMessage(placed), status: 409 };
     }

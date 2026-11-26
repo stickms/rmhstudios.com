@@ -53,6 +53,7 @@ import { route as r_lib_admin_api_admin_curated_builds_image_proxy } from '@/lib
 import { route as r_lib_admin_api_admin_daily_puzzles } from '@/lib/admin/api/admin.daily-puzzles.server';
 import { route as r_lib_admin_api_admin_daily_puzzles_generate } from '@/lib/admin/api/admin.daily-puzzles.generate.server';
 import { route as r_lib_admin_api_admin_daily_puzzles_replace } from '@/lib/admin/api/admin.daily-puzzles.replace.server';
+import { route as r_lib_admin_api_admin_daily_puzzles_review } from '@/lib/admin/api/admin.daily-puzzles.review.server';
 import { route as r_lib_ai_api_admin_deepseek_balance } from '@/lib/ai/api/admin.deepseek.balance.server';
 import { route as r_lib_ai_api_admin_deepseek_history } from '@/lib/ai/api/admin.deepseek.history.server';
 import { route as r_lib_ai_api_admin_deepseek_refresh } from '@/lib/ai/api/admin.deepseek.refresh.server';
@@ -149,6 +150,8 @@ import { route as r_lib_admin_api_admin_redemptions_id } from '@/lib/admin/api/a
 import { route as r_lib_developer_api_admin_release_notes } from '@/lib/developer/api/admin.release-notes.server';
 import { route as r_lib_developer_api_admin_release_notes_id } from '@/lib/developer/api/admin.release-notes.$id.server';
 import { route as r_lib_developer_api_admin_release_notes_draft } from '@/lib/developer/api/admin.release-notes.draft.server';
+import { route as r_lib_admin_api_admin_removal_reviews } from '@/lib/admin/api/admin.removal-reviews.server';
+import { route as r_lib_admin_api_admin_removal_reviews_id } from '@/lib/admin/api/admin.removal-reviews.$id.server';
 import { route as r_lib_admin_api_admin_reports } from '@/lib/admin/api/admin.reports.server';
 import { route as r_lib_admin_api_admin_reports_id } from '@/lib/admin/api/admin.reports.$id.server';
 import { route as r_lib_admin_api_admin_reports_claims } from '@/lib/admin/api/admin.reports.claims.server';
@@ -190,6 +193,7 @@ import { route as r_lib_feed_api_ai_search } from '@/lib/feed/api/ai.search.serv
 import { route as r_lib_ai_api_ai_smart_replies } from '@/lib/ai/api/ai.smart-replies.server';
 import { route as r_lib_ai_api_ai_suggest_tags } from '@/lib/ai/api/ai.suggest-tags.server';
 import { route as r_lib_ai_api_ai_takeaways } from '@/lib/ai/api/ai.takeaways.server';
+import { route as r_features_altair_api_altair_coop_place } from '@/features/altair/api/altair.coop-place.server';
 import { route as r_features_altair_api_altair_heat } from '@/features/altair/api/altair.heat.server';
 import { route as r_features_altair_api_altair_leaderboard } from '@/features/altair/api/altair.leaderboard.server';
 import { route as r_features_altair_api_altair_match } from '@/features/altair/api/altair.match.server';
@@ -400,6 +404,7 @@ import { route as r_features_doctrine_api_doctrine_safehouse_content } from '@/f
 import { route as r_features_doctrine_api_doctrine_safehouse_disclosures } from '@/features/doctrine/api/doctrine.safehouse.disclosures.server';
 import { route as r_features_doctrine_api_doctrine_sahur_status } from '@/features/doctrine/api/doctrine.sahur.status.server';
 import { route as r_features_dream_rift_api_dream_rift_coop } from '@/features/dream-rift/api/dream-rift.coop.server';
+import { route as r_features_dream_rift_api_dream_rift_coop_mine } from '@/features/dream-rift/api/dream-rift.coop.mine.server';
 import { route as r_features_dream_rift_api_dream_rift_leaderboard } from '@/features/dream-rift/api/dream-rift.leaderboard.server';
 import { route as r_features_dream_rift_api_dream_rift_score } from '@/features/dream-rift/api/dream-rift.score.server';
 import { route as r_lib_dunesday_api_dunesday_ask } from '@/lib/dunesday/api/dunesday.ask.server';
@@ -511,6 +516,7 @@ import { route as r_lib_playtime_api_games_playtime } from '@/lib/playtime/api/g
 import { route as r_lib_cards_api_games_showcase } from '@/lib/cards/api/games.showcase.server';
 import { route as r_features_synapse_storm_api_games_synapse_storm_leaderboard } from '@/features/synapse-storm/api/games.synapse-storm.leaderboard.server';
 import { route as r_features_synapse_storm_api_games_synapse_storm_matches } from '@/features/synapse-storm/api/games.synapse-storm.matches.server';
+import { route as r_features_synapse_storm_api_games_synapse_storm_rivals } from '@/features/synapse-storm/api/games.synapse-storm.rivals.server';
 import { route as r_features_synapse_storm_api_games_synapse_storm_save } from '@/features/synapse-storm/api/games.synapse-storm.save.server';
 import { route as r_lib_game_api_games_synapse_storm_score } from '@/lib/game/api/games.synapse-storm.score.server';
 import { route as r_lib_cards_api_games_trades_accept } from '@/lib/cards/api/games.trades.accept.server';
@@ -586,6 +592,8 @@ import { route as r_lib_competitive_api_jams_slug_entries_entryId_team_respond }
 import { route as r_lib_competitive_api_jams_slug_entry } from '@/lib/competitive/api/jams.$slug.entry.server';
 import { route as r_lib_competitive_api_jams_slug_feedback_id_helpful } from '@/lib/competitive/api/jams.$slug.feedback.$id.helpful.server';
 import { route as r_lib_competitive_api_jams_slug_rate } from '@/lib/competitive/api/jams.$slug.rate.server';
+import { route as r_lib_competitive_api_jams_slug_suggestions } from '@/lib/competitive/api/jams.$slug.suggestions.server';
+import { route as r_lib_competitive_api_jams_slug_suggestions_id } from '@/lib/competitive/api/jams.$slug.suggestions.$id.server';
 import { route as r_lib_competitive_api_jams_slug_theme_candidates } from '@/lib/competitive/api/jams.$slug.theme-candidates.server';
 import { route as r_lib_competitive_api_jams_slug_theme_vote } from '@/lib/competitive/api/jams.$slug.theme-vote.server';
 import { route as r_lib_kaikai_debt_api_kaikai_debt } from '@/lib/kaikai-debt/api/kaikai-debt.server';
@@ -691,6 +699,8 @@ import { route as r_lib_messages_api_messages_unread_count } from '@/lib/message
 import { route as r_lib_messages_api_messages_voice_filename } from '@/lib/messages/api/messages.voice.$filename.server';
 import { route as r_lib_moderation_api_moderation_block } from '@/lib/moderation/api/moderation.block.server';
 import { route as r_lib_moderation_api_moderation_mute } from '@/lib/moderation/api/moderation.mute.server';
+import { route as r_lib_moderation_api_moderation_removals } from '@/lib/moderation/api/moderation.removals.server';
+import { route as r_lib_moderation_api_moderation_removals_id_review } from '@/lib/moderation/api/moderation.removals.$id.review.server';
 import { route as r_lib_moderation_api_moderation_report } from '@/lib/moderation/api/moderation.report.server';
 import { route as r_lib_api_routes_moments } from '@/lib/api/routes/moments.server';
 import { route as r_lib_delight_api_museum } from '@/lib/delight/api/museum.server';
@@ -756,6 +766,7 @@ import { route as r_lib_predictions_api_predictions_id_comments } from '@/lib/pr
 import { route as r_lib_predictions_api_predictions_id_devils_advocate } from '@/lib/predictions/api/predictions.$id.devils-advocate.server';
 import { route as r_lib_predictions_api_predictions_id_sell } from '@/lib/predictions/api/predictions.$id.sell.server';
 import { route as r_lib_predictions_api_predictions_id_trade } from '@/lib/predictions/api/predictions.$id.trade.server';
+import { route as r_lib_predictions_api_predictions_comments_id } from '@/lib/predictions/api/predictions.comments.$id.server';
 import { route as r_lib_preferences_api_preferences_appearance } from '@/lib/preferences/api/preferences.appearance.server';
 import { route as r_lib_preferences_api_preferences_conversation } from '@/lib/preferences/api/preferences.conversation.server';
 import { route as r_lib_preferences_api_preferences_email } from '@/lib/preferences/api/preferences.email.server';
@@ -894,6 +905,8 @@ import { route as r_lib_rmhbox_api_rmhbox_packs_id_report } from '@/lib/rmhbox/a
 import { route as r_lib_rmhbox_api_rmhbox_presets } from '@/lib/rmhbox/api/rmhbox.presets.server';
 import { route as r_lib_rmhbox_api_rmhbox_presets_id } from '@/lib/rmhbox/api/rmhbox.presets.$id.server';
 import { route as r_lib_rmhbox_api_rmhbox_stats } from '@/lib/rmhbox/api/rmhbox.stats.server';
+import { route as r_lib_rmhcalculator_api_rmhcalculator_graphs } from '@/lib/rmhcalculator/api/rmhcalculator.graphs.server';
+import { route as r_lib_rmhcalculator_api_rmhcalculator_graphs_id } from '@/lib/rmhcalculator/api/rmhcalculator.graphs.$id.server';
 import { route as r_features_rmhcharacters_api_rmhcharacters_advisor } from '@/features/rmhcharacters/api/rmhcharacters.advisor.server';
 import { route as r_features_rmhcharacters_api_rmhcharacters_characters } from '@/features/rmhcharacters/api/rmhcharacters.characters.server';
 import { route as r_features_rmhcharacters_api_rmhcharacters_characters_id } from '@/features/rmhcharacters/api/rmhcharacters.characters.$id.server';
@@ -1203,6 +1216,7 @@ import { route as r_lib_tournaments_api_tournaments_id_matches_matchId_withdraw 
 import { route as r_lib_competitive_api_tournaments_id_pickem } from '@/lib/competitive/api/tournaments.$id.pickem.server';
 import { route as r_lib_tournaments_api_tournaments_id_schedule_settings } from '@/lib/tournaments/api/tournaments.$id.schedule-settings.server';
 import { route as r_lib_tournaments_api_tournaments_id_seeding } from '@/lib/tournaments/api/tournaments.$id.seeding.server';
+import { route as r_lib_tournaments_api_tournaments_mine } from '@/lib/tournaments/api/tournaments.mine.server';
 import { route as r_lib_delight_api_translate } from '@/lib/delight/api/translate.server';
 import { route as r_lib_delight_api_translate_suggest } from '@/lib/delight/api/translate.suggest.server';
 import { route as r_lib_delight_api_translate_vote } from '@/lib/delight/api/translate.vote.server';
@@ -1234,6 +1248,7 @@ import { route as r_lib_versecraft_api_versecraft_outline } from '@/lib/versecra
 import { route as r_lib_versecraft_api_versecraft_progress } from '@/lib/versecraft/api/versecraft.progress.server';
 import { route as r_lib_versecraft_api_versecraft_save } from '@/lib/versecraft/api/versecraft.save.server';
 import { route as r_lib_versecraft_api_versecraft_seeds } from '@/lib/versecraft/api/versecraft.seeds.server';
+import { route as r_lib_versecraft_api_versecraft_seeds_id } from '@/lib/versecraft/api/versecraft.seeds.$id.server';
 import { route as r_lib_versecraft_api_versecraft_seeds_fork } from '@/lib/versecraft/api/versecraft.seeds.fork.server';
 import { route as r_lib_versecraft_api_versecraft_seeds_rate } from '@/lib/versecraft/api/versecraft.seeds.rate.server';
 import { route as r_lib_rmhvibe_api_vibe_gallery } from '@/lib/rmhvibe/api/vibe.gallery.server';
@@ -1305,6 +1320,7 @@ const API_ROUTES_A: readonly ApiRoute[] = [
   r_lib_admin_api_admin_daily_puzzles, // /api/admin/daily-puzzles
   r_lib_admin_api_admin_daily_puzzles_generate, // /api/admin/daily-puzzles/generate
   r_lib_admin_api_admin_daily_puzzles_replace, // /api/admin/daily-puzzles/replace
+  r_lib_admin_api_admin_daily_puzzles_review, // /api/admin/daily-puzzles/review
   r_lib_ai_api_admin_deepseek_balance, // /api/admin/deepseek/balance
   r_lib_ai_api_admin_deepseek_history, // /api/admin/deepseek/history
   r_lib_ai_api_admin_deepseek_refresh, // /api/admin/deepseek/refresh
@@ -1401,6 +1417,8 @@ const API_ROUTES_A: readonly ApiRoute[] = [
   r_lib_developer_api_admin_release_notes, // /api/admin/release-notes
   r_lib_developer_api_admin_release_notes_id, // /api/admin/release-notes/$id
   r_lib_developer_api_admin_release_notes_draft, // /api/admin/release-notes/draft
+  r_lib_admin_api_admin_removal_reviews, // /api/admin/removal-reviews
+  r_lib_admin_api_admin_removal_reviews_id, // /api/admin/removal-reviews/$id
   r_lib_admin_api_admin_reports, // /api/admin/reports
   r_lib_admin_api_admin_reports_id, // /api/admin/reports/$id
   r_lib_admin_api_admin_reports_claims, // /api/admin/reports/claims
@@ -1442,6 +1460,7 @@ const API_ROUTES_A: readonly ApiRoute[] = [
   r_lib_ai_api_ai_smart_replies, // /api/ai/smart-replies
   r_lib_ai_api_ai_suggest_tags, // /api/ai/suggest-tags
   r_lib_ai_api_ai_takeaways, // /api/ai/takeaways
+  r_features_altair_api_altair_coop_place, // /api/altair/coop-place
   r_features_altair_api_altair_heat, // /api/altair/heat
   r_features_altair_api_altair_leaderboard, // /api/altair/leaderboard
   r_features_altair_api_altair_match, // /api/altair/match
@@ -1661,6 +1680,7 @@ const API_ROUTES_D: readonly ApiRoute[] = [
   r_features_doctrine_api_doctrine_safehouse_disclosures, // /api/doctrine/safehouse/disclosures
   r_features_doctrine_api_doctrine_sahur_status, // /api/doctrine/sahur/status
   r_features_dream_rift_api_dream_rift_coop, // /api/dream-rift/coop
+  r_features_dream_rift_api_dream_rift_coop_mine, // /api/dream-rift/coop/mine
   r_features_dream_rift_api_dream_rift_leaderboard, // /api/dream-rift/leaderboard
   r_features_dream_rift_api_dream_rift_score, // /api/dream-rift/score
   r_lib_dunesday_api_dunesday_ask, // /api/dunesday/ask
@@ -1781,6 +1801,7 @@ const API_ROUTES_G: readonly ApiRoute[] = [
   r_lib_cards_api_games_showcase, // /api/games/showcase
   r_features_synapse_storm_api_games_synapse_storm_leaderboard, // /api/games/synapse-storm/leaderboard
   r_features_synapse_storm_api_games_synapse_storm_matches, // /api/games/synapse-storm/matches
+  r_features_synapse_storm_api_games_synapse_storm_rivals, // /api/games/synapse-storm/rivals
   r_features_synapse_storm_api_games_synapse_storm_save, // /api/games/synapse-storm/save
   r_lib_game_api_games_synapse_storm_score, // /api/games/synapse-storm/score
   r_lib_cards_api_games_trades_accept, // /api/games/trades/accept
@@ -1865,6 +1886,8 @@ const API_ROUTES_J: readonly ApiRoute[] = [
   r_lib_competitive_api_jams_slug_entry, // /api/jams/$slug/entry
   r_lib_competitive_api_jams_slug_feedback_id_helpful, // /api/jams/$slug/feedback/$id/helpful
   r_lib_competitive_api_jams_slug_rate, // /api/jams/$slug/rate
+  r_lib_competitive_api_jams_slug_suggestions, // /api/jams/$slug/suggestions
+  r_lib_competitive_api_jams_slug_suggestions_id, // /api/jams/$slug/suggestions/$id
   r_lib_competitive_api_jams_slug_theme_candidates, // /api/jams/$slug/theme-candidates
   r_lib_competitive_api_jams_slug_theme_vote, // /api/jams/$slug/theme-vote
 ];
@@ -1979,6 +2002,8 @@ const API_ROUTES_M: readonly ApiRoute[] = [
   r_lib_messages_api_messages_voice_filename, // /api/messages/voice/$filename
   r_lib_moderation_api_moderation_block, // /api/moderation/block
   r_lib_moderation_api_moderation_mute, // /api/moderation/mute
+  r_lib_moderation_api_moderation_removals, // /api/moderation/removals
+  r_lib_moderation_api_moderation_removals_id_review, // /api/moderation/removals/$id/review
   r_lib_moderation_api_moderation_report, // /api/moderation/report
   r_lib_api_routes_moments, // /api/moments
   r_lib_delight_api_museum, // /api/museum
@@ -2053,6 +2078,7 @@ const API_ROUTES_P: readonly ApiRoute[] = [
   r_lib_predictions_api_predictions_id_devils_advocate, // /api/predictions/$id/devils-advocate
   r_lib_predictions_api_predictions_id_sell, // /api/predictions/$id/sell
   r_lib_predictions_api_predictions_id_trade, // /api/predictions/$id/trade
+  r_lib_predictions_api_predictions_comments_id, // /api/predictions/comments/$id
   r_lib_preferences_api_preferences_appearance, // /api/preferences/appearance
   r_lib_preferences_api_preferences_conversation, // /api/preferences/conversation
   r_lib_preferences_api_preferences_email, // /api/preferences/email
@@ -2197,6 +2223,8 @@ const API_ROUTES_R: readonly ApiRoute[] = [
   r_lib_rmhbox_api_rmhbox_presets, // /api/rmhbox/presets
   r_lib_rmhbox_api_rmhbox_presets_id, // /api/rmhbox/presets/$id
   r_lib_rmhbox_api_rmhbox_stats, // /api/rmhbox/stats
+  r_lib_rmhcalculator_api_rmhcalculator_graphs, // /api/rmhcalculator/graphs
+  r_lib_rmhcalculator_api_rmhcalculator_graphs_id, // /api/rmhcalculator/graphs/$id
   r_features_rmhcharacters_api_rmhcharacters_advisor, // /api/rmhcharacters/advisor
   r_features_rmhcharacters_api_rmhcharacters_characters, // /api/rmhcharacters/characters
   r_features_rmhcharacters_api_rmhcharacters_characters_id, // /api/rmhcharacters/characters/$id
@@ -2512,6 +2540,7 @@ const API_ROUTES_T: readonly ApiRoute[] = [
   r_lib_competitive_api_tournaments_id_pickem, // /api/tournaments/$id/pickem
   r_lib_tournaments_api_tournaments_id_schedule_settings, // /api/tournaments/$id/schedule-settings
   r_lib_tournaments_api_tournaments_id_seeding, // /api/tournaments/$id/seeding
+  r_lib_tournaments_api_tournaments_mine, // /api/tournaments/mine
   r_lib_delight_api_translate, // /api/translate
   r_lib_delight_api_translate_suggest, // /api/translate/suggest
   r_lib_delight_api_translate_vote, // /api/translate/vote
@@ -2549,6 +2578,7 @@ const API_ROUTES_V: readonly ApiRoute[] = [
   r_lib_versecraft_api_versecraft_progress, // /api/versecraft/progress
   r_lib_versecraft_api_versecraft_save, // /api/versecraft/save
   r_lib_versecraft_api_versecraft_seeds, // /api/versecraft/seeds
+  r_lib_versecraft_api_versecraft_seeds_id, // /api/versecraft/seeds/$id
   r_lib_versecraft_api_versecraft_seeds_fork, // /api/versecraft/seeds/fork
   r_lib_versecraft_api_versecraft_seeds_rate, // /api/versecraft/seeds/rate
   r_lib_rmhvibe_api_vibe_gallery, // /api/vibe/gallery

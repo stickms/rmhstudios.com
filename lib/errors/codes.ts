@@ -1485,6 +1485,62 @@ export const ERROR_CODES = {
     i18n: 'errors:featureRestrictedUntil',
     text: 'This is restricted on your account until {{endsAt}}. See Settings, Account status',
   },
+
+  // Sprint 15
+  // s15-06 member-text-reports
+  GUESTBOOK_CLOSED: {
+    http: 403,
+    i18n: 'errors:guestbookClosed',
+    text: 'This guestbook is not open to you',
+  },
+  GUESTBOOK_DAILY_LIMIT: {
+    http: 429,
+    i18n: 'errors:guestbookDailyLimit',
+    text: 'You can sign this guestbook once a day',
+  },
+
+  // s15-08 calc-graphs
+  CALC_GRAPH_LIMIT: {
+    http: 409,
+    i18n: 'errors:calcGraphLimit',
+    text: 'You can keep up to {{max}} saved graphs. Delete one to save another',
+  },
+
+  // s15-09 dream-rift-coop
+  COOP_RUN_UNKNOWN: {
+    http: 404,
+    i18n: 'errors:coopRunUnknown',
+    text: "That co-op run can't be posted",
+  },
+
+  // s15-13 jam-suggestions
+  JAM_SUGGESTION_LIMIT: {
+    http: 409,
+    i18n: 'errors:jamSuggestionLimit',
+    text: 'You can suggest up to {{max}} themes for a jam',
+  },
+  JAM_SUGGESTIONS_CLOSED: {
+    http: 409,
+    i18n: 'errors:jamSuggestionsClosed',
+    text: 'Theme suggestions for this jam are closed',
+  },
+  JAM_DELETE_STARTED: {
+    http: 409,
+    i18n: 'errors:jamDeleteStarted',
+    text: 'A jam that has started or has entries cannot be deleted',
+  },
+
+  // s15-16 removal-appeals
+  REMOVAL_REVIEW_CLOSED: {
+    http: 409,
+    i18n: 'errors:removalReviewClosed',
+    text: 'This removal can no longer be reviewed',
+  },
+  REMOVAL_REVIEW_ALREADY_ASKED: {
+    http: 409,
+    i18n: 'errors:removalReviewAlreadyAsked',
+    text: 'You have already asked for a second look at this',
+  },
 } as const;
 
 export type ErrorCode = keyof typeof ERROR_CODES;

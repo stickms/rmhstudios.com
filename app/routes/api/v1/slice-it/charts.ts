@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 
 import { apiOptions, withDeveloperApi } from '@/lib/api/with-developer-api.server';
 import { prisma } from '@/lib/prisma.server';
+import { SLICE_CACHE, songMetaSelect, toSongV1 } from '@/lib/api/v1/slice-it.server';
 import { SONG_GENRES } from '@features/slice-it/engine/taxonomy';
 
 /**
@@ -60,42 +61,19 @@ export const Route = createFileRoute('/api/v1/slice-it/charts')({
                 orderBy: [{ plays: 'desc' }, { id: 'asc' }],
                 take: limit,
                 skip: offset,
-                select: {
-                  id: true,
-                  title: true,
-                  artist: true,
-                  album: true,
-                  duration: true,
-                  bpm: true,
-                  genre: true,
-                  tags: true,
-                  chartRating: true,
-                  plays: true,
-                  createdAt: true,
-                  _count: { select: { likes: true, scores: true } },
-                },
+                select: songMetaSelect,
               }),
               prisma.song.count({ where }),
             ]);
 
-            return json({
-              data: rows.map((row) => ({
-                id: row.id,
-                title: row.title,
-                artist: row.artist,
-                album: row.album,
-                duration: row.duration,
-                bpm: row.bpm,
-                genre: row.genre,
-                tags: row.tags,
-                rating: row.chartRating,
-                plays: row.plays,
-                likes: row._count.likes,
-                scores: row._count.scores,
-                createdAt: row.createdAt.toISOString(),
-              })),
-              meta: { total, limit, offset },
-            });
+            return json(
+              {
+                data: rows.map(toSongV1),
+                meta: { total, limit, offset },
+              },
+              200,
+              SLICE_CACHE,
+            );
           },
           { scope: 'read:slice-it' },
         ),

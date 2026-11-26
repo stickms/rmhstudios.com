@@ -31,6 +31,11 @@ import {
   ShieldCheck,
   ListCollapse,
   Globe,
+  Crown,
+  CircleCheck,
+  CircleX,
+  Users,
+  UserX,
   type LucideProps,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
@@ -57,6 +62,11 @@ const ICON_MAP: Record<string, ComponentType<LucideProps>> = {
   'shield-check': ShieldCheck,
   'list-collapse': ListCollapse,
   globe: Globe,
+  crown: Crown,
+  'check-circle': CircleCheck,
+  'x-circle': CircleX,
+  users: Users,
+  'user-x': UserX,
 };
 
 interface LucideAwardIconProps extends LucideProps {

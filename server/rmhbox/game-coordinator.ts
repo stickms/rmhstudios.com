@@ -61,6 +61,7 @@ import { UndercoverEditorGame } from './minigames/undercover-editor';
 import { RankingFileGame } from './minigames/ranking-file';
 import { SequenceSamGame } from './minigames/sequence-sam';
 import { IdentityCrisisGame } from './minigames/identity-crisis';
+import { HumanKeyboardGame } from './minigames/human-keyboard';
 
 // ─── Minigame Server Registry ────────────────────────────────────
 
@@ -81,6 +82,7 @@ export const MINIGAME_SERVER_REGISTRY = new Map<string, new (context: MinigameCo
   ['ranking-file', RankingFileGame],
   ['sequence-sam', SequenceSamGame],
   ['identity-crisis', IdentityCrisisGame],
+  ['human-keyboard', HumanKeyboardGame],
 ]);
 
 // ─── Per-lobby lifecycle tracking ────────────────────────────────

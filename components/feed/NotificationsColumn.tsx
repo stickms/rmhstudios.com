@@ -161,8 +161,10 @@ export function NotificationsColumn({
 } = {}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('feed');
   const { t: tn } = useTranslation('notifications-inbox');
-  // The notice catalogue (`notice-previews.ts`) holds the literal keys; this only hands it the language.
-  const { t: tNotice } = useTranslation('notice-language');
+  // The notice catalogue (`notice-previews.ts`) holds the literal keys; this only hands it the language. A namespace
+  // loads only when a `useTranslation` asks for it, so the ones the catalogue borrows words from are listed here too:
+  // the report kinds (`my-reports`), a reviewed report's outcome (`fix-notices`) and the puzzle modes (`daily-stats`).
+  const { t: tNotice } = useTranslation(['notice-language', 'my-reports', 'fix-notices', 'daily-stats']);
   const verbs = notificationVerbs(t);
   const sysLabels = systemLabels(t);
   const navigate = useNavigate();
@@ -625,7 +627,9 @@ export function NotificationsColumn({
                 })(),
               });
             // A thread reply carries its own sentence ("Dana replied in X"): it leads the row instead of repeating the verb.
-            const noticeLed = Boolean(sys) || (n.previewKey === 'game-thread-reply' && Boolean(previewText));
+            const noticeLed =
+              Boolean(sys) ||
+              ((n.previewKey === 'game-thread-reply' || n.previewKey === 'game-thread-mention') && Boolean(previewText));
             const rowSummary =
               previewText && noticeLed
                 ? previewText

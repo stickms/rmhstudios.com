@@ -75,6 +75,8 @@ model VersecraftSeedListing {
   ratingSum   Int      @default(0)
   ratingCount Int      @default(0)
   forks       Int      @default(0)
+  /// s15-04: set when a moderator removes the listing from the gallery (the world stays). The author cannot undo it.
+  moderatedAt DateTime?
   createdAt   DateTime @default(now())
 
   author  User                   @relation(fields: [authorId], references: [id], onDelete: Cascade)

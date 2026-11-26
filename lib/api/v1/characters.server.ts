@@ -54,11 +54,21 @@ export interface ApiPartyDetail {
   members: {
     userId: string;
     name: string;
+    /** s15-18: true when the viewer is blocked with this player (either way); `name` then reads `'A player'`. */
+    nameHidden: boolean;
     joinedAt: string;
     isGm: boolean;
     summary: PartySummary | null;
   }[];
-  order: { id: string; kind: 'member' | 'extra'; userId: string | null; name: string; value: number }[];
+  order: {
+    id: string;
+    kind: 'member' | 'extra';
+    userId: string | null;
+    name: string;
+    /** s15-18: as on the members: the line's player is hidden from the viewer. */
+    nameHidden: boolean;
+    value: number;
+  }[];
   turnIndex: number;
 }
 
@@ -177,6 +187,7 @@ export async function getPartyForKey(userId: string, id: string): Promise<ApiPar
     members: p.members.map((m) => ({
       userId: m.userId,
       name: m.hidden ? 'A player' : m.name,
+      nameHidden: m.hidden === true,
       joinedAt: new Date(m.joinedAt).toISOString(),
       isGm: m.isGm,
       summary: m.summary,
@@ -186,6 +197,7 @@ export async function getPartyForKey(userId: string, id: string): Promise<ApiPar
       kind: l.kind,
       userId: l.userId,
       name: l.hidden ? 'A player' : l.name,
+      nameHidden: l.hidden === true,
       value: l.value,
     })),
     turnIndex: p.turnIndex,

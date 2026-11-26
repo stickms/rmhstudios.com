@@ -47,6 +47,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { MAX_GROUP_CALL_INVITES } from '@/lib/groupcall/events';
 import { cn } from '@/lib/utils';
 
+import { Handle } from '@/components/ui/handle';
 /**
  * One person as the picker shows them.
  *
@@ -342,7 +343,9 @@ export function GroupCallInviteDialog({
                           {displayName(person, unnamed)}
                         </span>
                         {person.handle && (
-                          <span className="block truncate text-xs text-site-text-muted">@{person.handle}</span>
+                          <span className="block truncate text-xs text-site-text-muted">
+                            <Handle handle={person.handle} />
+                          </span>
                         )}
                       </span>
                       {person.online && (

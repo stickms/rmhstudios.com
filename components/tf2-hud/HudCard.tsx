@@ -39,7 +39,11 @@ export default function HudCard({
             {hud.title}
           </Link>
         </h2>
-        {hud.visibility !== 'PUBLIC' ? (
+        {hud.removed ? (
+          <Pill tone="danger">
+            {t('removed-pill', { ns: 'workshop-reports', defaultValue: 'Removed by a moderator' })}
+          </Pill>
+        ) : hud.visibility !== 'PUBLIC' ? (
           <Pill tone={hud.visibility === 'PRIVATE' ? 'warning' : 'info'}>
             {hud.visibility === 'PRIVATE'
               ? t('private', {

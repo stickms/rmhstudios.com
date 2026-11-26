@@ -12,6 +12,7 @@ import {
   submitDailyPuzzleScoreApi,
   type DailyPuzzleScoreBody,
 } from './daily-puzzles.contract';
+import { readGlobeSetResult, readLightsOutResult } from './result-shapes';
 
 const STORAGE_KEY = 'rmh-daily-puzzles';
 
@@ -19,7 +20,7 @@ export interface PuzzleResult {
   puzzleDate: string;
   score: number;
   timeSeconds: number | null;
-  resultJson: any;
+  resultJson: unknown;
   completedAt: string;
 }
 
@@ -149,14 +150,15 @@ export function saveResultWithSync(
     };
 
     if (isLightsOut) {
-      body.moves = result.resultJson?.moves ?? result.score;
-      body.hintUsed = result.resultJson?.hintUsed ?? false;
-      body.dnf = result.resultJson?.dnf ?? false;
+      const shape = readLightsOutResult(result.resultJson);
+      body.moves = shape.moves ?? result.score;
+      body.hintUsed = shape.hintUsed;
+      body.dnf = shape.dnf;
     } else {
       body.score = result.score;
       // GlobeSet's `dnf` is "the auto-solver was used": the run is stored but is not a solve.
       if (gameMode === 'globeset') {
-        body.dnf = result.resultJson?.solverUsed === true;
+        body.dnf = readGlobeSetResult(result.resultJson).solverUsed;
       }
     }
 

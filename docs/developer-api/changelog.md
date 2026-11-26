@@ -1,5 +1,21 @@
 # Changelog
 
+## Sprint 15 — 2027-02
+
+<!-- s15-03 slice-api -->
+- Slice It! is now in the catalogue, the OpenAPI document and the SDK (group Slice It). `GET /api/v1/slice-it/charts` and `GET /api/v1/slice-it/leaderboard` were served but undocumented; their bodies are unchanged, and both now send `Cache-Control: private, max-age=30` like the new public reads (held by your client, never by a shared cache: every call is keyed and counted). In the SDK the leaderboard's `player` and `accuracy` are `string | null` and `number | null`, because they can be `null`.
+- New endpoints with `read:slice-it`: `GET /api/v1/slice-it/charts/{id}` (a public song's fields plus its published charts as `{ id, difficulty, noteCount, revision }` and `reviews` as `{ count, fit, fun }`; a private, taken-down or missing song is `404`) and `GET /api/v1/slice-it/players/{handle}` (career, best 20 rows on public songs and public uploads count; a member who left the leaderboards, is banned, has no handle or is blocked either way with the key owner is `404`). Both are answered with `Cache-Control: private, max-age=30`.
+- New scope `read:slice-it-runs` (group Games), **explicit**: `*` and `read:*` do not grant it and it is not in a new key's default grant, because your runs are your own activity. It opens `GET /api/v1/me/slice-it/runs?limit=&cursor=&songId=` (your runs, newest first, 1 to 50, default 25; `id` is a string; `Cache-Control: private, no-store`).
+
+<!-- s15-10 notifications-api -->
+- `GET /api/v1/me/notifications` gains, on every item, `key` and `params`: the translation key and values of a notice the site wrote (for example `achievement-unlocked` with `{ "name": "First post" }`), so a client can show it in your language. Both are `null` on a plain notification (a follow, a like); `preview` is unchanged. It also takes `unread=true` to list only unread notifications.
+- The list cursor is now `<createdAt>|<id>`, so two notifications created at the same instant are no longer skipped across a page boundary. `nextCursor` is always the new form; a bare-time cursor from before is still accepted, so a client part-way through a walk keeps working. A malformed cursor is `400 invalid_request`.
+- New endpoint `GET /api/v1/me/notifications/unread-count` (`read:notifications`; `{ "count": 3 }`, the number on the site's badge). New endpoint `POST /api/v1/me/notifications/read` (`write:notifications`, honours `Idempotency-Key`): body `{ "ids": [...] }` (1 to 100 of your own ids; other people's ids are ignored) or `{ "before": "<ISO time>" }` (every unread notification created at or before it); answers `{ "updated": n }`, the number that changed, and the site's inbox and badge show them read. Both answer `Cache-Control: private, no-store`.
+- New scope `write:notifications` (group Account), **explicit**: `*` and `write:*` do not grant it and it is not part of a new key's default grant. A key must list it itself.
+
+<!-- s15-18 s13-gaps -->
+- `GET /api/v1/me/parties/{id}` gains `nameHidden` (a boolean) on every member and every turn-order line: `true` for a player you are blocked with, either way, whose `name` stays `"A player"` as before. A client that translates the site's own wording can show its own text for `nameHidden: true` instead of the English `name`. Nothing else changed.
+
 ## Sprint 14 — 2027-01
 
 <!-- s14-15 homes-api -->

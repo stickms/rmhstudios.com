@@ -1025,6 +1025,71 @@ function sentence(t: Translate, code: ErrorCode, p: Record<string, string | numb
         defaultValue: 'This is restricted on your account until {{endsAt}}. See Settings, Account status',
         ...p,
       });
+
+    // Sprint 15
+    // s15-06 member-text-reports
+    case 'GUESTBOOK_CLOSED':
+      return t('guestbookClosed', {
+        ns: 'errors',
+        defaultValue: 'This guestbook is not open to you',
+        ...p,
+      });
+    case 'GUESTBOOK_DAILY_LIMIT':
+      return t('guestbookDailyLimit', {
+        ns: 'errors',
+        defaultValue: 'You can sign this guestbook once a day',
+        ...p,
+      });
+
+    // s15-08 calc-graphs
+    case 'CALC_GRAPH_LIMIT':
+      return t('calcGraphLimit', {
+        ns: 'errors',
+        defaultValue: 'You can keep up to {{max}} saved graphs. Delete one to save another',
+        ...p,
+      });
+
+    // s15-09 dream-rift-coop
+    case 'COOP_RUN_UNKNOWN':
+      return t('coopRunUnknown', {
+        ns: 'errors',
+        defaultValue: "That co-op run can't be posted",
+        ...p,
+      });
+
+    // s15-13 jam-suggestions
+    case 'JAM_SUGGESTION_LIMIT':
+      return t('jamSuggestionLimit', {
+        ns: 'errors',
+        defaultValue: 'You can suggest up to {{max}} themes for a jam',
+        ...p,
+      });
+    case 'JAM_SUGGESTIONS_CLOSED':
+      return t('jamSuggestionsClosed', {
+        ns: 'errors',
+        defaultValue: 'Theme suggestions for this jam are closed',
+        ...p,
+      });
+    case 'JAM_DELETE_STARTED':
+      return t('jamDeleteStarted', {
+        ns: 'errors',
+        defaultValue: 'A jam that has started or has entries cannot be deleted',
+        ...p,
+      });
+
+    // s15-16 removal-appeals
+    case 'REMOVAL_REVIEW_CLOSED':
+      return t('removalReviewClosed', {
+        ns: 'errors',
+        defaultValue: 'This removal can no longer be reviewed',
+        ...p,
+      });
+    case 'REMOVAL_REVIEW_ALREADY_ASKED':
+      return t('removalReviewAlreadyAsked', {
+        ns: 'errors',
+        defaultValue: 'You have already asked for a second look at this',
+        ...p,
+      });
   }
 }
 

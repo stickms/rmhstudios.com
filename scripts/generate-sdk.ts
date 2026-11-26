@@ -169,6 +169,22 @@ const NULLABLE: Record<string, string> = {
   minBeds: 'number | null',
   minBaths: 'number | null',
 
+  // Sprint 15
+  // s15-03 slice-api
+  album: 'string | null',
+  bpm: 'number | null',
+  genre: 'string | null',
+  rating: 'number | null',
+  fit: 'number | null',
+  fun: 'number | null',
+  chartId: 'string | null',
+  career: '{ totalScore: number; gamesPlayed: number } | null',
+  player: 'string | null',
+
+  // s15-10 notifications-api
+  key: 'string | null',
+  params: 'Record<string, string | number> | null',
+
 };
 
 // Arrays whose example may be empty (an own job opens with no interview dates), so the element type is stated.

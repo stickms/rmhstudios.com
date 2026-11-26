@@ -2,6 +2,8 @@ import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { screenNewContent } from '@/lib/moderation/auto-moderate.server';
+import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { notBannedWhere } from '@/lib/moderation/workshop-moderation';
 import { normalizeSeed } from '@/lib/versecraft/gen/rng';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import {
@@ -19,7 +21,10 @@ export const route = apiRoute('/api/versecraft/seeds', {
   GET: defineHandler(
     { auth: 'optional', rateLimit: 'read', query: listSeedsQuerySchema },
     async ({ userId, query }) => {
+      // The gallery leaves out removed stories and those by banned authors and by members blocked either way.
+      const hidden = await getHiddenAuthorIds(userId);
       const rows = await prisma.versecraftSeedListing.findMany({
+        where: { moderatedAt: null, authorId: { notIn: hidden }, author: notBannedWhere(new Date()) },
         // Rating order needs an average; a sum-over-count sort is not indexable, so
         // order by ratingSum (a fair proxy at this scale) and newest as tiebreak.
         orderBy:
@@ -54,7 +59,8 @@ export const route = apiRoute('/api/versecraft/seeds', {
       select: { seed: true },
     });
     if (!world) return Response.json({ error: 'unknown-seed' }, { status: 404 });
-    const count = await prisma.versecraftSeedListing.count({ where: { authorId: userId } });
+    // A story a moderator removed stops counting toward the cap (its author cannot delete it, so it would never free).
+    const count = await prisma.versecraftSeedListing.count({ where: { authorId: userId, moderatedAt: null } });
     if (count >= MAX_LISTINGS_PER_AUTHOR) {
       return Response.json({ error: 'limit' }, { status: 409 });
     }
@@ -64,7 +70,8 @@ export const route = apiRoute('/api/versecraft/seeds', {
         select: { id: true },
       });
       void screenNewContent({
-        entityType: 'versecraft_seed',
+        // The report type (s15-04), so an automated flag gets the queue preview and the takedown a member's report gets.
+        entityType: 'versecraft-seed',
         entityId: row.id,
         authorId: userId,
         text: body.title,

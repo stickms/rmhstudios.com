@@ -28,6 +28,8 @@ export interface HudSummary {
   description: string;
   tags: string[];
   visibility: Visibility;
+  /** A moderator removed this HUD (s15-04). Only its owner is ever sent one; it is private and cannot be published again. */
+  removed: boolean;
   author: HudAuthor | null;
   likeCount: number;
   forkCount: number;

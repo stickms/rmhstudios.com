@@ -166,6 +166,10 @@ export interface Dnd5eCharacter extends CharacterBase {
   armorId?: string;
   shield: boolean;
   hitDiceUsed: number;
+  /** Which sizes the spent Hit Dice were (`{ 10: 2 }`), for a multiclass sheet; `hitDiceUsed` stays the count. */
+  hitDiceSpent?: Record<number, number>;
+  /** Uses spent of each counted class resource, by resource name (`{ Rages: 2 }`); a resource at full has no entry. */
+  resourcesUsed: Record<string, number>;
   deathSaves: { successes: number; failures: number };
   heroicInspiration: boolean;
   exhaustion: number;

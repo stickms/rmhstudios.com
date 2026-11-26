@@ -63,7 +63,11 @@ export default function LoadoutCard({
         </h2>
         <div className="flex shrink-0 items-center gap-1">
           <Pill tone="accent">{classLabels[loadout.tfClass]}</Pill>
-          {loadout.visibility !== 'PUBLIC' ? (
+          {loadout.removed ? (
+            <Pill tone="danger">
+              {t('removed-pill', { ns: 'workshop-reports', defaultValue: 'Removed by a moderator' })}
+            </Pill>
+          ) : loadout.visibility !== 'PUBLIC' ? (
             <Pill tone={loadout.visibility === 'PRIVATE' ? 'warning' : 'info'}>
               {loadout.visibility === 'PRIVATE'
                 ? t('private', {

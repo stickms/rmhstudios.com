@@ -9,14 +9,20 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
-import { PACK_MAX_PROMPTS, PACK_MIN_PROMPTS, type PackView } from '@/lib/party/packs';
+import { PACK_GAMES, type PackView } from '@/lib/party/packs';
+import { isPackGame, parsePackText, type LineError, type PackGame } from '@/lib/party/pack-games';
 import { api } from '@/lib/contract/client';
 import { createPackApi, listPacksApi, type PackLists } from '@/lib/party/packs.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+
+/** How many unusable lines and how many usable ones the form lists before it stops. */
+const MAX_SHOWN_ERRORS = 5;
+const PREVIEW_LINES = 3;
 
 // The dialog carries the report schema (zod), so it loads only when a member opens it.
 const ReportDialog = lazy(() =>
@@ -24,7 +30,7 @@ const ReportDialog = lazy(() =>
 );
 
 export function PacksPage() {
-  const { t } = useTranslation(['f-party', 'pack-reports']);
+  const { t } = useTranslation(['f-party', 'pack-reports', 'more-packs']);
   const refusalText = useRefusalText();
   const session = useSession();
   const signedIn = !!session.data?.user;
@@ -38,6 +44,7 @@ export function PacksPage() {
   const [lists, setLists] = useState<PackLists | null>(null);
   const [name, setName] = useState('');
   const [text, setText] = useState('');
+  const [game, setGame] = useState<PackGame>('wit-war');
   const [busy, setBusy] = useState(false);
   const [reporting, setReporting] = useState<string | null>(null);
   const arrival = useArrival(lists !== null);
@@ -58,10 +65,132 @@ export function PacksPage() {
     void load();
   }, [load, signedIn]);
 
+  // The same rules the server and the hub apply (`pack-games.ts`), so a line that cannot be used is shown here first.
+  const parsed = parsePackText(game, text);
   const prompts = text
     .split('\n')
     .map((l) => l.trim())
     .filter(Boolean);
+  const errorSentence = (e: LineError): string => {
+    const line = e.line;
+    const limit = e.limit ?? 0;
+    switch (e.code) {
+      case 'too-short':
+        return t('line-too-short', {
+          ns: 'more-packs',
+          defaultValue: 'Line {{line}} is too short: at least {{limit}} characters.',
+          line,
+          limit,
+        });
+      case 'too-long':
+        return t('line-too-long', {
+          ns: 'more-packs',
+          defaultValue: 'Line {{line}} is too long: at most {{limit}} characters.',
+          line,
+          limit,
+        });
+      case 'empty-after-normalising':
+        return t('line-empty-after-normalising', {
+          ns: 'more-packs',
+          defaultValue: 'Line {{line}} has no letters once it is cleaned up.',
+          line,
+        });
+      case 'alias-too-short':
+        return t('line-alias-too-short', {
+          ns: 'more-packs',
+          defaultValue: 'Line {{line}} has an alias under {{limit}} characters.',
+          line,
+          limit,
+        });
+      case 'alias-too-long':
+        return t('line-alias-too-long', {
+          ns: 'more-packs',
+          defaultValue: 'Line {{line}} has an alias over {{limit}} characters.',
+          line,
+          limit,
+        });
+      case 'too-many-aliases':
+        return t('line-too-many-aliases', {
+          ns: 'more-packs',
+          defaultValue: 'Line {{line}} has more than {{limit}} aliases.',
+          line,
+          limit,
+        });
+    }
+  };
+  const gameLabel = (g: PackGame): string => {
+    switch (g) {
+      case 'wit-war':
+        return t('game-wit-war', { ns: 'more-packs', defaultValue: 'Wit War' });
+      case 'identity-crisis':
+        return t('game-identity-crisis', { ns: 'more-packs', defaultValue: 'Identity Crisis' });
+      case 'human-keyboard':
+        return t('game-human-keyboard', { ns: 'more-packs', defaultValue: 'Human Keyboard' });
+    }
+  };
+  const gameHelp = (g: PackGame): string => {
+    switch (g) {
+      case 'wit-war':
+        return t('help-wit-war', {
+          ns: 'more-packs',
+          defaultValue: 'One prompt per line, 8 to 120 characters. Players write funny answers to them.',
+        });
+      case 'identity-crisis':
+        return t('help-identity-crisis', {
+          ns: 'more-packs',
+          defaultValue:
+            'One person or character per line, 2 to 60 characters. Add other names a guess may use after a bar: Ada Lovelace | Lovelace.',
+        });
+      case 'human-keyboard':
+        return t('help-human-keyboard', {
+          ns: 'more-packs',
+          defaultValue:
+            'One sentence per line. Each is cleaned up to lowercase letters and single spaces, then must be 20 to 60 characters.',
+        });
+    }
+  };
+  const linesPlaceholder = (g: PackGame): string => {
+    switch (g) {
+      case 'wit-war':
+        return t('prompts-ph', {
+          defaultValue: 'One prompt per line, e.g. The worst thing to say at a job interview',
+        });
+      case 'identity-crisis':
+        return t('ph-identity-crisis', { ns: 'more-packs', defaultValue: 'Ada Lovelace | Lovelace' });
+      case 'human-keyboard':
+        return t('ph-human-keyboard', {
+          ns: 'more-packs',
+          defaultValue: 'the quick brown fox jumps over the lazy dog',
+        });
+    }
+  };
+  const entriesMeta = (p: PackView): string => {
+    switch (isPackGame(p.game) ? p.game : 'wit-war') {
+      case 'identity-crisis':
+        return t('entries-identity-crisis', {
+          ns: 'more-packs',
+          defaultValue_one: '{{count}} identity by {{author}}',
+          defaultValue: '{{count}} identities by {{author}}',
+          count: p.promptCount,
+          author: p.author?.name ?? p.author?.handle ?? '?',
+        });
+      case 'human-keyboard':
+        return t('entries-human-keyboard', {
+          ns: 'more-packs',
+          defaultValue_one: '{{count}} sentence by {{author}}',
+          defaultValue: '{{count}} sentences by {{author}}',
+          count: p.promptCount,
+          author: p.author?.name ?? p.author?.handle ?? '?',
+        });
+      case 'wit-war':
+        return t('pack-meta', {
+          defaultValue_one: '{{count}} prompt by {{author}}',
+          defaultValue: '{{count}} prompts by {{author}}',
+          count: p.promptCount,
+          author: p.author?.name ?? p.author?.handle ?? '?',
+        });
+    }
+  };
 
   async function create() {
     setBusy(true);
@@ -69,7 +198,7 @@ export function PacksPage() {
       const { pack } = await api(createPackApi, {
         body: {
           name,
-          game: 'wit-war',
+          game,
           prompts,
         },
       });
@@ -136,12 +265,9 @@ export function PacksPage() {
             {p.name}
           </h3>
           <p className="text-xs text-site-text-muted">
-            {t('pack-meta', {
-              defaultValue_one: '{{count}} prompt by {{author}}',
-              defaultValue: '{{count}} prompts by {{author}}',
-              count: p.promptCount,
-              author: p.author?.name ?? p.author?.handle ?? '?',
-            })}
+            {isPackGame(p.game) ? gameLabel(p.game) : p.game}
+            {' · '}
+            {entriesMeta(p)}
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
@@ -239,9 +365,10 @@ export function PacksPage() {
       title={t('packs-title', {
         defaultValue: 'RMHBox prompt packs',
       })}
-      description={t('packs-desc', {
+      description={t('page-desc', {
+        ns: 'more-packs',
         defaultValue:
-          'Write your own Wit-War prompts, share the code, and the host picks it in the lobby game settings.',
+          'Write prompts, identities or sentences for Wit War, Identity Crisis or Human Keyboard, share the code, and the host picks it in the lobby game settings.',
       })}
     >
       <div className="space-y-6 px-4 pt-4 pb-12">
@@ -265,36 +392,47 @@ export function PacksPage() {
                 defaultValue: 'Pack name',
               })}
             />
+            <label className="text-sm text-site-text-muted">
+              <span className="mb-2 block">
+                {t('game-label', {
+                  ns: 'more-packs',
+                  defaultValue: 'Game',
+                })}
+              </span>
+              <Select value={game} onChange={(e) => isPackGame(e.target.value) && setGame(e.target.value)}>
+                {PACK_GAMES.map((g) => (
+                  <option key={g} value={g}>
+                    {gameLabel(g)}
+                  </option>
+                ))}
+              </Select>
+            </label>
+            <p className="t-meta">{gameHelp(game)}</p>
             <Textarea
               dir="auto"
               value={text}
               onChange={(e) => setText(e.target.value)}
               rows={8}
-              aria-label={t('prompts-label', {
-                defaultValue: 'Prompts, one per line',
+              aria-label={t('lines-label', {
+                ns: 'more-packs',
+                defaultValue: 'Lines, one per line',
               })}
-              placeholder={t('prompts-ph', {
-                defaultValue: 'One prompt per line, e.g. The worst thing to say at a job interview',
-              })}
+              placeholder={linesPlaceholder(game)}
             />
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-site-text-muted">
-                {t('prompt-count', {
-                  defaultValue_one: '{{count}} prompt (need {{min}} to {{max}})',
-                  defaultValue: '{{count}} prompts (need {{min}} to {{max}})',
-                  count: prompts.length,
-                  min: PACK_MIN_PROMPTS,
-                  max: PACK_MAX_PROMPTS,
+              <span className="t-meta">
+                {t('usable-count', {
+                  ns: 'more-packs',
+                  defaultValue_one: '{{count}} usable line (need {{min}} to {{max}})',
+                  defaultValue: '{{count}} usable lines (need {{min}} to {{max}})',
+                  count: parsed.lines.length,
+                  min: parsed.min,
+                  max: parsed.max,
                 })}
               </span>
               <Button
                 variant="default"
-                disabled={
-                  busy ||
-                  name.trim().length < 3 ||
-                  prompts.length < PACK_MIN_PROMPTS ||
-                  prompts.length > PACK_MAX_PROMPTS
-                }
+                disabled={busy || name.trim().length < 3 || !parsed.ok}
                 onClick={() => void create()}
               >
                 {t('publish', {
@@ -302,6 +440,53 @@ export function PacksPage() {
                 })}
               </Button>
             </div>
+            {parsed.tooMany ? (
+              <p className="t-meta text-site-danger">
+                {t('too-many-lines', {
+                  ns: 'more-packs',
+                  defaultValue: 'A pack holds at most {{max}} lines.',
+                  max: parsed.max,
+                })}
+              </p>
+            ) : null}
+            {parsed.duplicates > 0 ? (
+              <p className="t-meta">
+                {t('duplicates', {
+                  ns: 'more-packs',
+                  defaultValue_one: '{{count}} repeated line is counted once.',
+                  defaultValue: '{{count}} repeated lines are counted once.',
+                  count: parsed.duplicates,
+                })}
+              </p>
+            ) : null}
+            {parsed.errors.length > 0 ? (
+              <ul aria-label={t('errors-label', { ns: 'more-packs', defaultValue: 'Lines that cannot be used' })}>
+                {parsed.errors.slice(0, MAX_SHOWN_ERRORS).map((e) => (
+                  <li key={e.line} className="t-meta border-b border-site-border py-2 text-site-danger">
+                    {errorSentence(e)}
+                  </li>
+                ))}
+                {parsed.errors.length > MAX_SHOWN_ERRORS ? (
+                  <li className="t-meta py-2">
+                    {t('errors-more', {
+                      ns: 'more-packs',
+                      defaultValue_one: 'and {{count}} more line',
+                      defaultValue: 'and {{count}} more lines',
+                      count: parsed.errors.length - MAX_SHOWN_ERRORS,
+                    })}
+                  </li>
+                ) : null}
+              </ul>
+            ) : null}
+            {parsed.errors.length === 0 && parsed.lines.length > 0 ? (
+              <ul aria-label={t('preview-label', { ns: 'more-packs', defaultValue: 'First lines of the pack' })}>
+                {parsed.lines.slice(0, PREVIEW_LINES).map((line) => (
+                  <li key={line} dir="auto" className="t-meta truncate border-b border-site-border py-2">
+                    {line}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </Section>
         ) : (
           <p className="text-sm text-site-text-muted">

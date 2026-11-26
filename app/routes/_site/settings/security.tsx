@@ -19,6 +19,7 @@ import { SessionManager } from '@/components/site/SessionManager';
 import { SecurityActivityPanel } from '@/components/settings/SecurityActivityPanel';
 import { AccountStandingPanel } from '@/components/moderation/AccountStandingPanel';
 import { MyReportsPanel } from '@/components/moderation/MyReportsPanel';
+import { RemovalsPanel } from '@/components/moderation/RemovalsPanel';
 import { useSession } from '@/components/Providers';
 import { SettingsPageBody } from '@/components/settings/SettingsSection';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
@@ -79,6 +80,7 @@ function SecuritySettingsPage() {
             <SessionManager />
             <SecurityActivityPanel />
             <AccountStandingPanel />
+            <RemovalsPanel />
             <MyReportsPanel />
           </>
         )}

@@ -19,6 +19,7 @@ import { updateUserBuildApi } from '@/lib/user-builds.contract';
 import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
+import { Handle } from '@/components/ui/handle';
 interface Build {
   id: string;
   slug: string;
@@ -145,7 +146,7 @@ function AdminUserBuildsPage() {
                         )}
                       </div>
                       <div className="t-body flex items-center gap-2 truncate text-site-text-muted">
-                        <Link to={`/u/${build.user.handle || build.user.username}` as string} className="transition-colors hover:text-site-text">@{build.user.handle || build.user.username}</Link>
+                        <Link to={`/u/${build.user.handle || build.user.username}` as string} className="transition-colors hover:text-site-text"><Handle handle={build.user.handle || build.user.username} /></Link>
                         <span aria-hidden>&bull;</span>
                         <span>{build.category?.name || t("uncategorized", { defaultValue: "Uncategorized" })}</span>
                       </div>

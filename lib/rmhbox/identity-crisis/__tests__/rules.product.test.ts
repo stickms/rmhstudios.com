@@ -236,9 +236,11 @@ describe('the input schemas and the settings', () => {
     expect(GuessInputSchema.safeParse({ text: 5 }).success).toBe(false);
   });
 
-  it('declares the three host settings with their bounds', () => {
+  it('declares the four host settings with their bounds', () => {
     const byKey = Object.fromEntries(IDENTITY_CRISIS_SETTINGS.map((s) => [s.key, s]));
-    expect(Object.keys(byKey).sort()).toEqual(['askSeconds', 'hardIdentities', 'questionsPerPlayer']);
+    // s15-17 added the optional community pack code.
+    expect(Object.keys(byKey).sort()).toEqual(['askSeconds', 'hardIdentities', 'packCode', 'questionsPerPlayer']);
+    expect(byKey.packCode).toMatchObject({ type: 'text', default: '', maxLength: 6 });
     expect(byKey.questionsPerPlayer).toMatchObject({ default: 3, min: 2, max: 5 });
     expect(byKey.askSeconds).toMatchObject({ default: 20, min: 10, max: 40 });
     expect(byKey.hardIdentities).toMatchObject({ type: 'boolean', default: false });

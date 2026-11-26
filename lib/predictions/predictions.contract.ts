@@ -8,6 +8,7 @@ import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { addComment, advocateSchema, commentSchema, listComments } from '@/lib/forecasting/forecasting.server';
 import type {
+  commentListQuery,
   createPredictionSchema,
   moderateSchema,
   predictionListQuery,
@@ -17,7 +18,7 @@ import type {
 } from '@/lib/predictions/predictions-schema';
 import type { SerializedMarket } from '@/lib/predictions/predictions.server';
 
-type CommentList = NonNullable<Awaited<ReturnType<typeof listComments>>>;
+type CommentPage = NonNullable<Awaited<ReturnType<typeof listComments>>>;
 type NewComment = NonNullable<Awaited<ReturnType<typeof addComment>>>;
 
 /** `filter` is `open` (default), `resolved` or `mine`. */
@@ -42,9 +43,12 @@ export const createPredictionApi = endpoint<{
   path: '/api/predictions',
 });
 
+/** One page, newest first; `nextCursor` is the `cursor` of the next one (null on the last). */
 export const listPredictionCommentsApi = endpoint<{
+  query: z.infer<typeof commentListQuery>;
   res: {
-    comments: CommentList;
+    comments: CommentPage['comments'];
+    nextCursor: CommentPage['nextCursor'];
     aiAvailable: boolean;
   };
 }>()({
@@ -61,6 +65,16 @@ export const addPredictionCommentApi = endpoint<{
 }>()({
   method: 'POST',
   path: '/api/predictions/$id/comments',
+});
+
+/** The author's own comment, or any for an admin; gone for everyone. Someone else's, and an unknown id, are both 404. */
+export const deletePredictionCommentApi = endpoint<{
+  res: {
+    deleted: true;
+  };
+}>()({
+  method: 'DELETE',
+  path: '/api/predictions/comments/$id',
 });
 
 /** Buy YES / NO shares with coins. Refusals carry the market's own message (`{ error }`). */

@@ -47,6 +47,7 @@ import { exportSprint11 } from '@/lib/account/export-sprint-11.server';
 import { exportSprint12 } from '@/lib/account/export-sprint-12.server';
 import { exportSprint13 } from '@/lib/account/export-sprint-13.server';
 import { exportSprint14 } from '@/lib/account/export-sprint-14.server';
+import { exportSprint15 } from '@/lib/account/export-sprint-15.server';
 
 // Bound each collection so a power user's export can't blow up memory.
 const CAP = 10_000;
@@ -110,6 +111,7 @@ export const route = apiRoute('/api/account/export', {
         sprint12,
         sprint13,
         sprint14,
+        sprint15,
       ] = await Promise.all([
         prisma.user.findUnique({
           where: { id: userId },
@@ -393,6 +395,8 @@ export const route = apiRoute('/api/account/export', {
         exportSprint13(userId),
         // The sprint 14 sections, each added under its own anchor (s14).
         exportSprint14(userId),
+        // The sprint 15 sections, each added under its own anchor (s15).
+        exportSprint15(userId),
       ]);
 
       const [
@@ -528,6 +532,7 @@ export const route = apiRoute('/api/account/export', {
         sprint12,
         sprint13,
         sprint14,
+        sprint15,
         rmhLadder: {
           preferences: ladderPrefs,
           // Salary expectations, work authorization and EEO answers — the

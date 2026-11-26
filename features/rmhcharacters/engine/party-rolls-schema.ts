@@ -17,7 +17,12 @@ export const sheetRequest = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('initiative') }),
   z.object({ kind: z.literal('perception') }),
   z.object({ kind: z.literal('strike'), index, map: z.union([z.literal(0), z.literal(1), z.literal(2)]) }),
-  z.object({ kind: z.literal('free'), notation: z.string().trim().min(1).max(64) }),
+  /** `as: 'hitDie'` names a short rest's Hit Die on the table; the notation is still rolled as typed. */
+  z.object({
+    kind: z.literal('free'),
+    notation: z.string().trim().min(1).max(64),
+    as: z.literal('hitDie').optional(),
+  }),
 ]);
 
 export const rollMode = z.enum(['normal', 'advantage', 'disadvantage']);

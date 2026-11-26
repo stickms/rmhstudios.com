@@ -36,6 +36,7 @@ import { NightrailRenderer3D } from '@features/nightrail/engine/renderer3d';
 import { FrameCap, MENU_BACKDROP_FPS } from '@/lib/render/frame-cap';
 import { NightrailAudio } from '@features/nightrail/engine/audio';
 import { LEVELS, LEVEL_ORDER } from '@features/nightrail/engine/levels';
+import { nightrailSave, persistNightrailUnlocks } from '@features/nightrail/engine/cloud';
 import type { InputState, LevelId, RunStats, TrickDirection } from '@features/nightrail/engine/types';
 import { useSession } from '@/components/session/session-context';
 import { useAssistRun } from '@/components/games/assist-run-island';
@@ -49,37 +50,6 @@ import { AssistRunLine } from './assist-ui';
 import { NightrailHud, type HudHandle } from './NightrailHud';
 import { NightrailUI, type UIState } from './NightrailUI';
 import { NightrailTouchControls } from './NightrailTouchControls';
-
-const UNLOCKS_KEY = 'nightrail.unlocks';
-
-/** Read the unlocked set, tolerating anything at all in storage. */
-function loadUnlocks(): Set<LevelId> {
-  try {
-    const raw = localStorage.getItem(UNLOCKS_KEY);
-    if (raw) {
-      const parsed: unknown = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        const ids = parsed.filter((n): n is LevelId =>
-          (LEVEL_ORDER as number[]).includes(n as number),
-        );
-        if (ids.length > 0) return new Set(ids);
-      }
-    }
-  } catch {
-    /* an unreadable save is "level one only", which is where everyone starts */
-  }
-  return new Set<LevelId>([LEVEL_ORDER[0]]);
-}
-
-function saveUnlocks(unlocks: Set<LevelId>): void {
-  try {
-    // Stored as a sorted array: a Set JSON-stringifies to `{}`, which is the
-    // kind of bug that only surfaces once the save is already overwritten.
-    localStorage.setItem(UNLOCKS_KEY, JSON.stringify([...unlocks].sort((a, b) => a - b)));
-  } catch {
-    /* private mode — the run still works, it just will not be remembered */
-  }
-}
 
 /**
  * Turn a stick/drag vector into one of the eight trick directions.
@@ -154,8 +124,35 @@ export function NightrailGame() {
 
   useEffect(() => {
     if (!supportsWebGL()) setWebglReady(false);
-    setUnlockedLevels(loadUnlocks());
+    // This device's copy first; the account's is folded in below once the session is known.
+    setUnlockedLevels(new Set(nightrailSave.readLocal() ?? [LEVEL_ORDER[0]]));
   }, []);
+
+  // Lines opened on another device are open here too: the union of both copies (never a question), and the account
+  // is caught up when this device holds more. A guest makes no request.
+  const userId = session.data?.user?.id ?? null;
+  const sessionPending = session.isPending;
+  useEffect(() => {
+    if (sessionPending) return;
+    let cancelled = false;
+    nightrailSave.setIdentity(userId);
+    void nightrailSave
+      .resolve()
+      .then((choice) => {
+        if (cancelled || choice.kind !== 'resolved') return;
+        // Anything opened while the account was being read stays opened.
+        const merged = new Set<LevelId>([...choice.save, ...unlocksRef.current]);
+        unlocksRef.current = merged;
+        setUnlockedLevels(merged);
+        if (userId && choice.origin === 'local') void nightrailSave.writeCloud([...merged].sort((a, b) => a - b)).catch(() => {});
+      })
+      .catch(() => {
+        // An unreadable copy is "line one only", which is where everyone starts.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, sessionPending]);
 
   // ── Renderer lifecycle ──
 
@@ -514,7 +511,13 @@ export function NightrailGame() {
               merged.add(next);
               unlocksRef.current = merged;
               setUnlockedLevels(merged);
-              saveUnlocks(merged);
+              void persistNightrailUnlocks(merged).then((kept) => {
+                // Another device had opened more lines: they are open here too.
+                const all = new Set<LevelId>([...kept, ...unlocksRef.current]);
+                if (all.size === unlocksRef.current.size) return;
+                unlocksRef.current = all;
+                setUnlockedLevels(all);
+              });
             }
           }
         }

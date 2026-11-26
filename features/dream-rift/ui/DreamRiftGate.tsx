@@ -66,6 +66,7 @@ function ScreenRouter() {
         })),
         difficulty: p.difficulty as Difficulty,
         seed: p.seed,
+        runId: p.runId ?? null,
       });
       useDreamRift.getState().setResult(null);
       useDreamRift.getState().setPaused(false);

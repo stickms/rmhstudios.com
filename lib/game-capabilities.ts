@@ -345,7 +345,9 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     sessionMinutes: [20, 90],
     engine: '2d-canvas',
     demanding: false,
-    save: 'local-only',
+    // The run (classic and New Game+) is one row on the shared table; the local copy stays first
+    // (`lib/house-always-wins/cloud.ts`). A guest's run stays on the device until they sign in.
+    save: 'shared-table',
     accessibility: [],
     // Depicts a casino; no real staking. Distinct from the coin-staked surfaces.
     descriptors: ['gambling-themes'],
@@ -391,11 +393,10 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     sessionMinutes: [5, 20],
     engine: 'webgl',
     demanding: true,
-    // Level unlocks are `localStorage` under `nightrail.unlocks`. The
-    // `NightrailPlayer` row is a leaderboard record, not progress the game
-    // reads back, so `own-table` would overstate what following your account
-    // actually gets you.
-    save: 'local-only',
+    // The opened lines are one row on the shared table, merged as a union across devices
+    // (`features/nightrail/engine/cloud.ts`); the local copy under `nightrail.unlocks` stays first. The
+    // `NightrailPlayer` row is still only a leaderboard record, not progress the game reads back.
+    save: 'shared-table',
     accessibility: ['assist-mode', 'reduced-flashing', 'colorblind-safe', 'no-timed-input'],
     // Neon signage, bloom, drift sparks and the crash burst all strobe.
     descriptors: ['flashing'],

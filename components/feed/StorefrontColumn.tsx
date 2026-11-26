@@ -36,6 +36,7 @@ import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
+import { Handle } from '@/components/ui/handle';
 interface Product {
   id: string;
   title: string;
@@ -278,7 +279,7 @@ export function StorefrontColumn({
           <span className="t-body block truncate font-medium text-site-text">{creatorName}</span>
           {creator.handle ? (
             <span className="t-meta block truncate" dir="ltr">
-              @{creator.handle}
+              <Handle handle={creator.handle} />
             </span>
           ) : null}
         </span>

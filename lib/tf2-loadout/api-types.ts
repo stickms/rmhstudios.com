@@ -21,6 +21,8 @@ export interface LoadoutSummary {
   description: string;
   tfClass: TfClass;
   visibility: Visibility;
+  /** A moderator removed this loadout (s15-04). Only its owner is ever sent one; it is private and cannot be published again. */
+  removed: boolean;
   slots: LoadoutSlots;
   author: LoadoutAuthor | null;
   likeCount: number;

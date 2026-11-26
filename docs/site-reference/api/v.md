@@ -68,6 +68,8 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/v1/me/ladder/own-jobs` | `OPTIONS` `POST` | `app/routes/api/v1/me/ladder/own-jobs.ts` |
 | `/api/v1/me/music/practice` | `GET` `OPTIONS` | `app/routes/api/v1/me/music/practice.ts` |
 | `/api/v1/me/notifications` | `GET` `OPTIONS` | `app/routes/api/v1/me/notifications.ts` |
+| `/api/v1/me/notifications/read` | `OPTIONS` `POST` | `app/routes/api/v1/me/notifications/read.ts` |
+| `/api/v1/me/notifications/unread-count` | `GET` `OPTIONS` | `app/routes/api/v1/me/notifications/unread-count.ts` |
 | `/api/v1/me/parties` | `GET` `OPTIONS` | `app/routes/api/v1/me/parties.ts` |
 | `/api/v1/me/parties/:id` | `GET` `OPTIONS` | `app/routes/api/v1/me/parties/$id.ts` |
 | `/api/v1/me/personal-bests` | `GET` `OPTIONS` | `app/routes/api/v1/me/personal-bests.ts` |
@@ -80,6 +82,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/v1/me/scheduled/:id/publish` | `OPTIONS` `POST` | `app/routes/api/v1/me/scheduled/$id/publish.ts` |
 | `/api/v1/me/shelves` | `GET` `OPTIONS` | `app/routes/api/v1/me/shelves.ts` |
 | `/api/v1/me/shelves/:slug` | `DELETE` `OPTIONS` `PUT` | `app/routes/api/v1/me/shelves/$slug.ts` |
+| `/api/v1/me/slice-it/runs` | `GET` `OPTIONS` | `app/routes/api/v1/me/slice-it/runs.ts` |
 | `/api/v1/me/tournaments` | `GET` `OPTIONS` | `app/routes/api/v1/me/tournaments.ts` |
 | `/api/v1/me/typing` | `GET` `OPTIONS` | `app/routes/api/v1/me/typing.ts` |
 | `/api/v1/me/typing/daily` | `GET` `OPTIONS` | `app/routes/api/v1/me/typing/daily.ts` |
@@ -98,7 +101,9 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/v1/search/people` | `GET` `OPTIONS` | `app/routes/api/v1/search/people.ts` |
 | `/api/v1/search/posts` | `GET` `OPTIONS` | `app/routes/api/v1/search/posts.ts` |
 | `/api/v1/slice-it/charts` | `GET` `OPTIONS` | `app/routes/api/v1/slice-it/charts.ts` |
+| `/api/v1/slice-it/charts/:id` | `GET` `OPTIONS` | `app/routes/api/v1/slice-it/charts/$id.ts` |
 | `/api/v1/slice-it/leaderboard` | `GET` `OPTIONS` | `app/routes/api/v1/slice-it/leaderboard.ts` |
+| `/api/v1/slice-it/players/:handle` | `GET` `OPTIONS` | `app/routes/api/v1/slice-it/players/$handle.ts` |
 | `/api/v1/tournaments` | `GET` `OPTIONS` | `app/routes/api/v1/tournaments.ts` |
 | `/api/v1/tournaments/:id` | `GET` `OPTIONS` | `app/routes/api/v1/tournaments/$id.ts` |
 | `/api/v1/tournaments/:id/check-in` | `OPTIONS` `POST` | `app/routes/api/v1/tournaments/$id/check-in.ts` |
@@ -137,6 +142,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/versecraft/progress` | `GET` | `lib/versecraft/api/versecraft.progress.server.ts` |
 | `/api/versecraft/save` | `GET` `POST` | `lib/versecraft/api/versecraft.save.server.ts` |
 | `/api/versecraft/seeds` | `GET` `POST` | `lib/versecraft/api/versecraft.seeds.server.ts` |
+| `/api/versecraft/seeds/:id` | `DELETE` | `lib/versecraft/api/versecraft.seeds.$id.server.ts` |
 | `/api/versecraft/seeds/fork` | `POST` | `lib/versecraft/api/versecraft.seeds.fork.server.ts` |
 | `/api/versecraft/seeds/rate` | `POST` | `lib/versecraft/api/versecraft.seeds.rate.server.ts` |
 | `/api/versecraft/world` | `GET` `POST` | `app/routes/api/versecraft/world.ts` |

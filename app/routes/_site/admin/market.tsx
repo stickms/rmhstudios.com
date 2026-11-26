@@ -18,6 +18,7 @@ import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
+import { Handle } from '@/components/ui/handle';
 export const Route = createFileRoute('/_site/admin/market')({
   head: () => ({ meta: [{ title: 'Marketplace Review | RMH Studios' }] }),
   component: AdminMarketPage,
@@ -133,7 +134,7 @@ function AdminMarketPage() { const fmt = useLocaleFormat();
                     <div className="min-w-0">
                       <div className="t-heading break-words text-site-text">{name}</div>
                       <div className="t-body text-site-text-muted">
-                        @{r.seller.handle ?? r.seller.name ?? r.seller.id.slice(0, 6)}
+                        <Handle handle={r.seller.handle ?? r.seller.name ?? r.seller.id.slice(0, 6)} />
                         {' · '}
                         {t('market-review-listed', {
                           defaultValue: 'listed {{when}}',

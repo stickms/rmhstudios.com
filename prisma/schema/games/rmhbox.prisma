@@ -36,6 +36,7 @@ model RMHboxMatch {
   @@index([minigameId])
   @@index([startedAt(sort: Desc)])
   @@index([lobbyId])
+  @@index([winnerUserId])
   @@map("rmhbox_match")
 }
 

@@ -48,6 +48,7 @@ import {
 import { RANKING_FILE_SETTINGS } from './ranking-file/settings';
 import { SEQUENCE_SAM_SETTINGS } from './sequence-sam/settings';
 import { IDENTITY_CRISIS_SETTINGS } from './identity-crisis/settings';
+import { HUMAN_KEYBOARD_SETTINGS } from './human-keyboard/settings';
 
 // ─── Per-Minigame Settings Schemas ───────────────────────────────
 
@@ -670,21 +671,23 @@ export const MINIGAME_REGISTRY: Record<string, MinigameDefinition> = {
     tags: ['action', 'memory'],
     settingsSchema: SEQUENCE_SAM_SETTINGS,
   },
-  // 'human-keyboard': {
-  //   id: 'human-keyboard',
-  //   displayName: 'Human Keyboard',
-  //   description: 'Each player controls one key — type words together cooperatively.',
-  //   category: 'action',
-  //   icon: '⌨️',
-  //   minPlayers: 3,
-  //   maxPlayers: 10,
-  //   estimatedDurationSeconds: 120,
-  //   supportsTeams: true,
-  //   instructionDurationSeconds: 15,
-  //   preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
-  //   joinInProgressPolicy: 'spectate_only',
-  //   tags: ['action', 'cooperative'],
-  // },
+  'human-keyboard': {
+    id: 'human-keyboard',
+    displayName: 'Human Keyboard',
+    description:
+      'The alphabet is shared out between you. Type one sentence together, each pressing only the letters you hold, before the keys are shuffled again.',
+    category: 'action',
+    icon: 'keyboard',
+    minPlayers: 3,
+    maxPlayers: 10,
+    estimatedDurationSeconds: 120,
+    supportsTeams: true,
+    instructionDurationSeconds: 15,
+    preloadAssets: { images: [], sounds: [], data: [], estimatedSizeBytes: 0 },
+    joinInProgressPolicy: 'spectate_only',
+    tags: ['action', 'cooperative'],
+    settingsSchema: HUMAN_KEYBOARD_SETTINGS,
+  },
   // 'cursor-curling': {
   //   id: 'cursor-curling',
   //   displayName: 'Cursor Curling',

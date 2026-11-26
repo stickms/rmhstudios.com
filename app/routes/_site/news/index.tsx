@@ -9,7 +9,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getNewsFront, NEWS_PAGE_SIZE } from '@/lib/news';
-import { isNewsCategory, type NewsCategory } from '@/lib/news-wire/categorize';
+import { isNewsCategory, type NewsCategory } from '@/lib/news-wire/categories';
 import { NEWS_FRONT_TAG } from '@/lib/news-wire/sources';
 import { cached } from '@/lib/cached.server';
 import { NewsFront } from '@/components/news/NewsFront';

@@ -12,7 +12,9 @@ import { relativeTimeShort } from '@/lib/utils';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { CommunityNav } from './CommunityNav';
 import { GroupRow } from './GroupRow';
+import { MentionTextarea } from '@/components/feed/MentionTextarea';
 import { EmotePicker } from './EmotePicker';
+import { MentionHint } from './MentionHint';
 import { PersonAvatar } from './SteamPeople';
 import { TitleArt } from './TitleArt';
 import { hubErrorText } from './hub-errors';
@@ -78,15 +80,18 @@ function NewThread({ gameId, emoteTitles }: { gameId: string; emoteTitles: strin
       </label>
       <label>
         <span className="stm-subhead">{t('steam-hub-body', { defaultValue: 'Text' })}</span>
-        <textarea
+        <MentionTextarea
           className="stm-textarea"
           rows={5}
           value={body}
           maxLength={MAX_THREAD_BODY}
-          onChange={(e) => setBody(e.target.value)}
+          onChange={setBody}
+          atOnly
+          aria-describedby="thread-body-hint"
           required
         />
       </label>
+      <MentionHint id="thread-body-hint" />
       <div className="stm-write-actions">
         <button type="submit" className="stm-btn stm-btn-blue" disabled={busy}>
           {t('steam-hub-post', { defaultValue: 'Post' })}

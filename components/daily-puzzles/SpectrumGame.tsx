@@ -15,6 +15,7 @@ import {
     PuzzleSection,
     PuzzleResultCard,
     PuzzleResultStack,
+    PuzzlePlayedElsewhere,
     PuzzleShareRow,
     TONE_TINT,
     type PuzzleTone,
@@ -23,6 +24,7 @@ import { PuzzleLoading } from '@/components/daily-puzzles/PuzzleLoading';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
 import { useSession } from '@/components/Providers';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
+import { hasSpectrumResult, readSpectrumResult } from '@/lib/daily-puzzles/result-shapes';
 import { saveResultWithSync, fetchResultFromServer } from '@/lib/daily-puzzles/persistence';
 import { useArrival } from '@/components/ui/arrive';
 
@@ -79,6 +81,8 @@ function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuz
     const [locked, setLocked] = useState(false);
     const [result, setResult] = useState<ReturnType<typeof computeSpectrumScore> | null>(null);
     const [showResults, setShowResults] = useState(false);
+    // A score saved with no ordering (another device): the score and nothing to replay.
+    const [elsewhereScore, setElsewhereScore] = useState<number | null>(null);
 
     // The results reveal is delayed for the animation. One tracked timer, so a
     // reveal scheduled by the server fetch or a lock-in never fires after unmount
@@ -99,9 +103,14 @@ function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuz
     useEffect(() => {
         const existing = getResult('spectrum', dateKey);
         if (existing) {
-            const savedResult = existing.resultJson;
+            if (!hasSpectrumResult(existing.resultJson)) {
+                setElsewhereScore(existing.score);
+                setLocked(true);
+                return;
+            }
+            const savedResult = readSpectrumResult(existing.resultJson);
             setResult(savedResult);
-            setPlayerOrder(savedResult.itemScores.map((s: { name: string }) => s.name));
+            setPlayerOrder(savedResult.itemScores.map((s) => s.name));
             setLocked(true);
             // Small delay so the results animate in
             const timer = setTimeout(() => setShowResults(true), 100);
@@ -117,9 +126,14 @@ function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuz
             fetchResultFromServer('spectrum', dateKey).then(serverResult => {
                 if (serverResult && !cancelled) {
                     saveResult('spectrum', dateKey, serverResult);
-                    const savedResult = serverResult.resultJson;
+                    if (!hasSpectrumResult(serverResult.resultJson)) {
+                        setElsewhereScore(serverResult.score);
+                        setLocked(true);
+                        return;
+                    }
+                    const savedResult = readSpectrumResult(serverResult.resultJson);
                     setResult(savedResult);
-                    setPlayerOrder(savedResult.itemScores.map((s: { name: string }) => s.name));
+                    setPlayerOrder(savedResult.itemScores.map((s) => s.name));
                     setLocked(true);
                     revealResults(100);
                 }
@@ -189,6 +203,9 @@ function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuz
                 subtitle={<>#{puzzleNumber} · {isToday ? t("today", { defaultValue: "Today" }) : dateKey}</>}
             />
 
+            {elsewhereScore !== null ? (
+                <PuzzlePlayedElsewhere score={elsewhereScore} />
+            ) : (
             <div className="flex flex-col gap-3">
                 {/* Spectrum label */}
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
@@ -303,6 +320,7 @@ function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuz
                     </motion.div>
                 )}
             </div>
+            )}
 
             {/* Results panel */}
             <AnimatePresence>
@@ -354,9 +372,9 @@ function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuz
                 <DailyPuzzleLeaderboard
                     gameMode="spectrum"
                     dateKey={dateKey}
-                    score={result?.points ?? 0}
+                    score={elsewhereScore ?? result?.points ?? 0}
                     completed={locked}
-                    resultJson={result}
+                    resultJson={elsewhereScore !== null ? undefined : result}
                     timeSeconds={null}
                 />
             )}

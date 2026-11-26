@@ -2,11 +2,13 @@
  * Announcement discussion — server logic. Server-only.
  * Contract: ./blog-comments.contract.ts
  */
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { publishedLogWhere } from '@/lib/blog/publication';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { getActiveBan } from '@/lib/admin-audit.server';
 import { restrictionResponse } from '@/lib/moderation/restrictions.server';
+import { notBannedWhere } from '@/lib/moderation/workshop-moderation';
 import type { BlogCommentView } from '@/lib/blog/blog-comments.contract';
 
 export const commentInclude = {
@@ -34,6 +36,25 @@ export async function findAnnouncementPost(slug: string): Promise<{
       id: true,
     },
   });
+}
+
+/**
+ * The comments of one announcement a viewer may see (shared by the list and its count, so `total` is what the viewer
+ * can see). Left out: deleted comments; authors the viewer blocked, was blocked by or muted
+ * (`hiddenAuthorIds`, `getHiddenAuthorIds`, empty when signed out); and, for everyone, authors who are banned now.
+ * `userId` is a required column, so the filter is `notIn`, never a null comparison.
+ */
+export function visibleCommentsWhere(
+  postId: string,
+  hiddenAuthorIds: readonly string[],
+  now: Date = new Date(),
+): Prisma.BlogCommentWhereInput {
+  return {
+    postId,
+    deletedAt: null,
+    ...(hiddenAuthorIds.length ? { userId: { notIn: [...hiddenAuthorIds] } } : {}),
+    user: notBannedWhere(now),
+  };
 }
 
 /** Pure: who may delete a comment. */

@@ -15,6 +15,7 @@ import { postQuotesApi } from '@/lib/feed/rmhark-actions.contract';
 import { api } from '@/lib/contract/client';
 import { useArrival } from '@/components/ui/arrive';
 
+import { Handle } from '@/components/ui/handle';
 /**
  * X10 — the "Quotes" view for a post: every quote-post of it, newest first,
  * 20 at a time, with quotes of those quotes nested one level beneath. Opened
@@ -44,7 +45,7 @@ function QuoteRow({
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm">
           <span className="font-semibold text-site-text">{item.user?.name || item.user?.handle}</span>
-          {item.user?.handle && <span className="text-site-text-muted"> @{item.user.handle}</span>}
+          {item.user?.handle && <span className="text-site-text-muted"> <Handle handle={item.user.handle} /></span>}
           <span className="text-site-text-muted">
             {' · '}
             <RelativeTime date={item.createdAt} format={relativeTimeShort} />

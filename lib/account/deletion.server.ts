@@ -46,6 +46,8 @@ import { erasureErrorName } from '@/lib/admin/deletions';
 import { removeMemberFromFlagLists } from '@/lib/flags/targeting.server';
 import { musicErasureOps } from '@/lib/rmhmusic/learn/account-data.server';
 import { partyErasureOps } from '@/lib/rmhtube/parties.server';
+import { redisPublish } from '@/lib/redis.server';
+import { MEMBER_ERASED_CHANNEL } from '@/lib/rmhtube/events';
 import {
   DELETED_ACCOUNT_BAN_REASON,
   DELETED_ACCOUNT_LOCK_UNTIL,
@@ -407,6 +409,18 @@ export async function anonymizeAccount(userId: string): Promise<void> {
   // which the transaction below deletes, so they go first (idempotent; they usually went at the request). A throw
   // here (the server secret is unset while events exist) leaves the account scheduled, to be retried by the next sweep.
   await eraseSharedMedEvents(userId);
+
+  // Sprint 15 pre-erasure steps (docs/autonomous/sprint-15/plan.md §Anchors)
+  // s15-09 dream-rift-coop
+  // The co-op runs naming the member are read here; the transaction takes their id out of memberIds and makes their
+  // slot's name "Deleted user" (new and old rows).
+  const dreamRiftCoopUpdates = await (await import('@features/dream-rift/engine/coop-runs.server')).eraseCoopMembership(userId);
+
+  // s15-20 s14-gaps
+  // The account's address, read before the profile scrub below removes it: a security report sent while signed out
+  // with this address carries no user id, so it is found by the address alone.
+  const accountRow = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+  const accountEmail = accountRow && typeof accountRow.email === 'string' ? accountRow.email : null;
 
   await prisma.$transaction([
     // 1. Destroy every way to authenticate as this account. Re-run safe: by the
@@ -874,6 +888,27 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     // RMHBox and RMHType match winners and the authors of staff content are nulled or take the deleted-user id.
     ...(await import('@/lib/account/erasure-plain.server')).plainColumnErasureOps(userId),
 
+    // Sprint 15 erasures (docs/autonomous/sprint-15/plan.md §Anchors): each feature adds its operations under its own line.
+    // s15-08 calc-graphs
+    // The member's saved calculator graphs (rows that no longer cascade once the user row is anonymised in place).
+    ...(await import('@/lib/rmhcalculator/graphs.server')).calcGraphErasureOps(userId),
+
+    // s15-09 dream-rift-coop
+    ...(await import('@features/dream-rift/engine/coop-runs.server')).dreamRiftCoopErasureOps(userId, dreamRiftCoopUpdates),
+
+    // s15-13 jam-suggestions
+    // The member's suggested jam themes (rows that no longer cascade once the user row is anonymised in place).
+    ...(await import('@/lib/competitive/jam-suggestions.server')).jamSuggestionErasureOps(userId),
+
+    // s15-16 removal-appeals
+    // The member's own removal records go (their notices and items are separate). A moderator's erased account is
+    // dropped from the records they decided; `reviewedById` is a plain column, so no relation nulls it.
+    prisma.contentRemoval.deleteMany({ where: { authorId: userId } }),
+    prisma.contentRemoval.updateMany({ where: { reviewedById: userId }, data: { reviewedById: null } }),
+
+    // s15-20 s14-gaps
+    ...(await import('@/lib/account/erasure-plain.server')).securityReportEmailErasureOps(accountEmail),
+
     // med-schools-phase-4 tracker, lists, preferences (the shared anonymous events go in a pre-step, plan Task 6)
     ...medschoolsErasureOps(userId),
 
@@ -921,4 +956,18 @@ export async function anonymizeAccount(userId: string): Promise<void> {
   await deleteMemberCardSoundObjects(userId).catch(() => {});
   // s10-19 erasure-follows (listing photo objects, after the transaction)
   await deleteMemberListingImageObjects(userId, listingImageUrls).catch(() => {});
+
+  // Sprint 15 after the transaction (docs/autonomous/sprint-15/plan.md §Anchors)
+  // s15-18 s13-gaps
+  // Running RMHTube rooms rename the member now the stored rows are renamed. A publish never fails the erasure.
+  // The stored rows are already renamed: without Redis, or on a failed publish, a running room keeps the old name until
+  // the hub restarts, and that is logged rather than thrown.
+  try {
+    if (!redisPublish(MEMBER_ERASED_CHANNEL, { userId })) {
+      console.warn(`[account] no Redis: running RMHTube rooms keep the erased name of ${userId} until the hub restarts`);
+    }
+  } catch (err) {
+    console.error(`[account] could not tell RMHTube rooms about the erasure of ${userId}:`, err);
+  }
+
 }

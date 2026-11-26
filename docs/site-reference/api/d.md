@@ -98,6 +98,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/dream-rift/coop` | `GET` `POST` | `features/dream-rift/api/dream-rift.coop.server.ts` |
+| `/api/dream-rift/coop/mine` | `GET` | `features/dream-rift/api/dream-rift.coop.mine.server.ts` |
 | `/api/dream-rift/leaderboard` | `GET` | `features/dream-rift/api/dream-rift.leaderboard.server.ts` |
 | `/api/dream-rift/score` | `POST` | `features/dream-rift/api/dream-rift.score.server.ts` |
 

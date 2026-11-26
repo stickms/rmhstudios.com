@@ -81,20 +81,22 @@ export function ResultScreen({
   const coopSubmittedFor = useRef<unknown>(null);
   useEffect(() => {
     if (!result || coopSubmittedFor.current === result) return;
-    if (result.playerCount < 2 || !result.isHost || !session.data?.user) return;
+    // Without a run id the hub never recorded this game, so there is nothing to post to.
+    if (result.playerCount < 2 || !result.isHost || !result.runId || !session.data?.user) return;
     coopSubmittedFor.current = result;
     api(submitDreamRiftCoopApi, {
       body: {
+        runId: result.runId,
         difficulty: result.difficulty,
         combinedScore: Math.min(result.combinedScore, 40_000_000),
         timeSurvived: result.timeSurvived,
         stageReached: result.stageReached,
         cleared: result.cleared,
         players: result.perPlayer.map((p) => ({
+          slot: p.slot,
           name: p.name,
           charId: p.charId,
           score: p.score,
-          userId: p.userId,
         })),
       },
     }).catch(() => {

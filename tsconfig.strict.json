@@ -34,6 +34,7 @@
     "lib/rmh-research/*.ts",
     "lib/rmh-research/data/*.ts",
     "lib/blog-media.ts",
+    "lib/news-wire/categories.ts",
     "lib/news-wire/categorize.ts",
     "lib/news-wire/parse.ts",
     "lib/news-wire/extract.ts",

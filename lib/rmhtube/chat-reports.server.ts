@@ -14,11 +14,11 @@
 import type { PgBoss } from 'pg-boss';
 import { prisma } from '@/lib/prisma.server';
 import { redisPublish } from '@/lib/redis.server';
-import { CHAT_REMOVED_CHANNEL } from '@/lib/rmhtube/events';
+import { CHAT_REMOVED_CHANNEL, DELETED_MEMBER_NAME } from '@/lib/rmhtube/events';
 
 export { CHAT_REMOVED_CHANNEL };
 /** What an erased member's name becomes in every room's history. */
-export const DELETED_CHAT_NAME = 'Deleted user';
+export const DELETED_CHAT_NAME = DELETED_MEMBER_NAME;
 /** A message older than this is pruned, unless it is among its room's newest `KEEP_NEWEST_PER_ROOM`. */
 export const CHAT_RETENTION_DAYS = 90;
 export const KEEP_NEWEST_PER_ROOM = 200;
@@ -88,7 +88,8 @@ export async function takeDownChatMessage(messageId: string): Promise<ChatTakedo
 
 /**
  * The erased member's messages, in every room: the name goes, the text stays (as their posts' does). Rooms running
- * at that moment keep the old name in their buffer until the next restart (a recorded residual).
+ * at that moment are told by the hub's `rmhtube:member:erased` message, published after the erasure commits (s15-18);
+ * without Redis they keep the old name until the hub restarts.
  */
 export function chatMessageErasureOps(userId: string) {
   return [

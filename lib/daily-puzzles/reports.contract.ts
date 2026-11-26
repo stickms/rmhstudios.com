@@ -6,18 +6,29 @@
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { DailyPuzzleMode } from '@/lib/daily-puzzles/generate-core';
-import type { DayRelation, ReportKind } from '@/lib/daily-puzzles/reports';
+import type { DayRelation, ReportKind, ReviewOutcome } from '@/lib/daily-puzzles/reports';
 import type {
   adminPuzzlesQuery,
   fileReportBody,
   generatePuzzleBody,
   replacePuzzleBody,
+  reviewReportsBody,
 } from '@/lib/daily-puzzles/reports-schema';
 
-/** Say what is wrong with a puzzle the member has finished. Sending again replaces the kind and the note. */
+/** What the team concluded about a day's reports (s15-07). */
+export interface ReportReview {
+  outcome: ReviewOutcome;
+  /** The admin's note to the reporters; null when there is none. */
+  note: string | null;
+}
+
+/**
+ * Say what is wrong with a puzzle the member has finished. Sending again replaces the kind and the note. When the
+ * day was already reviewed the answer also carries the outcome (and the new report is stored already reviewed).
+ */
 export const fileReportApi = endpoint<{
   body: z.infer<typeof fileReportBody>;
-  res: { ok: true };
+  res: { ok: true; review?: ReportReview };
 }>()({ method: 'PUT', path: '/api/daily-puzzles/report' });
 
 export interface AdminReportItem {
@@ -27,6 +38,8 @@ export interface AdminReportItem {
   kind: ReportKind;
   note: string | null;
   at: string;
+  /** ISO time an admin reviewed it; null while it is open. */
+  reviewedAt: string | null;
 }
 
 export interface AdminPuzzleRow {
@@ -51,6 +64,10 @@ export interface AdminPuzzleDay {
   generatable: boolean;
   reportCounts: Record<ReportKind, number>;
   reports: AdminReportItem[];
+  /** Reports of the day nobody has reviewed yet: "Mark reviewed" is offered when this is above zero. */
+  openReportCount: number;
+  /** The day's latest review, or null when none has happened. */
+  review: ReportReview | null;
 }
 
 export interface AdminPuzzles {
@@ -76,3 +93,12 @@ export const generatePuzzleApi = endpoint<{
   body: z.infer<typeof generatePuzzleBody>;
   res: { created: boolean; source: string };
 }>()({ method: 'POST', path: '/api/admin/daily-puzzles/generate' });
+
+/**
+ * Mark a mode-day's open reports reviewed with one outcome and an optional note, telling each reporter once. A second
+ * review of the same day changes nothing and sends nothing. The puzzle and the scores are never touched.
+ */
+export const reviewReportsApi = endpoint<{
+  body: z.infer<typeof reviewReportsBody>;
+  res: { ok: true; reviewed: number };
+}>()({ method: 'POST', path: '/api/admin/daily-puzzles/review' });

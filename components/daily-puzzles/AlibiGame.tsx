@@ -17,6 +17,7 @@ import {
     saveResult,
     hasCompleted,
 } from '@/lib/daily-puzzles/persistence';
+import { hasAlibiResult, readAlibiResult } from '@/lib/daily-puzzles/result-shapes';
 import { generateAlibiShare } from '@/lib/daily-puzzles/share';
 import { fetchDailyPuzzle } from '@/lib/daily-puzzles/client';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ import {
     PuzzleSection,
     PuzzleResultCard,
     PuzzleResultStack,
+    PuzzlePlayedElsewhere,
     PuzzleShareRow,
     PuzzleFootnote,
     TONE_TINT,
@@ -74,6 +76,7 @@ function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFul
     const [guesses, setGuesses] = useState<string[]>([]);
     const [solved, setSolved] = useState(false);
     const [failed, setFailed] = useState(false);
+    const [playedElsewhere, setPlayedElsewhere] = useState(false);
     const [score, setScore] = useState(0);
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
@@ -92,10 +95,14 @@ function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFul
         if (hasCompleted('alibi', dateKey)) {
             const result = getResult('alibi', dateKey);
             if (result) {
-                const data = result.resultJson;
-                setGuesses(data.guesses ?? []);
-                setSolved(data.solved ?? false);
-                setFailed(data.failed ?? false);
+                if (hasAlibiResult(result.resultJson)) {
+                    const data = readAlibiResult(result.resultJson);
+                    setGuesses(data.guesses);
+                    setSolved(data.solved);
+                    setFailed(data.failed);
+                } else {
+                    setPlayedElsewhere(true);
+                }
                 setScore(result.score);
                 setElapsedSeconds(result.timeSeconds ?? 0);
                 setPhase('result');
@@ -110,10 +117,14 @@ function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFul
             fetchResultFromServer('alibi', dateKey).then(serverResult => {
                 if (serverResult) {
                     saveResult('alibi', dateKey, serverResult);
-                    const data = serverResult.resultJson;
-                    setGuesses(data.guesses ?? []);
-                    setSolved(data.solved ?? false);
-                    setFailed(data.failed ?? false);
+                    if (hasAlibiResult(serverResult.resultJson)) {
+                        const data = readAlibiResult(serverResult.resultJson);
+                        setGuesses(data.guesses);
+                        setSolved(data.solved);
+                        setFailed(data.failed);
+                    } else {
+                        setPlayedElsewhere(true);
+                    }
                     // The run may already be timing (the fetch can land after
                     // "start"); stop it, or the interval keeps overwriting the
                     // saved time on the result screen.
@@ -348,7 +359,10 @@ function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFul
 
             {/* Result screen */}
             <AnimatePresence>
-                {phase === 'result' && (
+                {phase === 'result' && playedElsewhere && (
+                    <PuzzlePlayedElsewhere score={score} timeSeconds={elapsedSeconds} />
+                )}
+                {phase === 'result' && !playedElsewhere && (
                     <motion.div
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -410,7 +424,7 @@ function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFul
                     dateKey={dateKey}
                     score={score}
                     completed={phase === 'result'}
-                    resultJson={{ guesses, solved, failed }}
+                    resultJson={playedElsewhere ? undefined : { guesses, solved, failed }}
                     timeSeconds={elapsedSeconds}
                 />
             )}

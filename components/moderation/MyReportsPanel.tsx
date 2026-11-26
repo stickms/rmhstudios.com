@@ -136,6 +136,19 @@ export function MyReportsPanel() {
 
     // s14-10 tube-room-reports
     'tube-room': t('kind-tube-room', { defaultValue: 'Room' }),
+
+    // Sprint 15 (docs/autonomous/sprint-15/plan.md §Anchors)
+    // s15-04 workshop-reports
+    'tf2-hud': t('kind-tf2-hud', { defaultValue: 'TF2 HUD' }),
+    'tf2-loadout': t('kind-tf2-loadout', { defaultValue: 'TF2 loadout' }),
+    'versecraft-seed': t('kind-versecraft-seed', { defaultValue: 'Versecraft story' }),
+
+    // s15-05 prediction-comments
+    'prediction-comment': t('kind-prediction-comment', { defaultValue: 'Market comment' }),
+
+    // s15-06 member-text-reports
+    'guestbook-entry': t('kind-guestbook-entry', { defaultValue: 'Guestbook entry' }),
+    'blog-comment': t('kind-blog-comment', { defaultValue: 'Announcement comment' }),
   };
   const GONE: Partial<Record<ReportEntityType, string>> = {
     rmhark: t('gone-rmhark', { defaultValue: 'A post that is no longer available' }),
@@ -185,6 +198,19 @@ export function MyReportsPanel() {
 
     // s14-10 tube-room-reports
     'tube-room': t('gone-tube-room', { defaultValue: 'A room that is no longer available' }),
+
+    // Sprint 15 (docs/autonomous/sprint-15/plan.md §Anchors)
+    // s15-04 workshop-reports
+    'tf2-hud': t('gone-tf2-hud', { defaultValue: 'A TF2 HUD that is no longer available' }),
+    'tf2-loadout': t('gone-tf2-loadout', { defaultValue: 'A TF2 loadout that is no longer available' }),
+    'versecraft-seed': t('gone-versecraft-seed', { defaultValue: 'A Versecraft story that is no longer available' }),
+
+    // s15-05 prediction-comments
+    'prediction-comment': t('gone-prediction-comment', { defaultValue: 'A comment that is no longer available' }),
+
+    // s15-06 member-text-reports
+    'guestbook-entry': t('gone-guestbook-entry', { defaultValue: 'A guestbook entry that is no longer available' }),
+    'blog-comment': t('gone-blog-comment', { defaultValue: 'An announcement comment that is no longer available' }),
   };
 
   const whatOf = (r: MyReport): string =>

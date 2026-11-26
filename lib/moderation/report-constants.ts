@@ -90,6 +90,23 @@ export const REPORT_ENTITY_TYPES = [
   // s14-10 tube-room-reports
   // A room or watch party (the room code). Filed from the room's header and the party page; the report is about the host.
   'tube-room',
+
+  // Sprint 15 (docs/autonomous/sprint-15/plan.md §Anchors)
+  // s15-04 workshop-reports
+  // A member's TF2 HUD (`Tf2Hud` id), TF2 loadout (`Tf2Loadout` id) and shared Versecraft story (`VersecraftSeedListing`
+  // id): lib/moderation/workshop-moderation.ts. Each title or description is member text.
+  'tf2-hud',
+  'tf2-loadout',
+  'versecraft-seed',
+
+  // s15-05 prediction-comments
+  // A comment on a prediction market (the `PredictionComment` id). Filed from the comment's menu in a market's discussion.
+  'prediction-comment',
+
+  // s15-06 member-text-reports
+  // A profile's guestbook entry (`GuestbookEntry` id) and a comment under an announcement (`BlogComment` id): member text.
+  'guestbook-entry',
+  'blog-comment',
 ] as const;
 export type ReportEntityType = (typeof REPORT_ENTITY_TYPES)[number];
 
@@ -123,6 +140,22 @@ export const MEMBER_ITEM_REPORT_TYPES: ReadonlySet<string> = new Set([
   // s14-10 tube-room-reports
   // A public room, or one the reporter is in, that is not already removed and not the reporter's own (`roomReportable`).
   'tube-room',
+
+  // Sprint 15 (docs/autonomous/sprint-15/plan.md §Anchors)
+  // s15-04 workshop-reports
+  // Public or unlisted (a reporter can open it by link), by someone else and not already removed (`workshopReportAuthor`).
+  'tf2-hud',
+  'tf2-loadout',
+  'versecraft-seed',
+
+  // s15-05 prediction-comments
+  // A comment on a market the reporter can see, by someone else they have not blocked (`predictionCommentReportable`).
+  'prediction-comment',
+
+  // s15-06 member-text-reports
+  // A profile guestbook entry and a comment under an announcement; readable by the reporter, by someone else, not hidden or deleted.
+  'guestbook-entry',
+  'blog-comment',
 ]);
 
 /**
@@ -184,6 +217,21 @@ export const REMOVABLE_REPORT_ENTITY_TYPES: readonly ReportEntityType[] = [
   // s14-10 tube-room-reports
   // A removal stamps `moderatedAt` and `closedAt` and ends the running room (`takeDownRoom`).
   'tube-room',
+
+  // Sprint 15 (docs/autonomous/sprint-15/plan.md §Anchors)
+  // s15-04 workshop-reports
+  // A removal stamps `moderatedAt` (final, the owner cannot undo it); a HUD or loadout is made PRIVATE in the same write.
+  'tf2-hud',
+  'tf2-loadout',
+  'versecraft-seed',
+
+  // s15-05 prediction-comments
+  // A comment on a prediction market (the `PredictionComment` id): deleted on removal, like its author's own delete.
+  'prediction-comment',
+
+  // s15-06 member-text-reports
+  'guestbook-entry',
+  'blog-comment',
 ];
 
 /**

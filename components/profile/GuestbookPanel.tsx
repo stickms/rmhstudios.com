@@ -18,6 +18,8 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
+import { useRefusalText } from '@/components/errors/useRefusalText';
+import { MemberTextReportButton } from '@/components/moderation/MemberTextReportButton';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { IconButton } from '@/components/ui/icon-button';
@@ -60,6 +62,7 @@ export default function GuestbookPanel({
     data: session,
   } =
     useSession();
+  const refusalText = useRefusalText();
   const [
     page,
     setPage,
@@ -243,7 +246,7 @@ export default function GuestbookPanel({
         !res.ok
       ) {
         toast.error(
-          data.error ||
+          refusalText.maybe(data) ??
             t(
               'guestbook-sign-error',
               {
@@ -773,6 +776,9 @@ export default function GuestbookPanel({
                       }
                     </p>
                   </div>
+                  {!entry.hidden && entry.author.id !== viewerId ? (
+                    <MemberTextReportButton entityType="guestbook-entry" entityId={entry.id} />
+                  ) : null}
                   {page.isOwner ? (
                     <IconButton
                       icon={

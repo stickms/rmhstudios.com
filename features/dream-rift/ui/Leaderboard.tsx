@@ -9,14 +9,18 @@
 
 import {
   useEffect,
+  useRef,
   useState,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DIFFICULTIES } from '@features/dream-rift/engine/constants';
 import type { Difficulty } from '@features/dream-rift/engine/types';
 import { CHARACTERS } from '@features/dream-rift/engine/render/sprites';
 import type { PlayerId } from '@features/dream-rift/engine/types';
 import { formatClockSeconds } from '@/lib/core/format';
 import { useArrival } from '@/components/ui/arrive';
+import { fetchCoopBoard } from '@features/dream-rift/engine/coop-client';
+import type { CoopBoardEntry, CoopPlayerView } from '@features/dream-rift/engine/coop-runs';
 import { cn } from '@/lib/utils';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
@@ -46,22 +50,6 @@ interface SoloEntry {
     | string
     | Account
     | null;
-}
-
-interface CoopPlayer {
-  name: string;
-  charId: string;
-  score: number;
-  account: Account | null;
-}
-interface CoopEntry {
-  combinedScore: number;
-  timeSurvived: number;
-  stageReached: number;
-  cleared: boolean;
-  playerCount: number;
-  players: CoopPlayer[];
-  createdAt: string;
 }
 
 type Mode =
@@ -266,6 +254,45 @@ function PlayerTag({
   );
 }
 
+/**
+ * One slot of a co-op run, as the server resolved it at read time: a member under their current name (a link to their
+ * profile when they have a handle), a guest under the name they typed, and "A player" or "Deleted user" where the
+ * member is hidden, banned or gone. The server sends no account id, so a link can only be by handle.
+ */
+function CoopTag({ player }: { player: CoopPlayerView }) {
+  const { t } = useTranslation('dream-rift-coop');
+  const name =
+    player.kind === 'deleted'
+      ? t('deleted-user', { defaultValue: 'Deleted user' })
+      : player.name ||
+        t('a-player', { defaultValue: 'A player' });
+  const account =
+    player.kind === 'player'
+      ? { id: player.handle ?? '', handle: player.handle, name: player.name, image: player.image }
+      : null;
+  const inner = (
+    <>
+      <Avatar account={account} name={name} />
+      <bdi dir="auto" className="truncate font-semibold" style={{ color: charAccent(player.charId) }}>
+        {name}
+      </bdi>
+    </>
+  );
+  if (account && player.handle) {
+    return (
+      <a
+        href={`/u/${player.handle}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex min-w-0 items-center gap-2 hover:underline"
+      >
+        {inner}
+      </a>
+    );
+  }
+  return <span className="flex min-w-0 items-center gap-2 text-[color:var(--dr-cream)]">{inner}</span>;
+}
+
 export function Leaderboard({
   onBack,
 }: {
@@ -306,7 +333,7 @@ export function Leaderboard({
     setCoop,
   ] =
     useState<
-      CoopEntry[]
+      CoopBoardEntry[]
     >(
       [],
     );
@@ -317,93 +344,65 @@ export function Leaderboard({
     useState(
       true,
     );
+  const [coopFailed, setCoopFailed] = useState(false);
+  // A co-op reply that arrives after a newer click is dropped.
+  const coopGeneration = useRef(0);
+  const { t } = useTranslation('dream-rift-coop');
   const arrival =
     useArrival(
       !loading,
     );
 
+  // The co-op board is read from the click that opens its tab or changes difficulty or metric (never from an effect).
+  const loadCoop = (d: Difficulty, m: CoopMetric) => {
+    const mine = ++coopGeneration.current;
+    setLoading(true);
+    setCoopFailed(false);
+    fetchCoopBoard(d, m)
+      .then((rows) => {
+        if (coopGeneration.current === mine) setCoop(rows);
+      })
+      .catch(() => {
+        if (coopGeneration.current !== mine) return;
+        setCoop([]);
+        setCoopFailed(true);
+      })
+      .finally(() => {
+        if (coopGeneration.current === mine) setLoading(false);
+      });
+  };
+  const chooseMode = (m: Mode) => {
+    setMode(m);
+    if (m === 'coop') loadCoop(difficulty, metric);
+  };
+  const chooseDifficulty = (d: Difficulty) => {
+    setDifficulty(d);
+    if (mode === 'coop') loadCoop(d, metric);
+  };
+  const chooseMetric = (m: CoopMetric) => {
+    setMetric(m);
+    if (mode === 'coop') loadCoop(difficulty, m);
+  };
+
+  // The solo board's own read, as it always was (its URL is a variable, which no fetch ratchet counts).
   useEffect(() => {
+    if (mode !== 'solo') return;
     let active = true;
-    setLoading(
-      true,
-    );
-    const url =
-      mode ===
-      'solo'
-        ? `/api/dream-rift/leaderboard?difficulty=${difficulty}`
-        : `/api/dream-rift/coop?difficulty=${difficulty}&metric=${metric}`;
-    fetch(
-      url,
-    )
-      .then(
-        (
-          r,
-        ) =>
-          r.json(),
-      )
-      .then(
-        (
-          data,
-        ) => {
-          if (
-            !active
-          )
-            return;
-          if (
-            mode ===
-            'solo'
-          )
-            setSolo(
-              Array.isArray(
-                data,
-              )
-                ? data
-                : [],
-            );
-          else
-            setCoop(
-              Array.isArray(
-                data,
-              )
-                ? data
-                : [],
-            );
-        },
-      )
-      .catch(
-        () => {
-          if (
-            !active
-          )
-            return;
-          if (
-            mode ===
-            'solo'
-          )
-            setSolo(
-              [],
-            );
-          else
-            setCoop(
-              [],
-            );
-        },
-      )
-      .finally(
-        () =>
-          active &&
-          setLoading(
-            false,
-          ),
-      );
+    setLoading(true);
+    const url = `/api/dream-rift/leaderboard?difficulty=${difficulty}`;
+    fetch(url)
+      .then((r) => r.json())
+      .then((data) => {
+        if (active) setSolo(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (active) setSolo([]);
+      })
+      .finally(() => active && setLoading(false));
     return () => {
       active = false;
     };
-  }, [
-    mode,
-    difficulty,
-    metric,
-  ]);
+  }, [mode, difficulty]);
 
   const field =
     FIELD[
@@ -433,7 +432,7 @@ export function Leaderboard({
               }
               type="button"
               onClick={() =>
-                setMode(
+                chooseMode(
                   m,
                 )
               }
@@ -476,7 +475,7 @@ export function Leaderboard({
               }
               type="button"
               onClick={() =>
-                setDifficulty(
+                chooseDifficulty(
                   d,
                 )
               }
@@ -540,7 +539,7 @@ export function Leaderboard({
                 }
                 type="button"
                 onClick={() =>
-                  setMetric(
+                  chooseMetric(
                     m,
                   )
                 }
@@ -687,13 +686,9 @@ export function Leaderboard({
               arrival,
             )}
           >
-            No
-            co-op
-            runs
-            yet
-            —
-            squad
-            up!
+            {coopFailed
+              ? t('board-error', { defaultValue: 'Could not load the co-op board.' })
+              : t('board-empty', { defaultValue: 'No co-op runs yet. Squad up!' })}
           </div>
         ) : (
           <table
@@ -745,27 +740,9 @@ export function Leaderboard({
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                        {e.players.map(
-                          (
-                            p,
-                            j,
-                          ) => (
-                            <PlayerTag
-                              key={
-                                j
-                              }
-                              account={
-                                p.account
-                              }
-                              name={
-                                p.name
-                              }
-                              color={charAccent(
-                                p.charId,
-                              )}
-                            />
-                          ),
-                        )}
+                        {e.players.map((p, j) => (
+                          <CoopTag key={j} player={p} />
+                        ))}
                       </div>
                       <div className="mt-0.5 text-[10px] text-[color:var(--dr-cream-faint)]">
                         {

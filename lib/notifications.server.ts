@@ -167,6 +167,12 @@ export interface CreateNotificationInput {
    */
   dedupeUnread?: boolean;
   /**
+   * With `dedupeUnread`: collapse on recipient + type + entity whoever the actor is, so a recipient holds one unread
+   * row per entity however many people act (a mention in a game thread). The refresh moves the row's actor and link to
+   * the newest. Absent (every other caller): the actor is part of the key, as before.
+   */
+  dedupeAnyActor?: boolean;
+  /**
    * The conversation this is about (`scopeKeyFor('post', rootId)`). Present: the recipient's per-conversation
    * All / Mentions only / None choice is applied first, exactly as `dispatch()` does for chats. Absent (every other
    * caller): nothing changes.
@@ -319,8 +325,17 @@ export function invalidateNotificationPrefs(userId: string): void {
 }
 
 export async function createNotification(input: CreateNotificationInput): Promise<void> {
+  await deliverNotification(input);
+}
+
+/**
+ * {@link createNotification}, answering whether the recipient now holds the notice: true when a row was written or an
+ * unread one refreshed, false when the actor is the recipient, a conversation mute, a preference or a failure dropped
+ * it. A caller that skips a second notice for the members the first one told uses this.
+ */
+export async function deliverNotification(input: CreateNotificationInput): Promise<boolean> {
   // Never notify someone about their own action.
-  if (input.actorId && input.actorId === input.userId) return;
+  if (input.actorId && input.actorId === input.userId) return false;
 
   // A key-based notice stores its key and params; push and e-mail read the English fallback (no reader locale here).
   const previewText = noticeFallbackText(input.preview);
@@ -332,17 +347,17 @@ export async function createNotification(input: CreateNotificationInput): Promis
     // The conversation gate runs before anything is read or written: a muted thread is not a notification source.
     if (input.conversationKey && !isUnmutable(input)) {
       const pref = await getConversationPref(input.userId, input.conversationKey);
-      if (!shouldDeliver(pref, input.addressed ?? input.type === 'MENTION')) return;
+      if (!shouldDeliver(pref, input.addressed ?? input.type === 'MENTION')) return false;
     }
 
     const prefs = await loadPrefs(input.userId);
-    if (isMuted(input, prefs)) return;
+    if (isMuted(input, prefs)) return false;
 
     if (input.dedupeUnread) {
       const existing = await prisma.notification.findFirst({
         where: {
           userId: input.userId,
-          actorId: input.actorId ?? null,
+          ...(input.dedupeAnyActor ? {} : { actorId: input.actorId ?? null }),
           type: input.type,
           entityType: input.entityType ?? null,
           entityId: input.entityId ?? null,
@@ -357,6 +372,7 @@ export async function createNotification(input: CreateNotificationInput): Promis
           where: { id: existing.id },
           data: {
             createdAt: new Date(),
+            ...(input.dedupeAnyActor ? { actorId: input.actorId ?? null, link: input.link ?? null } : {}),
             preview: previewText ?? undefined,
             // A refresh with a different preview replaces the key too: a stale key would render the old sentence.
             ...(previewText !== null
@@ -366,7 +382,7 @@ export async function createNotification(input: CreateNotificationInput): Promis
               : {}),
           },
         });
-        return;
+        return true;
       }
     }
 
@@ -393,7 +409,7 @@ export async function createNotification(input: CreateNotificationInput): Promis
     // Mirror to Web Push (no-op unless the user enabled push on a device and
     // VAPID keys are configured). Fire-and-forget: never delays the caller.
     const push = pushDecision(input, prefs);
-    if (push === 'drop') return;
+    if (push === 'drop') return true;
     const tag = input.entityType && input.entityId ? `${input.entityType}:${input.entityId}` : undefined;
     if (push === 'hold') {
       void holdNotification({
@@ -412,7 +428,7 @@ export async function createNotification(input: CreateNotificationInput): Promis
             ? `${input.type}:${input.entityType}:${input.entityId}`
             : null),
       });
-      return;
+      return true;
     }
     void sendPushToUser(input.userId, {
       title: pushTitleFor(input.type),
@@ -422,8 +438,10 @@ export async function createNotification(input: CreateNotificationInput): Promis
       nid: created.id,
       actions: pushActionsFor(input.type, input.entityType),
     });
+    return true;
   } catch (err) {
     console.error('[notifications] failed to create notification:', err);
+    return false;
   }
 }
 

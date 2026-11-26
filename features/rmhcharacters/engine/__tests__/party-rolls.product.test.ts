@@ -140,6 +140,7 @@ describe('labels and notation', () => {
     expect(labelFor({ kind: 'strike', index: 1, map: 2 })).toBe('s1m2');
     expect(labelFor({ kind: 'damage', index: 0, critical: true })).toBe('d0c');
     expect(labelFor({ kind: 'free', notation: '3d6+2' })).toBe('');
+    expect(labelFor({ kind: 'free', notation: '1d10+2', as: 'hitDie' })).toBe('hitDie');
   });
 
   it('reads an attack, damage or Strike label back', () => {
@@ -237,6 +238,9 @@ describe('the request schema', () => {
     expect(ok({ roll: { kind: 'attack', index: 50 }, mode: 'normal', visibility: 'table' }).success).toBe(false);
     expect(ok({ roll: { kind: 'strike', index: 0, map: 3 }, mode: 'normal', visibility: 'table' }).success).toBe(false);
     expect(ok({ roll: { kind: 'wish' }, mode: 'normal', visibility: 'table' }).success).toBe(false);
+    expect(
+      ok({ roll: { kind: 'free', notation: '1d8', as: 'anything' }, mode: 'normal', visibility: 'table' }).success,
+    ).toBe(false);
     expect(ok({ roll: { kind: 'initiative' }, mode: 'luck', visibility: 'table' }).success).toBe(false);
   });
 });

@@ -10,6 +10,7 @@ import { userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
 import { isTrackableTitle } from '@/lib/games/route-match';
 import { getLibraryExtras } from '@/lib/games/detail.server';
 import { notifyThreadReply } from '@/lib/games/thread-notices.server';
+import { notifyThreadMentions, resolveThreadMentions } from '@/lib/games/thread-mentions.server';
 import { listWorkshop } from '@/lib/games/workshop.server';
 import { listGuides, listReviews } from '@/lib/games/meta.server';
 import {
@@ -77,6 +78,15 @@ export async function createThread(input: {
     data: { gameId: input.gameId, authorId: input.userId, title: v.title, body: v.body },
     select: { id: true },
   });
+  // After the write: tell the members the text names (failures are logged, never the writer's problem).
+  await notifyThreadMentions({
+    postId: null,
+    threadId: t.id,
+    gameId: input.gameId,
+    threadTitle: v.title,
+    body: v.body,
+    writerId: input.userId,
+  });
   return { id: t.id };
 }
 
@@ -110,15 +120,27 @@ export async function createPost(input: {
     });
     return { id: post.id, thread };
   });
-  // After the commit: tell the thread's author and its earlier posters (never the poster; failures are logged).
-  await notifyThreadReply({
-    id: made.id,
+  // After the commit: tell the members the reply names, then the thread's author and its earlier posters (never the
+  // poster, and never a member the mention already told; failures are logged).
+  const mentioned = await notifyThreadMentions({
+    postId: made.id,
     threadId: made.thread.id,
     gameId: made.thread.gameId,
     threadTitle: made.thread.title,
-    threadAuthorId: made.thread.authorId,
-    posterId: input.userId,
+    body: v.body,
+    writerId: input.userId,
   });
+  await notifyThreadReply(
+    {
+      id: made.id,
+      threadId: made.thread.id,
+      gameId: made.thread.gameId,
+      threadTitle: made.thread.title,
+      threadAuthorId: made.thread.authorId,
+      posterId: input.userId,
+    },
+    new Set(mentioned),
+  );
   return { id: made.id };
 }
 
@@ -292,7 +314,11 @@ export async function getThreadPage(
   if (!t || t.gameId !== gameId) return null;
   const author = person(t.author as AuthorRow);
   const ids = [...new Set([author.userId, ...t.posts.map((p) => p.authorId), ...(viewer.id ? [viewer.id] : [])])];
-  const emotes = await emoteTitlesFor(ids);
+  const [emotes, mentions] = await Promise.all([
+    emoteTitlesFor(ids),
+    // One handle lookup for the opening post and every reply shown.
+    resolveThreadMentions([t.body, ...t.posts.map((p) => p.body)]),
+  ]);
   return {
     gameId,
     gameTitle: title.title,
@@ -319,5 +345,6 @@ export async function getThreadPage(
     isAdmin: viewer.isAdmin,
     authorEmotes: emotes,
     myEmoteTitles: viewer.id ? (emotes[viewer.id] ?? []) : [],
+    mentions,
   };
 }

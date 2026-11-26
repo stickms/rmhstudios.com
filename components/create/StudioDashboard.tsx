@@ -11,6 +11,7 @@ import { TierEditor } from '@/components/creator/TierEditor';
 import type { StudioOverview } from '@/lib/creator/studio.server';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
+import { Handle } from '@/components/ui/handle';
 /**
  * StudioDashboard — the monetization dashboard that used to live at the
  * standalone `/creator-studio` ("Studio") route, now merged into the `/create`
@@ -209,7 +210,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) { co
                     {tip.sender?.name ?? t('someone', { defaultValue: 'Someone' })}
                   </span>
                   {tip.sender?.handle ? (
-                    <span className="text-xs font-medium text-site-text-muted"> @{tip.sender.handle}</span>
+                    <span className="text-xs font-medium text-site-text-muted"> <Handle handle={tip.sender.handle} /></span>
                   ) : null}
                   {tip.note ? (
                     <p className="truncate text-xs text-site-text-muted">{tip.note}</p>

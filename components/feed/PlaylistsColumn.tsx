@@ -37,6 +37,7 @@ import '@/components/library/library.css';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
+import { Handle } from '@/components/ui/handle';
 interface Summary {
   id: string;
   name: string;
@@ -462,7 +463,7 @@ export function PlaylistsColumn({
                                   key={c.userId}
                                   className="flex items-center gap-1 rounded-site-sm px-2 py-1 text-xs text-site-text hover:bg-site-surface-hover"
                                 >
-                                  <span>@{c.handle ?? c.name ?? c.userId}</span>
+                                  <span><Handle handle={c.handle ?? c.name ?? c.userId} /></span>
                                   <button
                                     type="button"
                                     onClick={() => removeCollaborator(pl.id, c.userId)}

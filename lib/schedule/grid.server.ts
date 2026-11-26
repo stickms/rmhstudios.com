@@ -227,7 +227,7 @@ export async function getMyGrid(userId: string, from: Date = new Date(), days = 
       href: e.href,
       startsAt: e.startsAt,
       endsAt: e.endsAt,
-      ...(e.allDay ? { allDay: true } : {}),
+      ...(e.allDay ? { allDay: true, allDayKey: e.allDay } : {}),
     });
   }
   occurrences.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());

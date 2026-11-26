@@ -20,6 +20,8 @@ import { notice } from '@/lib/notifications/notice-keys';
 import { takedownRing } from '@/lib/profile/webrings.server';
 import { hideMusicContent } from '@/lib/rmhmusic/learn/moderation.server';
 import { notifyReportersOfOutcome } from '@/lib/moderation/my-reports.server';
+import { recordContentRemoval } from '@/lib/moderation/removal-reviews.server';
+import { REMOVABLE_REPORT_ENTITY_TYPES } from '@/lib/moderation/report-constants';
 import { takedownShare } from '@/lib/studio/share.server';
 import { noteCountsFor } from '@/lib/moderation/notes.server';
 import { snippet, windowStart } from '@/lib/moderation/my-reports';
@@ -43,6 +45,8 @@ import {
 import type { ReportGroupRow, ReportGroupsPage } from '@/lib/moderation/triage.contract';
 
 /* ------------------------------ the decision ------------------------------ */
+
+const REMOVABLE_TYPES: ReadonlySet<string> = new Set(REMOVABLE_REPORT_ENTITY_TYPES);
 
 export type ReportAction = 'review' | 'resolve' | 'dismiss';
 
@@ -244,6 +248,27 @@ export async function takedownReportedContent(entityType: string, entityId: stri
       console.warn(`[tube-room] removed ${entityId}; the live room was not reached (no Redis)`);
     }
   }
+
+  // Sprint 15 (docs/autonomous/sprint-15/plan.md §Anchors)
+  // s15-04 workshop-reports
+  if (entityType === 'tf2-hud' || entityType === 'tf2-loadout' || entityType === 'versecraft-seed') {
+    // s15-04: stamp `moderatedAt` (a HUD or a loadout is made private in the same write). Idempotent. A HUD's
+    // content-addressed blobs and a story's world are left alone: other HUDs and other players' saves may use them.
+    await (await import('@/lib/moderation/workshop-moderation.server')).takeDownWorkshopItem(entityType, entityId, now);
+  }
+
+  // s15-05 prediction-comments
+  if (entityType === 'prediction-comment') {
+    // s15-05: the comment row is deleted (the same delete its author can do). Idempotent, so a repeated decision is harmless.
+    await (await import('@/lib/forecasting/comment-reports.server')).takeDownPredictionComment(entityId);
+  }
+
+  // s15-06 member-text-reports
+  if (entityType === 'guestbook-entry' || entityType === 'blog-comment') {
+    // s15-06: a guestbook entry is deleted (the owner's hide is a different, reversible act); an announcement comment
+    // is soft-deleted (`deletedAt`), as the admin delete does. Idempotent.
+    await (await import('@/lib/moderation/member-text-reports.server')).takeDownMemberText(entityType, entityId, now);
+  }
 }
 
 export interface Decision {
@@ -391,8 +416,36 @@ export async function decideReports(ids: readonly string[], decision: Decision):
     }
   }
 
+  // s15-16 removal-appeals: each removed target with an author gets one record and one notice (the message variant when
+  // the moderator wrote a message), after the takedown succeeded and the reports were claimed. A failure is logged and
+  // never undoes the takedown. A target whose record failed falls through to the plain decision notice below, so a typed
+  // message is not lost; one that was recorded (or whose report already had its row) is told once and gets no second notice.
+  const removalHandled = new Set<string>();
+  if (decision.deleteContent && decision.action === 'resolve') {
+    for (const [key, reports] of byTarget) {
+      const first = reports[0];
+      if (!first || !REMOVABLE_TYPES.has(first.entityType)) continue;
+      const author = reports.find((r) => r.targetUserId)?.targetUserId;
+      if (!author) continue;
+      try {
+        const outcome = await recordContentRemoval({
+          reportId: first.id,
+          entityType: first.entityType,
+          entityId: first.entityId,
+          authorId: author,
+          message: decision.message,
+          now,
+        });
+        if (outcome === 'recorded' || outcome === 'duplicate') removalHandled.add(key);
+      } catch (e) {
+        console.error('Removal record failed:', e);
+      }
+    }
+  }
+
   if (decision.message && decision.action === 'resolve') {
-    for (const reports of byTarget.values()) {
+    for (const [key, reports] of byTarget) {
+      if (removalHandled.has(key)) continue;
       const first = reports[0];
       if (!first?.targetUserId) continue;
       await createNotification({
@@ -714,6 +767,45 @@ async function previewsFor(targets: readonly DecideTarget[]): Promise<Map<string
           for (const [id, text] of texts) out.set(groupKey('tube-room', id), snippet(text, 420));
         })
       : Promise.resolve(),
+
+    // Sprint 15 (docs/autonomous/sprint-15/plan.md §Anchors)
+    // s15-04 workshop-reports
+    // The kind, title, author and text of each reported HUD, loadout or story, whatever its state.
+    idsOf('tf2-hud').length || idsOf('tf2-loadout').length || idsOf('versecraft-seed').length
+      ? (await import('@/lib/moderation/workshop-moderation.server'))
+          .workshopPreviews({
+            'tf2-hud': idsOf('tf2-hud'),
+            'tf2-loadout': idsOf('tf2-loadout'),
+            'versecraft-seed': idsOf('versecraft-seed'),
+          })
+          .then((texts) => {
+            for (const [key, text] of texts) {
+              const [type, ...rest] = key.split(':');
+              out.set(groupKey(type!, rest.join(':')), snippet(text, 420));
+            }
+          })
+      : Promise.resolve(),
+
+    // s15-05 prediction-comments
+    idsOf('prediction-comment').length
+      ? (await import('@/lib/forecasting/comment-reports.server'))
+          .predictionCommentPreviews(idsOf('prediction-comment'))
+          .then((lines) => {
+            for (const [id, line] of lines) out.set(groupKey('prediction-comment', id), snippet(line, 420));
+          })
+      : Promise.resolve(),
+
+    // s15-06 member-text-reports
+    // The kind, author, place and words of each reported guestbook entry or announcement comment, whatever its state.
+    ...(['guestbook-entry', 'blog-comment'] as const).map((type) =>
+      idsOf(type).length
+        ? import('@/lib/moderation/member-text-reports.server')
+            .then((m) => m.memberTextPreviews(type, idsOf(type)))
+            .then((texts) => {
+              for (const [id, text] of texts) out.set(groupKey(type, id), snippet(text, 420));
+            })
+        : Promise.resolve(),
+    ),
   ]);
   for (const bi of buildIssues)
     out.set(groupKey('build-issue', bi.id), snippet(`${bi.build.title}: ${bi.title}. ${bi.body}`, 160));

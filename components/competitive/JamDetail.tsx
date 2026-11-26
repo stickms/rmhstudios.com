@@ -1,10 +1,11 @@
 import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import { Section } from '@/components/ui/rules';
 import { Select } from '@/components/ui/select';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -12,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Hammer } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { api } from '@/lib/contract/client';
+import { deleteJamApi } from '@/lib/competitive/jam-delete.contract';
 import { enterJamApi, rateJamEntryApi } from '@/lib/competitive/jams.contract';
 import { jamQuery } from '@/lib/competitive/jams.queries';
 import { JAM_CATEGORIES, type JamCategory } from '@/lib/competitive/jam';
@@ -28,6 +30,7 @@ import { JamThemeVote } from './JamThemeVote';
 import { JamThemeResults } from './JamThemeResults';
 import { JamEditDialog } from './JamEditDialog';
 import { JamShortlistDialog } from './JamShortlistDialog';
+import { JamSuggestions } from './JamSuggestions';
 
 type Scores = Record<JamCategory, number>;
 interface Entry {
@@ -155,6 +158,8 @@ export function JamDetail({ slug }: { slug: string }) { const fmt = useLocaleFor
   const { data: session } = useSession();
   const signedIn = !!session?.user?.id;
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
+  const navigate = useNavigate();
   const query = jamQuery(slug);
   const { data, isError } = useQuery(query);
   // undefined while loading; null when the jam does not exist.
@@ -192,6 +197,31 @@ export function JamDetail({ slug }: { slug: string }) { const fmt = useLocaleFor
     }
   };
 
+  // s15-13: an admin deletes a jam that has not started (the server refuses once it has or has entries).
+  const removeJam = async () => {
+    const ok = await confirm({
+      title: t('delete-title', { ns: 'jam-suggestions', defaultValue: 'Delete this jam?' }),
+      description: t('delete-desc', {
+        ns: 'jam-suggestions',
+        defaultValue: 'The jam, its shortlist, votes and suggestions are removed. This cannot be undone.',
+      }),
+      confirmLabel: t('delete-confirm', { ns: 'jam-suggestions', defaultValue: 'Delete jam' }),
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await api(deleteJamApi, { params: { slug } });
+      toast.success(t('deleted', { ns: 'jam-suggestions', defaultValue: 'Jam deleted' }));
+      queryClient.removeQueries({ queryKey: ['jams', 'detail', slug] });
+      await queryClient.invalidateQueries({ queryKey: ['jams', 'list'] });
+      await navigate({ to: '/jams' });
+    } catch (e) {
+      toast.error(
+        refusalText.maybe(e) ?? t('delete-failed', { ns: 'jam-suggestions', defaultValue: 'Could not delete the jam' }),
+      );
+    }
+  };
+
   const viewerId = session?.user?.id ?? '';
   return (
     <div className={cn('space-y-4 max-w-3xl', arrival)}>
@@ -225,6 +255,11 @@ export function JamDetail({ slug }: { slug: string }) { const fmt = useLocaleFor
                 {t('open-shortlist', { ns: 'jam-editing', defaultValue: 'Edit shortlist' })}
               </Button>
             )}
+            {jam.phase === 'upcoming' && (
+              <Button size="sm" variant="danger" onClick={() => void removeJam()}>
+                {t('delete-jam', { ns: 'jam-suggestions', defaultValue: 'Delete jam' })}
+              </Button>
+            )}
           </div>
         )}
       </Section>
@@ -232,6 +267,7 @@ export function JamDetail({ slug }: { slug: string }) { const fmt = useLocaleFor
       {dialog === 'shortlist' && <JamShortlistDialog slug={slug} onClose={() => setDialog(null)} />}
 
       {jam.themeVoting && jam.phase === 'upcoming' && <JamThemeVote slug={slug} signedIn={signedIn} />}
+      {jam.themeVoting && jam.phase === 'upcoming' && <JamSuggestions slug={slug} signedIn={signedIn} />}
       {jam.themeVoting && jam.phase !== 'upcoming' && <JamThemeResults slug={slug} />}
 
       {jam.phase === 'open' && signedIn && !jam.teamEntryId && (

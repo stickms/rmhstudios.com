@@ -27,6 +27,7 @@ import {
 import { getPerformanceRating, generateShareText } from '@/lib/lights-out/share';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
 import { useSession } from '@/components/Providers';
+import { readLightsOutResult } from '@/lib/daily-puzzles/result-shapes';
 import { fetchResultFromServer, saveResult as saveGenericResult } from '@/lib/daily-puzzles/persistence';
 import {
     Sparkles, RotateCcw, Trophy, Undo2, Lightbulb, Flag,
@@ -154,7 +155,7 @@ export function LightsOutGame() {
 
         fetchResultFromServer('lights-out', dateKey).then(serverResult => {
             if (serverResult?.resultJson) {
-                const data = serverResult.resultJson;
+                const data = readLightsOutResult(serverResult.resultJson);
                 const serverMoves = data.moves ?? serverResult.score;
                 const serverDnf = data.dnf ?? false;
                 const serverHintUsed = data.hintUsed ?? false;

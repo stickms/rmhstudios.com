@@ -4,11 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import * as R from '@features/rmhcharacters/engine/dnd5e/rules';
+import { applyLongRest, applyShortRest } from '@features/rmhcharacters/engine/dnd5e/rest';
 import { ABILITIES, ABILITY_NAMES, type Dnd5eCharacter, type Dnd5eData } from '@features/rmhcharacters/engine/types';
 import { DND5E_CONDITIONS } from '@features/rmhcharacters/engine/conditions';
 import { Chip, Issues, Muted, Section, StatRow, Stepper } from '../controls';
 import { RollButton } from '../RollButton';
 import { RollsContext } from '../useRolls';
+import { ClassResources } from './ClassResources5e';
+import { ShortRestDialog } from './ShortRestDialog';
 
 type Set5e = (fn: (c: Dnd5eCharacter) => Dnd5eCharacter) => void;
 
@@ -39,6 +42,7 @@ function Sheet5eBody({
 }) {
   const { t } = useTranslation('c-rmhcharacters');
   const [amount, setAmount] = useState('');
+  const [shortRestOpen, setShortRestOpen] = useState(false);
   const scores = R.abilityScores(c, d);
   const level = R.totalLevel(c);
   const pb = R.proficiencyBonus(level);
@@ -201,29 +205,19 @@ function Sheet5eBody({
                     onChange={(n) => set((x) => ({ ...x, exhaustion: n }))}
                   />
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() =>
-                    set((x) => ({
-                      ...x,
-                      hp: { current: maxHp, temp: 0 },
-                      hitDiceUsed: Math.max(0, x.hitDiceUsed - Math.max(1, Math.floor(totalDice / 2))),
-                      spells: { ...x.spells, slotsUsed: x.spells.slotsUsed.map(() => 0), pactSlotsUsed: 0 },
-                      exhaustion: Math.max(0, x.exhaustion - 1),
-                      deathSaves: { successes: 0, failures: 0 },
-                    }))
-                  }
-                >
+                <Button type="button" variant="ghost" onClick={() => set((x) => applyLongRest(x, d))}>
                   {t('s5.longRest', { defaultValue: 'Long Rest' })}
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => set((x) => ({ ...x, spells: { ...x.spells, pactSlotsUsed: 0 } }))}
-                >
+                <Button type="button" variant="ghost" onClick={() => setShortRestOpen(true)}>
                   {t('s5.shortRest', { defaultValue: 'Short Rest' })}
                 </Button>
+                <ShortRestDialog
+                  open={shortRestOpen}
+                  onOpenChange={setShortRestOpen}
+                  c={c}
+                  d={d}
+                  onRest={(input) => set((x) => applyShortRest(x, d, input))}
+                />
               </div>
               {c.exhaustion ? (
                 <Muted className="mt-2">
@@ -284,13 +278,7 @@ function Sheet5eBody({
             ))}
           </Section>
 
-          {R.resources(c, d).length ? (
-            <Section title={t('s5.resources', { defaultValue: 'Class resources' })}>
-              {R.resources(c, d).map((r) => (
-                <StatRow key={r.name} label={r.name} value={r.value} {...(r.recharge ? { note: r.recharge } : {})} />
-              ))}
-            </Section>
-          ) : null}
+          {R.resources(c, d).length ? <ClassResources c={c} d={d} set={set} readOnly={readOnly} /> : null}
         </div>
 
         <div>

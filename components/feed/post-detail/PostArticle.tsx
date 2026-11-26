@@ -29,6 +29,7 @@ import { ARRIVE } from '@/components/ui/arrive';
 import { ContentWarningCover } from '@/components/feed/ContentWarningCover';
 import { cn } from '@/lib/utils';
 
+import { Handle } from '@/components/ui/handle';
 interface PostArticleProps {
   post: FeedItem;
   postId: string;
@@ -103,7 +104,7 @@ export function PostArticle({
               {authorName}
             </span>
           </Link>
-          {freshPostUser?.handle && <p className="t-meta truncate">@{freshPostUser.handle}</p>}
+          {freshPostUser?.handle && <p className="t-meta truncate"><Handle handle={freshPostUser.handle} /></p>}
         </div>
         {!post.deletedAt && (
           <RMHarkOverflowMenu
@@ -226,7 +227,7 @@ export function PostArticle({
                   {freshOriginalUser.name || t('unknown-user', { defaultValue: 'Unknown' })}
                 </span>
                 {freshOriginalUser.handle && (
-                  <span className="t-meta truncate">@{freshOriginalUser.handle}</span>
+                  <span className="t-meta truncate"><Handle handle={freshOriginalUser.handle} /></span>
                 )}
               </Link>
             ) : (

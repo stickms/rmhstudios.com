@@ -2,8 +2,9 @@ import { apiRoute } from '@/lib/api/route.server';
 import { z } from 'zod';
 import { notFound } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
+import { deleteJamApi } from '@/lib/competitive/jam-delete.contract';
 import { getJamApi, updateJamApi } from '@/lib/competitive/jams.contract';
-import { getJam, updateJam } from '@/lib/competitive/jams.server';
+import { deleteJam, getJam, updateJam } from '@/lib/competitive/jams.server';
 import { ERROR_CODES, refusalBody } from '@/lib/errors/codes';
 
 /** Every field optional; the same bounds as the create form. The slug is not a field: it never changes. */
@@ -20,6 +21,7 @@ const updateSchema = z.object({
 /**
  * GET   /api/jams/:slug — a jam with entries (once started) and, when done, results.
  * PATCH /api/jams/:slug — admin: edit a jam within what its phase allows (`lib/competitive/jam-edit.ts`).
+ * DELETE /api/jams/:slug — admin: delete a jam that has not started and has no entries.
  */
 export const route = apiRoute('/api/jams/$slug', {
   GET: implement(getJamApi, { auth: 'optional', rateLimit: 'read' }, async ({ params, userId }) => {
@@ -39,4 +41,9 @@ export const route = apiRoute('/api/jams/$slug', {
       return Response.json({ jam }, { headers: { 'Cache-Control': 'private, no-store' } });
     },
   ),
+  DELETE: implement(deleteJamApi, { auth: 'admin', rateLimit: 'write' }, async ({ params, userId }) => {
+    const res = await deleteJam(userId, params.slug);
+    if (!res.ok) return Response.json(refusalBody(res.code), { status: res.status });
+    return Response.json({ ok: true as const });
+  }),
 });

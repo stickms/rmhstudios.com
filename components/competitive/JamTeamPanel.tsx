@@ -34,6 +34,7 @@ import {
   type ViewerTeamState,
 } from '@/lib/competitive/jam-teams';
 
+import { Handle } from '@/components/ui/handle';
 interface JamTeamPanelProps {
   slug: string;
   entryId: string;
@@ -188,7 +189,11 @@ function TeamInvite({
             >
               <UserAvatar src={u.image} alt="" size={24} />
               <span className="t-body min-w-0 flex-1 truncate text-site-text">{u.name ?? u.handle}</span>
-              {u.handle && <span className="t-meta truncate">@{u.handle}</span>}
+              {u.handle && (
+                <span className="t-meta truncate">
+                  <Handle handle={u.handle} />
+                </span>
+              )}
             </button>
           </li>
         ))}

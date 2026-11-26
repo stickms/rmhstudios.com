@@ -19,6 +19,11 @@ export const predictionListQuery = z.object({
   filter: z.string().optional(),
 });
 
+/** `GET /api/predictions/$id/comments?cursor=` — the `nextCursor` of the previous page (`comment-cursor.ts`). */
+export const commentListQuery = z.object({
+  cursor: z.string().max(80).optional(),
+});
+
 export const tradeSchema = z.object({
   side: z.enum(['YES', 'NO']),
   amount: z.number().int().min(MIN_TRADE_AMOUNT).max(MAX_TRADE_AMOUNT),

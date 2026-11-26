@@ -97,6 +97,11 @@ export interface StartPayload {
     isHost: boolean;
   }[];
   yourSlot: number;
+  /**
+   * The co-op run the hub recorded for this game (`DreamRiftCoopRun.id`), which only the host may finish. Null when
+   * the game is solo or the record could not be written: such a run is never posted.
+   */
+  runId: string | null;
 }
 
 // ── Realtime relay payloads (carried inside C2S.RELAY / S2C.RELAY) ──

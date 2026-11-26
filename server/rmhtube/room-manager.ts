@@ -15,7 +15,7 @@ import { logger } from './logger';
 import { getPrismaClient } from './prisma-client';
 import { statsRecorder } from './stats-recorder';
 import { validated } from './schemas';
-import { C2S, S2C, ROOM_CLOSED_CHANNEL } from '../../lib/rmhtube/events';
+import { C2S, S2C, ROOM_CLOSED_CHANNEL, MEMBER_ERASED_CHANNEL, DELETED_MEMBER_NAME } from '../../lib/rmhtube/events';
 import { redisSubscribe } from '../../lib/redis.server';
 import { isRemovedRoomName, removedNameSince } from '../../lib/rmhtube/room-reports';
 import {
@@ -110,6 +110,9 @@ const EmptyPayloadSchema = z.object({}).optional();
 /** s14-10: what the web tier publishes on `ROOM_CLOSED_CHANNEL` when a moderator removes a room. */
 const RoomClosedSchema = z.object({ roomId: z.string().min(1).max(32) });
 
+/** s15-18: what the web tier publishes on `MEMBER_ERASED_CHANNEL` once an account erasure has committed. */
+const MemberErasedSchema = z.object({ userId: z.string().min(1).max(128) });
+
 export class RoomManager {
   /** All active rooms in memory */
   readonly rooms = new Map<string, RmhTubeRoom>();
@@ -129,6 +132,9 @@ export class RoomManager {
   /** Unsubscribes the moderator-closure channel (s14-10); called by `stopGarbageCollector` at shutdown. */
   private unsubscribeRoomClosed: (() => void) | null = null;
 
+  /** Unsubscribes the erased-member channel (s15-18); called by `stopGarbageCollector` at shutdown. */
+  private unsubscribeMemberErased: (() => void) | null = null;
+
   constructor(private io: Server) {
     // s14-10: the web tier publishes here when a moderator removes a reported room. Without Redis this is a no-op, and
     // the running room carries on until it empties or the hub restarts; neither loader will bring it back, because
@@ -137,6 +143,75 @@ export class RoomManager {
       const parsed = RoomClosedSchema.safeParse(data);
       if (parsed.success) this.closeRoomByModerator(parsed.data.roomId);
     });
+    // s15-18: the web tier publishes here after an account erasure commits. Without Redis this is a no-op, and a
+    // running room keeps the old name in its buffer until the hub restarts (the stored rows are already renamed).
+    this.unsubscribeMemberErased = redisSubscribe(MEMBER_ERASED_CHANNEL, (data) => {
+      const parsed = MemberErasedSchema.safeParse(data);
+      if (parsed.success) this.eraseMemberName(parsed.data.userId);
+    });
+  }
+
+  /**
+   * s15-18 (S13-06): rename an erased member to "Deleted user" in every running room: their chat lines, the pinned
+   * message, replies that quote them, their presence row, queue credits and ban-list entry. Their unsent typing state
+   * is dropped. Each affected room is told with a `MEMBER_ERASED` action; a room that never held them is untouched.
+   * Idempotent. Returns how many rooms changed.
+   */
+  eraseMemberName(userId: string): number {
+    let changed = 0;
+    for (const room of this.rooms.values()) {
+      let touched = false;
+      for (const m of room.chat) {
+        if (m.userId === userId && m.userName !== DELETED_MEMBER_NAME) {
+          m.userName = DELETED_MEMBER_NAME;
+          touched = true;
+        }
+      }
+      if (room.pinnedMessage?.userId === userId && room.pinnedMessage.userName !== DELETED_MEMBER_NAME) {
+        room.pinnedMessage.userName = DELETED_MEMBER_NAME;
+        touched = true;
+      }
+      // A reply quotes its target's name; the target is found by id because the quote carries no user id.
+      const byId = new Map(room.chat.map((m) => [m.id, m]));
+      for (const m of room.chat) {
+        const target = m.replyToId ? byId.get(m.replyToId) : undefined;
+        if (target?.userId === userId && m.replyToUserName && m.replyToUserName !== DELETED_MEMBER_NAME) {
+          m.replyToUserName = DELETED_MEMBER_NAME;
+          touched = true;
+        }
+      }
+      const member = room.members.get(userId);
+      if (member && (member.userName !== DELETED_MEMBER_NAME || member.avatarUrl !== null)) {
+        member.userName = DELETED_MEMBER_NAME;
+        member.avatarUrl = null;
+        touched = true;
+      }
+      for (const items of [room.queue, room.playedItems, room.currentItem ? [room.currentItem] : []]) {
+        for (const q of items) {
+          if (q.addedBy === userId && q.addedByName !== DELETED_MEMBER_NAME) {
+            q.addedByName = DELETED_MEMBER_NAME;
+            touched = true;
+          }
+        }
+      }
+      for (const b of room.bannedUsers) {
+        if (b.userId === userId && b.userName !== DELETED_MEMBER_NAME) {
+          b.userName = DELETED_MEMBER_NAME;
+          touched = true;
+        }
+      }
+      const typing = room.typingTimers.get(userId);
+      if (typing) {
+        clearTimeout(typing);
+        room.typingTimers.delete(userId);
+        touched = true;
+      }
+      if (!touched) continue;
+      changed++;
+      this.broadcastAction(room, 'MEMBER_ERASED', { userId, userName: DELETED_MEMBER_NAME });
+    }
+    if (changed > 0) logger.info({ event: 'member_erased_renamed', rooms: changed });
+    return changed;
   }
 
   /**
@@ -1520,6 +1595,8 @@ export class RoomManager {
   stopGarbageCollector(): void {
     this.unsubscribeRoomClosed?.();
     this.unsubscribeRoomClosed = null;
+    this.unsubscribeMemberErased?.();
+    this.unsubscribeMemberErased = null;
     if (this.gcInterval) {
       clearInterval(this.gcInterval);
       this.gcInterval = null;

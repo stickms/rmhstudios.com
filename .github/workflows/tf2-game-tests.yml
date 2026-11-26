@@ -120,5 +120,7 @@ jobs:
       - name: Pipeline unit tests
         run: |
           pip install vpk numpy pillow srctools==2.6.2
+          # Refresh the index first: the runner image's copy goes stale and the mirror drops old package versions (404).
+          sudo apt-get update -qq
           sudo apt-get install -y ffmpeg > /dev/null
           cd scripts/tf2-game && python3 -B -m unittest discover -p 'test_*.py'

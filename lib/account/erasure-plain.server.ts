@@ -49,3 +49,23 @@ export function plainColumnErasureOps(userId: string) {
     prisma.botWorkerSettings.updateMany({ where: { updatedById: userId }, data: { updatedById: null } }),
   ];
 }
+
+/**
+ * A security report sent while signed out carries the reporter's name and address with `userId` null, so the
+ * by-id operation above cannot find it (s15-20, S14-18). Rows with no `userId` whose `reporterEmail` is the account's
+ * address, compared case-insensitively, lose the name, the address and the IP hash; the title, text and status stay.
+ *
+ * `accountEmail` is read before the transaction, because the profile scrub inside it removes the address. No address
+ * (the account had none, or an earlier run already scrubbed it) is no operation: a blank value must never match the
+ * reports that were sent with no address at all.
+ */
+export function securityReportEmailErasureOps(accountEmail: string | null) {
+  const email = accountEmail?.trim();
+  if (!email) return [];
+  return [
+    prisma.securityReport.updateMany({
+      where: { userId: null, reporterEmail: { equals: email, mode: 'insensitive' } },
+      data: { reporterName: null, reporterEmail: null, ipHash: null },
+    }),
+  ];
+}

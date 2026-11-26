@@ -9,6 +9,7 @@ import { api } from '@/lib/contract/client';
 import { searchUsersApi } from '@/lib/discovery/explore.contract';
 import type { ResolvedUser } from '@/lib/user-display';
 
+import { Handle } from '@/components/ui/handle';
 /**
  * "Compare with…": the people typeahead (the same search the mention and message pickers use) and a way to the
  * comparison page. Picking a result or submitting a typed handle goes to `/progress/compare?with=`.
@@ -81,7 +82,11 @@ export function CompareWithField() {
                 >
                   <UserAvatar src={user.image} alt="" size={28} fallbackName={label} />
                   <span className="t-body truncate">{label}</span>
-                  {user.handle ? <span className="t-meta truncate">@{user.handle}</span> : null}
+                  {user.handle ? (
+                    <span className="t-meta truncate">
+                      <Handle handle={user.handle} />
+                    </span>
+                  ) : null}
                 </button>
               </li>
             );

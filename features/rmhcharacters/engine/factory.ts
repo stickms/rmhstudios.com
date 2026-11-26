@@ -70,6 +70,7 @@ export function newDnd5e(): Dnd5eCharacter {
     spells: { known: [], prepared: [], slotsUsed: [0, 0, 0, 0, 0, 0, 0, 0, 0], pactSlotsUsed: 0 },
     shield: false,
     hitDiceUsed: 0,
+    resourcesUsed: {},
     deathSaves: { successes: 0, failures: 0 },
     heroicInspiration: false,
     exhaustion: 0,
@@ -138,6 +139,41 @@ const strRecord = (v: unknown): Record<string, string> => {
   if (isObj(v))
     for (const [k, x] of Object.entries(v)) if (typeof x === 'string') out[k.slice(0, 100)] = x.slice(0, 200);
   return out;
+};
+
+/**
+ * Uses spent per class resource, by name. Only positive whole numbers survive, capped; which names are real and each
+ * one's maximum need the class data, so `clampResourcesUsed` (engine/dnd5e/rest.ts) finishes the job where the data is.
+ */
+const MAX_RESOURCE_NAMES = 40;
+const usesRecord = (v: unknown): Record<string, number> => {
+  const out: Record<string, number> = {};
+  if (!isObj(v)) return out;
+  for (const [k, x] of Object.entries(v)) {
+    if (Object.keys(out).length >= MAX_RESOURCE_NAMES) break;
+    if (typeof x !== 'number' || !Number.isFinite(x)) continue;
+    const n = Math.floor(x);
+    if (n > 0) out[k.slice(0, 100)] = Math.min(999, n);
+  }
+  return out;
+};
+
+/** Spent Hit Dice by die size: only the real sizes, each a whole count of at most 20 (the level cap). */
+const HIT_DIE_SIZES = new Set(['6', '8', '10', '12']);
+const spentBySize = (v: unknown): Record<number, number> => {
+  const out: Record<number, number> = {};
+  if (!isObj(v)) return out;
+  for (const size of HIT_DIE_SIZES) {
+    const n = Math.floor(num(v[size], 0, 0, 20));
+    if (n > 0) out[Number(size)] = n;
+  }
+  return out;
+};
+
+/** `hitDiceSpent` only when some die size is recorded, so a sheet that never rested round-trips unchanged. */
+const spentEntry = (v: unknown): { hitDiceSpent?: Record<number, number> } => {
+  const bySize = spentBySize(v);
+  return Object.keys(bySize).length ? { hitDiceSpent: bySize } : {};
 };
 
 /** Portraits are data URLs of an image, nothing else, and stay small. */
@@ -270,6 +306,8 @@ function normalizeDnd5e(raw: Obj): Dnd5eCharacter {
     },
     shield: bool(raw.shield),
     hitDiceUsed: num(raw.hitDiceUsed, 0, 0, 20),
+    ...spentEntry(raw.hitDiceSpent),
+    resourcesUsed: usesRecord(raw.resourcesUsed),
     deathSaves: { successes: num(death.successes, 0, 0, 3), failures: num(death.failures, 0, 0, 3) },
     heroicInspiration: bool(raw.heroicInspiration),
     exhaustion: num(raw.exhaustion, 0, 0, 6),

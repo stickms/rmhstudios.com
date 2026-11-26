@@ -205,6 +205,15 @@ export function systemLabels(t: TFunction): Record<string, string> {
     game_thread: t('system-label-game_thread', { ns: 'feed', defaultValue: 'Game discussion' }),
     song: t('system-label-song', { ns: 'feed', defaultValue: 'Slice It' }),
 
+    // Sprint 15 system labels (docs/autonomous/sprint-15/plan.md §Anchors)
+    // s15-07 fix-notices
+    puzzle_report: t('system-label-puzzle_report', { ns: 'feed', defaultValue: 'Daily puzzles' }),
+    jam_deadline: t('system-label-jam_deadline', { ns: 'feed', defaultValue: 'Game jams' }),
+
+    // s15-12 thread-mentions
+
+    // s15-16 removal-appeals
+
     default: t('system-label-default', { ns: 'feed', defaultValue: 'RMH Studios' }),
   };
 }

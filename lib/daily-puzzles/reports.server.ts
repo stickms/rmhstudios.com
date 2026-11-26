@@ -14,6 +14,8 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
 import { recordAdminActionIn } from '@/lib/admin-audit.server';
+import { createNotification } from '@/lib/notifications.server';
+import { notice } from '@/lib/notifications/notice-keys';
 import type { ErrorCode } from '@/lib/errors/codes';
 import { isAIPuzzleMode, type DailyPuzzleMode } from '@/lib/daily-puzzles/generate-core';
 import { generateForMode, getOrCreateDailyPuzzle } from '@/lib/daily-puzzles/generate.server';
@@ -23,14 +25,16 @@ import {
   isAheadDay,
   isReportableDay,
   isReportKind,
+  isReviewOutcome,
   puzzleDayOf,
   relationOf,
   replaceTiming,
   type ReportKind,
+  type ReviewOutcome,
 } from '@/lib/daily-puzzles/reports';
-import type { AdminPuzzleDay, AdminPuzzles, AdminReportItem } from '@/lib/daily-puzzles/reports.contract';
+import type { AdminPuzzleDay, AdminPuzzles, AdminReportItem, ReportReview } from '@/lib/daily-puzzles/reports.contract';
 
-export type ReportResult = { ok: true } | { ok: false; code: ErrorCode };
+export type ReportResult = { ok: true; review?: ReportReview } | { ok: false; code: ErrorCode };
 
 /* ── A member's report ───────────────────────────────────────────────────────────────────────────────────────── */
 
@@ -51,13 +55,114 @@ export async function fileReport(
   if (!played) return { ok: false, code: 'PUZZLE_REPORT_NOT_PLAYED' };
 
   const note = input.note?.trim() ? input.note.trim() : null;
-  // One upsert on the unique key, so two concurrent sends leave one row.
+  // A day an admin has already reviewed: the new row is written reviewed, with the day's outcome and note, so it never
+  // reopens the day and never earns a second notice (s15-07). The member is told the outcome at once.
+  const review = await dayReview(gameMode, dateKey);
+  const reviewedColumns = review
+    ? { reviewedAt: review.reviewedAt, reviewOutcome: review.outcome, reviewNote: review.note }
+    : {};
+  // One upsert on the unique key, so two concurrent sends leave one row. A resend keeps whatever review the row has.
   await prisma.dailyPuzzleReport.upsert({
     where: { userId_gameMode_dateKey: { userId, gameMode, dateKey } },
-    create: { userId, gameMode, dateKey, kind, note },
+    create: { userId, gameMode, dateKey, kind, note, ...reviewedColumns },
     update: { kind, note },
   });
-  return { ok: true };
+  return review ? { ok: true, review: { outcome: review.outcome, note: review.note } } : { ok: true };
+}
+
+/** The latest review of a mode-day's reports, or null when none has happened. Uses `[gameMode, dateKey]`. */
+async function dayReview(
+  mode: string,
+  dateKey: string,
+): Promise<{ outcome: ReviewOutcome; note: string | null; reviewedAt: Date } | null> {
+  const row = await prisma.dailyPuzzleReport.findFirst({
+    where: { gameMode: mode, dateKey, reviewedAt: { not: null } },
+    orderBy: { reviewedAt: 'desc' },
+    select: { reviewedAt: true, reviewOutcome: true, reviewNote: true },
+  });
+  if (!row?.reviewedAt || !isReviewOutcome(row.reviewOutcome)) return null;
+  return { outcome: row.reviewOutcome, note: row.reviewNote, reviewedAt: row.reviewedAt };
+}
+
+/* ── Review (s15-07) ─────────────────────────────────────────────────────────────────────────────────────────── */
+
+/** Most open reports one review claims; the admin page lists at most 500 per mode, so this is the same bound. */
+const REVIEW_CLAIM_CAP = 500;
+
+/**
+ * An admin marks a mode-day's open reports reviewed with one outcome and an optional note. In one transaction under the
+ * day's lock each open report is claimed by a conditional `updateMany` (`reviewedAt: null`), so a second review claims
+ * nothing, and one audit row records the day, mode, outcome and count. The reporters of the claimed rows (and only
+ * those) are told once after the commit; a failed notice is logged and never undoes the review. The puzzle and the
+ * scores are never read or written.
+ */
+export async function reviewReports(
+  adminId: string,
+  mode: DailyPuzzleMode,
+  dateKey: string,
+  outcome: ReviewOutcome,
+  note?: string | null,
+): Promise<{ ok: true; reviewed: number } | { ok: false; code: ErrorCode }> {
+  if (!isAIPuzzleMode(mode) || !isReviewOutcome(outcome) || !isReportableDay(dateKey, puzzleDayOf(Date.now()))) {
+    return { ok: false, code: 'INVALID_INPUT' };
+  }
+  const text = note?.trim() ? note.trim() : null;
+  const claimed = await prisma.$transaction(async (tx) => {
+    await lockKey(tx, `daily-puzzle-report:${mode}:${dateKey}`);
+    const open = await tx.dailyPuzzleReport.findMany({
+      where: { gameMode: mode, dateKey, reviewedAt: null },
+      orderBy: { createdAt: 'asc' },
+      take: REVIEW_CLAIM_CAP,
+      select: { id: true, userId: true },
+    });
+    const won: { id: string; userId: string }[] = [];
+    const reviewedAt = new Date();
+    for (const r of open) {
+      const res = await tx.dailyPuzzleReport.updateMany({
+        where: { id: r.id, reviewedAt: null },
+        data: { reviewedAt, reviewOutcome: outcome, reviewNote: text },
+      });
+      if (res.count === 1) won.push(r);
+    }
+    if (won.length > 0) {
+      await recordAdminActionIn(tx, adminId, 'daily-puzzle-report-review', {
+        targetType: 'daily_puzzle',
+        targetId: `${mode}:${dateKey}`,
+        detail: `${mode} ${dateKey}: ${outcome}, ${won.length} reports`,
+      });
+    }
+    return won;
+  });
+
+  const link = `/daily/${mode}`;
+  for (const r of claimed) {
+    try {
+      await createNotification({
+        userId: r.userId,
+        type: 'SYSTEM',
+        entityType: 'puzzle_report',
+        entityId: r.id,
+        preview: puzzleReviewedNotice(mode, dateKey, outcome, text),
+        link,
+      });
+    } catch (err) {
+      console.error('[puzzle-reports] review notice failed:', err);
+    }
+  }
+  return { ok: true, reviewed: claimed.length };
+}
+
+/** English for push and e-mail; the key's params (`mode`, `dateKey`, `outcome`, `note`) are all the inbox needs. */
+function puzzleReviewedNotice(mode: string, dateKey: string, outcome: ReviewOutcome, note: string | null) {
+  const built = notice('puzzle-report-reviewed', { mode, dateKey, outcome, note: note ?? '' });
+  const verdict =
+    outcome === 'fault'
+      ? 'You were right: the puzzle had a fault. Thank you.'
+      : 'We checked the puzzle and its answer stands.';
+  return {
+    ...built,
+    fallback: `Your report on the ${mode} puzzle for ${dateKey}: ${verdict}${note ? ` ${note}` : ''}`,
+  };
 }
 
 /* ── The admin page ──────────────────────────────────────────────────────────────────────────────────────────── */
@@ -69,11 +174,16 @@ const emptyCounts = (): Record<ReportKind, number> => ({
   other: 0,
 });
 
+interface ReportsOfDay {
+  counts: Record<ReportKind, number>;
+  items: AdminReportItem[];
+  /** Open (unreviewed) reports among the listed rows. */
+  open: number;
+  review: { at: Date; outcome: ReviewOutcome; note: string | null } | null;
+}
+
 /** Reports for a mode on some days: counts by kind (`groupBy`) and each report with its member's handle. */
-export async function reportsFor(
-  mode: DailyPuzzleMode,
-  dateKeys: string[],
-): Promise<Map<string, { counts: Record<ReportKind, number>; items: AdminReportItem[] }>> {
+export async function reportsFor(mode: DailyPuzzleMode, dateKeys: string[]): Promise<Map<string, ReportsOfDay>> {
   const where = { gameMode: mode, dateKey: { in: dateKeys } } satisfies Prisma.DailyPuzzleReportWhereInput;
   const [grouped, rows] = await Promise.all([
     prisma.dailyPuzzleReport.groupBy({ by: ['gameMode', 'dateKey', 'kind'], where, _count: { _all: true } }),
@@ -81,14 +191,24 @@ export async function reportsFor(
       where,
       orderBy: { updatedAt: 'desc' },
       take: 500,
-      select: { id: true, dateKey: true, kind: true, note: true, updatedAt: true, user: { select: { handle: true } } },
+      select: {
+        id: true,
+        dateKey: true,
+        kind: true,
+        note: true,
+        updatedAt: true,
+        reviewedAt: true,
+        reviewOutcome: true,
+        reviewNote: true,
+        user: { select: { handle: true } },
+      },
     }),
   ]);
-  const out = new Map<string, { counts: Record<ReportKind, number>; items: AdminReportItem[] }>();
+  const out = new Map<string, ReportsOfDay>();
   const slot = (dateKey: string) => {
     let s = out.get(dateKey);
     if (!s) {
-      s = { counts: emptyCounts(), items: [] };
+      s = { counts: emptyCounts(), items: [], open: 0, review: null };
       out.set(dateKey, s);
     }
     return s;
@@ -102,7 +222,13 @@ export async function reportsFor(
       kind: r.kind,
       note: r.note,
       at: r.updatedAt.toISOString(),
+      reviewedAt: r.reviewedAt ? r.reviewedAt.toISOString() : null,
     });
+    const slotOfDay = slot(r.dateKey);
+    if (!r.reviewedAt) slotOfDay.open += 1;
+    else if (isReviewOutcome(r.reviewOutcome) && (!slotOfDay.review || r.reviewedAt > slotOfDay.review.at)) {
+      slotOfDay.review = { at: r.reviewedAt, outcome: r.reviewOutcome, note: r.reviewNote };
+    }
   }
   return out;
 }
@@ -148,6 +274,8 @@ export async function adminDays(mode: DailyPuzzleMode, nowMs: number = Date.now(
       generatable: !row && isAheadDay(dateKey, today),
       reportCounts: rep?.counts ?? emptyCounts(),
       reports: rep?.items ?? [],
+      openReportCount: rep?.open ?? 0,
+      review: rep?.review ? { outcome: rep.review.outcome, note: rep.review.note } : null,
     };
   });
   return { mode, today, days };
@@ -236,12 +364,25 @@ export async function exportPuzzleReports(userId: string): Promise<
     note: string | null;
     createdAt: string;
     updatedAt: string;
+    reviewedAt: string | null;
+    reviewOutcome: string | null;
+    reviewNote: string | null;
   }[]
 > {
   const rows = await prisma.dailyPuzzleReport.findMany({
     where: { userId },
     orderBy: [{ dateKey: 'asc' }, { gameMode: 'asc' }],
-    select: { gameMode: true, dateKey: true, kind: true, note: true, createdAt: true, updatedAt: true },
+    select: {
+      gameMode: true,
+      dateKey: true,
+      kind: true,
+      note: true,
+      createdAt: true,
+      updatedAt: true,
+      reviewedAt: true,
+      reviewOutcome: true,
+      reviewNote: true,
+    },
   });
   return rows.map((r) => ({
     gameMode: r.gameMode,
@@ -250,6 +391,9 @@ export async function exportPuzzleReports(userId: string): Promise<
     note: r.note,
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
+    reviewedAt: r.reviewedAt ? r.reviewedAt.toISOString() : null,
+    reviewOutcome: r.reviewOutcome,
+    reviewNote: r.reviewNote,
   }));
 }
 

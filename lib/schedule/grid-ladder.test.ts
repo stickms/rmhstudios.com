@@ -47,6 +47,9 @@ describe('getMyGrid with RMHLadder', () => {
     const follow = all.find((o) => o.slotId === 'ladder-followup-app1');
     const interview = all.find((o) => o.slotId === 'ladder-interview-app1-0');
     expect(follow?.allDay).toBe(true);
+    // s15-18: the day key travels with the entry, in the member's zone (5 March 17:00Z is 5 March in New York).
+    expect(follow?.allDayKey).toBe('2026-03-05');
+    expect(interview?.allDayKey).toBeUndefined();
     expect(interview?.allDay).toBeUndefined();
   });
 

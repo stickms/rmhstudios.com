@@ -1,9 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { prisma } from '@/lib/prisma.server';
 import { withDeveloperApi, apiOptions } from '@/lib/api/with-developer-api.server';
-import { apiAuthorSelect, serializeAuthor, parsePage } from '@/lib/api/serializers.server';
+import { listQuery } from '@/lib/api/v1/notifications-schema';
+import { NO_STORE, listNotificationsForKey, queryOf, readInput } from '@/lib/api/v1/notifications.server';
 
-/** GET /api/v1/me/notifications — your notifications, newest first. */
+/**
+ * GET /api/v1/me/notifications — your notifications, newest first (`?limit&cursor&unread`). Each carries the site
+ * notice's `key` and `params` (both `null` for a plain notification). The cursor is `<createdAt>|<id>`; the old bare
+ * time is still read. Never cached.
+ */
 export const Route = createFileRoute('/api/v1/me/notifications')({
   server: {
     handlers: {
@@ -12,29 +16,14 @@ export const Route = createFileRoute('/api/v1/me/notifications')({
       GET: ({ request }) =>
         withDeveloperApi(
           request,
-          async ({ userId, json }) => {
-            const { limit, cursor } = parsePage(new URL(request.url));
-            const rows = await prisma.notification.findMany({
-              where: { userId, ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}) },
-              orderBy: { createdAt: 'desc' },
-              take: limit,
-              select: { id: true, type: true, entityType: true, entityId: true, preview: true, link: true, read: true, createdAt: true, actor: { select: apiAuthorSelect } },
-            });
-            const data = rows.map((n) => ({
-              id: n.id,
-              type: n.type,
-              entityType: n.entityType,
-              entityId: n.entityId,
-              preview: n.preview,
-              link: n.link,
-              read: n.read,
-              createdAt: n.createdAt,
-              actor: n.actor ? serializeAuthor(n.actor) : null,
-            }));
-            const nextCursor = rows.length === limit ? rows[rows.length - 1].createdAt.toISOString() : null;
-            return json({ data, nextCursor });
+          async ({ userId, json, error }) => {
+            const q = readInput(queryOf(request), listQuery);
+            if (!q.ok) return error('invalid_request', q.message, 400, NO_STORE);
+            const page = await listNotificationsForKey(userId, q.data);
+            if (page === 'invalid_cursor') return error('invalid_request', 'Invalid cursor.', 400, NO_STORE);
+            return json(page, 200, NO_STORE);
           },
-          { scope: 'read:notifications' }
+          { scope: 'read:notifications' },
         ),
     },
   },

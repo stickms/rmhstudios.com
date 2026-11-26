@@ -15,6 +15,24 @@ import { isolate, reportKindLabel } from '@/components/feed/report-kind-label';
 /** Writes an ISO instant as the reader's local date and time (`useLocaleFormat().dateTime`). */
 export type NoticeInstantFormatter = (iso: string) => string;
 
+/** The name of a daily puzzle mode in the reader's language (the existing `daily-stats` keys), else the id. */
+function puzzleModeName(t: TFunction, id: string): string {
+  switch (id) {
+    case 'alibi':
+      return t('mode-alibi', { ns: 'daily-stats', defaultValue: 'Alibi' });
+    case 'spectrum':
+      return t('mode-spectrum', { ns: 'daily-stats', defaultValue: 'Spectrum' });
+    case 'outcast':
+      return t('mode-outcast', { ns: 'daily-stats', defaultValue: 'Outcast' });
+    case 'chainlink':
+      return t('mode-chainlink', { ns: 'daily-stats', defaultValue: 'Chainlink' });
+    case 'impostor':
+      return t('mode-impostor', { ns: 'daily-stats', defaultValue: 'Impostor' });
+    default:
+      return id;
+  }
+}
+
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
@@ -1476,6 +1494,76 @@ export function noticeText(
         ns: 'notice-language',
         defaultValue: '{{name}} commented on {{title}}',
         ...values,
+      });
+
+    // Sprint 15 notices (docs/autonomous/sprint-15/plan.md §Anchors)
+    // s15-07 fix-notices
+    case 'puzzle-report-reviewed': {
+      // The outcome and the mode are ids: each becomes its own sentence here, one literal key apiece.
+      const outcome =
+        given.outcome === 'fault'
+          ? t('outcome-fault', {
+              ns: 'fix-notices',
+              defaultValue: 'You were right: the puzzle had a fault. Thank you.',
+            })
+          : t('outcome-stands', {
+              ns: 'fix-notices',
+              defaultValue: 'We checked the puzzle and its answer stands.',
+            });
+      const sentence = t('notice-puzzle-report-reviewed', {
+        ns: 'notice-language',
+        defaultValue: 'Your report on the {{mode}} puzzle for {{dateKey}} was reviewed. {{outcome}} {{note}}',
+        ...values,
+        mode: puzzleModeName(t, String(given.mode)),
+        outcome,
+        note: typeof given.note === 'string' && given.note.trim() ? values.note : '',
+      });
+      return sentence.trim();
+    }
+    case 'jam-deadline-moved':
+      return t('notice-jam-deadline-moved', {
+        ns: 'notice-language',
+        defaultValue:
+          '{{title}} moved its deadlines: submissions close {{submitEndsAt}}, ratings close {{ratingEndsAt}}',
+        ...values,
+      });
+
+    // s15-12 thread-mentions
+    case 'game-thread-mention':
+      return t('notice-game-thread-mention', {
+        ns: 'notice-language',
+        defaultValue: '{{name}} mentioned you in {{title}}',
+        ...values,
+      });
+
+    // s15-16 removal-appeals
+    case 'content-removed-after-report':
+      return t('notice-content-removed-after-report', {
+        ns: 'notice-language',
+        defaultValue: 'Your {{kind}} was removed after a report.',
+        ...values,
+        kind: isolate(reportKindLabel(t, given.kind)),
+      });
+    case 'content-removed-after-report-message':
+      return t('notice-content-removed-after-report-message', {
+        ns: 'notice-language',
+        defaultValue: 'Your {{kind}} was removed after a report: {{message}}',
+        ...values,
+        kind: isolate(reportKindLabel(t, given.kind)),
+      });
+    case 'removal-review-restored':
+      return t('notice-removal-review-restored', {
+        ns: 'notice-language',
+        defaultValue: 'A moderator looked again at your {{kind}} and restored it.',
+        ...values,
+        kind: isolate(reportKindLabel(t, given.kind)),
+      });
+    case 'removal-review-upheld':
+      return t('notice-removal-review-upheld', {
+        ns: 'notice-language',
+        defaultValue: 'A moderator looked again at your {{kind}}. The removal stands.',
+        ...values,
+        kind: isolate(reportKindLabel(t, given.kind)),
       });
 
     default:

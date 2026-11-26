@@ -34,6 +34,7 @@ import { GrantMembershipDialog } from '@/components/admin/GrantMembershipDialog'
 import type { GrantBody } from '@/lib/admin/grant-membership';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
+import { Handle } from '@/components/ui/handle';
 type AccountFilter = 'all' | 'people' | 'bots';
 
 interface User {
@@ -299,7 +300,7 @@ function AdminUsersPage() { const fmt = useLocaleFormat();
                             </div>
                           ) : (
                             <span className="flex items-center gap-2 truncate">
-                              @{user.handle || '\u2014'}
+                              <Handle handle={user.handle || '\u2014'} />
                               {!user.isAdmin && (
                                 <IconButton icon={Pencil} size="icon-xs" variant="ghost" label={t("title-change-handle", { defaultValue: "Change handle" })} onClick={() => startEditHandle(user)} />
                               )}

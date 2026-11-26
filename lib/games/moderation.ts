@@ -58,6 +58,8 @@ export const GAME_CONTENT_EXEMPT_PATHS: Readonly<Record<string, string>> = {
     'A list of the names of the tables a timeout covers (s14-17), so a source scan can find their writers; it holds no query and reads no row.',
   'lib/games/guide-history.server.ts':
     'Reads a guide for its author or an admin only (a stranger gets "not found"), and every write it makes goes through updateGuide, which refuses a removed guide; the account export reads the member\'s own guides.',
+  'lib/moderation/removal-restore.server.ts':
+    's15-16: reads a removed guide\'s title for its author\'s own "Removed after a report" list (filtered on the author) or for an admin reading a requested review, and a restore clears `moderatedAt` on a review, guide or tip an admin decided to put back. It shows no row to anyone else.',
 };
 
 /**

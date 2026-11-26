@@ -4,13 +4,28 @@
  */
 import { z } from 'zod';
 
-import { PACK_GAMES, PACK_MAX_PROMPTS, PACK_MIN_PROMPTS } from './packs';
+import { PACK_GAMES, PACK_MAX_PROMPTS } from './packs';
+import { PACK_RAW_LINE_MAX, parsePackLines } from './pack-games';
 
-export const createPackSchema = z.object({
-  name: z.string().trim().min(3).max(60),
-  game: z.enum(PACK_GAMES).default('wit-war'),
-  prompts: z.array(z.string().trim().min(8).max(120)).min(PACK_MIN_PROMPTS).max(PACK_MAX_PROMPTS),
-});
+/**
+ * One pack. `prompts` is the list of lines whatever the game; `pack-games.ts` says what a line is for each, and the
+ * refinement reports an unusable line by its position (`prompts.<n>`) and a list with too few distinct usable lines.
+ */
+export const createPackSchema = z
+  .object({
+    name: z.string().trim().min(3).max(60),
+    game: z.enum(PACK_GAMES).default('wit-war'),
+    prompts: z.array(z.string().max(PACK_RAW_LINE_MAX)).max(PACK_MAX_PROMPTS),
+  })
+  .superRefine((pack, ctx) => {
+    const parsed = parsePackLines(pack.game, pack.prompts);
+    for (const e of parsed.errors) {
+      ctx.addIssue({ code: 'custom', path: ['prompts', e.line - 1], message: e.code });
+    }
+    if (parsed.errors.length === 0 && parsed.lines.length < parsed.min) {
+      ctx.addIssue({ code: 'custom', path: ['prompts'], message: 'not-enough-lines' });
+    }
+  });
 
 export type CreatePackInput = z.infer<typeof createPackSchema>;
 

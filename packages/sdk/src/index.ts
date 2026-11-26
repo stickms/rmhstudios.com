@@ -39,9 +39,11 @@ export interface ListMyNotificationsArgs {
   limit?: number;
   /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
   cursor?: string;
+  /** When `true`, only unread notifications. */
+  unread?: boolean;
 }
 
-export type ListMyNotificationsResponse = { data: { id: string; type: string; actor: { id: string; name: string; handle: string; image: string }; preview: unknown; link: string; read: boolean; createdAt: string }[]; nextCursor: string | null };
+export type ListMyNotificationsResponse = { data: { id: string; type: string; actor: { id: string; name: string; handle: string; image: string }; preview: unknown; key: string | null; params: Record<string, string | number> | null; link: string; read: boolean; createdAt: string }[]; nextCursor: string | null };
 
 export interface ListMyBookmarksArgs {
   /** Page size, 1–50 (default 20). */
@@ -1357,7 +1359,7 @@ export interface GetMyPartyArgs {
   id: string;
 }
 
-export type GetMyPartyResponse = { data: { id: string; name: string; system: string; role: string; gm: string; members: { userId: string; name: string; joinedAt: string; isGm: boolean; summary: { system: string; name: string; level: number; ancestry: string | null; classes: { name: string; level: number }[]; ac: number; hp: { current: number; max: number; temp: number }; conditions: string[]; perception: number; speed: number; initiative: number } | null }[]; order: { id: string; kind: string; userId: string | null; name: string; value: number }[]; turnIndex: number } };
+export type GetMyPartyResponse = { data: { id: string; name: string; system: string; role: string; gm: string; members: { userId: string; name: string; nameHidden: boolean; joinedAt: string; isGm: boolean; summary: { system: string; name: string; level: number; ancestry: string | null; classes: { name: string; level: number }[]; ac: number; hp: { current: number; max: number; temp: number }; conditions: string[]; perception: number; speed: number; initiative: number } | null }[]; order: { id: string; kind: string; userId: string | null; name: string; nameHidden: boolean; value: number }[]; turnIndex: number } };
 
 export interface ListMyLadderApplicationsArgs {
   /** Page size, 1–50 (default 25). */
@@ -1460,6 +1462,72 @@ export interface UnsaveMyHomeArgs {
 
 export type ListMyHomeSearchesResponse = { data: { id: string; label: string; listingType: string | null; propertyTypes: string[]; locationLabel: string | null; radiusKm: number | null; minPriceCents: number | null; maxPriceCents: number | null; minBeds: number | null; minBaths: number | null; petsRequired: boolean; active: boolean; createdAt: string }[] };
 
+export interface ListSliceItChartsArgs {
+  /** Page size, 1–100 (default 25). */
+  limit?: number;
+  /** Songs to skip (default 0). */
+  offset?: number;
+  /** Only songs of this genre, for example `electronic`. An unknown genre is a 400. */
+  genre?: string;
+}
+
+export type ListSliceItChartsResponse = { data: { id: string; title: string; artist: string; album: string | null; duration: number; bpm: number | null; genre: string | null; tags: string[]; rating: number | null; plays: number; likes: number; scores: number; createdAt: string }[]; meta: { total: number; limit: number; offset: number } };
+
+export interface GetSliceItChartArgs {
+  /** The song id. */
+  id: string;
+}
+
+export type GetSliceItChartResponse = { data: { id: string; title: string; artist: string; album: string | null; duration: number; bpm: number | null; genre: string | null; tags: string[]; rating: number | null; plays: number; likes: number; scores: number; createdAt: string; charts: { id: string; difficulty: string; noteCount: number; revision: string }[]; reviews: { count: number; fit: number | null; fun: number | null } } };
+
+export interface GetSliceItLeaderboardArgs {
+  /** The song id. */
+  songId: string;
+  /** One of `easy`, `normal`, `hard`, `expert` (default `normal`). */
+  difficulty?: string;
+  /** One of `none`, `standard`, `challenge` (default `none`). */
+  modPool?: string;
+  /** Rows, 1–100 (default 25). */
+  limit?: number;
+}
+
+export type GetSliceItLeaderboardResponse = { song: { id: string; title: string; artist: string }; difficulty: string; modPool: string; data: { rank: number; player: string | null; score: number; maxCombo: number; accuracy: number | null; cleared: boolean; achievedAt: string }[] };
+
+export interface GetSliceItPlayerArgs {
+  /** The member’s handle. */
+  handle: string;
+}
+
+export type GetSliceItPlayerResponse = { data: { player: { handle: string; name: string }; career: { totalScore: number; gamesPlayed: number } | null; best: { songId: string; title: string; artist: string; score: number; accuracy: number | null; difficulty: string; modPool: string; lamp: string; achievedAt: string }[]; uploads: number } };
+
+export interface ListMySliceItRunsArgs {
+  /** Page size, 1–50 (default 25). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+  /** Only runs on this song. */
+  songId?: string;
+}
+
+export type ListMySliceItRunsResponse = { data: { id: string; songId: string; chartId: string | null; score: number; accuracy: number; maxCombo: number; difficulty: string; modPool: string; lamp: string; cleared: boolean; fullCombo: boolean; perfect: boolean; playedAt: string }[]; nextCursor: string | null };
+
+export type GetMyUnreadNotificationCountResponse = { count: number };
+
+export interface MarkMyNotificationsReadBody {
+  /** 1–100 notification ids. Use this or `before`. */
+  ids?: string[];
+  /** An ISO 8601 time. Every unread notification created at or before it is marked read. Use this or `ids`. */
+  before?: string;
+}
+
+export interface MarkMyNotificationsReadArgs {
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: MarkMyNotificationsReadBody;
+}
+
+export type MarkMyNotificationsReadResponse = { updated: number };
+
 export class RmhClient {
   private apiKey: string;
   private baseUrl: string;
@@ -1503,7 +1571,7 @@ export class RmhClient {
 
   /** List your notifications (scope: read:notifications) */
   listMyNotifications(args: ListMyNotificationsArgs = {}): Promise<ListMyNotificationsResponse> {
-    return this.request<ListMyNotificationsResponse>("GET", { path: "/api/v1/me/notifications", query: { limit: args.limit, cursor: args.cursor } });
+    return this.request<ListMyNotificationsResponse>("GET", { path: "/api/v1/me/notifications", query: { limit: args.limit, cursor: args.cursor, unread: args.unread } });
   }
 
   /** List your bookmarks (scope: read:bookmarks) */
@@ -2129,5 +2197,40 @@ export class RmhClient {
   /** List your saved searches (scope: read:homes) */
   listMyHomeSearches(): Promise<ListMyHomeSearchesResponse> {
     return this.request<ListMyHomeSearchesResponse>("GET", { path: "/api/v1/me/homes/searches" });
+  }
+
+  /** List Slice It! charts (scope: read:slice-it) */
+  listSliceItCharts(args: ListSliceItChartsArgs = {}): Promise<ListSliceItChartsResponse> {
+    return this.request<ListSliceItChartsResponse>("GET", { path: "/api/v1/slice-it/charts", query: { limit: args.limit, offset: args.offset, genre: args.genre } });
+  }
+
+  /** Get a Slice It! song and its charts (scope: read:slice-it) */
+  getSliceItChart(args: GetSliceItChartArgs): Promise<GetSliceItChartResponse> {
+    return this.request<GetSliceItChartResponse>("GET", { path: "/api/v1/slice-it/charts/{id}", pathParams: { id: args.id } });
+  }
+
+  /** Get a Slice It! leaderboard (scope: read:slice-it) */
+  getSliceItLeaderboard(args: GetSliceItLeaderboardArgs): Promise<GetSliceItLeaderboardResponse> {
+    return this.request<GetSliceItLeaderboardResponse>("GET", { path: "/api/v1/slice-it/leaderboard", query: { songId: args.songId, difficulty: args.difficulty, modPool: args.modPool, limit: args.limit } });
+  }
+
+  /** Get a Slice It! player’s public stats (scope: read:slice-it) */
+  getSliceItPlayer(args: GetSliceItPlayerArgs): Promise<GetSliceItPlayerResponse> {
+    return this.request<GetSliceItPlayerResponse>("GET", { path: "/api/v1/slice-it/players/{handle}", pathParams: { handle: args.handle } });
+  }
+
+  /** List your Slice It! runs (scope: read:slice-it-runs) */
+  listMySliceItRuns(args: ListMySliceItRunsArgs = {}): Promise<ListMySliceItRunsResponse> {
+    return this.request<ListMySliceItRunsResponse>("GET", { path: "/api/v1/me/slice-it/runs", query: { limit: args.limit, cursor: args.cursor, songId: args.songId } });
+  }
+
+  /** Get your unread notification count (scope: read:notifications) */
+  getMyUnreadNotificationCount(): Promise<GetMyUnreadNotificationCountResponse> {
+    return this.request<GetMyUnreadNotificationCountResponse>("GET", { path: "/api/v1/me/notifications/unread-count" });
+  }
+
+  /** Mark your notifications read (scope: write:notifications) */
+  markMyNotificationsRead(args: MarkMyNotificationsReadArgs): Promise<MarkMyNotificationsReadResponse> {
+    return this.request<MarkMyNotificationsReadResponse>("POST", { path: "/api/v1/me/notifications/read", body: args.body, idempotencyKey: args.idempotencyKey });
   }
 }

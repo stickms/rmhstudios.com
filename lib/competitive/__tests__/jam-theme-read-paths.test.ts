@@ -25,6 +25,11 @@ const GUARDS: Record<(typeof JAM_THEME_READ_PATHS)[number], RegExp[]> = {
   ],
   'lib/competitive/api/jams.$slug.theme-vote.server.ts': [/themeVoteView\(/, /rateLimit: 'write'/],
   'lib/competitive/api/jams.$slug.theme-candidates.server.ts': [/auth: 'admin'/],
+  'lib/competitive/jam-suggestions.server.ts': [
+    /mayShowShortlisted\(jam, now\)/,
+    /showShortlisted && shortlist\.has\(/,
+    /mayShowShortlisted\(r\.jam, now\)/,
+  ],
   'lib/admin/lookup.server.ts': [/gameJam\.findUnique/],
 };
 

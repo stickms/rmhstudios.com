@@ -39,6 +39,8 @@ export interface RunResult {
   character: PlayerId;
   difficulty: Difficulty;
   perPlayer: {
+    /** Lobby slot: how the server matches a score to the account the hub recorded for it. */
+    slot: number;
     name: string;
     score: number;
     charId: PlayerId;
@@ -52,6 +54,8 @@ export interface RunResult {
   playerCount: number;
   /** Whether the local client hosted the run (only the host submits co-op runs). */
   isHost: boolean;
+  /** The co-op run the hub recorded for this game (null for solo, or when the record could not be written). */
+  runId: string | null;
 }
 
 export interface DreamRiftState {

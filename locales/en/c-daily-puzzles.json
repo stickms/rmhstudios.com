@@ -287,5 +287,7 @@
   "daily-tab-connections": "Connections",
   "daily-sections-label": "Daily sections",
   "daily-mutator-heading": "Daily mutator",
-  "daily-connections-heading": "Connections grids"
+  "daily-connections-heading": "Connections grids",
+  "played-elsewhere": "Played on another device",
+  "played-elsewhere-detail": "Your score for this puzzle was saved, but not your answers. Only the score and time are shown."
 }

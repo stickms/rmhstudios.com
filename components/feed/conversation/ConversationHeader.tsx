@@ -13,6 +13,7 @@ import { SavedMessagesHeader } from '@/components/chat-plus/SavedMessagesRow';
 import { AutomatedBadge } from '@/components/feed/AutomatedBadge';
 import { MuteConversationControl, MutedUntilHeaderLine } from '@/components/messages/MuteConversationControl';
 import { PinConversationItem } from '@/components/messages/PinConversationItem';
+import { Handle } from '@/components/ui/handle';
 import type { OtherUser } from './conversation-state';
 
 // P4 — "It's 2:14 AM for Ana": a tiny lazy chunk, fetched after the header is idle.
@@ -68,7 +69,7 @@ export function ConversationHeader({
                 <span className="truncate">{otherUser.name || 'Unknown'}</span>
                 {otherUser.isBot && <AutomatedBadge />}
               </h1>
-              {otherUser.username && <p className="t-meta truncate">@{otherUser.username}</p>}
+              {otherUser.username && <p className="t-meta truncate"><Handle handle={otherUser.username} /></p>}
               <ArrivalSuspense>
                 <DmLocalTime userId={otherUser.id} name={otherUser.name || 'Unknown'} />
                 <AwayLine userId={otherUser.id} context="header" />
@@ -79,7 +80,8 @@ export function ConversationHeader({
         )}
         {/* Voice call. Renders nothing when a call can't be placed (signed out, no WebRTC); the server is still the
             authority on whether this person accepts calls from you. On a phone these controls take their own row under
-            the name: with 44px touch targets, five controls and the back button leave the name no room on one line. */}
+            the name: with 44px touch targets, five controls and the back button leave the name no room on one line. The
+            chat settings are the row's last item, so the tab order is the order on screen. */}
         {otherUser && !isSavedChat && (
           <div className="order-last flex basis-full justify-end gap-2 sm:order-none sm:ms-auto sm:basis-auto">
             <PinConversationItem conversationId={conversationId} />
@@ -104,9 +106,10 @@ export function ConversationHeader({
                 image: otherUser.image ?? null,
               }}
             />
+            <ChatHeaderPlus chat={chatRef} />
           </div>
         )}
-        <ChatHeaderPlus chat={chatRef} className={isSavedChat || !otherUser ? 'ms-auto' : ''} />
+        {(isSavedChat || !otherUser) && <ChatHeaderPlus chat={chatRef} className="ms-auto" />}
       </div>
       <ChatPinnedBar
         chat={chatRef}

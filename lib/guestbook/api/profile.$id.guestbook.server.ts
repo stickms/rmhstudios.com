@@ -2,6 +2,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
+import { ERROR_CODES, refusalBody } from '@/lib/errors/codes';
 import { guestbookModeSchema, signGuestbookSchema } from '@/lib/guestbook/schema';
 import { readGuestbook, setGuestbookMode, signGuestbook } from '@/lib/guestbook/guestbook.server';
 
@@ -33,7 +34,7 @@ export const route = apiRoute('/api/profile/$id/guestbook', {
       const restricted = await restrictionResponse(userId, 'comment');
       if (restricted) return restricted;
       const result = await signGuestbook(params.id, userId, body.body);
-      if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+      if (!result.ok) return Response.json(refusalBody(result.code), { status: ERROR_CODES[result.code].http });
       return Response.json({ id: result.id }, { status: 201 });
     },
   ),

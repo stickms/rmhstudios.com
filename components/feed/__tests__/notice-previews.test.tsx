@@ -35,6 +35,11 @@ function sample(key: NoticeKey): Record<string, string> {
   );
 }
 
+// A key whose slot is an id the notice turns into its own sentence (s15-07): the sentence the sample id renders as.
+const RENDERED_SLOTS: Partial<Record<NoticeKey, Record<string, string>>> = {
+  'puzzle-report-reviewed': { outcome: 'We checked the puzzle and its answer stands.' },
+};
+
 // Member-written names are isolated in the sentence, so a right-to-left name never reorders it.
 const strip = (s: string | null) => (s ?? '').replace(/[⁨⁩]/g, '');
 
@@ -45,13 +50,13 @@ describe('the notice catalogue', () => {
       const params = sample(key);
       const text = noticeText(t, key, params, (iso) => `<${iso}>`);
       expect(text, key).not.toBeNull();
-      const expected = fillNotice(NOTICE_TEMPLATES[key], params, (iso) => `<${iso}>`);
+      const expected = fillNotice(NOTICE_TEMPLATES[key], { ...params, ...RENDERED_SLOTS[key] }, (iso) => `<${iso}>`);
       expect(strip(text), key).toBe(expected);
     }
     // The report-kind words an admin notice borrows come from `my-reports`, not from the notice catalogue.
     const own = calls.filter((c) => c.ns === 'notice-language');
     expect(own.map((c) => c.key).sort()).toEqual(KEYS.map((k) => `notice-${k}`).sort());
-    expect(new Set(calls.map((c) => c.ns))).toEqual(new Set(['notice-language', 'my-reports']));
+    expect(new Set(calls.map((c) => c.ns))).toEqual(new Set(['notice-language', 'my-reports', 'fix-notices']));
   });
 
   it('keeps each default equal to the template, so a locale without the key reads like the fallback', () => {
@@ -59,6 +64,37 @@ describe('the notice catalogue', () => {
     for (const key of KEYS) noticeText(t, key, sample(key), (iso) => iso);
     for (const c of calls.filter((c) => c.ns === 'notice-language'))
       expect(c.defaultValue, c.key).toBe(NOTICE_TEMPLATES[c.key.slice('notice-'.length) as NoticeKey]);
+  });
+});
+
+describe('the fix notices (s15-07)', () => {
+  const at = (iso: string) => `<${iso}>`;
+
+  it('writes a reviewed report with the outcome sentence, the mode’s name and the note', () => {
+    const base = { mode: 'alibi', dateKey: '2026-12-10', outcome: 'fault', note: 'We fixed it.' };
+    expect(strip(noticeText(tFor({}), 'puzzle-report-reviewed', base, at))).toBe(
+      'Your report on the Alibi puzzle for 2026-12-10 was reviewed. You were right: the puzzle had a fault. Thank you. We fixed it.',
+    );
+    expect(strip(noticeText(tFor({}), 'puzzle-report-reviewed', { ...base, outcome: 'stands', note: '' }, at))).toBe(
+      'Your report on the Alibi puzzle for 2026-12-10 was reviewed. We checked the puzzle and its answer stands.',
+    );
+  });
+
+  it('reads the outcome in the reader’s language from the fix-notices catalogue', () => {
+    const text = noticeText(
+      tFor({ 'outcome-stands': 'تم التحقق من اللغز وإجابته صحيحة.' }),
+      'puzzle-report-reviewed',
+      { mode: 'alibi', dateKey: '2026-12-10', outcome: 'stands', note: '' },
+      at,
+    );
+    expect(text).toContain('تم التحقق من اللغز وإجابته صحيحة.');
+  });
+
+  it('writes a moved deadline with both times in the reader’s format', () => {
+    const params = { title: 'Space jam', submitEndsAt: AT, ratingEndsAt: '2026-12-08T14:30:00.000Z' };
+    expect(strip(noticeText(tFor({}), 'jam-deadline-moved', params, fmt('en')))).toBe(
+      `Space jam moved its deadlines: submissions close ${formatDateTime(AT, 'en', INSTANT)}, ratings close ${formatDateTime('2026-12-08T14:30:00.000Z', 'en', INSTANT)}`,
+    );
   });
 });
 

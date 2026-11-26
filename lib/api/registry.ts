@@ -104,6 +104,9 @@ const AUTHOR_OBJECT = {
   image: 'https://…',
 };
 
+/** A documentation example of a site notice's type, not an emitter (the notice-preview ratchet reads `type: 'SYSTEM'`). */
+const SYSTEM_TYPE = 'SYSTEM';
+
 export const ENDPOINTS: ApiEndpoint[] = [
   // ─── Account ────────────────────────────────────────────────────────────
   {
@@ -138,9 +141,18 @@ export const ENDPOINTS: ApiEndpoint[] = [
     group: 'Account',
     scope: 'read:notifications',
     summary: 'List your notifications',
-    description: 'Your notifications, newest first.',
+    description:
+      'Your notifications, newest first. A notice the site wrote carries its translation `key` and `params` so a client can show it in your language; `preview` stays the English text. Both are `null` on a plain notification. The cursor is `<createdAt>|<id>`, so notifications created at the same instant are never skipped; the older bare-time cursor is still accepted.',
     paginated: true,
-    params: PAGE_PARAMS,
+    params: [
+      ...PAGE_PARAMS,
+      {
+        name: 'unread',
+        in: 'query',
+        type: 'boolean',
+        description: 'When `true`, only unread notifications.',
+      },
+    ],
     responseExample: {
       data: [
         {
@@ -148,9 +160,22 @@ export const ENDPOINTS: ApiEndpoint[] = [
           type: 'FOLLOW',
           actor: AUTHOR_OBJECT,
           preview: null,
+          key: null,
+          params: null,
           link: '/u/ada',
           read: false,
           createdAt: '2026-06-30T09:00:00.000Z',
+        },
+        {
+          id: 'ck_n0',
+          type: SYSTEM_TYPE,
+          actor: null,
+          preview: 'Achievement unlocked: First post',
+          key: 'achievement-unlocked',
+          params: { name: 'First post' },
+          link: '/achievements',
+          read: true,
+          createdAt: '2026-06-29T09:00:00.000Z',
         },
       ],
       nextCursor: null,
@@ -4190,7 +4215,7 @@ export const ENDPOINTS: ApiEndpoint[] = [
     scope: 'read:characters',
     summary: 'Get one of your parties',
     description:
-      "One party as the site shows it to you: each member's name and the summary of the character they brought, the turn order and `turnIndex`, the line whose turn it is. A member's `summary` is `null` when the sheet cannot be read. Never another player's sheet or notes, and never the invite code. A party you are not in, or have left, is `404 not_found`. Never cached.",
+      "One party as the site shows it to you: each member's name and the summary of the character they brought, the turn order and `turnIndex`, the line whose turn it is. A member's `summary` is `null` when the sheet cannot be read. A player you are blocked with (either way) has `name` `A player` and `nameHidden: true` (on the turn order too), and `summary` is `null`; `name` keeps that English text, so a client that translates reads `nameHidden`. Never another player's sheet or notes, and never the invite code. A party you are not in, or have left, is `404 not_found`. Never cached.",
     params: [{ name: 'id', in: 'path', type: 'string', description: 'The party id.', required: true }],
     responseExample: {
       data: {
@@ -4203,6 +4228,7 @@ export const ENDPOINTS: ApiEndpoint[] = [
           {
             userId: 'cluser1',
             name: 'Ada',
+            nameHidden: false,
             joinedAt: '2026-11-01T18:00:00.000Z',
             isGm: true,
             summary: {
@@ -4221,8 +4247,8 @@ export const ENDPOINTS: ApiEndpoint[] = [
           },
         ],
         order: [
-          { id: 'line2', kind: 'extra', userId: null, name: 'Goblin', value: 12 },
-          { id: 'line1', kind: 'member', userId: 'cluser1', name: 'Ada', value: 17 },
+          { id: 'line2', kind: 'extra', userId: null, name: 'Goblin', nameHidden: false, value: 12 },
+          { id: 'line1', kind: 'member', userId: 'cluser1', name: 'Ada', nameHidden: false, value: 17 },
         ],
         turnIndex: 0,
       },
@@ -4663,6 +4689,241 @@ export const ENDPOINTS: ApiEndpoint[] = [
         },
       ],
     },
+  },
+
+  // Sprint 15
+  // s15-03 slice-api
+  // ─── Slice It ────────────────────────────────────────────────────────────
+  {
+    method: 'GET',
+    path: '/api/v1/slice-it/charts',
+    operationId: 'listSliceItCharts',
+    group: 'Slice It',
+    scope: 'read:slice-it',
+    summary: 'List Slice It! charts',
+    description:
+      'Public chart metadata for songs in the Slice It! library, most played first. A private or taken-down song is never listed. The chart itself (its notes) is not served; metadata, ratings and counts only. `rating` is the highest difficulty rating among the song’s charts and is `null` while none is rated. Pages with `limit` (1–100, default 25) and `offset`; `meta` carries the total. Cached privately for 30 seconds on the client (`Cache-Control: private, max-age=30`).',
+    params: [
+      { name: 'limit', in: 'query', type: 'integer', description: 'Page size, 1–100 (default 25).' },
+      { name: 'offset', in: 'query', type: 'integer', description: 'Songs to skip (default 0).' },
+      {
+        name: 'genre',
+        in: 'query',
+        type: 'string',
+        description: 'Only songs of this genre, for example `electronic`. An unknown genre is a 400.',
+      },
+    ],
+    responseExample: {
+      data: [
+        {
+          id: 'cm4slicesong0001',
+          title: 'Untitled demo',
+          artist: 'Ada',
+          album: null,
+          duration: 142.5,
+          bpm: null,
+          genre: null,
+          tags: ['chiptune'],
+          rating: null,
+          plays: 312,
+          likes: 18,
+          scores: 47,
+          createdAt: '2026-11-02T18:30:00.000Z',
+        },
+      ],
+      meta: { total: 1, limit: 25, offset: 0 },
+    },
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/slice-it/charts/{id}',
+    operationId: 'getSliceItChart',
+    group: 'Slice It',
+    scope: 'read:slice-it',
+    summary: 'Get a Slice It! song and its charts',
+    description:
+      'One public song’s metadata (the fields of the list), its published charts (`id`, `difficulty`, `noteCount` and `revision`, the chart’s content hash: it changes when the notes do) and its chart reviews (`count`, and the averages `fit` and `fun` from 1 to 5, `null` while there are no reviews). A song that is private, taken down or missing is `404 not_found`. The notes themselves are never served. Cached privately for 30 seconds on the client.',
+    params: [{ name: 'id', in: 'path', type: 'string', description: 'The song id.', required: true }],
+    responseExample: {
+      data: {
+        id: 'cm4slicesong0001',
+        title: 'Untitled demo',
+        artist: 'Ada',
+        album: null,
+        duration: 142.5,
+        bpm: null,
+        genre: null,
+        tags: ['chiptune'],
+        rating: null,
+        plays: 312,
+        likes: 18,
+        scores: 47,
+        createdAt: '2026-11-02T18:30:00.000Z',
+        charts: [
+          {
+            id: '0192b3c4-5d6e-7f80-91a2-b3c4d5e6f708',
+            difficulty: 'expert',
+            noteCount: 1184,
+            revision: '9f2c0e7a41d85b36c0a7e19d4b52f8630a1de7c94b2658f03ae1d7c4b9086f25',
+          },
+        ],
+        reviews: { count: 0, fit: null, fun: null },
+      },
+    },
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/slice-it/leaderboard',
+    operationId: 'getSliceItLeaderboard',
+    group: 'Slice It',
+    scope: 'read:slice-it',
+    summary: 'Get a Slice It! leaderboard',
+    description:
+      'One song’s board for one difficulty and modifier pool (a run with six modifiers is not ranked against a plain one). Players are handles, never ids (`player` is the handle, else the username, and `null` when the member has neither), and a member who left the leaderboards or is banned is not listed. `accuracy` is `null` on a score set before accuracy was recorded. A private, taken-down or missing song is `404 not_found`. `limit` is 1–100 (default 25). Cached privately for 30 seconds on the client (`Cache-Control: private, max-age=30`).',
+    params: [
+      { name: 'songId', in: 'query', type: 'string', description: 'The song id.', required: true },
+      {
+        name: 'difficulty',
+        in: 'query',
+        type: 'string',
+        description: 'One of `easy`, `normal`, `hard`, `expert` (default `normal`).',
+      },
+      {
+        name: 'modPool',
+        in: 'query',
+        type: 'string',
+        description: 'One of `none`, `standard`, `challenge` (default `none`).',
+      },
+      { name: 'limit', in: 'query', type: 'integer', description: 'Rows, 1–100 (default 25).' },
+    ],
+    responseExample: {
+      song: { id: 'cm4slicesong0001', title: 'Untitled demo', artist: 'Ada' },
+      difficulty: 'normal',
+      modPool: 'none',
+      data: [
+        {
+          rank: 1,
+          player: null,
+          score: 984210,
+          maxCombo: 612,
+          accuracy: null,
+          cleared: true,
+          achievedAt: '2026-11-20T21:14:00.000Z',
+        },
+      ],
+    },
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/slice-it/players/{handle}',
+    operationId: 'getSliceItPlayer',
+    group: 'Slice It',
+    scope: 'read:slice-it',
+    summary: 'Get a Slice It! player’s public stats',
+    description:
+      'A member’s public Slice It! career (`career`, `null` until their first run), their best 20 rows on public songs (`lamp` is `none`, `failed`, `cleared`, `fc` or `perfect`; `accuracy` is `null` on a score set before accuracy was recorded) and how many public songs they uploaded. Addressed and named by handle: no member id is returned. A member who left the leaderboards, is banned, has no handle or is blocked either way with the key owner is `404 not_found`, the same as an unknown handle. Cached privately for 30 seconds on the client.',
+    params: [{ name: 'handle', in: 'path', type: 'string', description: 'The member’s handle.', required: true }],
+    responseExample: {
+      data: {
+        player: { handle: 'ada', name: 'Ada' },
+        career: null,
+        best: [
+          {
+            songId: 'cm4slicesong0001',
+            title: 'Untitled demo',
+            artist: 'Ada',
+            score: 984210,
+            accuracy: null,
+            difficulty: 'expert',
+            modPool: 'none',
+            lamp: 'fc',
+            achievedAt: '2026-11-20T21:14:00.000Z',
+          },
+        ],
+        uploads: 3,
+      },
+    },
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/me/slice-it/runs',
+    operationId: 'listMySliceItRuns',
+    group: 'Slice It',
+    scope: 'read:slice-it-runs',
+    summary: 'List your Slice It! runs',
+    description:
+      'Your own runs, newest first, 1 to 50 (default 25), paged with `cursor`. `songId` keeps only the runs on one song. `id` is a string (a 64-bit integer). `chartId` is `null` for a run of a song’s generated chart. `lamp` is `none`, `failed`, `cleared`, `fc` or `perfect`; `fullCombo` and `perfect` are what the game declared, not verified. Never cached (`Cache-Control: private, no-store`). Needs the explicit `read:slice-it-runs` scope, which `*`, `read:*` and a new key’s default grant do not include.',
+    paginated: true,
+    params: [
+      { name: 'limit', in: 'query', type: 'integer', description: 'Page size, 1–50 (default 25).' },
+      {
+        name: 'cursor',
+        in: 'query',
+        type: 'string',
+        description: 'Opaque cursor from a previous `nextCursor` to fetch the next page.',
+      },
+      { name: 'songId', in: 'query', type: 'string', description: 'Only runs on this song.' },
+    ],
+    responseExample: {
+      data: [
+        {
+          id: '48211',
+          songId: 'cm4slicesong0001',
+          chartId: null,
+          score: 984210,
+          accuracy: 0.9731,
+          maxCombo: 612,
+          difficulty: 'expert',
+          modPool: 'none',
+          lamp: 'fc',
+          cleared: true,
+          fullCombo: true,
+          perfect: false,
+          playedAt: '2026-11-20T21:14:00.000Z',
+        },
+      ],
+      nextCursor: null,
+    },
+  },
+
+  // s15-10 notifications-api
+  {
+    method: 'GET',
+    path: '/api/v1/me/notifications/unread-count',
+    operationId: 'getMyUnreadNotificationCount',
+    group: 'Account',
+    scope: 'read:notifications',
+    summary: 'Get your unread notification count',
+    description: 'How many notifications you have not read: the number on the site’s badge.',
+    responseExample: { count: 3 },
+  },
+  {
+    method: 'POST',
+    path: '/api/v1/me/notifications/read',
+    operationId: 'markMyNotificationsRead',
+    group: 'Account',
+    scope: 'write:notifications',
+    idempotent: true,
+    summary: 'Mark your notifications read',
+    description:
+      'Mark notifications read, as the site’s inbox does. Send `ids` (1–100 of your own notification ids; ids that are not yours are ignored) or `before` (every unread notification created at or before that time), not both. Answers how many changed; marking a read notification read again changes nothing. Needs the explicit `write:notifications` scope.',
+    requestBody: {
+      fields: [
+        {
+          name: 'ids',
+          type: 'string[]',
+          description: '1–100 notification ids. Use this or `before`.',
+        },
+        {
+          name: 'before',
+          type: 'string',
+          description:
+            'An ISO 8601 time. Every unread notification created at or before it is marked read. Use this or `ids`.',
+        },
+      ],
+      example: { ids: ['ck_n1'] },
+    },
+    responseExample: { updated: 1 },
   },
 ];
 

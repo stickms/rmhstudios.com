@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { hasImpostorResult, readImpostorResult } from '@/lib/daily-puzzles/result-shapes';
 import { useTranslation } from 'react-i18next';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Check, CircleAlert } from 'lucide-react';
@@ -68,12 +69,13 @@ function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuz
     useEffect(() => {
         if (hasCompleted('impostor', dateKey)) {
             const saved = getResult('impostor', dateKey);
-            if (saved?.resultJson) {
+            if (saved && hasImpostorResult(saved.resultJson)) {
+                const data = readImpostorResult(saved.resultJson);
                 setCompleted(true);
                 setFinalScore(saved.score);
-                setFoundFakes(saved.resultJson.foundFakes ?? []);
-                setGuessNumber(saved.resultJson.guessNumber ?? 2);
-                setConfirmedReal(new Set(saved.resultJson.confirmedReal ?? []));
+                setFoundFakes(data.foundFakes);
+                setGuessNumber(data.guessNumber);
+                setConfirmedReal(new Set(data.confirmedReal));
             }
         }
     }, [dateKey]);
@@ -83,13 +85,14 @@ function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuz
     useEffect(() => {
         if (session.data && !hasCompleted('impostor', dateKey)) {
             fetchResultFromServer('impostor', dateKey).then(serverResult => {
-                if (serverResult?.resultJson) {
+                if (serverResult && hasImpostorResult(serverResult.resultJson)) {
+                    const data = readImpostorResult(serverResult.resultJson);
                     saveResult('impostor', dateKey, serverResult);
                     setCompleted(true);
                     setFinalScore(serverResult.score);
-                    setFoundFakes(serverResult.resultJson.foundFakes ?? []);
-                    setGuessNumber(serverResult.resultJson.guessNumber ?? 2);
-                    setConfirmedReal(new Set(serverResult.resultJson.confirmedReal ?? []));
+                    setFoundFakes(data.foundFakes);
+                    setGuessNumber(data.guessNumber);
+                    setConfirmedReal(new Set(data.confirmedReal));
                 }
             });
         }

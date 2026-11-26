@@ -105,13 +105,18 @@ export interface ThreadReplyPost {
   posterId: string;
 }
 
-/** Tell everyone `threadReplyRecipients` names. Never throws: the post is already committed. */
-export async function notifyThreadReply(post: ThreadReplyPost): Promise<number> {
+/**
+ * Tell everyone `threadReplyRecipients` names, except the members in `skip` (those the post's mention notice already
+ * told: a member who is both mentioned and a reply recipient gets the mention only). Never throws: the post is
+ * already committed.
+ */
+export async function notifyThreadReply(post: ThreadReplyPost, skip?: ReadonlySet<string>): Promise<number> {
   try {
-    const [recipients, poster] = await Promise.all([
+    const [named, poster] = await Promise.all([
       threadReplyRecipients(post.threadId, post.posterId, post.threadAuthorId),
       prisma.user.findUnique({ where: { id: post.posterId }, select: userDisplaySelect }),
     ]);
+    const recipients = skip && skip.size > 0 ? named.filter((id) => !skip.has(id)) : named;
     if (recipients.length === 0 || !poster) return 0;
     const name = noticeName(poster);
     const title = post.threadTitle.slice(0, TITLE_CHARS);

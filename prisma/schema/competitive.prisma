@@ -154,6 +154,7 @@ model Tournament {
   @@index([status, startsAt])
   @@index([status, checkInNoticeAt, startsAt])
   @@index([gameId, status])
+  @@index([createdById, createdAt])
   @@map("tournament")
 }
 
@@ -179,6 +180,7 @@ model TournamentEntrant {
 
   @@unique([tournamentId, userId])
   @@index([tournamentId, seed])
+  @@index([userId])
   @@map("tournament_entrant")
 }
 
@@ -393,6 +395,8 @@ model GameJam {
   entries         GameJamEntry[]
   themeCandidates GameJamThemeCandidate[]
   themeVotes      GameJamThemeVote[]
+  /// s15-13: members' suggested themes (cascade on jam delete).
+  themeSuggestions GameJamThemeSuggestion[]
 
   @@index([startsAt])
   @@map("game_jam")
@@ -429,6 +433,23 @@ model GameJamThemeVote {
   @@index([jamId, userId])
   @@index([jamId, candidateId])
   @@map("game_jam_theme_vote")
+}
+
+/// s15-13: a member's suggested theme for a theme-voted jam, before its vote opens. Seen by the suggester and admins
+/// only (never listed to other members); an admin may copy one onto the shortlist.
+model GameJamThemeSuggestion {
+  id        String   @id @default(cuid())
+  jamId     String
+  userId    String
+  text      String   @db.VarChar(120)
+  createdAt DateTime @default(now())
+
+  jam  GameJam @relation(fields: [jamId], references: [id], onDelete: Cascade)
+  user User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([jamId, userId, text])
+  @@index([jamId, createdAt])
+  @@map("game_jam_theme_suggestion")
 }
 
 model GameJamEntry {

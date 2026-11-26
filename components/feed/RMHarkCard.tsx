@@ -48,6 +48,7 @@ import { ARRIVE } from '@/components/ui/arrive';
 import { ContentWarningCover } from '@/components/feed/ContentWarningCover';
 import { BadgeMark } from '@/components/shop/art/BadgeMark';
 
+import { Handle } from '@/components/ui/handle';
 interface RMHarkCardProps {
   item: FeedItem;
 }
@@ -355,7 +356,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                       <span className="sr-only">{t('admin-title', { defaultValue: 'Admin' })}</span>
                     </>
                   )}
-                  {item.user.handle && <span className="t-meta truncate">@{item.user.handle}</span>}
+                  {item.user.handle && <span className="t-meta truncate"><Handle handle={item.user.handle} /></span>}
                 </Link>
               </ProfileHoverCard>
             ) : (
@@ -555,7 +556,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                       </>
                     )}
                     {freshOriginalUser.handle && (
-                      <span className="t-meta truncate">@{freshOriginalUser.handle}</span>
+                      <span className="t-meta truncate"><Handle handle={freshOriginalUser.handle} /></span>
                     )}
                   </Link>
                 ) : (
