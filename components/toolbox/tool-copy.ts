@@ -27,7 +27,7 @@ import type { ToolCategory } from '@/lib/toolbox/catalog';
 /**
  * The translated name and one-line description of each tool, and its icon.
  *
- * Every key is written out literally so `i18next-parser` can find it: a key built
+ * Every key is written out literally so `i18next-cli` can find it: a key built
  * from the slug (`tool-${slug}-name`) would never reach `locales/en/tools.json`.
  */
 export interface ToolCopy {

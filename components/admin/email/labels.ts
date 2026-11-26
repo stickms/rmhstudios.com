@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import type { CampaignCategory } from '@/lib/email/preferences';
 
-// Literal t() keys per category: i18next-parser cannot see a templated key.
+// Literal t() keys per category: i18next-cli cannot see a templated key.
 export function categoryName(t: TFunction, category: CampaignCategory): string {
   switch (category) {
     case 'announcements':

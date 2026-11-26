@@ -83,7 +83,7 @@ function IconFor({ name, className }: { name: string; className?: string }) {
  *
  * The registry carries `labelKey`/`blurbKey`, and the obvious thing —
  * `t(feature.labelKey, { defaultValue: feature.label })` — silently does not
- * work: `i18next-parser` reads the source statically, so a computed key is
+ * work: `i18next-cli` reads the source statically, so a computed key is
  * invisible to it, the key never lands in `locales/`, and every locale serves
  * the English `defaultValue` forever. `MembershipPanel`'s `planCopy()` hit this
  * first and solved it the same way. Verified by checking `locales/en/feed.json`

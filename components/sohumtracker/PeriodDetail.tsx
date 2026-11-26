@@ -39,7 +39,7 @@ export function PeriodDetail({ period, days, totals, summary }: PeriodDetailProp
 
   const maxSignedIn = Math.max(1, ...days.map((day) => day.onlineSec + day.idleSec + day.dndSec));
 
-  // Literal keys, one `t()` per fact — `i18next-parser` is a static scanner and
+  // Literal keys, one `t()` per fact — `i18next-cli` is a static scanner and
   // a {key,label} table would extract nothing (CLAUDE.md §5).
   const facts: Array<{
     id: string;

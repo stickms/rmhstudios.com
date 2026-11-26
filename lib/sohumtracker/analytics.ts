@@ -388,7 +388,7 @@ export interface WatchRecord {
  * The biggest day for each figure worth a leaderboard.
  *
  * Returned as an ordered list of `{id, value}` rather than a labelled object
- * because the labels are `t()` calls and `i18next-parser` is a static scanner:
+ * because the labels are `t()` calls and `i18next-cli` is a static scanner:
  * a label stored beside the number here would never reach `locales/`.
  */
 export function buildRecords(days: WatchDayDTO[]): WatchRecord[] {

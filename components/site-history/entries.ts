@@ -11,7 +11,7 @@
  * an old build of a game shows less than the game does today. `live` is the same-origin path the "Open here" frame
  * loads.
  *
- * The strings are written out as t() calls (not keys built at runtime) so i18next-parser finds every one.
+ * The strings are written out as t() calls (not keys built at runtime) so i18next-cli finds every one.
  */
 import type { TFunction } from 'i18next';
 

@@ -107,7 +107,7 @@ interface PageLayoutProps {
  * 2026-10-09). The meta row now exists only when it has a job: the back link.
  *
  * Do not put a `{/* … *\/}` comment immediately before a `t()` call in this
- * file's JSX: `i18next-parser` silently skips the call that follows one, the key
+ * file's JSX: `i18next-cli` silently skips the call that follows one, the key
  * never reaches `locales/`, and every non-English locale quietly falls back to
  * the English `defaultValue`. Explanations go here instead.
  */

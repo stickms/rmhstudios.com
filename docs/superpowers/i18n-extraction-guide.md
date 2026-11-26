@@ -53,7 +53,7 @@ For dynamic text use interpolation:
 {t("greeting", { name, defaultValue: "Hello, {{name}}!" })}
 ```
 
-**Why `defaultValue` matters:** `i18next-parser.config.js` sets `resetDefaultValueLocale: "en"`, so without `defaultValue` the parser resets the `en` value to the bare key string on every extract run; the `defaultValue` form preserves the English copy through re-extractions. It also sets `keepRemoved: true`: a key the parser cannot see (an aliased `t`, a key built at runtime) is kept rather than deleted, so a key that is no longer used has to be removed by hand.
+**Why `defaultValue` matters:** `i18next.config.ts` sets `primaryLanguage: "en"`, so without `defaultValue` the parser resets the `en` value to the bare key string on every extract run; the `defaultValue` form preserves the English copy through re-extractions. It also sets `removeUnusedKeys: false`: a key the parser cannot see (an aliased `t`, a key built at runtime) is kept rather than deleted, so a key that is no longer used has to be removed by hand.
 
 ### Step 4 — Extract
 
@@ -61,7 +61,7 @@ For dynamic text use interpolation:
 pnpm run i18n:extract
 ```
 
-This runs `i18next-parser` over `app/**/*.{ts,tsx}` and `components/**/*.{ts,tsx}`, writing keys into `locales/en/<ns>.json` only. The other locales live on the `i18n/catalogs` branch and are never written by the extractor.
+This runs `i18next-cli` over `app/**/*.{ts,tsx}` and `components/**/*.{ts,tsx}`, writing keys into `locales/en/<ns>.json` only. The other locales live on the `i18n/catalogs` branch and are never written by the extractor.
 
 After extraction, open `locales/en/<ns>.json` and verify:
 - Every key has its correct English string as the value (not a bare key).

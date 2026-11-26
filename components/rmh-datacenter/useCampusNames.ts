@@ -2,7 +2,7 @@
  * The six campuses' human names, in one place.
  *
  * They are spelled out as literal `t()` keys rather than composed from the
- * campus id — `i18next-parser` cannot see through a computed key, so
+ * campus id — `i18next-cli` cannot see through a computed key, so
  * `t(\`campus-${id}-name\`)` never reaches `locales/` and every non-English
  * locale silently serves the English default forever (CLAUDE.md §5b). Two pages
  * need these names, so they live here rather than being typed out twice.

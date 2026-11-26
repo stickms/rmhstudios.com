@@ -178,7 +178,7 @@ export function ExploreRecommendations({
   }, []);
 
   // Both headings are STATIC t() calls, not ``t(`${kind}-heading`)`` — a computed
-  // key is invisible to i18next-parser, so it would never reach locales/ and
+  // key is invisible to i18next-cli, so it would never reach locales/ and
   // every non-English locale would silently serve the English default.
   const catalogSections = [
     {

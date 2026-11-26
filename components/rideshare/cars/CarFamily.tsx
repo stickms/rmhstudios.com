@@ -15,7 +15,7 @@
  *
  * ## Why the copy is spelled out here rather than kept beside the geometry
  *
- * `i18next-parser` reads `defaultValue` **literally**. A `t(key, { defaultValue:
+ * `i18next-cli` reads `defaultValue` **literally**. A `t(key, { defaultValue:
  * spec.blurb })` extracts as an empty default, lands in `locales/en/` as `""`,
  * and i18next then serves that empty string to every locale — English included.
  * So the fleet's prose is written out below as literal defaults, one key per

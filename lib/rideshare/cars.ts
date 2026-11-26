@@ -117,7 +117,7 @@ export interface CarBodySpec {
 /*
  * No prose lives on a spec, deliberately. Everything a visitor reads about a
  * vehicle — what it is, what drives it, its tagline — is written where
- * `i18next-parser` can see a literal `defaultValue` and put the key in
+ * `i18next-cli` can see a literal `defaultValue` and put the key in
  * `locales/en/`: `components/rideshare/cars/CarFamily.tsx`. A string held here
  * and passed through as a variable extracts as an EMPTY default, which serves
  * every locale (English included) an empty string. This file is geometry.

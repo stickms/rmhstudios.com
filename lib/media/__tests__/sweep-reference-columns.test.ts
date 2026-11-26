@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import ts from 'typescript';
+import ts from 'typescript-js';
 import { describe, expect, it } from 'vitest';
 import { SWEEP_REFERENCE_EXEMPT } from '@/lib/media/sweep-surfaces';
 

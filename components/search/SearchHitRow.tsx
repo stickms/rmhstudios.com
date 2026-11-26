@@ -41,7 +41,7 @@ export const KIND_ICON: Record<SearchKind, LucideIcon> = {
 /**
  * Kind labels, as one static `t()` call each.
  *
- * A computed key (``t(`kind-${hit.kind}`)``) is invisible to `i18next-parser`:
+ * A computed key (``t(`kind-${hit.kind}`)``) is invisible to `i18next-cli`:
  * the key never lands in `locales/`, and every non-English locale silently
  * serves the English `defaultValue` forever. Spelling the calls out is what
  * makes them extractable.

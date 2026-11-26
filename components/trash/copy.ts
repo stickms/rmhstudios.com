@@ -2,7 +2,7 @@
  * Copy tables for the recycle bin and bulk cleanup.
  *
  * Every entry is a **literal** `t()` call. A lookup keyed by variable
- * (`t(reasonKeys[reason])`) is invisible to `i18next-parser`: the key never
+ * (`t(reasonKeys[reason])`) is invisible to `i18next-cli`: the key never
  * reaches `locales/en/*.json`, so it never reaches the translators either, and
  * all sixteen locales quietly serve the English `defaultValue` forever. The
  * table has to be spelled out one call at a time for the extractor to see it —

@@ -30,7 +30,7 @@
  * This file carries only what is TRUE about a course — its running order, the
  * diameter it is served at, its temperature, which bath set it. Every word said
  * about it lives in `components/rebar-rutabaga/copy.ts`, keyed by `Course.id`,
- * because `i18next-parser` extracts by reading source and cannot see through a
+ * because `i18next-cli` extracts by reading source and cannot see through a
  * computed key: strings kept here and interpolated into `t()` would never reach
  * `locales/` and every locale would silently serve English (root `CLAUDE.md`
  * §5). The id is the join, and nothing is said twice.

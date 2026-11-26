@@ -28,7 +28,7 @@ export function RecordsCard({ days, todayKey }: { days: WatchDayDTO[]; todayKey:
   const records = useMemo(() => buildRecords(days), [days]);
   const comparison = useMemo(() => compareWeeks(days, todayKey), [days, todayKey]);
 
-  // One literal `t()` per id rather than a `{id: label}` table: `i18next-parser`
+  // One literal `t()` per id rather than a `{id: label}` table: `i18next-cli`
   // is a static scanner, so a label looked up from a map never reaches
   // `locales/` and every non-English locale would serve English forever.
   const label = (id: string): string => {

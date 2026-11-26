@@ -4,7 +4,6 @@ import { auth } from "@/lib/auth";
 const ALLOWED_ORIGINS = new Set([
   "https://rmhstudios.com",
   "https://www.rmhstudios.com",
-  "https://staging.rmhstudios.com",
 ]);
 
 function withCors(response: Response, request: Request): Response {

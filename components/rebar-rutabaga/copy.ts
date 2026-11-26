@@ -2,7 +2,7 @@
  * Every word on the Rebar & Rutabaga page, with its key spelled out.
  *
  * This file looks repetitive on purpose, and the repetition is load-bearing.
- * `i18next-parser` extracts by reading the source: it can see
+ * `i18next-cli` extracts by reading the source: it can see
  * `t('course.gravel.name', …)` and cannot see `t(`course.${id}.name`, …)`. A
  * computed key never reaches `locales/en/c-rebar-rutabaga.json`, which means it
  * is never sent for translation, which means all sixteen locales quietly serve
@@ -27,11 +27,11 @@ import type { TFunction } from 'i18next';
  * (`c-rebar-rutabaga:course.gravel.name`), and that prefix is not decoration.
  *
  * `useTranslation` is never called in this file — `t` arrives as a parameter —
- * so `i18next-parser` has nothing to infer a namespace from and files every key
+ * so `i18next-cli` has nothing to infer a namespace from and files every key
  * it finds here under `defaultNamespace`, which is `common`, which is not where
  * this page loads its strings from. An `ns` passed in the options object does
  * not change that; the lexer reads the namespace off the KEY, using the
- * `namespaceSeparator: ':'` set in `i18next-parser.config.js`. i18next resolves
+ * `namespaceSeparator: ':'` set in `i18next.config.ts`. i18next resolves
  * the same prefix the same way at runtime, so one literal satisfies both.
  *
  * It has to be a literal, which is why it is repeated rather than held in a

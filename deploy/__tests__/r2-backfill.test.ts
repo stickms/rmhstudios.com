@@ -27,7 +27,6 @@ afterEach(() => {
 interface Invocation {
   args: string[];
   migrated: boolean;
-  attached: boolean;
 }
 
 function runDeploy(options: {
@@ -35,7 +34,6 @@ function runDeploy(options: {
   folders?: string[];
   storage?: string;
   absoluteStorage?: boolean;
-  staging?: boolean;
   migration?: 'pending' | 'current' | 'fail';
   failJob?: 'avatars' | 'media';
   hangJob?: 'avatars' | 'media';
@@ -76,12 +74,11 @@ const mark = (name) => fs.writeFileSync(file(name), '');
 const exists = (name) => fs.existsSync(file(name));
 const pause = () => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5);
 const args = process.argv.slice(2);
-fs.appendFileSync(file('calls'), JSON.stringify({ args, migrated: exists('migrated'), attached: exists('attached') }) + '\\n');
+fs.appendFileSync(file('calls'), JSON.stringify({ args, migrated: exists('migrated') }) + '\\n');
 const cmd = args.join(' ');
 if (args[0] === 'inspect') { console.log('true'); process.exit(0); }
 if (args[0] === 'image' && args[1] === 'inspect') { console.log('{}'); process.exit(0); }
 if (args[0] === 'network') {
-  if (args[1] === 'connect') { mark('attached'); event('network-attached'); }
   process.exit(0);
 }
 if (cmd.includes('scripts/sync-static-assets-to-r2.mjs')) {
@@ -129,7 +126,7 @@ ENV_FILE=${quote(shellPath(envFile))}
 DOCKER_BIN=${quote(shellPath(dockerWrapper))}
 PROJECT_NAME=rmhstudios-test
 IMAGE_NAME=rmhstudios-test-app
-ENVIRONMENT=${options.staging ? 'staging' : 'production'}
+ENVIRONMENT=production
 log() { printf '%s\\n' "$1"; }
 step_start() { :; }
 step_done() { :; }
@@ -187,15 +184,14 @@ const backfills = (calls: Invocation[]) => calls.filter(({ args }) =>
 
 describe('deployment R2 backfills', () => {
   // Removing Compose or moving either launch ahead of migrate deploy breaks
-  // hostname reachability / schema safety, even if the background job succeeds.
+  // schema safety, even if the background job succeeds.
   it('runs both backfills through the web Compose service after successful migrations', () => {
-    const result = runDeploy({ staging: true });
+    const result = runDeploy();
     expect(result.status, result.output).toBe(0);
     const jobs = backfills(result.calls);
     expect(jobs).toHaveLength(2);
     for (const job of jobs) {
       expect(job.migrated, job.args.join(' ')).toBe(true);
-      expect(job.attached, job.args.join(' ')).toBe(true);
       expect(job.args).toEqual([
         'compose', '-p', 'rmhstudios-test', '--env-file', result.envFile,
         '-f', 'docker-compose.yml', '-f', 'deploy/docker-compose.backfill.yml',

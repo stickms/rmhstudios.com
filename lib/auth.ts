@@ -64,7 +64,7 @@ const stripeClient = getStripeClient();
 // the site down (above). One structured line at boot, so a deploy that lost the
 // key is visible in the logs instead of surfacing as "checkout fails" later.
 // Not a throw: .env.example lists the key as optional and nothing in the repo
-// proves every environment (staging, previews) sets it.
+// proves every environment (previews) sets it.
 if (process.env.NODE_ENV === 'production') {
   const missing = [
     'STRIPE_SECRET_KEY',
@@ -165,7 +165,6 @@ export const auth = betterAuth({
   trustedOrigins: [
     'https://rmhstudios.com',
     'https://www.rmhstudios.com',
-    'https://staging.rmhstudios.com',
   ],
   advanced: {
     useSecureCookies: process.env.BETTER_AUTH_URL?.startsWith('https'),

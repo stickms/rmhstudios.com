@@ -13,7 +13,7 @@ import { deleteReadingSubscriptionApi, updateReadingSubscriptionApi } from '@/li
 import { readingSubscriptionsQuery } from '@/lib/reading/subscriptions.queries';
 import type { SubscriptionView } from '@/lib/reading/subscriptions-schema';
 
-// Literal t() keys per kind: i18next-parser cannot see a templated key.
+// Literal t() keys per kind: i18next-cli cannot see a templated key.
 function subscriptionName(t: TFunction, sub: SubscriptionView): string {
   switch (sub.kind) {
     case 'blog':

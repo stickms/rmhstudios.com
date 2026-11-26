@@ -1,14 +1,11 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # rmhstudios.com — Docker Compose
 #
-# Used for BOTH production and staging via --project-name and --env-file:
+# Production, via --project-name and --env-file:
 #
-#   Production:  docker compose -p rmhstudios-prod  --env-file .env.production  up -d
-#   Staging:     docker compose -p rmhstudios-staging --env-file .env.staging   up -d
+#   docker compose -p rmhstudios-prod --env-file .env.production up -d
 #
-# Port assignments are set in the respective .env files:
-#   Production:  7005 / 7001 / 7676 / 7003
-#   Staging:     8005 / 8001 / 8676 / 8003
+# Port assignments are set in .env.production: 7005 / 7001 / 7676 / 7003
 #
 # TWO images are built from the SAME Dockerfile + build args (only the target
 # stage differs):
@@ -568,8 +565,7 @@ services:
       # internal container health: the website row hits "/" here, and /api/ready,
       # /blog/rss.xml and /sitemap.xml exercise the database, the render path and
       # the SEO surface through the same route a visitor takes. cmd/status derives
-      # the origin from this one value (e.g. point it at the staging host on the
-      # staging stack).
+      # the origin from this one value (e.g. point it at another origin).
       - STATUS_WEBSITE_URL=${STATUS_WEBSITE_URL:-https://rmhstudios.com/}
       # The three realtime hubs are probed on their OWN /health over compose DNS,
       # not at the public /socket/health · /rmhbox-ws/health · /rmhtube-ws/health

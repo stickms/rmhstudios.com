@@ -47,7 +47,7 @@ export function ActivityCharts({ days }: ChartsProps) {
   const { t } = useTranslation('r-sohumtracker');
   const [metric, setMetric] = useState<TrendMetric>('online');
 
-  // Literal keys, not a table lookup: `i18next-parser` is a static scanner and
+  // Literal keys, not a table lookup: `i18next-cli` is a static scanner and
   // `t(option.key)` over an array extracts nothing, so the string would never
   // reach `locales/` and every non-English locale would serve English forever.
   const metrics: ReadonlyArray<{

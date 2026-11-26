@@ -44,7 +44,7 @@ export function DayDetail({ day, showPermalink = true }: DayDetailProps) {
   };
 
   // Literal keys, one `t()` per fact: a data table of {key,label} would read
-  // better and would extract nothing (`i18next-parser` is a static scanner).
+  // better and would extract nothing (`i18next-cli` is a static scanner).
   const facts: Array<{
     id: string;
     label: string;

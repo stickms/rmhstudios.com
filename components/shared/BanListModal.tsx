@@ -24,7 +24,7 @@ interface BanListModalProps {
   onClose: () => void;
   /**
    * Resolved strings. Each app builds these with literal `t("key", ...)` calls
-   * in its own namespace so i18next-parser keeps extracting the keys (a dynamic
+   * in its own namespace so i18next-cli keeps extracting the keys (a dynamic
    * key or namespace here would silently drop them from `locales/`).
    */
   labels: {

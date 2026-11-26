@@ -30,7 +30,7 @@
 #   - server-builder is decoupled from app source → only rebuilds when
 #     server/ or lib/ change, NOT on app/component/public changes (and it runs
 #     in parallel with vite-builder, so even a rebuild costs no wall-clock)
-#   - server-builder is env-agnostic → 100% cache hit between prod/staging
+#   - server-builder is env-agnostic → 100% cache hit between builds
 #   - node_modules copied from prisma-generate (not builder) → stable layer
 #     that includes @prisma/client and only rebuilds on lockfile/schema changes
 #   - Optional shared/remote layer cache: set DEPLOY_BUILDKIT_CACHE so a fresh or
@@ -82,8 +82,8 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharin
 # esbuild runs in <3s and produces CJS bundles for the six Node services.
 # Copies server/ + lib/ and nothing else — app/, components/ and public/ stay
 # out, so a page or component change does NOT invalidate this stage.
-# Because this stage has NO build args, it caches perfectly when deploying
-# staging right after production (or vice versa) with the same source code.
+# Because this stage has NO build args, it caches perfectly across builds of
+# the same source code.
 #
 # WHY `COPY lib` AND NOT A FILE-BY-FILE LIST: this block used to be 83 separate
 # `COPY lib/<one thing>` lines, each with a comment explaining which handler

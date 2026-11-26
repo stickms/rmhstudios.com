@@ -38,7 +38,7 @@ export function PunchCard({ days }: { days: WatchDayDTO[] }) {
 
   const card = useMemo(() => buildPunchCard(days), [days]);
 
-  // Literal keys, one `t()` each: `i18next-parser` is a static scanner and a
+  // Literal keys, one `t()` each: `i18next-cli` is a static scanner and a
   // `t(option.key)` over an array extracts nothing (CLAUDE.md §5).
   const metrics: ReadonlyArray<{ value: PunchMetric; label: string }> = [
     { value: 'voice', label: t('metric-voice', { defaultValue: 'Voice' }) },

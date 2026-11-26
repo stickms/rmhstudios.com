@@ -247,7 +247,7 @@ function activityIcon(type: number) {
 
 /**
  * Discord's own verb per activity type. Literal `t()` keys per branch, because
- * `i18next-parser` is a static scanner and a lookup table extracts nothing.
+ * `i18next-cli` is a static scanner and a lookup table extracts nothing.
  */
 function activityLabel(
   type: number,

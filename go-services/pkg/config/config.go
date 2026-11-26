@@ -17,7 +17,7 @@ import (
 type Common struct {
 	// ServiceName is used for structured logging and metrics labels.
 	ServiceName string
-	// Env is one of "development", "staging", "production".
+	// Env is one of "development", "production".
 	Env string
 	// DatabaseURL is the single Postgres DSN used across the whole platform,
 	// identical to the Node services' DATABASE_URL.

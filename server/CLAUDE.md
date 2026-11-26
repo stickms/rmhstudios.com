@@ -220,7 +220,7 @@ Consequences:
   registered modules in `features/medschools/api/`). Mapping keeps the one-key-per-source rule (a school has one alias
   key per source; an existing alias is never moved). Alias seeding is not gated by `MEDSCHOOLS_ADMIT_ENABLED`. (5) A
   GraphQL `errors` reply to a profile lookup defers that user and does not count toward the three-strike halt. (6)
-  `pnpm i18n:extract` scans `features/medschools/**` (scoped in `i18next-parser.config.js`); other feature folders are
+  `pnpm i18n:extract` scans `features/medschools/**` (scoped in `i18next.config.ts`); other feature folders are
   not yet scanned. Built by `pnpm build` and run as its own compose service. **SDN (Student Doctor Network) connector,
   phase 2b.** Three more queues (all `exclusive`, `retryLimit: 0`, UTC): `medschools.sdn-live` (daily at 12:20 UTC,
   off-peak, `MEDSCHOOLS_SDN_LIVE_CRON`, expires after 25 min: RSS feeds, then the changed threads),

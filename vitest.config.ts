@@ -27,7 +27,9 @@
  * doubles are module state. Order-dependent red is worse than slow green, and
  * this repo's whole gate culture is built on the suite being evidence. The
  * speed came from elsewhere (see `maxWorkers` below and the notes in
- * docs/testing.md §Speed).
+ * docs/testing.md §Speed). Re-measured on vitest 5.1.2 (2026-11-26): `--no-isolate` fails
+ * 2692 tests across the altair, medschools and other `vi.mock`-heavy suites, so it is still
+ * not an option; the "faster with isolate: false" hint in the run summary does not apply.
  */
 import { defineConfig } from 'vitest/config';
 import { availableParallelism } from 'node:os';

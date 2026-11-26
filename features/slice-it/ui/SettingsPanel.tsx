@@ -50,7 +50,7 @@ import { sfxGain, useSliceItStore } from '@features/slice-it/engine/store';
 /**
  * ## Two rules this file follows that the rest of the game does not
  *
- * Both are `i18next-parser` limits, and both fail SILENTLY — the UI looks
+ * Both are `i18next-cli` limits, and both fail SILENTLY — the UI looks
  * right in English and every other locale serves the English `defaultValue`
  * forever, because the key never reaches `locales/`.
  *
@@ -619,7 +619,7 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
   /**
    * A3 — one literal `t()` per palette rather than `t(\`lane-palette-${id}\`)`.
    *
-   * `i18next-parser` cannot read a template-literal key, so the interpolated
+   * `i18next-cli` cannot read a template-literal key, so the interpolated
    * form extracts to nothing and every locale falls back to the raw id
    * (`deuteranopia`) as its label. Keyed by `LanePaletteId`, so adding a palette
    * to `palettes.ts` is a type error here until it has a name.
@@ -925,7 +925,7 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
 
         {/* V7 — the stage backdrop. One literal `t()` per option rather than
             `t(\`backdrop-${id}\`)`, for the same reason the lane palettes below
-            spell theirs out: `i18next-parser` cannot read a template-literal
+            spell theirs out: `i18next-cli` cannot read a template-literal
             key, so the interpolated form extracts to nothing and every locale
             falls back to the raw id.
 

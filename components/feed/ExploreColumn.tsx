@@ -70,7 +70,7 @@ const ASSIST_RESULT_THRESHOLD = 3;
 /**
  * Tab labels, one static `t()` call each.
  *
- * A computed key (``t(`tab-${id}`)``) is invisible to `i18next-parser`, so the
+ * A computed key (``t(`tab-${id}`)``) is invisible to `i18next-cli`, so the
  * key never reaches `locales/` and every non-English locale quietly serves the
  * English default. The four `tab-*` keys that already existed were only in the
  * catalog because older code happened to call them statically elsewhere.

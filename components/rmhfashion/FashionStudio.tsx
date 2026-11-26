@@ -15,7 +15,7 @@
  *
  * ## Why the labels are written out
  *
- * `i18next-parser` reads `defaultValue` literally. A `t(key, { defaultValue:
+ * `i18next-cli` reads `defaultValue` literally. A `t(key, { defaultValue:
  * garment.name })` extracts as an empty default, lands in `locales/en/` as `""`,
  * and i18next then serves that empty string to every locale — English included.
  * So all forty-three garment names are spelled out below. It is more lines than

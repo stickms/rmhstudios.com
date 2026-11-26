@@ -29,7 +29,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import ts from 'typescript';
+import ts from 'typescript-js';
 import { CACHE_POLICY } from '../lib/api/cache-policies';
 import { registeredApiRoutes } from '../lib/api/route-sources';
 

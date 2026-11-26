@@ -45,7 +45,7 @@ describe('medschools ui rules', () => {
     }
   });
 
-  it('puts no {/* comment on the line before a t( call (i18next-parser skips it)', () => {
+  it('puts no {/* comment on the line before a t( call (i18next-cli skips it)', () => {
     for (const f of uiFiles) {
       const lines = read(f).split('\n');
       lines.forEach((line, i) => {

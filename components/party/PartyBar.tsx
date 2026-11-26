@@ -375,7 +375,7 @@ export function PartyBar({
     // below `sm`. As one unwrapped row the sentence took the width and left
     // "Party up" about 40px, which rendered as "Party" over "up". (Comment here
     // rather than in the JSX: a `{/* … */}` immediately before a `t()` call
-    // makes i18next-parser skip that key.)
+    // makes i18next-cli skip that key.)
     return (
       <section className="relative py-3">
         <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-2">
