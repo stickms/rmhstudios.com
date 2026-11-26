@@ -251,6 +251,51 @@ describe('runForecast', () => {
   });
 });
 
+describe('one forecast per source', () => {
+  const seed = (s: ReturnType<typeof setup>, source: string, cur: number, prev: number) => {
+    s.season({ schoolId: 'a', cycleYear: 2027, total: cur, until: '2027-01-14', source });
+    s.season({ schoolId: 'a', cycleYear: 2026, total: prev, source });
+  };
+
+  it('fits CycleTrack and Admit separately, each on its own series and its own history', async () => {
+    const s = setup();
+    s.school('a');
+    seed(s, 'CYCLETRACK', 150, 200);
+    seed(s, 'ADMIT', 60, 80);
+    await s.run();
+    const rows = forecasts(s.f) as {
+      source: string;
+      mode: string;
+      summary: { observed: number; basis: { source: string }[] };
+    }[];
+    expect(rows.map((r) => r.source).sort()).toEqual(['ADMIT', 'CYCLETRACK']);
+    const by = Object.fromEntries(rows.map((r) => [r.source, r]));
+    expect(by.CYCLETRACK!.summary.observed).toBeGreaterThan(by.ADMIT!.summary.observed);
+    for (const r of rows) expect(r.summary.basis.every((b) => b.source === r.source)).toBe(true);
+  });
+
+  it('a school with only SDN data still gets a row', async () => {
+    const s = setup();
+    s.school('a');
+    seed(s, 'SDN', 90, 120);
+    await s.run();
+    expect(forecasts(s.f).map((r) => r.source)).toEqual(['SDN']);
+  });
+
+  it('a re-run leaves every per-source row unchanged, and a new source adds only its own row', async () => {
+    const s = setup();
+    s.school('a');
+    seed(s, 'CYCLETRACK', 150, 200);
+    const first = await s.run();
+    expect(first!.fitted + first!.early + first!.none).toBe(1);
+    seed(s, 'ADMIT', 60, 80);
+    const second = await s.run();
+    expect(second).toMatchObject({ unchanged: 1 });
+    expect(second!.fitted + second!.early + second!.none).toBe(1);
+    expect(forecasts(s.f)).toHaveLength(2);
+  });
+});
+
 describe('fitSchool', () => {
   it('fits each program and type on its own and never mixes sources', () => {
     const zero = (y: number) => `${y - 1}-06-01`;
@@ -279,9 +324,12 @@ describe('fitSchool', () => {
       })),
     ];
     const out = fitSchool({ schoolId: 's', rows, cycleYear: 2027, today: '2027-01-15', dayZeroOf: zero });
-    expect(out).toHaveLength(1);
-    // CycleTrack is primary; its history is CycleTrack's (there is none), so Admit's 2026 is never borrowed.
+    expect(out.map((r) => r.source)).toEqual(['CYCLETRACK', 'ADMIT']);
+    // CycleTrack's history is CycleTrack's (there is none), so Admit's 2026 is never borrowed; Admit has its own.
     expect(out[0]).toMatchObject({ source: 'CYCLETRACK', mode: 'NONE' });
+    expect(out[1]).toMatchObject({ source: 'ADMIT' });
+    expect(out[1]!.mode).not.toBe('NONE');
+    expect(out[1]!.summary.basis.every((b) => b.source === 'ADMIT')).toBe(true);
   });
 });
 

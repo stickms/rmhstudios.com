@@ -1,7 +1,7 @@
 /**
  * `medschools.forecast`: the daily derived job of phase 5 (spec §8, 06:40 UTC). For every active school it fits the
  * current cycle's interview, secondary, waitlist, rejection and acceptance series per program (REG and PHD, never ALL)
- * and upserts one `MedForecast` row each; then it rebuilds the aggregate wait curves (`run-wait-curves.ts`).
+ * and upserts one `MedForecast` row per source that has data; then it rebuilds the aggregate wait curves (`run-wait-curves.ts`).
  *
  * A forecast is a function of the PUBLIC, floored primary series and nothing else: counts are read through
  * `floorWhere` (engine/floor.ts, the one definition the readers use) and turned into figures by `primarySeriesOf`, so a
@@ -17,7 +17,7 @@ import { CHARTED_TYPES, resolveCycleYear, utcDayOf, type StoredCountRow } from '
 import { MODEL_VERSION } from '../engine/stats/constants';
 import { addDays } from '../engine/stats/days';
 import { forecastCycle, type HistoryCycle } from '../engine/stats/forecast';
-import { primarySeriesOf, seriesOfSource, toDayCounts } from '../engine/stats/input';
+import { seriesBySource, seriesOfSource, toDayCounts } from '../engine/stats/input';
 import { MIN_HISTORY_TOTAL } from '../engine/stats/constants';
 import { fnv1a } from '../engine/stats/random';
 import type { MedEventType, MedProgram, MedSource } from '../engine/types';
@@ -77,7 +77,7 @@ export interface ForecastRow {
   eventType: MedEventType;
   modelVersion: number;
   mode: 'FULL' | 'EARLY' | 'NONE';
-  source: MedSource | null;
+  source: MedSource;
   asOf: string;
   curve: { days: number[]; p10: number[]; p50: number[]; p90: number[] };
   summary: {
@@ -93,7 +93,9 @@ export interface ForecastRow {
 const round2 = (n: number): number => Math.round(n * 100) / 100;
 
 /**
- * Fit one school: every program x charted event type that has a floored primary series in the current cycle.
+ * Fit one school: every program x charted event type x source that has a floored series in the current cycle. Each
+ * source is fitted on its own current series and its own earlier cycles, never summed; the reader's CycleTrack /
+ * Admit.org choice picks which stored row the Forecast tab shows.
  * `rows` holds the school's count rows for the current cycle and the cycles before it, already read through
  * `floorWhere`; the pure step is exported so the matrix test needs no database.
  */
@@ -117,55 +119,55 @@ export function fitSchool(args: {
       if (asOfDay >= endDay) continue;
       const of = (y: number) =>
         rows.filter((r) => r.program === program && r.eventType === eventType && r.cycleYear === y);
-      const primary = primarySeriesOf(of(cycleYear), today);
-      if (!primary) continue;
-      const history: HistoryCycle[] = [];
-      for (let k = 1; k <= HISTORY_CYCLES; k++) {
-        const y = cycleYear - k;
-        const hrows = of(y);
-        let days = seriesOfSource(hrows, today, primary.source);
-        let source: MedSource = primary.source;
-        if (days.reduce((n, d) => n + d.count, 0) < MIN_HISTORY_TOTAL) {
-          // A thin cycle may lend its SHAPE from MDApplicants; it is never added to a count of another source.
-          const shape = seriesOfSource(hrows, today, 'MDAPPLICANTS');
-          if (shape.reduce((n, d) => n + d.count, 0) < SHAPE_FALLBACK_MIN) continue;
-          days = shape;
-          source = 'MDAPPLICANTS';
+      for (const primary of seriesBySource(of(cycleYear), today)) {
+        const history: HistoryCycle[] = [];
+        for (let k = 1; k <= HISTORY_CYCLES; k++) {
+          const y = cycleYear - k;
+          const hrows = of(y);
+          let days = seriesOfSource(hrows, today, primary.source);
+          let source: MedSource = primary.source;
+          if (days.reduce((n, d) => n + d.count, 0) < MIN_HISTORY_TOTAL) {
+            // A thin cycle may lend its SHAPE from MDApplicants; it is never added to a count of another source.
+            const shape = seriesOfSource(hrows, today, 'MDAPPLICANTS');
+            if (shape.reduce((n, d) => n + d.count, 0) < SHAPE_FALLBACK_MIN) continue;
+            days = shape;
+            source = 'MDAPPLICANTS';
+          }
+          history.push({ cycleYear: y, source, days: toDayCounts(days, dayZeroOf(y)) });
         }
-        history.push({ cycleYear: y, source, days: toDayCounts(days, dayZeroOf(y)) });
+        const result = forecastCycle({
+          current: toDayCounts(primary.days, dayZeroOn),
+          asOfDay,
+          endDay,
+          history,
+          seed: fnv1a(`${schoolId}|${program}|${eventType}|${primary.source}|${cycleYear}|${asOf}`),
+        });
+        out.push({
+          program,
+          cycleYear,
+          eventType,
+          modelVersion: MODEL_VERSION,
+          mode: result.mode,
+          source: primary.source,
+          asOf,
+          curve: {
+            days: result.band.map((b) => b.day),
+            p10: result.band.map((b) => b.p10),
+            p50: result.band.map((b) => b.p50),
+            p90: result.band.map((b) => b.p90),
+          },
+          summary: {
+            dayZeroOn,
+            observed: result.observed,
+            meanShare: result.meanShare === null ? null : round2(result.meanShare),
+            total: result.total,
+            halfDay: result.halfDay,
+            basis: result.basis
+              .filter((b) => b.weight > 0)
+              .map((b) => ({ cycleYear: b.cycleYear, source: b.source, weight: round2(b.weight) })),
+          },
+        });
       }
-      const result = forecastCycle({
-        current: toDayCounts(primary.days, dayZeroOn),
-        asOfDay,
-        endDay,
-        history,
-        seed: fnv1a(`${schoolId}|${program}|${eventType}|${cycleYear}|${asOf}`),
-      });
-      out.push({
-        program,
-        cycleYear,
-        eventType,
-        modelVersion: MODEL_VERSION,
-        mode: result.mode,
-        source: primary.source,
-        asOf,
-        curve: {
-          days: result.band.map((b) => b.day),
-          p10: result.band.map((b) => b.p10),
-          p50: result.band.map((b) => b.p50),
-          p90: result.band.map((b) => b.p90),
-        },
-        summary: {
-          dayZeroOn,
-          observed: result.observed,
-          meanShare: result.meanShare === null ? null : round2(result.meanShare),
-          total: result.total,
-          halfDay: result.halfDay,
-          basis: result.basis
-            .filter((b) => b.weight > 0)
-            .map((b) => ({ cycleYear: b.cycleYear, source: b.source, weight: round2(b.weight) })),
-        },
-      });
     }
   }
   return out;
@@ -311,8 +313,8 @@ export async function runForecast(
             summary: true,
           },
         });
-        const key = (p: string, t: string) => `${p}|${t}`;
-        const prior = new Map(stored.map((r) => [key(r.program, r.eventType), r]));
+        const key = (p: string, t: string, src: string) => `${p}|${t}|${src}`;
+        const prior = new Map(stored.map((r) => [key(r.program, r.eventType, r.source), r]));
         for (const f of fits) {
           const data = {
             modelVersion: f.modelVersion,
@@ -322,7 +324,7 @@ export async function runForecast(
             curve: f.curve,
             summary: f.summary,
           };
-          const had = prior.get(key(f.program, f.eventType));
+          const had = prior.get(key(f.program, f.eventType, f.source));
           if (
             had &&
             had.modelVersion === f.modelVersion &&
@@ -337,11 +339,12 @@ export async function runForecast(
           }
           await prisma.medForecast.upsert({
             where: {
-              schoolId_program_cycleYear_eventType: {
+              schoolId_program_cycleYear_eventType_source: {
                 schoolId: school.id,
                 program: f.program,
                 cycleYear: f.cycleYear,
                 eventType: f.eventType,
+                source: f.source,
               },
             },
             create: {

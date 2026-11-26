@@ -25,11 +25,23 @@ function floored(rows: readonly StoredCountRow[], today: string): CountCell[] {
   return applyKFloor(cells, today);
 }
 
-/** The floored primary source's daily counts, or null when nothing public is left. */
-export function primarySeriesOf(rows: readonly StoredCountRow[], today: string): PrimarySeries | null {
-  const series = buildTypeSeries(floored(rows, today), today);
+/**
+ * The floored primary source's daily counts, or null when nothing public is left. `prefer` is the reader's chosen
+ * source (`primaryOrder`): primary where it has data, else the usual order decides.
+ */
+export function primarySeriesOf(
+  rows: readonly StoredCountRow[],
+  today: string,
+  prefer?: MedSource | null,
+): PrimarySeries | null {
+  const series = buildTypeSeries(floored(rows, today), today, prefer);
   const hit = series.sources.find((s) => s.source === series.primary);
   return hit ? { source: hit.source, days: hit.days } : null;
+}
+
+/** Every source with floored public data, in `PRIMARY_ORDER`, each its own daily counts. Never added together. */
+export function seriesBySource(rows: readonly StoredCountRow[], today: string): PrimarySeries[] {
+  return buildTypeSeries(floored(rows, today), today).sources.map((s) => ({ source: s.source, days: s.days }));
 }
 
 /** One named source's floored daily counts (history cycles use the SAME source as the current primary). */

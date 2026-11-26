@@ -25,7 +25,7 @@ const UNIQUE_KEYS: Record<string, string[]> = {
   medUserPrefs: ['userId'],
   medApplicantProfile: ['userId'],
   medApplicantHours: ['profileId', 'category'],
-  medForecast: ['schoolId', 'program', 'cycleYear', 'eventType'],
+  medForecast: ['schoolId', 'program', 'cycleYear', 'eventType', 'source'],
   medWaitCurve: ['schoolId', 'program'],
   medSecondaryPrompt: ['schoolId', 'program', 'key'],
   medSecondaryObservation: ['promptId', 'cycleYear', 'source'],
