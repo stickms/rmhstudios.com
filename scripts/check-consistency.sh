@@ -18,7 +18,7 @@
 #   2. The executable design/consistency gates (`lib/__tests__/*`), which are
 #      the AUTHORITY for rules 1-9 of docs/design-language.md §13. The fast
 #      scan is a preview of these, not a replacement.
-#   3. The repo-wide quality bar: eslint on changed files, `tsc -b` (pnpm typecheck), and
+#   3. The repo-wide quality bar: `tsc -b` (pnpm typecheck), and
 #      the generated-docs freshness checks that `web-ci.yml` runs.
 #
 # Anything it cannot verify mechanically is printed as a REVIEW item — the
@@ -270,9 +270,10 @@ step "2. Design language — added lines (design.md; docs/plans/2026-11-11-steel
 BEFORE=$FAILED
 
 # Raw palette colours (§13 rule 5), hardcoded radii (rule 6), `transition-all` (rule 8) and dead
-# tailwindcss-animate classes (rule 9) are eslint rules now — local/no-raw-palette-color,
-# local/no-hardcoded-radius, local/no-transition-all, local/no-dead-animate-classes — so the
-# eslint step below gates them, scoped by eslint-local-rules/design-scope.js.
+# tailwindcss-animate classes (rule 9) are written as eslint rules (local/no-raw-palette-color,
+# local/no-hardcoded-radius, local/no-transition-all, local/no-dead-animate-classes in
+# eslint-local-rules/). ESLint is switched off for now (TypeScript 7 has no JS API for
+# typescript-eslint), so NOTHING gates them at the moment: review them by hand.
 
 # The one exemption mirrors TABLIST_ALLOW in design-consistency.test.ts: the TF2 HUD Editor is
 # deliberately outside the site design and ships its own flat TfTabs.
@@ -430,7 +431,7 @@ step "4. Executable gates (the authority — docs/design-language.md §13)"
 # Every tool below goes through run_step (scripts/gate-step.sh), so "the step was
 # killed" and "the step found something" are never the same line.
 #
-# The vitest and eslint steps start `node <bin>` rather than `pnpm exec <bin>`:
+# The vitest step starts `node <bin>` rather than `pnpm exec <bin>`:
 # pnpm exec turns a child's SIGKILL into a plain exit 1, and it costs about half
 # a second per start for nothing.
 #
@@ -442,13 +443,12 @@ step "4. Executable gates (the authority — docs/design-language.md §13)"
 # failing silently. Every gate runs on every commit; only the worker count is
 # capped, so the step's memory does not grow with the machine's core count.
 VITEST=(node node_modules/vitest/vitest.mjs)
-ESLINT=(node node_modules/eslint/bin/eslint.js)
 FAST_GATE_WORKERS=3
 
 if ! command -v pnpm >/dev/null 2>&1; then
-  warn "vitest / eslint / tsc did NOT run — pnpm is not on PATH. The scans above are a preview, not the gate."
+  warn "vitest / tsc did NOT run — pnpm is not on PATH. The scans above are a preview, not the gate."
 elif [ ! -d node_modules ]; then
-  warn "vitest / eslint / tsc did NOT run — node_modules is missing. Run pnpm install; the scans above are a preview, not the gate."
+  warn "vitest / tsc did NOT run — node_modules is missing. Run pnpm install; the scans above are a preview, not the gate."
 else
   GATE_TESTS=(
     lib/__tests__/design-consistency.test.ts
@@ -504,35 +504,6 @@ else
     esac
   fi
 
-  LINTABLE="$TMP/lintable"
-  list '\.(ts|tsx|js|jsx|mjs)$' | grep -vE '^(app/routeTree\.gen\.ts|lib/i18n/resources\.)' > "$LINTABLE" || true
-  if [ -s "$LINTABLE" ]; then
-    mkdir -p .cache/eslint
-    # Bound each invocation so a large merge also works within Windows' command
-    # line limit. NUL-delimited paths retain spaces; every batch must pass.
-    # xargs answers 123 when a batch fails and 125 when one is killed by a signal,
-    # which would hide the signal from run_step — so each batch reports its own
-    # status on a marker line and the wrapper returns the worst one.
-    eslint_batches() {
-      tr '\n' '\0' < "$LINTABLE" | xargs -0 -n 40 bash -c '
-        "$@"; rc=$?
-        [ "$rc" -eq 0 ] || printf "__eslint_batch_exit__ %s\n" "$rc" >&3
-        exit 0
-      ' _ "${ESLINT[@]}" --cache --cache-location .cache/eslint/eslintcache \
-        --cache-strategy content 3> "$TMP/eslint-exits"
-      [ -s "$TMP/eslint-exits" ] || return 0
-      local worst
-      worst=$(sort -k2 -n -r "$TMP/eslint-exits" | head -n 1 | cut -d' ' -f2)
-      return "$worst"
-    }
-    run_step "eslint ($(wc -l < "$LINTABLE" | tr -d ' ') changed files)" eslint_batches
-    case $? in
-      0) pass_timed "eslint (changed files)" ;;
-      1) fail "eslint — the bar is no NEW errors or warnings versus the base branch" ;;
-    esac
-  else
-    skip "eslint" "no lintable files changed"
-  fi
 
   if [ "$FAST" = 1 ]; then
     skip "tsc -b" "--fast"
@@ -541,8 +512,8 @@ else
     if has '(\.(ts|tsx)|^tsconfig[^/]*\.json)$'; then
       mkdir -p .cache/tsc
       # `pnpm run typecheck`, never bare `tsc`. Two packages in this workspace
-      # ship a `tsc` bin — `typescript` (6.x, the module typescript-eslint
-      # imports) and `typescript-native` (7.x, the Go compiler) — so
+      # ship a `tsc` bin — `typescript` (7.x, the Go compiler) and `typescript-js`
+      # (6.x, the JS API the ratchet tests walk ASTs with) — so
       # node_modules/.bin/tsc is whichever pnpm linked last. The script pins the
       # native one by path. It is `tsc -b` over the three projects the root
       # tsconfig.json lists (core, engine, site; audit AR1), each with its own

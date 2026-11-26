@@ -43,12 +43,18 @@ aliased over `i18next` and `react-i18next`). Node ≥26.13, pnpm workspace.
 
 ## Commands
 
+> **ESLint is switched off (2026-11-26).** `typescript` is 7.x (the native compiler, no JS API), which
+> typescript-eslint cannot use. Nothing now enforces the rules that lived only in `eslint-local-rules/`
+> (`no-raw-palette-color`, `no-hardcoded-radius`, `no-transition-all`, `no-dead-animate-classes`, `no-inline-motion`,
+> `route-needs-head`, …) or the jsx-a11y and import-cycle ratchets: review those by hand until a replacement lands.
+> The config and rule files stay in the repo for that. Code that walks ASTs in tests imports the 6.x API as
+> `typescript-js`.
+
 ```bash
 pnpm install                 # postinstall runs prisma generate
 pnpm db:push                 # apply schema to local Postgres (dev)
 pnpm dev                     # Vite (7005) + socket/rmhbox/rmhtube hubs + ladder/homes/jobs workers
 pnpm typecheck               # typecheck: `tsc -b` over the core, engine and site projects (a bare `tsc --noEmit` checks nothing)
-pnpm lint                    # eslint (jsx-a11y at warn — add no new warnings)
 pnpm format                  # prettier
 pnpm test                    # main test suite (mission-critical scope — docs/testing.md; time it with `time pnpm test`)
 pnpm test:epic               # epic content-build suite (needs Chromium)
@@ -74,17 +80,14 @@ time: **the commit.**
 
 ```bash
 pnpm check:consistency          # gate the staged change (what the commit will contain)
-pnpm check:consistency --fast   # design/style gates + eslint only (what the hooks run)
+pnpm check:consistency --fast   # design/style gates only (what the hooks run)
 pnpm check:consistency --base main   # gate the whole branch before a PR
 pnpm check:consistency:full     # + the complete vitest suite
 ```
 
 `scripts/check-consistency.sh` runs, in order: a scan of the **added lines** for the rules CI already fails on
-(hand-rolled tab strips and the like; raw palette colours, hardcoded radii, `transition-all` and dead
-`tailwindcss-animate` classes are eslint `local/no-raw-palette-color`, `local/no-hardcoded-radius`,
-`local/no-transition-all`, `local/no-dead-animate-classes`, scoped by `eslint-local-rules/design-scope.js`) · the
-executable gates in `lib/__tests__/` that are the **authority** for `design.md` and the Steel plan §17 · eslint on the
-changed files · `tsc -b` (`pnpm typecheck`) · the generated-docs freshness checks. Then it prints the handful of things
+(hand-rolled tab strips and the like) · the
+executable gates in `lib/__tests__/` that are the **authority** for `design.md` and the Steel plan §17 · `tsc -b` (`pnpm typecheck`) · the generated-docs freshness checks. Then it prints the handful of things
 no script can check — both editions, the role-less switcher that is really a tab strip — because a green gate means you
 did not regress an enforced rule, never that the change looks right.
 
@@ -120,7 +123,7 @@ Two rules about the gate itself:
 **Merge conflicts: what is deliberately not in git.** Files that are a pure function of other files conflict whenever
 two branches change the inputs, so they are generated, not committed: `app/routeTree.gen.ts`,
 `lib/prepaint/generated.ts` and `docs/_generated/facts/*.json` (the repo's countable facts, one file per category) are
-written by `pnpm gen`, which `pnpm install`, `pnpm dev`, `pnpm build`, `pnpm typecheck`, `pnpm lint` and the vitest run
+written by `pnpm gen`, which `pnpm install`, `pnpm dev`, `pnpm build`, `pnpm typecheck` and the vitest run
 call for you (CI's `setup-deps` and the Dockerfile too). The ones that stay committed are written so a new entry touches
 only its own lines: `lib/api/route-table.server.ts` (imports named by path, routes bucketed by first letter), the
 inventories under `docs/site-reference/{pages,api}/` (one file per first letter, no counts) and `NAMESPACES` in
@@ -188,8 +191,7 @@ warnings versus the base branch, and a message that explains _why_.
    commit** read [`design.md`](design.md), [`docs/design-language.md`](docs/design-language.md) §0 and
    [`docs/page-consistency.md`](docs/page-consistency.md). Part of this is CI-enforced —
    `lib/__tests__/steel-tokens.test.ts`, `steel-flat.test.ts`, `steel-ghost-buttons.test.ts` and
-   `design-consistency.test.ts` (hand-rolled tab strips, floating UI below the overlay tier) plus the eslint rules
-   `local/no-transition-all` and `local/no-dead-animate-classes` — and `pnpm check:consistency` is how you find that out
+   `design-consistency.test.ts` (hand-rolled tab strips, floating UI below the overlay tier) — and `pnpm check:consistency` is how you find that out
    **before** you commit rather than in CI. `docs/archive/2026/plasmatic-jelly-design-language.md` and `docs/archive/2026/plasmatic-jelly-system.md`
    describe the deleted material and are historical.
 5. **i18n:** all user-facing strings through `t("key", { defaultValue })`; then `pnpm i18n:extract`. English is

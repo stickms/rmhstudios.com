@@ -29,10 +29,11 @@ updates:
       # (scripts/check-entry-composition.ts). Lifts when zod leaves the shell.
       - dependency-name: "zod"
         versions: [">=4.5.0"]
-      # typescript-eslint supports typescript <6.1. Type-checking already runs
-      # on TS 7 through the `typescript-native` alias.
-      - dependency-name: "typescript"
-        versions: [">=6.1.0"]
+      # `typescript` is 7 (the native compiler, no JS API). The ratchet tests and a few
+      # scripts that walk ASTs import the 6.x JS API through the `typescript-js` alias;
+      # it stays on 6 until they move to a parser that ships its own API.
+      - dependency-name: "typescript-js"
+        versions: [">=7.0.0"]
       # Prisma 8 replaces the client API, schema format and migrate commands
       # (794 importing files): it moves as its own project once 8.0 is stable,
       # not as a Dependabot bump. The three packages move together.

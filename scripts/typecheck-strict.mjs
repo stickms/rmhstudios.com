@@ -10,7 +10,7 @@ const cfg = JSON.parse(readFileSync('tsconfig.strict.json', 'utf8').replace(/^\s
 const include = cfg.include;
 const r = spawnSync(
   process.execPath,
-  ['node_modules/typescript-native/bin/tsc', '--noEmit', '-p', 'tsconfig.strict.json', '--pretty', 'false'],
+  ['node_modules/typescript/bin/tsc', '--noEmit', '-p', 'tsconfig.strict.json', '--pretty', 'false'],
   {
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,

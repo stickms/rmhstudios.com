@@ -18,7 +18,7 @@
  * A placeholder, a `title`, a comment and a label in another file do not name a field.
  */
 import { readFileSync } from 'node:fs';
-import ts from 'typescript';
+import ts from 'typescript-js';
 
 /** Native elements that are form fields. */
 const NATIVE_FIELDS = new Set(['input', 'textarea', 'select']);

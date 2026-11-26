@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
-import ts from 'typescript';
+import ts from 'typescript-js';
 
 /**
  * No browser dialogs. `window.prompt`, `window.confirm` and `alert` are suppressed in a sandboxed

@@ -19,7 +19,7 @@
  * Every entry carries the reason the call stays.
  */
 import { globSync, readFileSync } from 'node:fs';
-import ts from 'typescript';
+import ts from 'typescript-js';
 import { describe, expect, it } from 'vitest';
 
 /** file -> [count, why it stays]. Entries come out; they do not go in. */

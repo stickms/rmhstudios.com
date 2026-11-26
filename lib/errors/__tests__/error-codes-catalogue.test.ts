@@ -10,7 +10,7 @@
  * English readers must see no change, so a code's text is the sentence the server sent before the code existed.
  */
 import { readFileSync } from 'node:fs';
-import ts from 'typescript';
+import ts from 'typescript-js';
 import { describe, expect, it } from 'vitest';
 import { REFUSAL_BY_MESSAGE } from '@/lib/tournaments/tournament-error';
 import { ERROR_CODES, fillTemplate, refusalBody, type ErrorCode, type ErrorCodeDef } from '@/lib/errors/codes';

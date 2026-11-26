@@ -24,7 +24,7 @@
 #   · exit 1 + a line   a vitest worker thread or a node process that hit its
 #                       heap limit prints an out-of-memory line and exits 1.
 #
-# The gate's own vitest and eslint steps call `node <bin>` directly rather than
+# The gate's own vitest step calls `node <bin>` directly rather than
 # `pnpm exec`, so for them the first shape is the one that arrives.
 # ─────────────────────────────────────────────────────────────────────────────
 

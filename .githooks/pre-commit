@@ -4,7 +4,7 @@
 #   pnpm hooks:install      # git config core.hooksPath .githooks
 #
 # It runs `scripts/check-consistency.sh --staged --fast` — the design/style
-# gates plus eslint on the staged files. `tsc` and the docs-freshness checks are
+# gates on the staged files. `tsc` and the docs-freshness checks are
 # left out on purpose: they are slow enough to make people reach for
 # --no-verify, which is worse than not gating at all. Run the full sweep before
 # you push: `pnpm check:consistency`.
