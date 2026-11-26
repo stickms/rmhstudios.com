@@ -302,6 +302,7 @@
   "facts-who-out-of-state": "Out of state",
   "facts-who-title": "Who can apply",
   "facts-yes": "Yes",
+  "forecast-admit-phd-note": "Admit.org only began reporting {{program}} separately this cycle, so this forecast is not accurate for {{program}}.",
   "forecast-asof": "Forecast as of {{date}}.",
   "forecast-basis": "Based on {{n}} earlier cycles from {{source}}.",
   "forecast-basis-narrow": "With one earlier cycle the range is narrower than the real uncertainty.",

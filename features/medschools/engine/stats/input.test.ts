@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { StoredCountRow } from '../public-read';
-import { primarySeriesOf, seriesOfSource, toDayCounts } from './input';
+import { primarySeriesOf, seriesBySource, seriesOfSource, toDayCounts } from './input';
 
 const TODAY = '2026-11-23';
 const row = (o: Partial<StoredCountRow> & Pick<StoredCountRow, 'source' | 'date'>): StoredCountRow => ({
@@ -49,6 +49,45 @@ describe('primarySeriesOf', () => {
     expect(primarySeriesOf(rows, TODAY)).toEqual({ source: 'CYCLETRACK', days: [{ date: '2026-11-01', count: 7 }] });
   });
   it('is null for no rows', () => expect(primarySeriesOf([], TODAY)).toBeNull());
+});
+
+describe('seriesBySource', () => {
+  it('lists CycleTrack and Admit separately and never adds them', () => {
+    const rows = [
+      row({ source: 'ADMIT', date: '2026-11-01', count: 5 }),
+      row({ source: 'CYCLETRACK', date: '2026-11-01', count: 3 }),
+    ];
+    expect(seriesBySource(rows, TODAY)).toEqual([
+      { source: 'CYCLETRACK', days: [{ date: '2026-11-01', count: 3 }] },
+      { source: 'ADMIT', days: [{ date: '2026-11-01', count: 5 }] },
+    ]);
+  });
+  it('drops a suppressed RMH source (k floor)', () => {
+    const rows = [
+      row({
+        source: 'RMH',
+        date: '2026-11-01',
+        count: 9,
+        contributors: 2,
+        publishedCount: 9,
+        publishedContributors: 2,
+      }),
+      row({ source: 'ADMIT', date: '2026-11-01', count: 5 }),
+    ];
+    expect(seriesBySource(rows, TODAY).map((s) => s.source)).toEqual(['ADMIT']);
+  });
+  it('is empty for no rows', () => expect(seriesBySource([], TODAY)).toEqual([]));
+});
+
+describe('primarySeriesOf with a preferred source', () => {
+  const both = [
+    row({ source: 'CYCLETRACK', date: '2026-11-01', count: 7 }),
+    row({ source: 'ADMIT', date: '2026-11-01', count: 2 }),
+  ];
+  it('prefers the chosen source and falls back when it has none', () => {
+    expect(primarySeriesOf(both, TODAY, 'ADMIT')?.source).toBe('ADMIT');
+    expect(primarySeriesOf([both[0]!], TODAY, 'ADMIT')?.source).toBe('CYCLETRACK');
+  });
 });
 
 describe('seriesOfSource', () => {

@@ -366,7 +366,12 @@ export const getMedSchoolHistoryApi = endpoint<{
 }>()({ method: 'GET', path: '/api/medschools/schools/$slug/history' });
 
 export const getMedSchoolForecastApi = endpoint<{
-  query: { program?: MedProgramFilter | undefined; type?: MedChartedTypeId | undefined };
+  query: {
+    program?: MedProgramFilter | undefined;
+    type?: MedChartedTypeId | undefined;
+    /** The stored forecast of this source where there is one, else the next in the primary order. */
+    source?: MedSourcePrefId | undefined;
+  };
   res: MedSchoolForecastRes;
 }>()({ method: 'GET', path: '/api/medschools/schools/$slug/forecast' });
 

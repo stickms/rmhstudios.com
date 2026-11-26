@@ -58,7 +58,8 @@ export const historyQuery = z.object({
   type: chartedType.optional(),
 });
 
-export const forecastQuery = historyQuery;
+/** The forecast read follows the reader's CycleTrack / Admit.org choice: one stored forecast per source, never summed. */
+export const forecastQuery = historyQuery.extend({ source: sourcePref.optional() });
 
 export const arrivalsQuery = historyQuery;
 

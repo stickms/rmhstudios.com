@@ -47,7 +47,7 @@ export function prefetchSchoolTabs(
   const jobs = [
     () => qc.prefetchQuery(activityQuery(slug, { program, cycle: search.cycle, ...source })),
     () => qc.prefetchQuery(historyQuery(slug, { program, type })),
-    () => qc.prefetchQuery(forecastQuery(slug, { program: program === 'PHD' ? 'PHD' : 'REG', type })),
+    () => qc.prefetchQuery(forecastQuery(slug, { program: program === 'PHD' ? 'PHD' : 'REG', type, ...source })),
     // Interviews reads this cycle's activity; History draws when results arrive.
     () => qc.prefetchQuery(activityQuery(slug, { program, cycle: undefined, ...source })),
     () => qc.prefetchQuery(arrivalsQuery(slug, { program, type })),

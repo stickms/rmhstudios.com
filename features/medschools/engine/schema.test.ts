@@ -370,7 +370,7 @@ model MedTrackerApplication {
     });
 
     it('pins the uniques the job upserts on', () => {
-      expect(uniques('MedForecast')).toContainEqual(['schoolId', 'program', 'cycleYear', 'eventType']);
+      expect(uniques('MedForecast')).toContainEqual(['schoolId', 'program', 'cycleYear', 'eventType', 'source']);
       expect(uniques('MedWaitCurve')).toContainEqual(['schoolId', 'program']);
     });
 
@@ -394,6 +394,15 @@ model MedTrackerApplication {
       expect(sql).toContain('CREATE TABLE "med_wait_curve"');
       expect(sql).toContain('CREATE TYPE "MedForecastMode"');
       expect(sql).not.toMatch(/\bDROP\b/i);
+    });
+
+    it('the per-source migration makes source required and re-keys the unique', () => {
+      const dir = readdirSync('prisma/migrations').find((d) => d.endsWith('_medschools_forecast_per_source'));
+      expect(dir).toBeDefined();
+      const sql = readFileSync(`prisma/migrations/${dir}/migration.sql`, 'utf8');
+      expect(sql).toContain('ALTER COLUMN "source" SET NOT NULL');
+      expect(sql).toContain('DROP INDEX "med_forecast_schoolId_program_cycleYear_eventType_key"');
+      expect(sql).toContain('CREATE UNIQUE INDEX "med_forecast_schoolId_program_cycleYear_eventType_source_key"');
     });
   });
 
@@ -578,7 +587,8 @@ model MedTrackerApplication {
           !d.endsWith('_medschools_admit_curriculum') &&
           !d.endsWith('_medschools_mdphd_sources') &&
           !d.endsWith('_medschools_applicant_stats') &&
-          !d.endsWith('_medschools_retire_drew_ucla'),
+          !d.endsWith('_medschools_retire_drew_ucla') &&
+          !d.endsWith('_medschools_forecast_per_source'),
       );
       for (const o of others) expect(mine > o, o).toBe(true);
     });

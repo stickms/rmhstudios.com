@@ -112,7 +112,10 @@ export const historyQuery = (slug: string, q: { program: MedProgramFilter; type:
     slug,
   );
 
-export const forecastQuery = (slug: string, q: { program: 'REG' | 'PHD'; type: MedChartedTypeId }) =>
+export const forecastQuery = (
+  slug: string,
+  q: { program: 'REG' | 'PHD'; type: MedChartedTypeId; source?: 'admit' | undefined },
+) =>
   schoolScoped(
     contractQuery(
       ['medschools', 'forecast', slug, q],
@@ -380,7 +383,10 @@ export async function loadSchoolHead(
   } else if (deps.tab === 'forecast') {
     // The same key the tab asks for (ALL reads REG, D12; a category the charts do not draw reads Interview).
     const type = (CHARTED.includes(deps.type as MedChartedTypeId) ? deps.type : 'INTERVIEW') as MedChartedTypeId;
-    tab = prefetchRouteQuery(queryClient, forecastQuery(slug, { program: program === 'PHD' ? 'PHD' : 'REG', type }));
+    tab = prefetchRouteQuery(
+      queryClient,
+      forecastQuery(slug, { program: program === 'PHD' ? 'PHD' : 'REG', type, ...sourceParamOf(deps.source) }),
+    );
   } else if (deps.tab === 'secondaries') {
     tab = prefetchRouteQuery(queryClient, secondariesQuery(slug, { program }));
   } else if (deps.tab === 'facts') {

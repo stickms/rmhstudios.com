@@ -899,7 +899,7 @@ describe('getForecast', () => {
   const setup = (forecast: unknown, counts: unknown[]) => {
     m.medSchool.findFirst.mockResolvedValue(school);
     m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: CYCLE });
-    m.medForecast.findFirst.mockResolvedValue(forecast);
+    m.medForecast.findMany.mockResolvedValue(forecast ? [forecast].flat() : []);
     m.medCycleCount.findMany.mockResolvedValue(counts);
   };
 
@@ -976,8 +976,50 @@ describe('getForecast', () => {
     expect((await getForecast('duke', { program: 'ALL' }, NOW))!.program).toBe('REG');
     expect((await getForecast('duke', {}, NOW))!.program).toBe('REG');
     await getForecast('duke', { program: 'PHD', type: 'ACCEPTANCE' }, NOW);
-    const args = m.medForecast.findFirst.mock.calls.at(-1)![0] as { where: Record<string, unknown> };
+    const args = m.medForecast.findMany.mock.calls.at(-1)![0] as { where: Record<string, unknown> };
     expect(args.where).toEqual({ schoolId: 's1', program: 'PHD', cycleYear: CYCLE, eventType: 'ACCEPTANCE' });
+  });
+
+  describe('per source (the header toggle)', () => {
+    const ct = (mode: 'FULL' | 'EARLY' | 'NONE' = 'FULL') =>
+      row(mode, {
+        source: 'CYCLETRACK',
+        summary: { ...row(mode).summary, basis: [{ cycleYear: 2027, source: 'CYCLETRACK', weight: 1 }] },
+      });
+    const both = [ct(), row('FULL')];
+    const counts = [cnt('CYCLETRACK', '2027-11-20', 6), cnt('ADMIT', '2027-11-20', 3)];
+
+    it('source=admit returns the Admit row when both exist, and its observed line', async () => {
+      setup(both, counts);
+      const res = (await getForecast('duke', { source: 'admit' }, NOW))!;
+      expect(res.source).toBe('ADMIT');
+      expect(res.observed.at(-1)!.cumulative).toBe(3);
+    });
+    it('no source and source=cycletrack read CycleTrack first', async () => {
+      setup(both, counts);
+      expect((await getForecast('duke', {}, NOW))!.source).toBe('CYCLETRACK');
+      expect((await getForecast('duke', { source: 'cycletrack' }, NOW))!.source).toBe('CYCLETRACK');
+    });
+    it('falls back to the other source when the chosen one has no row', async () => {
+      setup([ct()], counts);
+      const res = (await getForecast('duke', { source: 'admit' }, NOW))!;
+      expect(res.source).toBe('CYCLETRACK');
+      expect(res.status).toBe('ready');
+    });
+    it('a NONE row for the chosen source stays no-history; it does not borrow the other band', async () => {
+      setup([ct(), row('NONE')], counts);
+      const res = (await getForecast('duke', { source: 'admit' }, NOW))!;
+      expect(res.source).toBe('ADMIT');
+      expect(res.status).toBe('no-history');
+      expect(res.band).toEqual([]);
+    });
+    it('with no row at all the observed line follows the chosen source', async () => {
+      setup(null, counts);
+      const res = (await getForecast('duke', { source: 'admit' }, NOW))!;
+      expect(res.status).toBe('pending');
+      expect(res.source).toBe('ADMIT');
+      expect(res.observed.at(-1)!.cumulative).toBe(3);
+    });
   });
 
   it('reads the site cycle through the floor, never the schools own newest', async () => {

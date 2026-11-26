@@ -182,7 +182,7 @@ export interface MedForecastRow {
   eventType: MedEventType;
   modelVersion: number;
   mode: string;
-  source: MedSource | null;
+  source: MedSource;
   asOf: Date;
   curve: unknown;
   summary: unknown;

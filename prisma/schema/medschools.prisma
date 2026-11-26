@@ -554,8 +554,8 @@ model MedForecast {
   eventType    MedEventType
   modelVersion Int
   mode         MedForecastMode
-  /// The primary source the fit used; null when there was nothing to fit.
-  source       MedSource?
+  /// The source this forecast was fitted on (one row per source, never summed).
+  source       MedSource
   /// The last UTC day the model saw (yesterday at run time).
   asOf         DateTime        @db.Date
   computedAt   DateTime        @default(now())
@@ -566,7 +566,7 @@ model MedForecast {
 
   school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
-  @@unique([schoolId, program, cycleYear, eventType])
+  @@unique([schoolId, program, cycleYear, eventType, source])
   @@index([cycleYear])
   @@map("med_forecast")
 }
