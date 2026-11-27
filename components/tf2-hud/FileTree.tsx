@@ -523,7 +523,6 @@ export default function FileTree() {
         </div>
       </div>
       {/* Dropping files is an extra route; the Upload button is the keyboard path. */}
-      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
       <div
         className="min-h-0 flex-1 overflow-y-auto py-1"
         onDragOver={(e) => e.preventDefault()}

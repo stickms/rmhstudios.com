@@ -18,6 +18,8 @@
   "empty-following": "You aren't following anyone yet",
   "filter-all": "Everyone",
   "filter-inactive": "Inactive {{days}} days",
+  "filter-inactive_one": "Inactive {{days}} day",
+  "filter-inactive_other": "Inactive {{days}} days",
   "filter-label": "Filter",
   "filter-not-followed-back": "You don't follow back",
   "filter-not-following-back": "Not following you back",

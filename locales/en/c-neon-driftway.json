@@ -18,6 +18,7 @@
   "endless-mode-hint": "Endless mode ramps difficulty beyond the normal cap",
   "enter-lobby-code": "Enter lobby code...",
   "exit-vr": "EXIT VR",
+  "field-lobby-code": "Lobby code",
   "final-rankings": "Final Rankings",
   "ghost-mode-off": "Ghost: off",
   "ghost-mode-pb": "Ghost: your best",
@@ -63,6 +64,7 @@
   "play-again": "Play Again",
   "players-count_one": "Players ({{count}}/6)",
   "players-count_other": "Players ({{count}}/6)",
+  "quit": "Quit",
   "race-over": "RACE OVER",
   "race-starting-in": "Race starting in",
   "ready": "READY",
@@ -92,7 +94,5 @@
   "webgl-required-title": "3D not available",
   "you-label": "(You)",
   "you-label-short": "You",
-  "your-score": "Your Score",
-  "quit": "Quit",
-  "field-lobby-code": "Lobby code"
+  "your-score": "Your Score"
 }

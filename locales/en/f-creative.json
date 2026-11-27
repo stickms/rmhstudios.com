@@ -18,6 +18,8 @@
   "challenge-back": "All challenges",
   "challenge-dates": "Submissions close {{close}}. Voting ends {{vote}}.",
   "challenge-entries": "{{n}} entries",
+  "challenge-entries_one": "{{n}} entry",
+  "challenge-entries_other": "{{n}} entries",
   "challenge-error": "Something went wrong",
   "challenge-none": "No sample flip is running yet. Check back soon.",
   "challenge-title": "Sample flip",
@@ -31,6 +33,8 @@
   "embed-js": "JavaScript",
   "embed-menu": "Runnable code snippet",
   "embed-size": "{{used}} of {{max}} characters",
+  "embed-size_one": "{{used}} of {{max}} character",
+  "embed-size_other": "{{used}} of {{max}} characters",
   "embed-title": "Runnable code snippet",
   "entries-none": "No entries yet.",
   "entry-file": "Audio bounce (WAV or MP3, up to 8 MB)",
@@ -94,5 +98,7 @@
   "vote-sent": "Vote cast",
   "vote-yours": "Your vote",
   "votes": "{{n}} votes",
+  "votes_one": "{{n}} vote",
+  "votes_other": "{{n}} votes",
   "winner": "Winner"
 }

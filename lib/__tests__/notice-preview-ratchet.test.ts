@@ -16,7 +16,7 @@
  * call, not a literal, and are not counted. Tests are not scanned.
  */
 import { globSync, readFileSync } from 'node:fs';
-import ts from 'typescript-js';
+import * as ts from './ts-ast';
 import { describe, expect, it } from 'vitest';
 
 /** Emitters not yet converted, `path:count`. Only ever shrinks. */

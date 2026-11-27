@@ -17,6 +17,8 @@
   "dispute-submit": "Dispute",
   "dispute-title": "Dispute this result",
   "dispute-too-long": "Keep it to {{max}} characters.",
+  "dispute-too-long_one": "Keep it to {{max}} character.",
+  "dispute-too-long_other": "Keep it to {{max}} characters.",
   "disputed": "Disputed",
   "disputed-toast": "Disputed. The host will decide.",
   "disputes": "Disputes",

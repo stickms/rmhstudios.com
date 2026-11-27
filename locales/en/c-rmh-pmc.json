@@ -193,6 +193,8 @@
   "logistics-p1": "Air, ground, and maritime movement, basing, and sustainment that put a self-supporting force on the ground within days — and keep it supplied for as long as the mandate runs. Charter lift, hardened convoys, camps and life support, fuel and ration chains, and an organic medevac capability.",
   "logistics-p2": "We handle customs and clearance through the same liaison channels that run the rest of the company, so the tail never becomes the bottleneck.",
   "manifest-count": "{{shown}} of {{total}} dispatches",
+  "manifest-count_one": "{{shown}} of {{total}} dispatch",
+  "manifest-count_other": "{{shown}} of {{total}} dispatches",
   "manifest-desig": "The Manifest",
   "manifest-heading": "Every cleared dispatch",
   "media-affairs-desc": "On-record inquiries only",

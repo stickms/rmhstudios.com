@@ -39,6 +39,8 @@
   "page.retry": "Try again",
   "quiet.applied": "applied {{date}}",
   "quiet.choice": "{{n}} days without news",
+  "quiet.choice_one": "{{n}} day without news",
+  "quiet.choice_other": "{{n}} days without news",
   "quiet.failed": "That did not save. Try again.",
   "quiet.followUp": "follow-up {{date}}",
   "quiet.followUpDate": "Follow-up date",

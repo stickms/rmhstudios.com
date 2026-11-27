@@ -18,6 +18,8 @@
   "goal-error": "Could not save your goal",
   "goal-heading": "Weekly goal",
   "goal-hint": "From {{min}} minutes to {{max}} minutes (50 hours).",
+  "goal-hint_one": "From {{min}} minutes to {{max}} minute (50 hours).",
+  "goal-hint_other": "From {{min}} minutes to {{max}} minutes (50 hours).",
   "goal-hint-value": "That is {{duration}} a week.",
   "goal-label": "Goal in minutes per week",
   "goal-none": "No weekly goal set. Pick a target to track your progress.",

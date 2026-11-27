@@ -104,6 +104,8 @@
   "trick-error": "Could not enter the trick.",
   "trick-kept": "You already entered a bigger trick this week.",
   "trick-line": "{{name}} · {{points}} points · ×{{mult}} · Line {{level}}",
+  "trick-line_one": "{{name}} · {{points}} point · ×{{mult}} · Line {{level}}",
+  "trick-line_other": "{{name}} · {{points}} points · ×{{mult}} · Line {{level}}",
   "trick-load-error": "The entries did not load.",
   "trick-loading": "Loading…",
   "trick-no-winner": "No winner yet. Enter your best combo after a run, then vote.",

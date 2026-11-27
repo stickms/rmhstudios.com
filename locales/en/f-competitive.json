@@ -79,6 +79,8 @@
   "jam-rating": "Rating",
   "jam-rating-until": "rating until {{when}}",
   "jam-ratings": "{{n}} ratings",
+  "jam-ratings_one": "{{n}} rating",
+  "jam-ratings_other": "{{n}} ratings",
   "jam-results": "Results",
   "jam-submit": "Submit a build",
   "jam-swap": "Swap entry",

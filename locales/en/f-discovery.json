@@ -2,6 +2,8 @@
   "alerts-add": "Add",
   "alerts-add-failed": "Could not add that alert",
   "alerts-desc": "Get a notification when someone posts a word or phrase. Use quotes for phrases, -word to exclude, #tag for tags. Up to {{max}} alerts.",
+  "alerts-desc_one": "Get a notification when someone posts a word or phrase. Use quotes for phrases, -word to exclude, #tag for tags. Up to {{max}} alert.",
+  "alerts-desc_other": "Get a notification when someone posts a word or phrase. Use quotes for phrases, -word to exclude, #tag for tags. Up to {{max}} alerts.",
   "alerts-input": "New alert",
   "alerts-placeholder": "\"slice it\" charts -leak",
   "alerts-remove": "Remove alert",

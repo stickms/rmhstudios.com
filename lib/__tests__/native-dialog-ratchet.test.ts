@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
-import ts from 'typescript-js';
+import * as ts from './ts-ast';
 
 /**
  * No browser dialogs. `window.prompt`, `window.confirm` and `alert` are suppressed in a sandboxed
@@ -47,7 +47,8 @@ function bindingNames(name: ts.BindingName, into: Set<string>): void {
     return;
   }
   for (const element of name.elements) {
-    if (ts.isBindingElement(element)) bindingNames(element.name, into);
+    // an elision (`[, b]`) is a BindingElement with no name in the 7.1 tree
+    if (ts.isBindingElement(element) && element.name) bindingNames(element.name, into);
   }
 }
 

@@ -16,6 +16,8 @@
   "save-failed": "Could not save that.",
   "target-clear": "Clear target",
   "target-invalid": "Enter a target between {{min}} and {{max}} minutes.",
+  "target-invalid_one": "Enter a target between {{min}} and {{max}} minute.",
+  "target-invalid_other": "Enter a target between {{min}} and {{max}} minutes.",
   "target-label": "Weekly target (minutes)",
   "target-save": "Save target",
   "target-saved": "Weekly target saved.",

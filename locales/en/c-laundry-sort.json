@@ -53,6 +53,7 @@
   "player": "Player",
   "popup-missed": "Missed",
   "quick-match": "Quick match",
+  "quit": "Quit",
   "race": "Race",
   "race-over": "Race over",
   "races-played_one": "{{count}} race",
@@ -85,6 +86,8 @@
   "sorted-count_one": "{{count}} sorted",
   "sorted-count_other": "{{count}} sorted",
   "sr-status": "{{seconds}} seconds left. Score {{score}}.",
+  "sr-status_one": "{{seconds}} second left. Score {{score}}.",
+  "sr-status_other": "{{seconds}} seconds left. Score {{score}}.",
   "start-race": "Start race",
   "start-solo": "Start solo run",
   "submitting-score": "Saving score…",
@@ -101,6 +104,5 @@
   "wins-count_one": "{{count}}W",
   "wins-count_other": "{{count}}W",
   "wrong-bin": "Wrong bin",
-  "you-suffix": "(you)",
-  "quit": "Quit"
+  "you-suffix": "(you)"
 }

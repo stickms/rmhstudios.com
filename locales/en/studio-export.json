@@ -44,6 +44,8 @@
   "refuse-empty": "There is nothing to export: no clips on tracks that are playing.",
   "refuse-no-loop": "Set a loop region first, or export the whole song.",
   "refuse-too-long": "This is {{length}} long. An export can be at most {{max}} minutes; shorten the range.",
+  "refuse-too-long_one": "This is {{length}} long. An export can be at most {{max}} minute; shorten the range.",
+  "refuse-too-long_other": "This is {{length}} long. An export can be at most {{max}} minutes; shorten the range.",
   "render": "Render",
   "step-import-midi": "Import MIDI",
   "summary": "Length {{length}}, about {{size}} MB.",

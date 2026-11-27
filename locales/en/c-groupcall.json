@@ -58,6 +58,8 @@
   "ringing-count_one": "{{count}} still ringing",
   "ringing-count_other": "{{count}} still ringing",
   "room-full": "This call is full — it holds up to {{max}} people.",
+  "room-full_one": "This call is full — it holds up to {{max}} person.",
+  "room-full_other": "This call is full — it holds up to {{max}} people.",
   "roster-label": "People in this call",
   "someone": "Someone",
   "speaking": "Speaking",

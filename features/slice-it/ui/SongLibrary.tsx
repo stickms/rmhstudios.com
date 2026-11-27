@@ -585,8 +585,7 @@ export function SongLibrary({
           );
         }
       },
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` intentionally
-      // excluded. i18next hands back a NEW `t` identity every time a namespace
+      // `t` intentionally excluded. i18next hands back a NEW `t` identity every time a namespace
       // finishes loading, and this callback is the dependency of the fetch effect
       // below — so including it made the library fetch itself four times on a
       // single page load, three of them for nothing. `t` is read only in the

@@ -4,6 +4,8 @@
   "chart-heading": "Last 30 days",
   "chart-label": "Minutes watched per day",
   "chart-summary": "{{minutes}} minutes watched in the last 30 days, as bars.",
+  "chart-summary_one": "{{minutes}} minute watched in the last 30 days, as bars.",
+  "chart-summary_other": "{{minutes}} minutes watched in the last 30 days, as bars.",
   "clear": "Clear my statistics",
   "clear-cancel": "Cancel",
   "clear-confirm": "Clear statistics",

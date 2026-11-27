@@ -9,6 +9,8 @@
   "choose-file": "Choose file",
   "deck-description": "Description",
   "deck-full": "A deck holds at most {{max}} cards.",
+  "deck-full_one": "A deck holds at most {{max}} card.",
+  "deck-full_other": "A deck holds at most {{max}} cards.",
   "deck-public": "Public deck",
   "deck-public-hint": "Anyone with the link can study, clone and export it.",
   "deck-title": "Title",
@@ -74,5 +76,7 @@
   "tab-settings": "Settings",
   "title": "Edit deck",
   "too-many": "One import adds at most {{max}} cards. Split the list.",
+  "too-many_one": "One import adds at most {{max}} card. Split the list.",
+  "too-many_other": "One import adds at most {{max}} cards. Split the list.",
   "undo": "Undo"
 }

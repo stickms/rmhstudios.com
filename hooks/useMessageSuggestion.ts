@@ -69,7 +69,6 @@ export function useMessageSuggestion({ draft, context, enabled = true }: UseMess
       clearTimeout(timer);
     };
     // context intentionally excluded — read via ref so it doesn't re-trigger.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft, enabled]);
 
   return {

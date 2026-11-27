@@ -2,6 +2,7 @@
   "cancel": "Cancel",
   "custom-amount": "Custom amount",
   "duration": "Duration",
+  "field-tip-note": "Tip note",
   "gift-a-membership": "Gift a membership",
   "gift-desc": "Give this user a membership with coins.",
   "gift-desc-named": "Give {{name}} a membership with coins.",
@@ -19,8 +20,9 @@
   "tip-dialog-title": "Send a tip",
   "tip-error": "Could not send tip",
   "tip-invalid": "That tip amount isn't allowed.",
+  "tip-max-hint": "Maximum per tip: {{max}}",
   "tip-sign-in": "Please sign in to tip.",
   "tip-success": "Tipped {{amount}} coins{{recipient}}!",
-  "tip-max-hint": "Maximum per tip: {{max}}",
-  "field-tip-note": "Tip note"
+  "tip-success_one": "Tipped {{amount}} coin{{recipient}}!",
+  "tip-success_other": "Tipped {{amount}} coins{{recipient}}!"
 }

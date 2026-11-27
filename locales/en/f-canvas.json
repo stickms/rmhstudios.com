@@ -58,6 +58,8 @@
   "place-error": "Could not place that",
   "replay": "Watch the timelapse",
   "replay-count": "{{done}} of {{total}} pixels",
+  "replay-count_one": "{{done}} of {{total}} pixel",
+  "replay-count_other": "{{done}} of {{total}} pixels",
   "replay-empty": "Nobody placed a pixel on this canvas.",
   "replay-failed": "The replay could not be loaded.",
   "replay-label": "Timelapse of the finished canvas",

@@ -3,6 +3,8 @@
   "cancelled": "The pending change is cancelled.",
   "deferred": "Saved. Because this gives you more room, it takes effect {{when}}.",
   "hint": "Shop, unlocks, tips, gifts, memberships and market buys, per calendar month (UTC). Leave blank for no budget. Allowed: {{min}} to {{max}} coins.",
+  "hint_one": "Shop, unlocks, tips, gifts, memberships and market buys, per calendar month (UTC). Leave blank for no budget. Allowed: {{min}} to {{max}} coin.",
+  "hint_other": "Shop, unlocks, tips, gifts, memberships and market buys, per calendar month (UTC). Leave blank for no budget. Allowed: {{min}} to {{max}} coins.",
   "label": "Monthly spending budget",
   "left-this-month": "{{left}} of {{cap}} left this month",
   "meter-label": "Monthly spending budget",

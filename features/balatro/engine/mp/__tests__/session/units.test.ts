@@ -633,7 +633,6 @@ describe('referee driver', () => {
     }[] = [];
     const cps: RefCheckpoint[] = [];
     let d: RefereeDriver;
-    // eslint-disable-next-line prefer-const
     d = new RefereeDriver({
       sched,
       match: {

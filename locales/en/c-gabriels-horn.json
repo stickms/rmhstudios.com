@@ -96,6 +96,8 @@
   "log-call-wrong": "{{actor}} called {{target}} — wrong. It was {{total}}.",
   "log-claim": "{{actor}} says it is {{total}}.",
   "log-deal": "Dealt {{amount}} cards each.",
+  "log-deal_one": "Dealt {{amount}} card each.",
+  "log-deal_other": "Dealt {{amount}} cards each.",
   "log-draw": "{{actor}} draws {{amount}}.",
   "log-empty": "Nothing has happened yet.",
   "log-end": "{{actor}} sounded the horn. One turn each, then hands are counted.",
@@ -137,6 +139,7 @@
   "player-range": "{{min}}–{{max}} players. Bluffing works better with more of them.",
   "public-table": "Listed publicly",
   "quick-table": "Find a table",
+  "quit": "Quit",
   "read-rules": "Read the rules",
   "ready-label": "Ready",
   "ready-up": "Ready",
@@ -162,6 +165,8 @@
   "rule-starting-hand": "Starting hand",
   "rule-swap": "Sevens swap hands",
   "rules-away-1": "Losing signal does not lose you the game. Your seat, your cards and your place in the order are held for about {{seconds}} seconds, and coming back — reconnecting, or reloading the page — puts you straight back in them.",
+  "rules-away-1_one": "Losing signal does not lose you the game. Your seat, your cards and your place in the order are held for about {{seconds}} second, and coming back — reconnecting, or reloading the page — puts you straight back in them.",
+  "rules-away-1_other": "Losing signal does not lose you the game. Your seat, your cards and your place in the order are held for about {{seconds}} seconds, and coming back — reconnecting, or reloading the page — puts you straight back in them.",
   "rules-away-2": "The table does not wait, though. While you are away your turns are skipped and your answers default to the truth, so nobody is stuck watching a clock run down on somebody who is not there.",
   "rules-away-title": "If you drop out",
   "rules-cards-1": "Everyone starts with {{start}}. Drawing is never one card: the card you drew brings two more, so being caught costs {{penalty}}.",
@@ -182,6 +187,8 @@
   "rules-seven": "Any seven",
   "rules-seven-desc": "the one rank that matters: trade your entire hand with anyone you like. It ignores the colour.",
   "rules-table-1": "{{min}} to {{max}} players. Everyone can see how many cards everyone else is holding — that is the score, and hiding it would hide the race. What is in those hands is private.",
+  "rules-table-1_one": "{{min}} to {{max}} player. Everyone can see how many cards everyone else is holding — that is the score, and hiding it would hide the race. What is in those hands is private.",
+  "rules-table-1_other": "{{min}} to {{max}} players. Everyone can see how many cards everyone else is holding — that is the score, and hiding it would hide the race. What is in those hands is private.",
   "rules-table-3": "Talk to each other. The numbers are the only structured part of a claim — the persuading, the pattern-spotting and the outright lying happen in the chat, and a bluffing game without it is a coin flip.",
   "rules-table-4": "One deck of {{deck}} — four colours, thirteen ranks. When it runs out the discards are shuffled back in, so it never actually runs dry.",
   "rules-table-title": "The table",
@@ -206,6 +213,5 @@
   "was-lie": "lie",
   "was-truth": "true",
   "you-suffix": "(you)",
-  "your-hand": "Your hand — {{n}}",
-  "quit": "Quit"
+  "your-hand": "Your hand — {{n}}"
 }

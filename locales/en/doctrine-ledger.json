@@ -22,11 +22,11 @@
   "empty-title": "No XP yet",
   "error-title": "Could not load your XP breakdown",
   "gained": "Gained",
+  "heatmap-summary": "Active on {{active}} of the last {{total}} days",
   "history-heading": "Every change",
   "load-more": "Show more",
   "lost": "Lost",
   "retry": "Try again",
   "summary-heading": "Last 30 days",
-  "title": "XP breakdown",
-  "heatmap-summary": "Active on {{active}} of the last {{total}} days"
+  "title": "XP breakdown"
 }

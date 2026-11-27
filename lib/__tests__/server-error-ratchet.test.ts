@@ -15,7 +15,7 @@
  * (`components/errors/useRefusalText.ts`) is excluded, and so are tests.
  */
 import { globSync, readFileSync } from 'node:fs';
-import ts from 'typescript-js';
+import * as ts from './ts-ast';
 import { describe, expect, it } from 'vitest';
 
 /** Lower this when you convert call sites. Never raise it. */

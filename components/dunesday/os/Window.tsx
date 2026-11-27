@@ -230,7 +230,6 @@ export function Window({ win, active, compact }: { win: Win; active: boolean; co
       <div className="win7 ds-os-head">
         {/* The title bar drags the window; the buttons inside it opt out. Every
             action here also has a captioned button, so it needs no role. */}
-        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
         <div
           className={cn('title-bar', active && 'active')}
           onPointerDown={onTitlePointerDown}

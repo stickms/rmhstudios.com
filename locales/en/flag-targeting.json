@@ -5,6 +5,8 @@
   "add": "Add",
   "add-field": "Add by handle to the {{list}} list",
   "add-full": "A list holds at most {{max}} members.",
+  "add-full_one": "A list holds at most {{max}} member.",
+  "add-full_other": "A list holds at most {{max}} members.",
   "add-label": "Add by handle",
   "add-unknown": "No member has the handle {{handle}}.",
   "allow-empty": "Nobody is named. The rollout decides.",

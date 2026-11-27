@@ -84,6 +84,7 @@
   "bp.bgGrants": "Trained: {{skills}}, {{lore}} · Skill feat: {{feat}}",
   "bp.boostsAt": "Level {{lvl}}: four boosts ({{n}}/4)",
   "bp.class": "Class",
+  "bp.classStats": "{{hp}} + Con HP per level · key attribute {{key}}",
   "bp.customFeat": "Another book (write in)",
   "bp.deity": "Deity or philosophy (optional)",
   "bp.featName": "Feat name",

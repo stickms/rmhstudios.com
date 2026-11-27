@@ -28,6 +28,7 @@
   "confirm-escalate-title": "Escalate to Sev1?",
   "confirm-resolve-body": "It closes the alert in Discord. If the check is still failing, the alarm fires again on its next run.",
   "confirm-resolve-title": "Resolve this alarm?",
+  "discord-user": "Discord user {{id}}",
   "escalate": "Escalate",
   "escalated-by": "Escalated to Sev1 by {{who}}, {{when}}",
   "filter-all": "All",

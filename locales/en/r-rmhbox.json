@@ -6,6 +6,7 @@
   "create-lobby": "Create Lobby",
   "create-lobby-desc": "Start a new game session and invite friends.",
   "failed-to-connect": "Failed to connect",
+  "field-search-history": "Search history",
   "filter-all": "{{label}}: All",
   "final-standings": "Final Standings",
   "game-log-unavailable": "Game log not available.",
@@ -37,6 +38,7 @@
   "player-range": "{{minPlayers}}–{{maxPlayers}} players",
   "pts": "pts",
   "public-lobbies": "Public Lobbies",
+  "quit": "Quit",
   "refresh": "Refresh",
   "room-code": "Room code",
   "room-code-length": "Room code must be 6 characters",
@@ -51,7 +53,5 @@
   "starting-game": "Starting game...",
   "view-minigames": "View Minigames",
   "winner-label": "Winner:",
-  "winner-none": "None",
-  "quit": "Quit",
-  "field-search-history": "Search history"
+  "winner-none": "None"
 }

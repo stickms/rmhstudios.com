@@ -11,6 +11,8 @@
   "load-more-failed": "Couldn't load more.",
   "menu-item": "Edit image descriptions",
   "missing": "{{missing}} of {{total}} images without a description",
+  "missing_one": "{{missing}} of {{total}} image without a description",
+  "missing_other": "{{missing}} of {{total}} images without a description",
   "no-description": "No description",
   "placeholder": "A golden retriever running on a beach at sunset",
   "retry": "Try again",

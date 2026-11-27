@@ -34,11 +34,15 @@
   "retry": "Try again",
   "slot": "{{day}} at {{time}}",
   "slot-count": "{{n}} interactions",
+  "slot-count_one": "{{n}} interaction",
+  "slot-count_other": "{{n}} interactions",
   "title": "Audience",
   "unknown-member": "Member",
   "weekly-label": "Net follower change per week",
   "weekly-net": "Net",
   "weekly-summary": "Net change per week over {{weeks}} weeks, {{total}} in all.",
+  "weekly-summary_one": "Net change per week over {{weeks}} week, {{total}} in all.",
+  "weekly-summary_other": "Net change per week over {{weeks}} weeks, {{total}} in all.",
   "weekly-title": "Net change per week",
   "weekly-week": "Week starting"
 }

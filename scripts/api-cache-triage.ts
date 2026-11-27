@@ -29,7 +29,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import ts from 'typescript-js';
+import * as ts from '../lib/__tests__/ts-ast';
 import { CACHE_POLICY } from '../lib/api/cache-policies';
 import { registeredApiRoutes } from '../lib/api/route-sources';
 
@@ -292,11 +292,11 @@ function collectFromFunction(
   const viewerNames = new Set<string>();
   if (opts.isRoot) {
     const p = fn.parameters[0];
-    if (p && ts.isObjectBindingPattern(p.name)) {
+    if (p?.name && ts.isObjectBindingPattern(p.name)) {
       for (const el of p.name.elements) {
         const n = (el.propertyName ?? el.name) as ts.Identifier;
         if (ts.isIdentifier(n) && ['userId', 'user', 'session', 'isAdmin'].includes(n.text)) {
-          if (ts.isIdentifier(el.name)) viewerNames.add(el.name.text);
+          if (el.name && ts.isIdentifier(el.name)) viewerNames.add(el.name.text);
         }
       }
     }
@@ -305,9 +305,9 @@ function collectFromFunction(
       if (ts.isIdentifier(p.name) && VIEWER_PARAM.test(p.name.text)) {
         out.findings.push({ signal: 'viewer', via, detail: `parameter ${p.name.text}` });
       }
-      if (ts.isObjectBindingPattern(p.name)) {
+      if (p.name && ts.isObjectBindingPattern(p.name)) {
         for (const el of p.name.elements) {
-          if (ts.isIdentifier(el.name) && VIEWER_PARAM.test(el.name.text)) {
+          if (el.name && ts.isIdentifier(el.name) && VIEWER_PARAM.test(el.name.text)) {
             out.findings.push({ signal: 'viewer', via, detail: `parameter ${el.name.text}` });
           }
         }
@@ -529,7 +529,7 @@ function literalProp(obj: ts.ObjectLiteralExpression, name: string): ts.Expressi
     ) {
       return p.initializer;
     }
-    if (ts.isShorthandPropertyAssignment(p) && p.name.text === name) return p.name;
+    if (ts.isShorthandPropertyAssignment(p) && ts.isIdentifier(p.name) && p.name.text === name) return p.name;
   }
   return null;
 }

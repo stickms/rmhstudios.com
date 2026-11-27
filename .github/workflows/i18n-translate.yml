@@ -10,8 +10,6 @@
 # A string is never paid for twice:
 #   - only keys that are missing, or whose English changed, are sent
 #     (locales/<lng>/.sources.<ns>.json records what each was translated from);
-#   - translations left on older `i18n/*` branches by the previous pipeline are
-#     reused before any model call (scripts/i18n-collect-reuse.ts);
 #   - identical English is sent once per locale, and strings with no words are
 #     copied.
 name: i18n-translate
@@ -75,23 +73,11 @@ jobs:
           bash scripts/i18n-pull.sh
           echo "base=$(cat locales/.catalogs-commit)" >> "$GITHUB_OUTPUT"
 
-      # Old per-run branches from the previous pipeline hold paid translations
-      # that never merged. Harmless and quick once they are deleted.
-      - name: Collect translations already paid for
-        id: reuse
-        run: |
-          set -euo pipefail
-          git fetch --no-tags --depth=1 origin '+refs/heads/i18n/*:refs/remotes/origin/i18n/*'
-          dir="$RUNNER_TEMP/i18n-reuse"
-          pnpm exec tsx scripts/i18n-collect-reuse.ts "$dir"
-          echo "dir=$dir" >> "$GITHUB_OUTPUT"
-
       - name: Translate
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           I18N_LOCALES: ${{ inputs.locales }}
           I18N_DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
-          I18N_REUSE_DIR: ${{ steps.reuse.outputs.dir }}
         run: pnpm exec tsx scripts/translate-locales.ts
 
       # The catalog tests are the gate for this branch: pull requests no longer

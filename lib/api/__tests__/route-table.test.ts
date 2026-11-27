@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import ts from 'typescript-js';
+import * as ts from '@/lib/__tests__/ts-ast';
 import {
   createMemoryHistory,
   createRootRoute,
@@ -145,7 +145,7 @@ function readBindings(source: ApiSource): Bindings {
   const other: string[] = [];
   const methods: string[] = [];
   for (const prop of handlers.properties) {
-    const method = prop.name?.getText(sf) ?? '?';
+    const method = (ts.isSpreadAssignment(prop) ? undefined : prop.name)?.getText(sf) ?? '?';
     methods.push(method);
     const init = ts.isPropertyAssignment(prop) ? prop.initializer : undefined;
     const callee = init && ts.isCallExpression(init) ? init.expression.getText(sf) : undefined;
