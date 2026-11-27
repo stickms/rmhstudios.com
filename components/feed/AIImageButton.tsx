@@ -73,7 +73,7 @@ export function useAiImage(
 
 /**
  * A wand button that asks xAI to generate an image for the post and hands the
- * resulting feed URL back to the composer. HARD-R+ only — the composer passes
+ * resulting feed URL back to the composer. Pro+ only — the composer passes
  * `locked`for lower tiers so they see the feature (greyed out) and an upgrade
  * nudge; the server re-checks the tier regardless.
  */
@@ -157,7 +157,7 @@ export function AIImageUpgradeDialog({ onClose }: { onClose: () => void }) {
  <DialogDescription className="mx-auto mt-2 max-w-xs">
  {t('ai-image-upgrade-body', {
  defaultValue:
-'Turn your posts into eye-catching art. Generate custom AI images straight from the composer — available on HARD-R and above.',
+'Turn your posts into eye-catching art. Generate custom AI images straight from the composer — available on Pro and above.',
  })}
  </DialogDescription>
  <div className="mt-6 flex flex-col gap-2">

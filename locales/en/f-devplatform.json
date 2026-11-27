@@ -65,7 +65,7 @@
   "keys-scopes": "Scopes",
   "keys-select-all": "Select all",
   "keys-show-usage": "Show usage",
-  "keys-subscription-body": "The developer API needs an active HARD-R plan or higher. Your access is checked on every request, so it stays in sync with your subscription.",
+  "keys-subscription-body": "The developer API needs an active Pro plan or higher. Your access is checked on every request, so it stays in sync with your subscription.",
   "keys-subscription-title": "A subscription is required",
   "keys-title": "Your API keys",
   "keys-view-plans": "View plans",

@@ -147,7 +147,7 @@ export function GrantMembershipDialog({ userName, open, onOpenChange, onGrant, b
   const labels: GrantMembershipLabels = {
     tier: t('grant-tier', { defaultValue: 'Tier' }),
     starter: t('grant-tier-starter', { defaultValue: 'Starter' }),
-    pro: t('grant-tier-pro', { defaultValue: 'Pro' }),
+    pro: t('grant-tier-pro', { defaultValue: 'Max' }),
     revoke: t('grant-tier-revoke', { defaultValue: 'Revoke active grants' }),
     months: t('grant-months', { defaultValue: 'Months' }),
     monthsHint: t('grant-months-hint', {

@@ -83,7 +83,7 @@ export const route = apiRoute('/api/admin/users/$id/grant-membership', {
         type: 'SYSTEM',
         entityType: 'membership',
         entityId: tier,
-        preview: notice('membership-granted', { months, tier: tier === 'pro' ? 'Pro' : 'HARD-R' }),
+        preview: notice('membership-granted', { months, tier: tier === 'pro' ? 'Max' : 'Pro' }),
         link: '/store?tab=membership',
       }).catch(() => {});
 

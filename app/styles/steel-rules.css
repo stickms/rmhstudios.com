@@ -167,6 +167,10 @@
     .rule-cells[data-columns='4'] > li {
       flex-basis: 25%;
     }
+    /* Cells that cannot carry data-last-row (the admin hub, whose children are opaque components): the last row is the
+       last cell, plus the one before it when the count is even. */
+    .rule-cells[data-columns='2'] > li:last-child::after,
+    .rule-cells[data-columns='2'] > li:nth-last-child(2):nth-child(odd)::after,
     .rule-cells > li[data-last-row]::after {
       display: none;
     }

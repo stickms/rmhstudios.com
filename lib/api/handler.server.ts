@@ -441,7 +441,7 @@ export interface HandlerOptions<
    * Gate the route behind a membership feature (`lib/entitlements/features.ts`).
    *
    * Refusal is a **402 carrying an upgrade envelope**, not a bare 403, so the
-   * client can render "this needs HARD-R" with a link straight to the plan
+   * client can render "this needs Pro" with a link straight to the plan
    * instead of a toast that says "Forbidden". Routing every paywall through
    * here is what keeps the gate and the membership page's feature list derived
    * from the same declaration — a feature cannot be gated without also being

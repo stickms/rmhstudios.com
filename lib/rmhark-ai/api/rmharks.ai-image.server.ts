@@ -1,7 +1,7 @@
 /**
  * POST /api/rmharks/ai-image — generate an image for the composer with xAI.
  *
- * HARD-R tier and above only. Returns { url } pointing at a re-hosted feed
+ * Pro tier and above only. Returns { url } pointing at a re-hosted feed
  * image the client appends to its imageUrls, exactly like an uploaded image.
  * Nothing is persisted as a post here. Fails gracefully: any generation problem
  * returns a friendly error and the user can still post text/their own images.
@@ -25,7 +25,7 @@ export const route = apiRoute('/api/rmharks/ai-image', {
     const tier = await getUserTier(session.user.id);
     if (TIER_RANK[tier] < TIER_RANK.starter) {
       return Response.json(
-        { error: 'A HARD-R subscription or higher is required to generate images.' },
+        { error: 'A Pro subscription or higher is required to generate images.' },
         { status: 403 },
       );
     }

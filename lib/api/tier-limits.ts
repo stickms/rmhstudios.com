@@ -1,4 +1,4 @@
-/** Per-key per-minute request budget by tier. Pro+ gets a higher ceiling than HARD-R. */
+/** Per-key per-minute request budget by tier. Max+ gets a higher ceiling than Pro. */
 const MINUTE_LIMITS: Record<string, number> = {
   starter: 120,
   pro: 600,

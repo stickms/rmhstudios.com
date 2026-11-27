@@ -204,8 +204,8 @@ export function upgradeHref(feature: MemberFeature): string {
 /** Display name for a tier, for upsell copy. Plan ids are not user-facing. */
 export const TIER_LABELS: Record<Tier, string> = {
   free: 'Free',
-  starter: 'HARD-R',
-  pro: 'Pro',
+  starter: 'Pro',
+  pro: 'Max',
   enterprise: 'Enterprise',
 };
 
