@@ -268,8 +268,11 @@ that plugin.
   includes the engine-side tests of `tf2-hud/` and `tf2-loadout/` (`vitest.engine-tests.mjs` reads the list from
   `tsconfig.engine.json`). Their server-side tests stay in the main suite.
 - Coverage: `pnpm test:coverage` — informational, never a gate.
-- **Isolation is on and stays on.** `--no-isolate` is ~40% faster and produces order-dependent failures
-  (`lib/rmhladder/pipeline/*` fail on a different set of seeds each shuffle). Details and the rest of the speed work:
+- **Two vitest projects: `isolated` and `shared`.** A test file that mocks a module, stubs a global or fakes timers
+  (`vi.mock`, `vi.stubGlobal`, `vi.useFakeTimers`, `vi.spyOn`, …) runs with a fresh module registry per file; every
+  other file shares one per worker (`isolate: false`, about 17% faster). The split is a pattern in `vitest.config.ts`,
+  so a new mocking test goes to `isolated` automatically. A file that passes alone but fails only in the shared project
+  goes in `vitest.isolated-files.json`. A blanket `--no-isolate` still fails 2484 tests; details in
   [`docs/testing.md`](../docs/testing.md) §Speed.
 - **`lib/__tests__/` is where the repo's consistency is executable.** The design/tab-strip gate, the game-viewport
   contract, the filter-cost budget, the theme-token and colour-vision contracts, the API-handler adoption backlog, the
