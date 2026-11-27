@@ -18,7 +18,11 @@
 #   deploy/smoke-test.sh                      # against this host's Apache
 #   BASE_URL=https://rmhstudios.com ORIGIN_HOST= deploy/smoke-test.sh
 #
-# Exit 0 when every probe passes; 1 otherwise, with one line per failure.
+# Exit 0 when every probe passes. Otherwise one line per failure, and the exit code says what kind:
+#   1  BROKEN: a response that is wrong (a 4xx or 500, or a 200 without the page)
+#   2  SLOW or UNREACHABLE: a timeout, no connection, or a 502/503/504, which say as much about the
+#      host or a dependency as about the release. deploy/bake-policy.sh waits longer before it rolls
+#      back on these. A broken probe wins when both kinds are present.
 set -uo pipefail
 
 BASE_URL="${BASE_URL:-http://127.0.0.1}"
@@ -29,7 +33,9 @@ QUIET="${QUIET:-0}"
 
 say() { [ "$QUIET" = "1" ] || echo "[smoke] $*"; }
 
-failed=0
+failed=0   # 0 ok, 1 broken, 2 slow or unreachable (1 wins)
+broken() { failed=1; }
+slow() { [ "$failed" = 1 ] || failed=2; }
 # probe <path> <expected substring, or empty> [<alternative substring>]
 probe() {
     local path="$1" expect="${2:-}" alt="${3:-}" resp body code
@@ -50,13 +56,13 @@ probe() {
     body="${resp%$'\n'*}"
     if [ "$code" != "200" ]; then
         echo "[smoke] FAIL ${path} — HTTP ${code}" >&2
-        failed=1
+        case "$code" in 000 | 502 | 503 | 504) slow ;; *) broken ;; esac
     # In-shell match (no grep): a here-string can spill to a temp file, and
     # `printf | grep -q` trips pipefail on SIGPIPE when grep exits early.
     elif [ -n "$expect" ] && [[ "$body" != *"$expect"* ]] \
         && { [ -z "$alt" ] || [[ "$body" != *"$alt"* ]]; }; then
         echo "[smoke] FAIL ${path} — 200 but body lacks '${expect}'${alt:+ / '${alt}'} (${#body} bytes)" >&2
-        failed=1
+        broken
     else
         say "ok   ${path}"
     fi

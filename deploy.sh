@@ -1213,9 +1213,13 @@ step_done
 
 # HTTP /health on each hub + status (a listening port alone said nothing about a
 # hub that accepted connections but could not serve them).
+# HTTP_HEALTH_TRIES x 5 s is the budget a freshly started hub gets to answer: 60 tries = 5 minutes, because the
+# whole non-web fleet starts at once on a host that is also pulling and extracting images, and a Node hub needs
+# its DB pool up before /health answers. A healthy hub answers on the first probe, so the budget costs
+# wall-clock only when something is genuinely down.
 check_http() {
     local port=$1
-    for _ in $(seq 1 "${HTTP_HEALTH_TRIES:-24}"); do
+    for _ in $(seq 1 "${HTTP_HEALTH_TRIES:-60}"); do
         curl -fsS --max-time 4 "http://127.0.0.1:${port}/health" >/dev/null 2>&1 && return 0
         sleep 5
     done
@@ -1227,6 +1231,7 @@ check_http() {
 # OOM at a cron-tick minute, a host blip), not a bad release: it used to roll back the whole non-web fleet
 # (2026-11-09, `jobs`). Up to WORKER_RESTARTS_TOLERATED restarts since the baseline are logged as a warning;
 # more than that, or a worker that is not running, fails the release. 1 is the default; 0 restores the strict rule.
+# (A worker that flaps and then settles is forgiven separately, by the second look before a rollback below.)
 WORKER_RESTARTS_TOLERATED="${WORKER_RESTARTS_TOLERATED:-1}"
 WORKER_SERVICES="jobs ladder-worker homes-worker medschools-worker"
 worker_state() { # → "<running> <restartCount>" or "missing"
@@ -1397,6 +1402,24 @@ failed_services=$(cat "$HEALTH_RESULT_FILE")
 # This catches failures anywhere in the observation window without another sleep.
 late_failures=$(run_health_checks 0)
 failed_services=$(printf '%s %s' "$failed_services" "$late_failures" | xargs)
+# Do not roll back on the first failed wave. The release has already shipped and passed its smoke gate and bake;
+# a hub that was slow to answer, or a worker that restarted once under load, is far more often a busy host than
+# a bad release, and rolling the whole non-web fleet back is itself an outage-shaped event. So look again: a fresh
+# worker baseline taken NOW, then HEALTH_RECHECK_SECONDS of watching, so a worker that flapped and then settled
+# passes while one still restarting (a crash loop) or a hub still not answering does not. Set
+# HEALTH_RECHECK_SECONDS=0 to roll back on the first failure as before.
+if [ -n "$failed_services" ] && [ "${HEALTH_RECHECK_SECONDS:-90}" -gt 0 ]; then
+    log "WARNING: health checks failed for: ${failed_services}; watching ${HEALTH_RECHECK_SECONDS:-90}s more before deciding on a rollback..."
+    rm -f "${HEALTH_RESULT_FILE}.workers"
+    still_failed=$(run_health_checks "${HEALTH_RECHECK_SECONDS:-90}")
+    if [ -z "$still_failed" ]; then
+        log "Recovered: ${failed_services} answered the second look (workers stable for ${HEALTH_RECHECK_SECONDS:-90}s). Not rolling back."
+        failed_services=""
+    else
+        log "Still failing after the second look: ${still_failed}"
+        failed_services="$still_failed"
+    fi
+fi
 if [ -n "$failed_services" ]; then
     log "ERROR: health checks failed for: ${failed_services}"
     log "--- Container logs (${failed_services}) ---"

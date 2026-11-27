@@ -112,17 +112,27 @@ old host-side cover-render step in `deploy.sh` was a no-op and has been removed.
 
 ## Rollback
 
-**Automatic (web):** after the flip, `hotswap-web.sh` bakes the new web container
-for `BAKE_SECONDS` (default 300) with the old one stopped beside it. Three
-consecutive failed `smoke-test.sh` rounds (`BAKE_FAIL_THRESHOLD`, every
-`BAKE_INTERVAL`=20s), or the new container dying/restarting, flips Apache back
-to the old container and fails the deploy as "auto-rolled back". It will not
-flip back to an old container that is not itself healthy (that points at a
-shared dependency — DB, Redis, disk — so the new one stays live and the deploy
-fails as "ROLLBACK FAILED"). It is web-only and runs after migrations: keep
-each release's schema change backward-compatible with the previous web
-(expand/contract). `BAKE_SECONDS=0` in the deploy env skips the bake (the
-one-shot smoke gate still runs).
+**Automatic (web):** after the flip, `hotswap-web.sh` runs the smoke gate (a 4-minute budget, `GATE_BUDGET_SECONDS`,
+not a fixed number of tries) and then bakes the new web container for `BAKE_SECONDS` (default 300) with the old one
+stopped beside it. The policy for when that rolls back lives in `deploy/bake-policy.sh` and is built not to roll back a
+healthy release that is merely slow:
+
+- the first `BAKE_GRACE_SECONDS` (90) of the bake are a startup grace: failed rounds are logged, not counted;
+- `smoke-test.sh` exits 1 for a **broken** response (a 4xx/500, or a 200 without the page) and 2 for a **slow or
+  unreachable** one (a timeout, no connection, a 502/503/504). Broken rolls back after `BAKE_FAIL_THRESHOLD` (3) in a row;
+  slow only after `BAKE_SOFT_FAIL_THRESHOLD` (9) in a row, about three minutes at the 20 s `BAKE_INTERVAL`;
+- up to `BAKE_RESTARTS_TOLERATED` (1) container restart is tolerated if it is running again, and a container seen down
+  once is retried a round before it counts.
+
+It will not flip back to an old container that is not itself healthy (that points at a shared dependency, so the new
+one stays live and the deploy fails as "ROLLBACK FAILED"). The new container also gets `HEALTH_TIMEOUT` (120 s) to start
+before the deploy gives up on it, which moves no traffic. It is web-only and runs after migrations: keep each release's
+schema change backward-compatible with the previous web (expand/contract). `BAKE_SECONDS=0` skips the bake.
+
+**Automatic (everything else):** `deploy.sh` health-checks the hubs (`/health`, `HTTP_HEALTH_TRIES` x 5 s, 5 minutes)
+and watches the workers for a crash loop. A failed wave is not final: it watches `HEALTH_RECHECK_SECONDS` (90) more
+with a fresh worker baseline and only then restores the non-web services to the previous release, so a hub that was slow
+or a worker that flapped and settled is not rolled back. `HEALTH_RECHECK_SECONDS=0` restores the old first-failure rule.
 
 **Manual:** `deploy.sh` keeps the previous SHA-tagged images (one per env). To roll back,
 re-run `./deploy.sh <env> <previous-sha>` on the VPS — it pulls (or reuses) that
