@@ -1,6 +1,6 @@
 /**
  * Core numeric primitives. The one home for `clamp` / `clamp01` / `lerp` —
- * an ESLint rule (`no-restricted-syntax`, eslint.config.mjs) stops new local
+ * a lint rule (`local/no-core-primitive-redefinition`, oxlint) stops new local
  * copies from appearing.
  */
 

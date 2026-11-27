@@ -65,7 +65,7 @@ const W = WEIGHTS as readonly [
 const DECAY = -W[20];
 const FACTOR = Math.exp(Math.log(0.9) / DECAY) - 1;
 
-// eslint-disable-next-line no-restricted-syntax -- clamp with a NaN fallback argument (the stored state may be corrupt)
+// eslint-disable-next-line local/no-core-primitive-redefinition -- clamp with a NaN fallback argument (the stored state may be corrupt)
 function clamp(n: number, lo: number, hi: number, fallback = lo): number {
   if (Number.isNaN(n)) return fallback;
   return Math.min(hi, Math.max(lo, n));

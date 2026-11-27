@@ -18,7 +18,7 @@
 #   2. The executable design/consistency gates (`lib/__tests__/*`), which are
 #      the AUTHORITY for rules 1-9 of docs/design-language.md §13. The fast
 #      scan is a preview of these, not a replacement.
-#   3. The repo-wide quality bar: `tsc -b` (pnpm typecheck), and
+#   3. The repo-wide quality bar: oxlint on changed files, `tsc -b` (pnpm typecheck), and
 #      the generated-docs freshness checks that `web-ci.yml` runs.
 #
 # Anything it cannot verify mechanically is printed as a REVIEW item — the
@@ -202,7 +202,7 @@ review() {
 # ── The site-tier path filter, read from the CI gate itself ──────────────────
 # The site-tier rules exempt the full-screen games and the `--app-*` apps by
 # design. That exemption list is POLICY and lives in eslint-local-rules/design-scope.js
-# (the same file eslint.config.mjs scopes its class-string rules from); it is
+# (the same file scripts/gen-oxlintrc.mjs scopes its class-string rules from); it is
 # parsed out here rather than copied so the two can never drift apart.
 GATE_TEST="eslint-local-rules/design-scope.js"
 # POSIX ERE has no lookahead, so the tier is a two-stage filter: candidate
@@ -504,6 +504,23 @@ else
     esac
   fi
 
+
+  # oxlint on the changed files (errors only fail the gate; the warnings are the backlog the ratchets count).
+  # It takes about a second for the whole tree, so unlike tsc it runs in --fast too.
+  LINTABLE="$TMP/lintable"
+  list '\.(ts|tsx|js|jsx|mjs)$' | grep -vE '^(app/routeTree\.gen\.ts|lib/i18n/resources\.)' > "$LINTABLE" || true
+  if [ -s "$LINTABLE" ]; then
+    oxlint_changed() {
+      tr '\n' '\0' < "$LINTABLE" | xargs -0 node node_modules/oxlint/bin/oxlint -c .oxlintrc.json --quiet
+    }
+    run_step "oxlint ($(wc -l < "$LINTABLE" | tr -d ' ') changed files)" oxlint_changed
+    case $? in
+      0) pass_timed "oxlint (changed files)" ;;
+      1) fail "oxlint — the bar is no errors, and no NEW warnings versus the base branch" ;;
+    esac
+  else
+    skip "oxlint" "no lintable files changed"
+  fi
 
   if [ "$FAST" = 1 ]; then
     skip "tsc -b" "--fast"

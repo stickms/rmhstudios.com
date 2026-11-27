@@ -145,7 +145,7 @@ function enclosingTag(src: string, idx: number): string {
 }
 
 // The site-tier exemption lists (FULLSCREEN_TIER_DIRS, FULLSCREEN_ROUTE_SEGMENTS, RAW_COLOR_ALLOW)
-// live in eslint-local-rules/design-scope.js — the one list, shared with eslint.config.mjs.
+// live in eslint-local-rules/design-scope.js — the one list, shared with scripts/gen-oxlintrc.mjs.
 const SITE_FILES = FILES.filter(isSiteTier);
 
 type Violation = {

@@ -1,0 +1,154 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "import"
+  ],
+  "categories": {
+    "correctness": "off"
+  },
+  "ignorePatterns": [
+    ".cache/**",
+    ".output/**",
+    ".tanstack/**",
+    ".vinxi/**",
+    "bazel-*/**",
+    "dist-server/**",
+    "build/**",
+    "**/node_modules/**",
+    "public/vibe-packages/**",
+    "public/balatro/engine/**",
+    "webhook-server.cjs",
+    "check_db.js",
+    "sync_db.js",
+    ".claude/worktrees/**",
+    "public/**",
+    "app/routeTree.gen.ts"
+  ],
+  "options": {
+    "reportUnusedDisableDirectives": "off",
+    "respectEslintDisableDirectives": false
+  },
+  "rules": {},
+  "overrides": [
+    {
+      "files": [
+        "components/**/*.{ts,tsx}",
+        "lib/**/*.{ts,tsx}",
+        "hooks/**/*.{ts,tsx}",
+        "stores/**/*.{ts,tsx}",
+        "features/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "import/no-cycle": [
+          "error",
+          {
+            "maxDepth": 4,
+            "ignoreTypes": true
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "lib/**/*.{ts,tsx}",
+        "features/*/engine/**/*.{ts,tsx}",
+        "features/*/server/**/*.{ts,tsx}",
+        "features/*/net/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^@/components(/|$)",
+                "message": "lib/ must not import from components/ (lib is the lower layer)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "components/**/*.{ts,tsx}",
+        "hooks/**/*.{ts,tsx}",
+        "stores/**/*.{ts,tsx}",
+        "features/*/ui/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "\\.server(\\.ts)?$",
+                "allowTypeImports": true,
+                "message": "Value imports of *.server modules belong in server functions/handlers only (type-only imports are fine)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "components/ui/**/*.{ts,tsx}",
+        "components/shared/**/*.{ts,tsx}",
+        "hooks/**/*.{ts,tsx}",
+        "stores/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^(@/(components|lib)/(altair|balatro|baccarat|blackjack|csgo-game|cursed-logic|dream-rift|dunesday|gabriels-horn|hearthworks|holdem|house-always-wins|kaikai-debt|kowloon-knockout|laundry-sort|lights-out|lockdown|marathon|neon-driftway|nightrail|plinko|rebar-rutabaga|rideshare|rmh-capital|rmh-datacenter|rmh-pmc|rmh-research|rmhbox|rmhcalculator|rmhcode|rmhfashion|rmhladder|rmhmusic|rmhstudy|rmhtube|rmhtype|rmhvibe|roulette|signal-forge|slice-it|sohumtracker|sp-game|speedrun|synapse-storm|temple-of-joy|tf2-game|tf2-hud|vega|velum2099|versecraft|void-breaker)|@features)(/|$)",
+                "message": "Shared code (ui/shared/hooks/stores/utils) must not import a game/app feature directory. Move the shared piece into ui/ or shared/."
+              },
+              {
+                "regex": "\\.server(\\.ts)?$",
+                "allowTypeImports": true,
+                "message": "Value imports of *.server modules belong in server functions/handlers only (type-only imports are fine)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "lib/shared/**/*.{ts,tsx}",
+        "lib/utils/**/*.{ts,tsx}",
+        "lib/utils.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^(@/(components|lib)/(altair|balatro|baccarat|blackjack|csgo-game|cursed-logic|dream-rift|dunesday|gabriels-horn|hearthworks|holdem|house-always-wins|kaikai-debt|kowloon-knockout|laundry-sort|lights-out|lockdown|marathon|neon-driftway|nightrail|plinko|rebar-rutabaga|rideshare|rmh-capital|rmh-datacenter|rmh-pmc|rmh-research|rmhbox|rmhcalculator|rmhcode|rmhfashion|rmhladder|rmhmusic|rmhstudy|rmhtube|rmhtype|rmhvibe|roulette|signal-forge|slice-it|sohumtracker|sp-game|speedrun|synapse-storm|temple-of-joy|tf2-game|tf2-hud|vega|velum2099|versecraft|void-breaker)|@features)(/|$)",
+                "message": "Shared code (ui/shared/hooks/stores/utils) must not import a game/app feature directory. Move the shared piece into ui/ or shared/."
+              },
+              {
+                "regex": "^@/components(/|$)",
+                "message": "lib/ must not import from components/ (lib is the lower layer)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "**/*.server.{ts,tsx}",
+        "**/api/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ]
+}

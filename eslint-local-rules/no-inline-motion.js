@@ -14,7 +14,7 @@
  * Name a token; if none fits, add one to `lib/motion.ts`.
  *
  * Scope: the site tier (components/** and app/routes/** minus the full-screen
- * game/app dirs in `design-scope.js`), wired in `eslint.config.mjs`. A
+ * game/app dirs in `design-scope.js`), wired in `.oxlintrc.json` (scripts/gen-oxlintrc.mjs). A
  * legitimate one-off takes an inline
  * `eslint-disable-next-line local/no-inline-motion -- <reason>`.
  */

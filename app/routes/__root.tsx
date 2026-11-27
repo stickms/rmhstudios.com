@@ -503,6 +503,7 @@ function RootDocument({ children }: { children: ReactNode }) {
   // this loader answers from the account, which a save that failed silently would leave on the older face.
   const storeFonts = useThemeStore((s) => (s.appearanceHydrated ? s.fonts : null));
   try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks -- the loader may be absent when the root error boundary renders; the call is unconditional per render
     const data = Route.useLoaderData();
     locale = (data?.locale ?? 'en') as Locale;
     fonts = storeFonts ?? data?.fonts ?? DEFAULT_FONTS;

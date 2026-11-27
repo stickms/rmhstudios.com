@@ -1,0 +1,576 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "typescript",
+    "react",
+    "jsx-a11y",
+    "oxc"
+  ],
+  "jsPlugins": [
+    "./eslint-local-rules/index.js"
+  ],
+  "categories": {
+    "correctness": "error"
+  },
+  "ignorePatterns": [
+    ".cache/**",
+    ".output/**",
+    ".tanstack/**",
+    ".vinxi/**",
+    "bazel-*/**",
+    "dist-server/**",
+    "build/**",
+    "**/node_modules/**",
+    "public/vibe-packages/**",
+    "public/balatro/engine/**",
+    "webhook-server.cjs",
+    "check_db.js",
+    "sync_db.js",
+    ".claude/worktrees/**"
+  ],
+  "options": {
+    "reportUnusedDisableDirectives": "off"
+  },
+  "env": {
+    "builtin": true,
+    "es2022": true
+  },
+  "rules": {
+    "no-useless-assignment": "warn",
+    "typescript/no-explicit-any": "warn",
+    "typescript/no-unsafe-function-type": "warn",
+    "typescript/no-require-imports": "warn",
+    "no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ],
+    "prefer-const": "warn",
+    "no-empty": "warn",
+    "no-case-declarations": "warn",
+    "typescript/ban-ts-comment": "warn",
+    "no-console": [
+      "warn",
+      {
+        "allow": [
+          "warn",
+          "error"
+        ]
+      }
+    ],
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+    "react/set-state-in-effect": "off",
+    "react/purity": "off",
+    "react/immutability": "off",
+    "react/refs": "off",
+    "react/preserve-manual-memoization": "off",
+    "react/incompatible-library": "warn",
+    "react/no-direct-mutation-state": "error",
+    "oxc/erasing-op": "warn",
+    "oxc/only-used-in-recursion": "warn",
+    "oxc/double-comparisons": "warn",
+    "local/no-adhoc-user-select": "warn",
+    "local/no-lucide-namespace-import": "error",
+    "local/no-use-client-directive": "error",
+    "local/no-adhoc-spinner": "error",
+    "local/no-core-primitive-redefinition": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "framer-motion",
+            "importNames": [
+              "motion"
+            ],
+            "message": "Import `m as motion` instead. `motion` ships its own full feature bundle and defeats the <LazyMotion> split in components/Providers.tsx (docs/archive/2026/performance-audit-2026-08-12.md §1.3)."
+          },
+          {
+            "name": "sonner",
+            "message": "Import `toast` from `@/lib/toast`. Importing sonner directly puts the library back in the entry closure (scripts/check-entry-composition.ts fails on it)."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/*.mjs"
+      ],
+      "env": {
+        "node": true,
+        "browser": true
+      }
+    },
+    {
+      "files": [
+        "public/sw*.js"
+      ],
+      "env": {
+        "serviceworker": true,
+        "browser": false
+      }
+    },
+    {
+      "files": [
+        "public/**/*.js"
+      ],
+      "excludeFiles": [
+        "public/sw*.js"
+      ],
+      "env": {
+        "browser": true
+      }
+    },
+    {
+      "files": [
+        "**/*.{jsx,tsx}"
+      ],
+      "rules": {
+        "jsx-a11y/aria-props": "error",
+        "jsx-a11y/aria-proptypes": "error",
+        "jsx-a11y/aria-unsupported-elements": "error",
+        "jsx-a11y/iframe-has-title": "error",
+        "jsx-a11y/img-redundant-alt": "error",
+        "jsx-a11y/no-redundant-roles": "error",
+        "jsx-a11y/role-has-required-aria-props": "error",
+        "jsx-a11y/role-supports-aria-props": "error",
+        "jsx-a11y/alt-text": "warn",
+        "jsx-a11y/anchor-has-content": "warn",
+        "jsx-a11y/anchor-is-valid": "warn",
+        "jsx-a11y/aria-role": "warn",
+        "jsx-a11y/click-events-have-key-events": "warn",
+        "jsx-a11y/heading-has-content": "warn",
+        "jsx-a11y/label-has-associated-control": "warn",
+        "jsx-a11y/no-static-element-interactions": "warn",
+        "jsx-a11y/no-autofocus": "off",
+        "jsx-a11y/prefer-tag-over-role": "off",
+        "jsx-a11y/no-noninteractive-element-interactions": "off",
+        "jsx-a11y/no-noninteractive-tabindex": "off",
+        "jsx-a11y/control-has-associated-label": "off",
+        "jsx-a11y/no-noninteractive-element-to-interactive-role": "off",
+        "jsx-a11y/no-interactive-element-to-noninteractive-role": "off",
+        "jsx-a11y/interactive-supports-focus": "off",
+        "jsx-a11y/media-has-caption": "off"
+      }
+    },
+    {
+      "files": [
+        "app/routes/**/*.tsx"
+      ],
+      "rules": {
+        "local/route-needs-head": "error"
+      }
+    },
+    {
+      "files": [
+        "**/*.{ts,tsx}"
+      ],
+      "excludeFiles": [
+        "lib/core/**",
+        "**/*.test.{ts,tsx}",
+        "**/__tests__/**",
+        "testing/**"
+      ],
+      "rules": {
+        "local/no-core-primitive-redefinition": "error"
+      }
+    },
+    {
+      "files": [
+        "lib/core/**",
+        "**/*.test.{ts,tsx}",
+        "**/__tests__/**",
+        "testing/**"
+      ],
+      "rules": {
+        "local/no-core-primitive-redefinition": "off"
+      }
+    },
+    {
+      "files": [
+        "**/*.test.{ts,tsx}",
+        "**/__tests__/**/*.{ts,tsx}",
+        "testing/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "local/no-lucide-namespace-import": "off",
+        "no-unsafe-optional-chaining": "off"
+      }
+    },
+    {
+      "files": [
+        "components/**/*.tsx",
+        "features/*/ui/**/*.tsx",
+        "app/routes/**/*.tsx"
+      ],
+      "excludeFiles": [
+        "**/__tests__/**",
+        "**/*.test.tsx"
+      ],
+      "rules": {
+        "local/no-transition-all": "error",
+        "local/no-dead-animate-classes": "error"
+      }
+    },
+    {
+      "files": [
+        "components/**/*.tsx",
+        "features/*/ui/**/*.tsx",
+        "app/routes/**/*.tsx"
+      ],
+      "excludeFiles": [
+        "**/__tests__/**",
+        "**/*.test.tsx",
+        "components/altair/**",
+        "features/altair/**",
+        "components/cursed-logic/**",
+        "features/cursed-logic/**",
+        "components/daily-puzzles/**",
+        "features/daily-puzzles/**",
+        "components/dream-rift/**",
+        "features/dream-rift/**",
+        "components/gabriels-horn/**",
+        "features/gabriels-horn/**",
+        "components/hearthworks/**",
+        "features/hearthworks/**",
+        "components/house-always-wins/**",
+        "features/house-always-wins/**",
+        "components/kowloon-knockout/**",
+        "features/kowloon-knockout/**",
+        "components/laundry-sort/**",
+        "features/laundry-sort/**",
+        "components/lights-out/**",
+        "features/lights-out/**",
+        "components/neon-driftway/**",
+        "features/neon-driftway/**",
+        "components/nightrail/**",
+        "features/nightrail/**",
+        "components/signal-forge/**",
+        "features/signal-forge/**",
+        "components/slice-it/**",
+        "features/slice-it/**",
+        "components/synapse-storm/**",
+        "features/synapse-storm/**",
+        "components/temple-of-joy/**",
+        "features/temple-of-joy/**",
+        "components/vega/**",
+        "features/vega/**",
+        "components/velum2099/**",
+        "features/velum2099/**",
+        "components/versecraft/**",
+        "features/versecraft/**",
+        "components/void-breaker/**",
+        "features/void-breaker/**",
+        "components/rmhbox/**",
+        "features/rmhbox/**",
+        "components/med/**",
+        "features/med/**",
+        "components/rmhmusic/**",
+        "features/rmhmusic/**",
+        "components/rmhstudy/**",
+        "features/rmhstudy/**",
+        "components/rmhtube/**",
+        "features/rmhtube/**",
+        "components/rmhtype/**",
+        "features/rmhtype/**",
+        "components/tf2-hud/**",
+        "features/tf2-hud/**",
+        "components/tf2-game/**",
+        "features/tf2-game/**",
+        "components/sp-game/**",
+        "features/sp-game/**",
+        "components/csgo-game/**",
+        "features/csgo-game/**",
+        "components/rmhvibe/**",
+        "features/rmhvibe/**",
+        "components/dunesday/**",
+        "features/dunesday/**",
+        "components/covid/**",
+        "features/covid/**",
+        "components/elections/**",
+        "features/elections/**",
+        "components/doctrine/**",
+        "features/doctrine/**",
+        "components/rmh-capital/**",
+        "features/rmh-capital/**",
+        "components/rmh-pmc/**",
+        "features/rmh-pmc/**",
+        "components/rmh-research/**",
+        "features/rmh-research/**",
+        "components/sohumbum/**",
+        "features/sohumbum/**",
+        "components/sohumtracker/**",
+        "features/sohumtracker/**",
+        "components/steam/**",
+        "features/steam/**",
+        "components/medschools/**",
+        "features/medschools/**",
+        "app/routes/altair/**",
+        "app/routes/altair.tsx",
+        "app/routes/daily/**",
+        "app/routes/daily.tsx",
+        "app/routes/discord/**",
+        "app/routes/discord.tsx",
+        "app/routes/cursed-logic/**",
+        "app/routes/cursed-logic.tsx",
+        "app/routes/dream-rift/**",
+        "app/routes/dream-rift.tsx",
+        "app/routes/games/**",
+        "app/routes/games.tsx",
+        "app/routes/dunesday/**",
+        "app/routes/dunesday.tsx",
+        "app/routes/gabriels-horn/**",
+        "app/routes/gabriels-horn.tsx",
+        "app/routes/hearthworks/**",
+        "app/routes/hearthworks.tsx",
+        "app/routes/house-always-wins/**",
+        "app/routes/house-always-wins.tsx",
+        "app/routes/kowloon-knockout/**",
+        "app/routes/kowloon-knockout.tsx",
+        "app/routes/laundry-sort/**",
+        "app/routes/laundry-sort.tsx",
+        "app/routes/neon-driftway/**",
+        "app/routes/neon-driftway.tsx",
+        "app/routes/nightrail/**",
+        "app/routes/nightrail.tsx",
+        "app/routes/rmhbox/**",
+        "app/routes/rmhbox.tsx",
+        "app/routes/rmhmusic/**",
+        "app/routes/rmhmusic.tsx",
+        "app/routes/rmhstudy/**",
+        "app/routes/rmhstudy.tsx",
+        "app/routes/rmhtube/**",
+        "app/routes/rmhtube.tsx",
+        "app/routes/rmhtype/**",
+        "app/routes/rmhtype.tsx",
+        "app/routes/slice-it/**",
+        "app/routes/slice-it.tsx",
+        "app/routes/sohumbum/**",
+        "app/routes/sohumbum.tsx",
+        "app/routes/sohumtracker/**",
+        "app/routes/sohumtracker.tsx",
+        "app/routes/strategies/**",
+        "app/routes/strategies.tsx",
+        "app/routes/signal-forge/**",
+        "app/routes/signal-forge.tsx",
+        "app/routes/synapse-storm/**",
+        "app/routes/synapse-storm.tsx",
+        "app/routes/temple-of-joy/**",
+        "app/routes/temple-of-joy.tsx",
+        "app/routes/vega/**",
+        "app/routes/vega.tsx",
+        "app/routes/velum2099/**",
+        "app/routes/velum2099.tsx",
+        "app/routes/versecraft/**",
+        "app/routes/versecraft.tsx",
+        "app/routes/void-breaker/**",
+        "app/routes/void-breaker.tsx"
+      ],
+      "rules": {
+        "local/no-arbitrary-type-size": "error",
+        "local/no-inline-motion": "error"
+      }
+    },
+    {
+      "files": [
+        "components/**/*.tsx",
+        "features/*/ui/**/*.tsx",
+        "app/routes/**/*.tsx"
+      ],
+      "excludeFiles": [
+        "**/__tests__/**",
+        "**/*.test.tsx",
+        "components/altair/**",
+        "features/altair/**",
+        "components/cursed-logic/**",
+        "features/cursed-logic/**",
+        "components/daily-puzzles/**",
+        "features/daily-puzzles/**",
+        "components/dream-rift/**",
+        "features/dream-rift/**",
+        "components/gabriels-horn/**",
+        "features/gabriels-horn/**",
+        "components/hearthworks/**",
+        "features/hearthworks/**",
+        "components/house-always-wins/**",
+        "features/house-always-wins/**",
+        "components/kowloon-knockout/**",
+        "features/kowloon-knockout/**",
+        "components/laundry-sort/**",
+        "features/laundry-sort/**",
+        "components/lights-out/**",
+        "features/lights-out/**",
+        "components/neon-driftway/**",
+        "features/neon-driftway/**",
+        "components/nightrail/**",
+        "features/nightrail/**",
+        "components/signal-forge/**",
+        "features/signal-forge/**",
+        "components/slice-it/**",
+        "features/slice-it/**",
+        "components/synapse-storm/**",
+        "features/synapse-storm/**",
+        "components/temple-of-joy/**",
+        "features/temple-of-joy/**",
+        "components/vega/**",
+        "features/vega/**",
+        "components/velum2099/**",
+        "features/velum2099/**",
+        "components/versecraft/**",
+        "features/versecraft/**",
+        "components/void-breaker/**",
+        "features/void-breaker/**",
+        "components/rmhbox/**",
+        "features/rmhbox/**",
+        "components/med/**",
+        "features/med/**",
+        "components/rmhmusic/**",
+        "features/rmhmusic/**",
+        "components/rmhstudy/**",
+        "features/rmhstudy/**",
+        "components/rmhtube/**",
+        "features/rmhtube/**",
+        "components/rmhtype/**",
+        "features/rmhtype/**",
+        "components/tf2-hud/**",
+        "features/tf2-hud/**",
+        "components/tf2-game/**",
+        "features/tf2-game/**",
+        "components/sp-game/**",
+        "features/sp-game/**",
+        "components/csgo-game/**",
+        "features/csgo-game/**",
+        "components/rmhvibe/**",
+        "features/rmhvibe/**",
+        "components/dunesday/**",
+        "features/dunesday/**",
+        "components/covid/**",
+        "features/covid/**",
+        "components/elections/**",
+        "features/elections/**",
+        "components/doctrine/**",
+        "features/doctrine/**",
+        "components/rmh-capital/**",
+        "features/rmh-capital/**",
+        "components/rmh-pmc/**",
+        "features/rmh-pmc/**",
+        "components/rmh-research/**",
+        "features/rmh-research/**",
+        "components/sohumbum/**",
+        "features/sohumbum/**",
+        "components/sohumtracker/**",
+        "features/sohumtracker/**",
+        "components/steam/**",
+        "features/steam/**",
+        "components/medschools/**",
+        "features/medschools/**",
+        "app/routes/altair/**",
+        "app/routes/altair.tsx",
+        "app/routes/daily/**",
+        "app/routes/daily.tsx",
+        "app/routes/discord/**",
+        "app/routes/discord.tsx",
+        "app/routes/cursed-logic/**",
+        "app/routes/cursed-logic.tsx",
+        "app/routes/dream-rift/**",
+        "app/routes/dream-rift.tsx",
+        "app/routes/games/**",
+        "app/routes/games.tsx",
+        "app/routes/dunesday/**",
+        "app/routes/dunesday.tsx",
+        "app/routes/gabriels-horn/**",
+        "app/routes/gabriels-horn.tsx",
+        "app/routes/hearthworks/**",
+        "app/routes/hearthworks.tsx",
+        "app/routes/house-always-wins/**",
+        "app/routes/house-always-wins.tsx",
+        "app/routes/kowloon-knockout/**",
+        "app/routes/kowloon-knockout.tsx",
+        "app/routes/laundry-sort/**",
+        "app/routes/laundry-sort.tsx",
+        "app/routes/neon-driftway/**",
+        "app/routes/neon-driftway.tsx",
+        "app/routes/nightrail/**",
+        "app/routes/nightrail.tsx",
+        "app/routes/rmhbox/**",
+        "app/routes/rmhbox.tsx",
+        "app/routes/rmhmusic/**",
+        "app/routes/rmhmusic.tsx",
+        "app/routes/rmhstudy/**",
+        "app/routes/rmhstudy.tsx",
+        "app/routes/rmhtube/**",
+        "app/routes/rmhtube.tsx",
+        "app/routes/rmhtype/**",
+        "app/routes/rmhtype.tsx",
+        "app/routes/slice-it/**",
+        "app/routes/slice-it.tsx",
+        "app/routes/sohumbum/**",
+        "app/routes/sohumbum.tsx",
+        "app/routes/sohumtracker/**",
+        "app/routes/sohumtracker.tsx",
+        "app/routes/strategies/**",
+        "app/routes/strategies.tsx",
+        "app/routes/signal-forge/**",
+        "app/routes/signal-forge.tsx",
+        "app/routes/synapse-storm/**",
+        "app/routes/synapse-storm.tsx",
+        "app/routes/temple-of-joy/**",
+        "app/routes/temple-of-joy.tsx",
+        "app/routes/vega/**",
+        "app/routes/vega.tsx",
+        "app/routes/velum2099/**",
+        "app/routes/velum2099.tsx",
+        "app/routes/versecraft/**",
+        "app/routes/versecraft.tsx",
+        "app/routes/void-breaker/**",
+        "app/routes/void-breaker.tsx",
+        "components/blog/ShareButton.tsx",
+        "components/create/AnalyticsDashboard.tsx",
+        "components/library/LibraryCollections.tsx",
+        "app/routes/_site/library/index.tsx",
+        "components/party/PhoneControllerHost.tsx",
+        "components/rideshare/RideMap.tsx",
+        "components/rideshare/RideChat.tsx",
+        "components/rmhcoins/PlinkoGame.tsx",
+        "features/casino/ui/RouletteTable.tsx",
+        "components/kaikai-debt/stats/RhythmHeatmap.tsx",
+        "components/studio/plugins/FaderControl.tsx",
+        "components/shared/ChatPanel.tsx",
+        "components/shared/DesktopControlsGate.tsx",
+        "components/shared/GameErrorBoundary.tsx",
+        "components/shared/GameLoadingFallback.tsx",
+        "components/shared/WebGLUnavailable.tsx",
+        "components/user-builds/TechBadges.tsx",
+        "app/routes/v.$slug.tsx"
+      ],
+      "rules": {
+        "local/no-hardcoded-radius": "error",
+        "local/no-raw-palette-color": "error"
+      }
+    },
+    {
+      "files": [
+        "app/routes/login.tsx"
+      ],
+      "rules": {
+        "local/no-raw-palette-color": "off"
+      }
+    },
+    {
+      "files": [
+        "testing/e2e/*.mjs",
+        "testing/hearthworks-e2e/*.ts",
+        "testing/hearthworks-models/*.ts"
+      ],
+      "rules": {
+        "no-console": "off"
+      }
+    }
+  ]
+}
