@@ -38,8 +38,8 @@ export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }
       await api(giftSubApi, { body: { recipient: recipientId, tier, months } });
       toast.success(
         recipientName
-          ? t('gift-success-named', { defaultValue: 'Gifted {{months}} month{{s}} of {{tier}} to {{name}}!', months, s: months > 1 ? 's' : '', tier: tier === 'pro' ? 'Pro' : 'HARD-R', name: recipientName })
-          : t('gift-success', { defaultValue: 'Gifted {{months}} month{{s}} of {{tier}}!', months, s: months > 1 ? 's' : '', tier: tier === 'pro' ? 'Pro' : 'HARD-R' })
+          ? t('gift-success-named', { defaultValue: 'Gifted {{months}} month{{s}} of {{tier}} to {{name}}!', months, s: months > 1 ? 's' : '', tier: tier === 'pro' ? 'Max' : 'Pro', name: recipientName })
+          : t('gift-success', { defaultValue: 'Gifted {{months}} month{{s}} of {{tier}}!', months, s: months > 1 ? 's' : '', tier: tier === 'pro' ? 'Max' : 'Pro' })
       );
       onOpenChange(false);
     } catch (e) {
@@ -82,7 +82,7 @@ export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }
                     tier === tierOpt ? 'border-site-accent bg-site-accent/10 text-site-text' : 'border-site-border text-site-text-muted hover:text-site-text'
                   }`}
                 >
-                  {tierOpt === 'pro' ? 'Pro' : 'HARD-R'}
+                  {tierOpt === 'pro' ? 'Pro' : 'Pro'}
                   <span className="mt-0.5 flex items-center justify-center gap-0.5 text-caption text-site-text-muted">
                     <CoinIcon className="h-3 w-3" /> {fmt.number(PRICES[tierOpt])}/mo
                   </span>

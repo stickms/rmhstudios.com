@@ -445,10 +445,10 @@ export function EarningsTab() {
                   }
                 >
                   <option value="starter">
-                    HARD-R
+                    Pro
                   </option>
                   <option value="pro">
-                    Pro
+                    Max
                   </option>
                 </Select>
               </div>

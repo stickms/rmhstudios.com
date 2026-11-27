@@ -14,7 +14,7 @@ const bearer = (key: string) => ({
 });
 
 beforeAll(async () => {
-  // Key creation is gated on a paid tier (HARD-R = plan `starter`). Stripe is
+  // Key creation is gated on a paid tier (Pro = plan `starter`). Stripe is
   // out of scope here, so carol's active subscription is seeded directly — the
   // same row the Stripe webhook would write.
   await db().query(

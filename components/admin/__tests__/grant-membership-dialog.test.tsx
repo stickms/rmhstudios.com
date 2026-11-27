@@ -13,7 +13,7 @@ import { buildGrantBody, parseGrantMonths } from '@/lib/admin/grant-membership';
 const labels: GrantMembershipLabels = {
   tier: 'Tier',
   starter: 'Starter',
-  pro: 'Pro',
+  pro: 'Max',
   revoke: 'Revoke active grants',
   months: 'Months',
   monthsHint: 'A whole number from 1 to 24.',

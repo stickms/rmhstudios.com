@@ -68,7 +68,7 @@ export function tierFromSubscription(
   return mapPlanToTier(sub.plan);
 }
 
-/** HARD-R (plan id `starter`) and above get programmatic RMH API access. */
+/** Pro (plan id `starter`) and above get programmatic RMH API access. */
 export function hasApiAccess(tier: Tier): boolean {
   return TIER_RANK[tier] >= TIER_RANK.starter;
 }
@@ -78,13 +78,13 @@ export function hasApiImageUpload(tier: Tier): boolean {
   return TIER_RANK[tier] >= TIER_RANK.starter;
 }
 
-/** Pro and above (incl. enterprise) get the profile badge. */
+/** Max and above (incl. enterprise) get the profile badge. */
 export function hasBadge(tier: Tier): boolean {
   return TIER_RANK[tier] >= TIER_RANK.pro;
 }
 
 /**
- * Ad-free browsing — HARD-R (plan id `starter`) and above.
+ * Ad-free browsing — Pro (plan id `starter`) and above.
  *
  * Ads are what the free tier is paid with, so a membership of any kind turns
  * them off; there is no half-measure tier that sees fewer of them. Coin-funded

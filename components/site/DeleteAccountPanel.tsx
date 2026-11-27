@@ -22,10 +22,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { useDeviceSignOut } from '@/components/settings/useDeviceSignOut';
+import { TIER_LABELS } from '@/lib/entitlements/features';
 
-/** The plan as the member knows it: "pro" is "Pro". */
+/** The plan as the member knows it: the plan id `pro` is "Max". */
 function planName(plan: string): string {
-  return plan.charAt(0).toUpperCase() + plan.slice(1);
+  return plan in TIER_LABELS ? TIER_LABELS[plan as keyof typeof TIER_LABELS] : plan.charAt(0).toUpperCase() + plan.slice(1);
 }
 
 export function DeleteAccountPanel() {

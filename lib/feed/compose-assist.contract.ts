@@ -138,7 +138,7 @@ export const aiGeneratePostApi = endpoint<{
   path: '/api/rmharks/ai-generate',
 });
 
-/** HARD-R and above. Returns a re-hosted feed image URL. */
+/** Pro and above. Returns a re-hosted feed image URL. */
 export const aiGenerateImageApi = endpoint<{
   body: {
     draft?: string | undefined;

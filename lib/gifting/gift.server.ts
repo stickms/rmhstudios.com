@@ -18,8 +18,8 @@ export const GIFT_PRICES: Record<GiftableTier, number> = {
 
 export const GIFT_TIER_LABELS: Record<GiftableTier, string> = {
   // Display label only — the `starter` key is the Stripe/DB plan id and stays.
-  starter: 'HARD-R',
-  pro: 'Pro',
+  starter: 'Pro',
+  pro: 'Max',
 };
 
 export class GiftError extends Error {}

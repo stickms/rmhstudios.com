@@ -17,7 +17,7 @@ const WHATSNEW_KEY ='rmh-whatsnew-seen-v2';
 
 /**
  * Occasionally offers eligible (free-tier, never-claimed) users a free month of
- * Pro. Eligibility is authoritative server-side; this component only decides
+ * Max. Eligibility is authoritative server-side; this component only decides
  * when to surface the offer (gated by a localStorage snooze so it appears
  * occasionally rather than on every visit).
  */
@@ -89,9 +89,9 @@ export function FreeMonthModal() {
 
  {claimed ? (
  <>
- <DialogTitle className="text-xl font-semibold text-site-text">{t("claimed-title", { defaultValue:"You’re on Pro! 🎉"})}</DialogTitle>
+ <DialogTitle className="text-xl font-semibold text-site-text">{t("claimed-title", { defaultValue:"You’re on Max! 🎉"})}</DialogTitle>
  <p className="mx-auto mt-2 max-w-xs text-sm text-site-text-muted">
- {t("claimed-body", { defaultValue:"Your free month of Pro is active. Enjoy the perks — including the developer API."})}
+ {t("claimed-body", { defaultValue:"Your free month of Max is active. Enjoy the perks — including the developer API."})}
  </p>
  <Button variant="default"className="mt-6 w-full"onClick={() => setOpen(false)}>
  {t("lets-go", { defaultValue:"Let’s go"})}
@@ -100,10 +100,10 @@ export function FreeMonthModal() {
  ) : (
  <>
  <DialogTitle className="inline-flex items-center gap-2 text-xl font-semibold text-site-text">
- <Sparkles className="h-5 w-5 text-site-accent"/> {t("offer-title", { defaultValue:"A month of Pro, on us"})}
+ <Sparkles className="h-5 w-5 text-site-accent"/> {t("offer-title", { defaultValue:"A month of Max, on us"})}
  </DialogTitle>
  <p className="mx-auto mt-2 max-w-xs text-sm text-site-text-muted">
- {t("offer-body", { defaultValue:"Try RMH Pro free for one month — no payment, no card. Unlock the developer API, the profile badge, and more."})}
+ {t("offer-body", { defaultValue:"Try RMH Max free for one month — no payment, no card. Unlock the developer API, the profile badge, and more."})}
  </p>
  <div className="mt-6 flex flex-col gap-2">
  <Button variant="default"loading={claiming} onClick={claim} className="w-full">

@@ -170,7 +170,7 @@ export function KeysManager() { const fmt = useLocaleFormat();
         <p className="mx-auto mt-1 max-w-sm text-sm text-site-text-muted">
           {t('keys-subscription-body', {
             defaultValue:
-              'The developer API needs an active HARD-R plan or higher. Your access is checked on every request, so it stays in sync with your subscription.',
+              'The developer API needs an active Pro plan or higher. Your access is checked on every request, so it stays in sync with your subscription.',
           })}
         </p>
         <Button asChild variant="default" size="sm" className="mt-3">

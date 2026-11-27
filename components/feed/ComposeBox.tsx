@@ -207,7 +207,7 @@ export function ComposeBox({
 
   const { t } = useTranslation('feed');
   const { data: session } = useSession();
-  // HARD-R and above can generate images. Server re-enforces this.
+  // Pro and above can generate images. Server re-enforces this.
   const userTier = (session?.user as { tier?: string } | undefined)?.tier;
   const canGenerateImage =
     userTier === 'starter' || userTier === 'pro' || userTier === 'enterprise';
@@ -853,7 +853,7 @@ export function ComposeBox({
                 title={t('ai-generate-title', { defaultValue: 'Generate a reply with AI' })}
               />
 
-              {/* AI image button — locked (greyed + upgrade nudge) below HARD-R */}
+              {/* AI image button — locked (greyed + upgrade nudge) below Pro */}
               <AIImageButton
                 draft={content}
                 locked={!canGenerateImage}
