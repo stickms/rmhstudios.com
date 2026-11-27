@@ -76,7 +76,7 @@ const TRAFFIC_PAINT = [
 ];
 const TRUCK_PAINT = ['#aaaacc', '#8f9aa8', '#c2b48a', '#7a8fa6'];
 
-// eslint-disable-next-line no-restricted-syntax -- lerp clamps t to <= 1
+// eslint-disable-next-line local/no-core-primitive-redefinition -- lerp clamps t to <= 1
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * Math.min(t, 1);
 }

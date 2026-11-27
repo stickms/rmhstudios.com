@@ -1,7 +1,7 @@
 /**
  * The site-tier exemption policy — the ONE list.
  *
- * Read by `eslint.config.mjs` (scopes `local/no-raw-palette-color` and
+ * Read by `scripts/gen-oxlintrc.mjs` (scopes `local/no-raw-palette-color` and
  * `local/no-hardcoded-radius`), by `isSiteTier()` below, by the vitest gates in
  * `lib/__tests__/` (`design-consistency`, `jelly-coverage`, `jelly-ownership`,
  * `ios-edge-contract`) and by `scripts/check-consistency.sh`, which awk-parses

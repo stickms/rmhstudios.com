@@ -1,0 +1,304 @@
+/**
+ * Writes `.oxlintrc.json` (and `.oxlintrc.boundaries.json`) from `eslint-local-rules/design-scope.js`.
+ *
+ *   node scripts/gen-oxlintrc.mjs          write both files
+ *   node scripts/gen-oxlintrc.mjs --check  fail if either is stale (lib/__tests__/oxlint-config.test.ts runs this)
+ *
+ * Why a generator and not a hand-written JSON: the site-tier exemption policy (which directories are
+ * full-screen games, which files are the Steel baseline) is ONE list, `design-scope.js`, that the vitest gates and
+ * scripts/check-consistency.sh read too. oxlint scopes rules with `files` / `excludeFiles` globs in JSON, so the
+ * globs are expanded from that list here instead of being copied by hand and drifting.
+ *
+ * `.oxlintrc.json` is the config `pnpm lint` runs. `.oxlintrc.boundaries.json` is the architecture ratchet's
+ * (import cycles, layer and feature boundaries, `.server` value imports): those rules have existing violations, so
+ * they run through scripts/check-lint-ratchet.ts against lint-baseline/boundaries.json, not through `pnpm lint`.
+ */
+import { readFileSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import {
+  ALL_TIER_FILES,
+  CLASS_RULE_IGNORES,
+  FULLSCREEN_IGNORES,
+  STEEL_BASELINE_IGNORES,
+  RAW_COLOR_ALLOW,
+} from '../eslint-local-rules/design-scope.js';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+/** Game / app feature directories shared code must not import (mirrors the boundaries ratchet's list). */
+const FEATURE_DIRS = [
+  'altair', 'balatro', 'baccarat', 'blackjack', 'csgo-game', 'cursed-logic', 'dream-rift', 'dunesday',
+  'gabriels-horn', 'hearthworks', 'holdem', 'house-always-wins', 'kaikai-debt', 'kowloon-knockout',
+  'laundry-sort', 'lights-out', 'lockdown', 'marathon', 'neon-driftway', 'nightrail', 'plinko',
+  'rebar-rutabaga', 'rideshare', 'rmh-capital', 'rmh-datacenter', 'rmh-pmc', 'rmh-research', 'rmhbox',
+  'rmhcalculator', 'rmhcode', 'rmhfashion', 'rmhladder', 'rmhmusic', 'rmhstudy', 'rmhtube', 'rmhtype',
+  'rmhvibe', 'roulette', 'signal-forge', 'slice-it', 'sohumtracker', 'sp-game', 'speedrun', 'synapse-storm',
+  'temple-of-joy', 'tf2-game', 'tf2-hud', 'vega', 'velum2099', 'versecraft', 'void-breaker',
+];
+
+const IGNORE_PATTERNS = [
+  '.cache/**',
+  '.output/**',
+  '.tanstack/**',
+  '.vinxi/**',
+  'bazel-*/**',
+  'dist-server/**',
+  'build/**',
+  '**/node_modules/**',
+  'public/vibe-packages/**',
+  // Vendored Emscripten output (love.js, scripts/balatro/vendor-lovejs.sh)
+  'public/balatro/engine/**',
+  // Plain JS server files: CommonJS require() is intentional
+  'webhook-server.cjs',
+  'check_db.js',
+  'sync_db.js',
+  // Worktrees of other branches
+  '.claude/worktrees/**',
+];
+
+const TS = '*.{ts,tsx}';
+
+/** `pnpm lint` */
+function mainConfig() {
+  return {
+    $schema: './node_modules/oxlint/configuration_schema.json',
+    plugins: ['typescript', 'react', 'jsx-a11y', 'oxc'],
+    jsPlugins: ['./eslint-local-rules/index.js'],
+    categories: { correctness: 'error' },
+    ignorePatterns: IGNORE_PATTERNS,
+    options: { reportUnusedDisableDirectives: 'off' },
+    env: { builtin: true, es2022: true },
+    rules: {
+      // ── Downgraded from the correctness error default, as in the ESLint config: pre-existing debt surfaces as
+      // warnings and the bar is "no NEW warnings versus the base branch".
+      'no-useless-assignment': 'warn',
+      'typescript/no-explicit-any': 'warn',
+      'typescript/no-unsafe-function-type': 'warn',
+      'typescript/no-require-imports': 'warn',
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
+      'prefer-const': 'warn',
+      'no-empty': 'warn',
+      'no-case-declarations': 'warn',
+      'typescript/ban-ts-comment': 'warn',
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+
+      // ── React hooks (these four were switched off for the patterns this codebase uses on purpose)
+      'react/rules-of-hooks': 'error',
+      'react/exhaustive-deps': 'warn',
+      'react/set-state-in-effect': 'off',
+      'react/purity': 'off',
+      'react/immutability': 'off',
+      'react/refs': 'off',
+      // React Compiler rules the ESLint config never enabled (oxlint's react plugin ships them in correctness)
+      'react/preserve-manual-memoization': 'off',
+      'react/incompatible-library': 'warn',
+      'react/no-direct-mutation-state': 'error',
+      // oxc-only correctness rules: shown, not blocking (the ESLint set had no equivalent)
+      'oxc/erasing-op': 'warn',
+      'oxc/only-used-in-recursion': 'warn',
+      'oxc/double-comparisons': 'warn',
+
+      // ── Repo conventions (eslint-local-rules/). Scoped below.
+      'local/no-adhoc-user-select': 'warn',
+      'local/no-lucide-namespace-import': 'error',
+      'local/no-use-client-directive': 'error',
+      'local/no-adhoc-spinner': 'error',
+      'local/no-core-primitive-redefinition': 'error',
+
+      // `motion` ships its own full feature bundle and defeats the <LazyMotion> split; sonner loads on the first toast.
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'framer-motion',
+              importNames: ['motion'],
+              message:
+                'Import `m as motion` instead. `motion` ships its own full feature bundle and defeats the <LazyMotion> split in components/Providers.tsx (docs/archive/2026/performance-audit-2026-08-12.md §1.3).',
+            },
+            {
+              name: 'sonner',
+              message:
+                'Import `toast` from `@/lib/toast`. Importing sonner directly puts the library back in the entry closure (scripts/check-entry-composition.ts fails on it).',
+            },
+          ],
+        },
+      ],
+    },
+    overrides: [
+      // ── Globals for plain scripts and the static microsites under public/ ──
+      { files: ['**/*.mjs'], env: { node: true, browser: true } },
+      { files: ['public/sw*.js'], env: { serviceworker: true, browser: false } },
+      { files: ['public/**/*.js'], excludeFiles: ['public/sw*.js'], env: { browser: true } },
+
+      // ── jsx-a11y: zero-violation rules are errors so regressions cannot land; the rest are warnings until clean
+      {
+        files: ['**/*.{jsx,tsx}'],
+        rules: {
+          'jsx-a11y/aria-props': 'error',
+          'jsx-a11y/aria-proptypes': 'error',
+          'jsx-a11y/aria-unsupported-elements': 'error',
+          'jsx-a11y/iframe-has-title': 'error',
+          'jsx-a11y/img-redundant-alt': 'error',
+          'jsx-a11y/no-redundant-roles': 'error',
+          'jsx-a11y/role-has-required-aria-props': 'error',
+          'jsx-a11y/role-supports-aria-props': 'error',
+          'jsx-a11y/alt-text': 'warn',
+          'jsx-a11y/anchor-has-content': 'warn',
+          'jsx-a11y/anchor-is-valid': 'warn',
+          'jsx-a11y/aria-role': 'warn',
+          'jsx-a11y/click-events-have-key-events': 'warn',
+          'jsx-a11y/heading-has-content': 'warn',
+          'jsx-a11y/label-has-associated-control': 'warn',
+          'jsx-a11y/no-static-element-interactions': 'warn',
+          // Not in the ESLint set this replaces: oxlint's correctness category enables them by default.
+          'jsx-a11y/no-autofocus': 'off',
+          'jsx-a11y/prefer-tag-over-role': 'off',
+          'jsx-a11y/no-noninteractive-element-interactions': 'off',
+          'jsx-a11y/no-noninteractive-tabindex': 'off',
+          'jsx-a11y/control-has-associated-label': 'off',
+          'jsx-a11y/no-noninteractive-element-to-interactive-role': 'off',
+          'jsx-a11y/no-interactive-element-to-noninteractive-role': 'off',
+          'jsx-a11y/interactive-supports-focus': 'off',
+          'jsx-a11y/media-has-caption': 'off',
+        },
+      },
+
+      // F8: every page route declares head()
+      { files: ['app/routes/**/*.tsx'], rules: { 'local/route-needs-head': 'error' } },
+
+      // One copy of the numeric / RNG primitives (redesign audit A4). Tests are exempt.
+      {
+        files: [`**/${TS}`],
+        excludeFiles: ['lib/core/**', '**/*.test.{ts,tsx}', '**/__tests__/**', 'testing/**'],
+        rules: { 'local/no-core-primitive-redefinition': 'error' },
+      },
+      {
+        files: ['lib/core/**', '**/*.test.{ts,tsx}', '**/__tests__/**', 'testing/**'],
+        rules: { 'local/no-core-primitive-redefinition': 'off' },
+      },
+
+      // Tests may hold the whole icon set (a test is never bundled), and `(x?.y as T).z` is how they unwrap a mock call
+      {
+        files: ['**/*.test.{ts,tsx}', '**/__tests__/**/*.{ts,tsx}', 'testing/**/*.{ts,tsx}'],
+        rules: { 'local/no-lucide-namespace-import': 'off', 'no-unsafe-optional-chaining': 'off' },
+      },
+
+      // ── Class-string conventions (design-language.md §13 rules 5, 6, 8, 9) ──
+      // The exemption lists live in eslint-local-rules/design-scope.js. Site tier = components/** + app/routes/**
+      // minus the full-screen game/app tier; transition-all and dead animate classes run over the whole tree.
+      {
+        files: ALL_TIER_FILES,
+        excludeFiles: CLASS_RULE_IGNORES,
+        rules: { 'local/no-transition-all': 'error', 'local/no-dead-animate-classes': 'error' },
+      },
+      {
+        files: ALL_TIER_FILES,
+        excludeFiles: [...CLASS_RULE_IGNORES, ...FULLSCREEN_IGNORES],
+        rules: { 'local/no-arbitrary-type-size': 'error', 'local/no-inline-motion': 'error' },
+      },
+      // The two Steel palette rules, minus the named, shrinking baseline
+      {
+        files: ALL_TIER_FILES,
+        excludeFiles: [...CLASS_RULE_IGNORES, ...FULLSCREEN_IGNORES, ...STEEL_BASELINE_IGNORES],
+        rules: { 'local/no-hardcoded-radius': 'error', 'local/no-raw-palette-color': 'error' },
+      },
+      // /login renders third-party sign-in buttons in their brand colours
+      { files: RAW_COLOR_ALLOW, rules: { 'local/no-raw-palette-color': 'off' } },
+
+      // e2e harnesses: stdout IS the deliverable
+      {
+        files: ['testing/e2e/*.mjs', 'testing/hearthworks-e2e/*.ts', 'testing/hearthworks-models/*.ts'],
+        rules: { 'no-console': 'off' },
+      },
+    ],
+  };
+}
+
+const featurePattern = {
+  regex: `^(@/(components|lib)/(${FEATURE_DIRS.join('|')})|@features)(/|$)`,
+  message:
+    'Shared code (ui/shared/hooks/stores/utils) must not import a game/app feature directory. Move the shared piece into ui/ or shared/.',
+};
+const libLayerPattern = {
+  regex: '^@/components(/|$)',
+  message: 'lib/ must not import from components/ (lib is the lower layer).',
+};
+const serverPattern = {
+  regex: '\\.server(\\.ts)?$',
+  allowTypeImports: true,
+  message: 'Value imports of *.server modules belong in server functions/handlers only (type-only imports are fine).',
+};
+const restrict = (...patterns) => ['error', { patterns }];
+
+/** `pnpm lint:ratchet` */
+function boundariesConfig() {
+  return {
+    $schema: './node_modules/oxlint/configuration_schema.json',
+    plugins: ['import'],
+    categories: { correctness: 'off' },
+    ignorePatterns: [...IGNORE_PATTERNS, 'public/**', 'app/routeTree.gen.ts'],
+    options: { reportUnusedDisableDirectives: 'off', respectEslintDisableDirectives: false },
+    rules: {},
+    overrides: [
+      // Import cycles, scoped to the client/shared trees (the node tier in server/ is covered by tsc and its bundles)
+      {
+        files: [`components/**/${TS}`, `lib/**/${TS}`, `hooks/**/${TS}`, `stores/**/${TS}`, `features/**/${TS}`],
+        rules: { 'import/no-cycle': ['error', { maxDepth: 4, ignoreTypes: true }] },
+      },
+      // lib/ is below components/ in the layering; a feature's engine/server/net is its lib half
+      {
+        files: [`lib/**/${TS}`, `features/*/engine/**/${TS}`, `features/*/server/**/${TS}`, `features/*/net/**/${TS}`],
+        rules: { 'no-restricted-imports': restrict(libLayerPattern) },
+      },
+      // Client trees: no value imports of .server modules
+      {
+        files: [`components/**/${TS}`, `hooks/**/${TS}`, `stores/**/${TS}`, `features/*/ui/**/${TS}`],
+        rules: { 'no-restricted-imports': restrict(serverPattern) },
+      },
+      // Shared dirs must not import feature dirs
+      {
+        files: [`components/ui/**/${TS}`, `components/shared/**/${TS}`, `hooks/**/${TS}`, `stores/**/${TS}`],
+        rules: { 'no-restricted-imports': restrict(featurePattern, serverPattern) },
+      },
+      // lib shared files: feature rule plus the layering rule
+      {
+        files: [`lib/shared/**/${TS}`, `lib/utils/**/${TS}`, 'lib/utils.ts'],
+        rules: { 'no-restricted-imports': restrict(featurePattern, libLayerPattern) },
+      },
+      // Server-side files may value-import .server modules
+      { files: ['**/*.server.{ts,tsx}', `**/api/**/${TS}`], rules: { 'no-restricted-imports': 'off' } },
+    ],
+  };
+}
+
+export const OUTPUTS = {
+  '.oxlintrc.json': mainConfig(),
+  '.oxlintrc.boundaries.json': boundariesConfig(),
+};
+
+const render = (config) => JSON.stringify(config, null, 2) + '\n';
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const check = process.argv.includes('--check');
+  let stale = false;
+  for (const [file, config] of Object.entries(OUTPUTS)) {
+    const target = path.join(ROOT, file);
+    let current = '';
+    try {
+      current = readFileSync(target, 'utf8');
+    } catch {
+      /* missing */
+    }
+    if (current === render(config)) continue;
+    if (check) {
+      console.error(`${file} is stale: run \`node scripts/gen-oxlintrc.mjs\``);
+      stale = true;
+    } else {
+      writeFileSync(target, render(config));
+      console.log(`wrote ${file}`);
+    }
+  }
+  if (stale) process.exit(1);
+}

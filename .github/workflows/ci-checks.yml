@@ -1,6 +1,6 @@
 # The single definition of the check jobs shared by web-ci (PR / merge queue /
 # nightly) and deploy (push to main). Callers choose which half runs:
-#   checks:   typecheck + docs freshness, unit shards, production audit
+#   checks:   typecheck + lint + ratchets + docs freshness, unit shards, production audit
 #   frontend: build + integration suite against a throwaway Postgres
 # and two options for the integration job's build (web-ci sets both):
 #   bundle-checks: build with sourcemaps and run the bundle budget + entry-composition
@@ -75,6 +75,14 @@ jobs:
           key: tsc-${{ runner.os }}-${{ github.sha }}
       - name: Typecheck (strict islands)
         run: pnpm run typecheck:strict
+      # oxlint lints the whole tree in about 8 s, so lint and both ratchets ride in this job (the ESLint versions
+      # took ~3 min and ~2.5 min and had a job of their own).
+      - name: Lint
+        run: pnpm run lint
+      - name: Architecture ratchet (import cycles + layer boundaries)
+        run: pnpm run lint:ratchet
+      - name: Accessibility ratchet (jsx-a11y findings only go down)
+        run: pnpm run a11y:ratchet
       - name: Docs freshness
         run: |
           pnpm run docs:api:check

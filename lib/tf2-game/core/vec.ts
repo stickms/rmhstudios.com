@@ -68,7 +68,7 @@ export function ma(out: Vec3, a: Vec3, s: number, b: Vec3): Vec3 {
 }
 
 /** out = a + (b - a) * t */
-// eslint-disable-next-line no-restricted-syntax -- lerp on Vec3 with an out parameter
+// eslint-disable-next-line local/no-core-primitive-redefinition -- lerp on Vec3 with an out parameter
 export function lerp(out: Vec3, a: Vec3, b: Vec3, t: number): Vec3 {
   out.x = a.x + (b.x - a.x) * t;
   out.y = a.y + (b.y - a.y) * t;

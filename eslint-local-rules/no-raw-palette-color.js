@@ -9,7 +9,7 @@
  * `border-[color-mix(…)]`). If a colour is genuinely domain-fixed (a playing card, a brand mark, a scrim over a photo)
  * add a scoped variable group like `--casino-*` or `--site-media-*` and bind it in `@theme inline`.
  *
- * Scope (eslint.config.mjs, from `design-scope.js`): `components/**` and `app/routes/**` `.tsx`, minus the full-screen
+ * Scope (scripts/gen-oxlintrc.mjs, from `design-scope.js`): `components/**` and `app/routes/**` `.tsx`, minus the full-screen
  * game/app tier, `login.tsx` and the named, shrinking `STEEL_PALETTE_BASELINE` (each entry says which phase removes it).
  */
 import { createPatternRule } from './class-strings.js';
