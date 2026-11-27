@@ -156,7 +156,9 @@ function DrawerLink({
 }) {
   return (
     <Link
-      {...({ to, hash, search } as object)}
+      // The destinations are a fixed list of `/med` pages (and `/login`); the cast keeps one component for all of them.
+      to={to as '/med'}
+      {...({ hash, search } as object)}
       className={cn('medapp-drawer__item', current && 'medapp-drawer__item--current')}
       aria-current={current ? 'page' : undefined}
       onClick={onGo}
