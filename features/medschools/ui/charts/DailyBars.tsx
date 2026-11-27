@@ -67,7 +67,8 @@ export function DailyBars(p: {
   const tween = useTween(target);
 
   const waveOf = new Map((labels.wave ? (p.waves ?? []) : []).map((w) => [w.date, w.count] as const));
-  const fmtDay = (date: string) => formatUtcDay(date, labels.locale, { month: 'short', day: 'numeric', year: 'numeric' });
+  const fmtDay = (date: string) =>
+    formatUtcDay(date, labels.locale, { month: 'short', day: 'numeric', year: 'numeric' });
 
   const many = p.series.length > 1;
   const dates = [...new Set(p.series.flatMap((s) => s.primary.days.map((d) => d.date)))].sort();
@@ -133,7 +134,13 @@ export function DailyBars(p: {
             },
           }));
           if (many) {
-            rows.push({ key: 'total', name: totalLabel, color: 'var(--app-text)', text: nf.format(d.count), y: () => null });
+            rows.push({
+              key: 'total',
+              name: totalLabel,
+              color: 'var(--app-text)',
+              text: nf.format(d.count),
+              y: () => null,
+            });
           }
           if (wave !== undefined && labels.wave) {
             rows.push({

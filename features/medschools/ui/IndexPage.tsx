@@ -24,6 +24,8 @@ import { SkeletonSwap } from './skeletons';
 import { useLiveSignal } from './useLiveSignal';
 import { useMedLabels } from './labels';
 import { LatestStatus } from './LatestStatus';
+import { StatusIcon } from './status/StatusIcon';
+import { statusOfEvent } from './status/status';
 import { MedEmpty } from './MedEmpty';
 
 /**
@@ -134,7 +136,18 @@ export function IndexPage() {
               <ul className="medapp-panel medapp-rows">
                 {rows.map((s) => (
                   <li key={s.slug} className="medapp-row medapp-schoolrow">
-                    <SchoolCrest slug={s.slug} name={s.name} size={40} />
+                    {/* On a phone the decision is a badge on the crest's corner (as in the live rows); from 600px it is the disc
+                        at the row's end, so one of the two is hidden by CSS. */}
+                    <span className="medapp-crestbadge">
+                      <SchoolCrest slug={s.slug} name={s.name} size={40} />
+                      {s.latest ? (
+                        <StatusIcon
+                          status={statusOfEvent(s.latest.eventType)}
+                          size="xs"
+                          className="medapp-crestbadge__badge medapp-schoolrow__badge"
+                        />
+                      ) : null}
+                    </span>
                     <div className="medapp-row__body">
                       <p className="medapp-row__name">
                         <Link to="/med/$slug" params={{ slug: s.slug }} search={schoolSearch}>

@@ -297,7 +297,9 @@ export function PhaseBar({
       <div
         role="img"
         aria-label={label}
-        className={['medapp-phasebar', typical ? 'is-typical' : '', legend ? 'is-legend' : ''].filter(Boolean).join(' ')}
+        className={['medapp-phasebar', typical ? 'is-typical' : '', legend ? 'is-legend' : '']
+          .filter(Boolean)
+          .join(' ')}
         data-proportional={model.proportional ? 'true' : 'false'}
         style={{ gridTemplateColumns: columns }}
       >

@@ -25,7 +25,8 @@ export function useAsk(): {
   const run = useRef<ReturnType<typeof createAskRun> | null>(null);
   if (!run.current) {
     run.current = createAskRun(
-      (body, signal) => api(askMedQuestionApi, {
+      (body, signal) =>
+        api(askMedQuestionApi, {
           body,
           signal,
           timeoutMs: body.think ? QA_THINK_CLIENT_TIMEOUT_MS : AI_TIMEOUT_MS,

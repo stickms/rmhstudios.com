@@ -10,7 +10,18 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ to, params, children, search: _s, ...rest }: { to: string; params?: { slug: string }; search?: unknown; children: ReactNode }) => (
+  Link: ({
+    to,
+    params,
+    children,
+    search: _s,
+    ...rest
+  }: {
+    to: string;
+    params?: { slug: string };
+    search?: unknown;
+    children: ReactNode;
+  }) => (
     <a href={params ? to.replace('$slug', params.slug) : to} {...rest}>
       {children}
     </a>
@@ -22,7 +33,11 @@ import { bodyOf, draftOf } from '../stats/draft';
 import { BuildResult } from './BuildResult';
 import { defaultListName } from './BuilderPage';
 
-const school = (slug: string, label: MedBuildSchoolDto['label'], over: Partial<MedBuildSchoolDto> = {}): MedBuildSchoolDto => ({
+const school = (
+  slug: string,
+  label: MedBuildSchoolDto['label'],
+  over: Partial<MedBuildSchoolDto> = {},
+): MedBuildSchoolDto => ({
   slug,
   name: `${slug} School of Medicine`,
   shortName: slug,
@@ -88,7 +103,12 @@ describe('BuildResult', () => {
               theirs: '520',
               stat: 'median',
               band: 'below',
-              mcat: { latest: 513, earlier: [], yoursPct: { rank: 86, printed: '86' }, theirsPct: { rank: 97, printed: '97' } },
+              mcat: {
+                latest: 513,
+                earlier: [],
+                yoursPct: { rank: 86, printed: '86' },
+                theirsPct: { rank: 97, printed: '97' },
+              },
             },
           ],
           reason: { text: 'Your MCAT of 513 is below the class median of 520.', cites: ['m1', 'c1f1'] },
@@ -127,8 +147,12 @@ describe('BuildResult', () => {
   });
 
   it('says how the MCAT was weighted, cites AAMC for every percentile, and says when a figure is not compared', () => {
-    const mcat = (yours: string, theirs: string, band: MedBuildComparisonDto['band'], m: MedBuildComparisonDto['mcat']) =>
-      ({ metric: 'MCAT', yours, theirs, stat: 'median', band, mcat: m }) as MedBuildComparisonDto;
+    const mcat = (
+      yours: string,
+      theirs: string,
+      band: MedBuildComparisonDto['band'],
+      m: MedBuildComparisonDto['mcat'],
+    ) => ({ metric: 'MCAT', yours, theirs, stat: 'median', band, mcat: m }) as MedBuildComparisonDto;
     const out = html(
       res(
         [
@@ -143,7 +167,14 @@ describe('BuildResult', () => {
             ],
           }),
           school('odd', 'not-enough-data', {
-            comparisons: [mcat('472', '530', 'not-compared', { latest: 472, earlier: [], yoursPct: { rank: 0, printed: '<1' }, theirsPct: null })],
+            comparisons: [
+              mcat('472', '530', 'not-compared', {
+                latest: 472,
+                earlier: [],
+                yoursPct: { rank: 0, printed: '<1' },
+                theirsPct: null,
+              }),
+            ],
           }),
         ],
         {
@@ -181,7 +212,15 @@ describe('BuildResult', () => {
         statsMissing: true,
         usedStats: false,
         notice: 'removed-ungrounded',
-        filters: { states: [], degree: null, mdphd: false, size: null, missions: ['rural'], unused: ['rural'], count: 15 },
+        filters: {
+          states: [],
+          degree: null,
+          mdphd: false,
+          size: null,
+          missions: ['rural'],
+          unused: ['rural'],
+          count: 15,
+        },
       }),
     );
     expect(out).toContain('nothing was compared');

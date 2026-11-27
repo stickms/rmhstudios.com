@@ -68,7 +68,8 @@ export function BuilderPage() {
     );
   }
 
-  const hasStats = !!stats.data?.stats && (stats.data.stats.mcat.length > 0 || stats.data.stats.gpa.cumulative !== null);
+  const hasStats =
+    !!stats.data?.stats && (stats.data.stats.mcat.length > 0 || stats.data.stats.gpa.cumulative !== null);
   const thinkingAvailable = status.data?.thinkingAvailable === true;
   const configured = status.data?.configured ?? true;
   const remaining = status.data?.remainingToday ?? null;
@@ -150,7 +151,8 @@ export function BuilderPage() {
               <span id={`${id}-stats-help`} className="medapp-meta">
                 {hasStats
                   ? t('builder-use-stats-help', {
-                      defaultValue: 'Sends your latest MCAT total, GPAs, hours and home state to the AI for this list only.',
+                      defaultValue:
+                        'Sends your latest MCAT total, GPAs, hours and home state to the AI for this list only.',
                     })
                   : t('builder-use-stats-none', { defaultValue: 'You have no MCAT or GPA saved yet.' })}{' '}
                 <Link to="/med/stats" className="medapp-link">
@@ -205,7 +207,8 @@ export function BuilderPage() {
           </div>
           <p className="medapp-meta">
             {t('builder-provider-note', {
-              defaultValue: 'Your request goes to an AI provider to build the list. Nothing is kept unless you save it.',
+              defaultValue:
+                'Your request goes to an AI provider to build the list. Nothing is kept unless you save it.',
             })}
           </p>
         </form>
@@ -213,7 +216,9 @@ export function BuilderPage() {
 
       {run.state === 'pending' ? (
         <p className="medapp-meta" role="status" aria-busy="true">
-          {t('builder-pending', { defaultValue: 'Choosing schools from the published data. This takes a few seconds.' })}
+          {t('builder-pending', {
+            defaultValue: 'Choosing schools from the published data. This takes a few seconds.',
+          })}
         </p>
       ) : null}
       {run.state === 'error' ? (
@@ -235,7 +240,10 @@ export function BuilderPage() {
               description={t('builder-try-again', { defaultValue: 'Try fewer limits or other words.' })}
             />
           ) : (
-            <section className="medapp-panel medapp-panel--padded" aria-label={t('builder-result', { defaultValue: 'Suggested schools' })}>
+            <section
+              className="medapp-panel medapp-panel--padded"
+              aria-label={t('builder-result', { defaultValue: 'Suggested schools' })}
+            >
               <BuildResult
                 res={result}
                 selected={selected}

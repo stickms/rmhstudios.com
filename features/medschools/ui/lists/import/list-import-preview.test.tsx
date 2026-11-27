@@ -18,7 +18,13 @@ vi.mock('@/components/ui/select', () => ({
   ),
 }));
 
-const duke = { slug: 'duke', name: 'Duke University School of Medicine', shortName: 'Duke', degree: 'MD' as const, state: 'NC' };
+const duke = {
+  slug: 'duke',
+  name: 'Duke University School of Medicine',
+  shortName: 'Duke',
+  degree: 'MD' as const,
+  state: 'NC',
+};
 const rows = toListEditable({
   truncated: false,
   dropped: 0,

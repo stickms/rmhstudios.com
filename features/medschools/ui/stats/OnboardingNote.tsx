@@ -41,7 +41,8 @@ export function OnboardingNote({ signedIn }: { signedIn: boolean }) {
       </p>
       <p className="medapp-meta">
         {t('stats-onboard-why', {
-          defaultValue: 'With them, the list builder can compare your MCAT and GPA with each school’s published class figures.',
+          defaultValue:
+            'With them, the list builder can compare your MCAT and GPA with each school’s published class figures.',
         })}
       </p>
       <div className="medapp-actions">

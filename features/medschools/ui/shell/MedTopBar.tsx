@@ -8,7 +8,7 @@ import { NavDrawer } from './NavDrawer';
 /**
  * The app's top bar, over the main column only (the live rail starts level with it, owner 2026-11-24): a 44px round
  * button, the app's name, then the actions at its end (`HeaderActions`: practice, live, the member's area, the light /
- * dark switch). Under 600px the actions are one menu button that opens `NavDrawer` (owner 2026-11-27). It is in the document
+ * dark switch). Under 600px the bar is a menu button at the start edge, the title and nothing else; `NavDrawer` holds the home / back link and the actions (owner 2026-11-27). It is in the document
  * flow (never `fixed`, never `sticky` flush to the edge: the iOS bars take their colour from edge-pinned
  * layers). On the index the button is a plain home link to the site (`/`, a house) and the name is the page's `<h1>`;
  * on every other route, the error and 404 frames included, it is back one level, always to the school index
@@ -22,14 +22,21 @@ export function MedTopBar() {
 
   return (
     <header className="medapp-bar">
+      {/* Under 600px the menu button is the bar's first control (top left, where the drawer opens from) and the
+          home / back link moves into the drawer; from 600px this link shows and the button does not. */}
+      <NavDrawer />
       {isIndex ? (
-        <Link to="/" className="medapp-round" aria-label={t('shell-home', { defaultValue: 'RMH home' })}>
+        <Link
+          to="/"
+          className="medapp-round medapp-bar__lead"
+          aria-label={t('shell-home', { defaultValue: 'RMH home' })}
+        >
           <House aria-hidden size={20} />
         </Link>
       ) : (
         <Link
           to={backTargetFor(pathname)}
-          className="medapp-round"
+          className="medapp-round medapp-bar__lead"
           aria-label={t('shell-back-schools', { defaultValue: 'Back to all schools' })}
         >
           <ArrowLeft aria-hidden size={20} />
@@ -40,7 +47,6 @@ export function MedTopBar() {
       {isIndex ? <h1 className="medapp-title">{appName}</h1> : <span className="medapp-title">{appName}</span>}
       {/* From 600px the actions sit in the bar; under it they are one menu button and a drawer (CSS shows one). */}
       <HeaderActions />
-      <NavDrawer />
     </header>
   );
 }

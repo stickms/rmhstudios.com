@@ -1,13 +1,14 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useRouterState } from '@tanstack/react-router';
 import * as Dialog from '@radix-ui/react-dialog';
-import { Activity, LogIn, Menu, Mic, X, type LucideIcon } from 'lucide-react';
+import { Activity, ArrowLeft, House, LogIn, Menu, Mic, X, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/session/session-context';
 import { cn } from '@/lib/utils';
 import { SOURCE_PREFS } from '../../engine/source-pref';
 import { SourceGlyph } from '../sources/SourceGlyph';
 import { useSourcePref } from '../useSourcePref';
+import { isMedIndex } from './back-target';
 import { MINE, useMineNames } from './mine-places';
 import { SOURCE_PREF_NAMES } from './SourceToggle';
 import { ThemeToggle } from './ThemeToggle';
@@ -60,6 +61,18 @@ export function NavDrawer() {
           </div>
 
           <nav className="medapp-drawer__body" aria-label={menu}>
+            <DrawerGroup>
+              {isMedIndex(pathname) ? (
+                <DrawerLink to="/" icon={House} onGo={close}>
+                  {t('shell-home', { defaultValue: 'RMH home' })}
+                </DrawerLink>
+              ) : (
+                <DrawerLink to="/med" icon={ArrowLeft} onGo={close}>
+                  {t('shell-back-schools', { defaultValue: 'Back to all schools' })}
+                </DrawerLink>
+              )}
+            </DrawerGroup>
+
             {session ? (
               <DrawerGroup label={t('shell-mine-label', { defaultValue: 'My cycle and lists' })}>
                 {MINE.map((m) => {

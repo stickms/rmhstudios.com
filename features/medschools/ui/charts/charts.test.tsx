@@ -79,7 +79,9 @@ function expectBasics(html: string, empty = false) {
 
 describe('DailyBars', () => {
   const props = { from: '2026-11-19', to: '2026-11-23', labels };
-  const one = (primary: Series) => [{ key: 'INTERVIEW', name: 'Interview invite', color: CATEGORY_COLOR.INTERVIEW, primary }];
+  const one = (primary: Series) => [
+    { key: 'INTERVIEW', name: 'Interview invite', color: CATEGORY_COLOR.INTERVIEW, primary },
+  ];
   const two = [
     { key: 'INTERVIEW', name: 'Interview invite', color: CATEGORY_COLOR.INTERVIEW, primary: ct },
     { key: 'ACCEPTANCE', name: 'Acceptance', color: CATEGORY_COLOR.ACCEPTANCE, primary: admit },
@@ -118,7 +120,9 @@ describe('DailyBars', () => {
     expect(svg.match(new RegExp(`fill="${CATEGORY_COLOR.INTERVIEW.replace(/[()]/g, '\\$&')}"`, 'g'))).toHaveLength(2);
     expect(svg.match(new RegExp(`fill="${CATEGORY_COLOR.ACCEPTANCE.replace(/[()]/g, '\\$&')}"`, 'g'))).toHaveLength(1);
     const table = html.slice(html.indexOf('<table'));
-    expect(table).toContain('<th scope="col">Interview invite</th><th scope="col">Acceptance</th><th scope="col">Count</th>');
+    expect(table).toContain(
+      '<th scope="col">Interview invite</th><th scope="col">Acceptance</th><th scope="col">Count</th>',
+    );
     expect(table).toContain('<td>Nov 20, 2026</td><td>4</td><td>0</td><td>4</td>');
     expect(table).toContain('<td>Nov 21, 2026</td><td>0</td><td>3</td><td>3</td>');
     // Each category draws its own primary; the caption names both.
@@ -128,7 +132,12 @@ describe('DailyBars', () => {
   it('a day with two categories stacks them: the upper segment sits on the lower one', () => {
     const same = [
       { key: 'INTERVIEW', name: 'Interview invite', color: CATEGORY_COLOR.INTERVIEW, primary: ct },
-      { key: 'ACCEPTANCE', name: 'Acceptance', color: CATEGORY_COLOR.ACCEPTANCE, primary: { ...admit, days: [{ date: '2026-11-20', count: 2 }] } },
+      {
+        key: 'ACCEPTANCE',
+        name: 'Acceptance',
+        color: CATEGORY_COLOR.ACCEPTANCE,
+        primary: { ...admit, days: [{ date: '2026-11-20', count: 2 }] },
+      },
     ];
     const svg = phone(renderToString(<DailyBars series={same} {...props} />));
     const rects = [...svg.matchAll(/<rect x="([\d.]+)" y="([\d.]+)" width="[\d.]+" height="([\d.]+)" fill="([^"]+)"/g)];

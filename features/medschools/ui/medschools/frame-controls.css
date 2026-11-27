@@ -568,11 +568,9 @@
    the palette tokens apply. The one fixed layer of this sheet, and only while open: the panel floats 8px off every
    edge, and the scrim is a modal's, so no edge-pinned layer rests on the page. It slides in by a transition (no
    keyframes) and closes at once. The two app-tier rule tests name `.medapp-drawer*` as their one exception. */
-.medapp-menu-btn {
-  margin-inline-start: auto;
-}
 @media (max-width: 599px) {
-  .medapp-bar__actions {
+  .medapp-bar__actions,
+  .medapp-bar__lead {
     display: none;
   }
 }
