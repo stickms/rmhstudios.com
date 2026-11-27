@@ -43,6 +43,8 @@
   "predict-totals": "Yes {{yes}} pts · No {{no}} pts",
   "predict-waiting": "Waiting for the host to ask a question.",
   "predict-your-pick": "You picked {{choice}} for {{points}} pts.",
+  "predict-your-pick_one": "You picked {{choice}} for {{points}} pt.",
+  "predict-your-pick_other": "You picked {{choice}} for {{points}} pts.",
   "remove": "Remove",
   "save-failed": "Could not save",
   "tab-bingo": "Bingo",

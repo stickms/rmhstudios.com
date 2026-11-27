@@ -2,13 +2,13 @@
   "alerts-off": "Alerts off",
   "alerts-on": "Alerts on",
   "error": "Couldn't save the search",
+  "operator-copied": "Copied {{operator}}",
+  "operator-copy": "Copy {{operator}}",
   "operators": "Operators",
   "remove": "Remove",
   "save": "Save",
   "saved": "Search saved",
   "saved-empty-desc": "Search on Explore and choose Save to keep a search here.",
   "saved-empty-title": "No saved searches",
-  "saved-searches": "Saved searches",
-  "operator-copy": "Copy {{operator}}",
-  "operator-copied": "Copied {{operator}}"
+  "saved-searches": "Saved searches"
 }

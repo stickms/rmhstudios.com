@@ -11,6 +11,8 @@
   "controls-move": "Arrow keys — Move   Z — Shoot   X — Melee",
   "difficulty": "Difficulty",
   "failed-to-load-leaderboard": "Failed to load leaderboard.",
+  "field-music-volume": "Music volume",
+  "field-sfx-volume": "Sound effects volume",
   "final-score": "Final Score",
   "game-over": "GAME OVER",
   "graze": "Graze",
@@ -71,6 +73,7 @@
   "menu-public-state": "Public",
   "menu-quickplay-desc": "Jump into the first open public lobby, or start a new one.",
   "menu-quickplay-title": "Quick Play",
+  "menu-quit": "Quit",
   "menu-ready": "Ready",
   "menu-ready-up": "Ready Up",
   "menu-remove": "Remove {{name}}",
@@ -117,8 +120,5 @@
   "submitting": "Submitting...",
   "subtitle": "~ A Bullet Hell Story ~",
   "title": "Dream Rift",
-  "total-score": "Total Score",
-  "menu-quit": "Quit",
-  "field-music-volume": "Music volume",
-  "field-sfx-volume": "Sound effects volume"
+  "total-score": "Total Score"
 }

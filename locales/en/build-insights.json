@@ -13,8 +13,12 @@
   "chart-title": "Day by day",
   "chart-views": "First views per day",
   "chart-views-summary": "{{views}} first views in the last {{days}} days, as bars.",
+  "chart-views-summary_one": "{{views}} first views in the last {{days}} day, as bars.",
+  "chart-views-summary_other": "{{views}} first views in the last {{days}} days, as bars.",
   "curated-note": "A curated build does not record views, so only likes, comments and unlocks are shown. Days are UTC.",
   "empty": "Nothing happened on this build in the last {{days}} days.",
+  "empty_one": "Nothing happened on this build in the last {{days}} day.",
+  "empty_other": "Nothing happened on this build in the last {{days}} days.",
   "error-body": "Try again in a moment.",
   "error-title": "Could not load the insights",
   "link": "Insights",
@@ -22,6 +26,8 @@
   "not-found-title": "Build not found",
   "range-label": "Time range",
   "range-option": "Last {{days}} days",
+  "range-option_one": "Last {{days}} day",
+  "range-option_other": "Last {{days}} days",
   "released": "{{versions}} released",
   "releases-title": "Releases",
   "retry": "Try again",
@@ -40,5 +46,7 @@
   "total-unlocks": "Unlocks",
   "total-views": "First views",
   "views-note": "First views count each signed-in viewer or device once, ever; a returning viewer is not counted again. Days are UTC.",
-  "vs-previous": "{{change}} vs previous {{days}} days"
+  "vs-previous": "{{change}} vs previous {{days}} days",
+  "vs-previous_one": "{{change}} vs previous {{days}} day",
+  "vs-previous_other": "{{change}} vs previous {{days}} days"
 }

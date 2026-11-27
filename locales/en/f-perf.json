@@ -184,6 +184,8 @@
   "profile-result_one": "Top functions by self time (worker pid {{pid}}, {{count}} s)",
   "profile-result_other": "Top functions by self time (worker pid {{pid}}, {{count}} s)",
   "profile-result-meta": "{{samples}} samples; the worker was idle {{idle}}% of the time.",
+  "profile-result-meta_one": "{{samples}} sample; the worker was idle {{idle}}% of the time.",
+  "profile-result-meta_other": "{{samples}} samples; the worker was idle {{idle}}% of the time.",
   "profile-running_one": "Profiling for {{count}} s…",
   "profile-running_other": "Profiling for {{count}} s…",
   "profile-saved": "Saved {{name}}. Open it in Chrome DevTools, Performance tab.",

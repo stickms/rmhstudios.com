@@ -22,11 +22,16 @@
   "doc-write": "Write",
   "first-page": "First page",
   "last-page": "Last page",
+  "loading": "Loading…",
   "move-down": "Move down{{name}}",
   "move-up": "Move up{{name}}",
   "next-page": "Next page",
   "notification-badge-unread_one": "{{count}} unread",
   "notification-badge-unread_other": "{{count}} unread",
+  "page-error-description": "We could not load this page. Try again, or head back home.",
+  "page-error-home": "Go home",
+  "page-error-retry": "Try again",
+  "page-error-title": "Something went wrong",
   "page-of": "Page {{page}} of {{total}}",
   "prev-page": "Previous page",
   "prompt-unavailable": "Couldn't open the dialog. Check your connection and try again.",
@@ -39,10 +44,5 @@
   "select-all": "Select all",
   "selection-actions": "Selection actions",
   "selection-count_one": "{{count}} selected",
-  "selection-count_other": "{{count}} selected",
-  "page-error-description": "We could not load this page. Try again, or head back home.",
-  "page-error-home": "Go home",
-  "page-error-retry": "Try again",
-  "page-error-title": "Something went wrong",
-  "loading": "Loading…"
+  "selection-count_other": "{{count}} selected"
 }

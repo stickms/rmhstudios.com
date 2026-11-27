@@ -71,5 +71,7 @@
   "year-heading": "Last year",
   "year-label": "Practice per day, last 365 days",
   "year-summary": "{{label}}: practised on {{days}} days. Busiest day {{date}}.",
+  "year-summary_one": "{{label}}: practised on {{days}} day. Busiest day {{date}}.",
+  "year-summary_other": "{{label}}: practised on {{days}} days. Busiest day {{date}}.",
   "year-summary-empty": "{{label}}: no practice yet."
 }

@@ -7,6 +7,8 @@
   "album-close": "Close",
   "album-download": "Download",
   "album-item-count": "{{total}} items",
+  "album-item-count_one": "{{total}} item",
+  "album-item-count_other": "{{total}} items",
   "album-link-copied": "Link copied",
   "album-next": "Next",
   "album-prev": "Previous",

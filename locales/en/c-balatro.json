@@ -8,6 +8,7 @@
   "error_webgl": "This browser has WebGL turned off, and the game needs it to draw.",
   "export_hint": "Download your saves as a zip, in the same layout as the desktop game’s save folder.",
   "export_saves": "Export saves",
+  "field-save-file": "Save file",
   "fullscreen": "Fullscreen",
   "fullscreen_exit_hint": "Exit fullscreen (Esc)",
   "fullscreen_hint": "Play fullscreen",
@@ -42,10 +43,9 @@
   "phase_download": "Downloading",
   "phase_starting": "Starting",
   "phase_unpacking": "Unpacking",
-  "rotate_hint": "Turn your phone sideways for a bigger table.",
-  "rotate_hint_dismiss": "Dismiss",
-  "toolbar": "Game controls",
   "quit": "Quit",
   "quit_hint": "Quit the game. Your progress is saved.",
-  "field-save-file": "Save file"
+  "rotate_hint": "Turn your phone sideways for a bigger table.",
+  "rotate_hint_dismiss": "Dismiss",
+  "toolbar": "Game controls"
 }

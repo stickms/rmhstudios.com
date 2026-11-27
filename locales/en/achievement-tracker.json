@@ -19,6 +19,8 @@
   "track-limit_other": "You can track up to {{count}} achievements. Untrack one first.",
   "track-named": "Track {{name}}",
   "tracked-empty": "Track up to {{max}} achievements to follow them here.",
+  "tracked-empty_one": "Track up to {{max}} achievement to follow them here.",
+  "tracked-empty_other": "Track up to {{max}} achievements to follow them here.",
   "tracked-heading_one": "Tracked ({{count}} of {{max}})",
   "tracked-heading_other": "Tracked ({{count}} of {{max}})",
   "tracked-load-failed": "Could not load your tracked achievements.",

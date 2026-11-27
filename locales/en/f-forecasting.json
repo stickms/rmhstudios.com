@@ -25,6 +25,8 @@
   "scored": "{{n}} scored",
   "season": "Forecasting season",
   "season-meta": "{{title}}: {{resolved}} of {{total}} markets resolved. Points only, no coins.",
+  "season-meta_one": "{{title}}: {{resolved}} of {{total}} market resolved. Points only, no coins.",
+  "season-meta_other": "{{title}}: {{resolved}} of {{total}} markets resolved. Points only, no coins.",
   "season-title": "Season title",
   "skill": "Skill vs 50%",
   "starts": "Starts",

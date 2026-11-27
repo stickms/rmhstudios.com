@@ -11,6 +11,8 @@
   "error-dates": "The end date must be today or later, and not before the start.",
   "error-generic": "Could not save your away message. Try again.",
   "error-too-far": "Choose an end date within {{days}} days.",
+  "error-too-far_one": "Choose an end date within {{days}} day.",
+  "error-too-far_other": "Choose an end date within {{days}} days.",
   "inbox-on-until": "Away message on until {{date}}",
   "inbox-starts": "Away message set, ends {{date}}",
   "profile-label": "Also show \"Away until …\" on my profile",

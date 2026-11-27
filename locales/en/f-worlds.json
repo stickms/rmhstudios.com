@@ -6,6 +6,8 @@
   "codex-locked-name": "Unknown",
   "codex-open": "Codex",
   "codex-progress": "{{found}}/{{total}} entries - {{pct}}% complete",
+  "codex-progress_one": "{{found}}/{{total}} entry - {{pct}}% complete",
+  "codex-progress_other": "{{found}}/{{total}} entries - {{pct}}% complete",
   "codex-share": "Share card",
   "codex-title": "CODEX",
   "eff-failed": "Could not rank this yet.",

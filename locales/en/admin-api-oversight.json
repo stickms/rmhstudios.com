@@ -48,6 +48,8 @@
   "row-suspended-note": "Suspended {{date}}: {{reason}}",
   "row-today": "Today {{requests}} requests, {{units}} units",
   "row-webhooks": "{{total}} webhooks, {{disabled}} disabled",
+  "row-webhooks_one": "{{total}} webhook, {{disabled}} disabled",
+  "row-webhooks_other": "{{total}} webhooks, {{disabled}} disabled",
   "row-week": "7 days {{requests}} requests, {{units}} units",
   "set-cap": "Set cap",
   "show-more": "Show more",
@@ -60,6 +62,8 @@
   "suspend-confirm": "Suspend",
   "suspend-label": "Reason (the owner can read it)",
   "suspend-reason-length": "The reason is {{min}} to {{max}} characters.",
+  "suspend-reason-length_one": "The reason is {{min}} to {{max}} character.",
+  "suspend-reason-length_other": "The reason is {{min}} to {{max}} characters.",
   "suspend-title": "Suspend this key",
   "suspended-toast": "Key suspended.",
   "test-mark": "Test"

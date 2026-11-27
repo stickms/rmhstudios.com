@@ -32,6 +32,8 @@
   "matches": "Matches",
   "max-players": "Bracket size",
   "n-coins": "{{n}} coins",
+  "n-coins_one": "{{n}} coin",
+  "n-coins_other": "{{n}} coins",
   "name": "Name",
   "name-ph": "Friday Night Showdown",
   "not-found": "This tournament no longer exists.",

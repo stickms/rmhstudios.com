@@ -14,6 +14,7 @@
   "challenge-sent": "Challenge sent!",
   "challenge-title-named": "Challenge {{name}}",
   "challenge-title-open": "Post an open challenge",
+  "compete-description": "Challenge anyone to a coin-staked head-to-head match on any skill game.",
   "create": "Create challenge",
   "create-failed": "Could not create challenge",
   "detail-title": "Wager Match",
@@ -39,6 +40,5 @@
   "tab-open": "Open challenges",
   "title": "Wager Matches",
   "vs": "vs",
-  "who-won": "Who won?",
-  "compete-description": "Challenge anyone to a coin-staked head-to-head match on any skill game."
+  "who-won": "Who won?"
 }

@@ -17,6 +17,8 @@
   "error-published": "This post has already been published",
   "error-unknown": "Could not save. Try again.",
   "error-warning": "A reason is at most {{max}} characters on one line",
+  "error-warning_one": "A reason is at most {{max}} character on one line",
+  "error-warning_other": "A reason is at most {{max}} characters on one line",
   "field-audience": "Audience",
   "field-image-alt": "Description of image {{number}}",
   "field-images": "Image descriptions",

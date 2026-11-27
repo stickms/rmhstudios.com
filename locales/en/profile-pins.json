@@ -1,5 +1,7 @@
 {
   "limit-reached": "You can pin up to {{max}} posts. Unpin one first.",
+  "limit-reached_one": "You can pin up to {{max}} post. Unpin one first.",
+  "limit-reached_other": "You can pin up to {{max}} posts. Unpin one first.",
   "move-down": "Move down",
   "move-down-label": "Move down, pinned {{position}} of {{total}}",
   "move-error": "Could not move the pin",

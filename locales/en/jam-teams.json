@@ -9,6 +9,8 @@
   "empty": "No teammates yet. Teammates are credited on this entry and cannot rate it.",
   "error-closed": "Submissions are closed, so the team can no longer change.",
   "error-full": "A team can have at most {{max}} teammates.",
+  "error-full_one": "A team can have at most {{max}} teammate.",
+  "error-full_other": "A team can have at most {{max}} teammates.",
   "error-generic": "Something went wrong. Try again.",
   "error-gone": "That invitation is no longer open.",
   "error-ineligible": "That member can't be invited.",

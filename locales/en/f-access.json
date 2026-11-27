@@ -10,6 +10,7 @@
   "activity-label": "Show my study timer in notifications",
   "bedtime-desc": "Dim and soften colours during your quiet hours.",
   "bedtime-label": "Bedtime mode",
+  "bedtime-needs-hours": "Dims and softens colours during the quiet hours above, once you set them.",
   "bedtime-no-quiet": "You have not set quiet hours yet.",
   "bedtime-set-quiet": "Set quiet hours",
   "bg-dim": "Dim",
@@ -29,7 +30,9 @@
   "fb-desc": "You shook your phone. Tell us what went wrong or what you wish worked.",
   "fb-title": "Report a problem",
   "formats-desc": "Clock, week start and number style, independent of your language.",
+  "formats-desc-week-numbers": "Week start and number style, independent of your language.",
   "formats-preview": "Preview: {{time}} · {{number}}",
+  "formats-preview-number": "Preview: {{number}}",
   "formats-title": "Formats",
   "game-again": "Play again",
   "game-canvas": "Dodge game: move left and right to avoid falling blocks",
@@ -76,8 +79,5 @@
   "week-label": "Week starts on",
   "week-mon": "Monday",
   "week-sat": "Saturday",
-  "week-sun": "Sunday",
-  "bedtime-needs-hours": "Dims and softens colours during the quiet hours above, once you set them.",
-  "formats-desc-week-numbers": "Week start and number style, independent of your language.",
-  "formats-preview-number": "Preview: {{number}}"
+  "week-sun": "Sunday"
 }

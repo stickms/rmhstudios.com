@@ -15,6 +15,8 @@
   "over-max": "That exceeds your redeemable earnings.",
   "payout": "Payout",
   "payout-note": "Payouts require a verified creator account and admin review (min {{n}} coins).",
+  "payout-note_one": "Payouts require a verified creator account and admin review (min {{n}} coin).",
+  "payout-note_other": "Payouts require a verified creator account and admin review (min {{n}} coins).",
   "payout-ph": "Payout account reference",
   "pending": "Pending",
   "redeem": "Redeem coins",

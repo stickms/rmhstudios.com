@@ -20,6 +20,10 @@
   "load-failed": "Could not load this account.",
   "methods-heading": "Sign-in methods kept",
   "methods-none": "No passkeys or linked accounts.",
+  "notice-body": "RMH Studios staff secured your account after a report that it may have been accessed by someone else. What changed: {{list}}. Change your password and remove any passkeys or linked sign-in accounts you do not recognise.",
+  "notice-cta": "Review your sign-in methods",
+  "notice-preview": "Staff signed your account out everywhere and revoked its keys.",
+  "notice-subject": "Your RMH Studios account was secured",
   "passkey": "Passkey",
   "passkey-named": "Passkey: {{name}}",
   "reason-label": "Reason (staff only, never shown to the member)",
@@ -34,9 +38,5 @@
   "result-sessions_other": "Sessions ended: {{count}}",
   "result-webhooks_one": "Webhooks disabled: {{count}}",
   "result-webhooks_other": "Webhooks disabled: {{count}}",
-  "submit": "Secure account",
-  "notice-preview": "Staff signed your account out everywhere and revoked its keys.",
-  "notice-subject": "Your RMH Studios account was secured",
-  "notice-body": "RMH Studios staff secured your account after a report that it may have been accessed by someone else. What changed: {{list}}. Change your password and remove any passkeys or linked sign-in accounts you do not recognise.",
-  "notice-cta": "Review your sign-in methods"
+  "submit": "Secure account"
 }

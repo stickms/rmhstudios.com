@@ -14,6 +14,8 @@
   "editor-help": "A description lets people who use screen readers understand the image. Say what's in it.",
   "editor-placeholder": "A golden retriever running on a beach at sunset",
   "editor-remaining": "{{remaining}} characters left",
+  "editor-remaining_one": "{{remaining}} character left",
+  "editor-remaining_other": "{{remaining}} characters left",
   "editor-title": "Describe this image",
   "hide-description": "Hide description of image {{n}}",
   "image-n-without-description": "Image {{n}} without description",

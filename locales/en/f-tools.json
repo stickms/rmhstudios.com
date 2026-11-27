@@ -67,6 +67,8 @@
   "plan-save-failed": "Check the exam date and topics, then try again",
   "plan-saved": "Plan saved",
   "plan-shortfall": "This does not fit: you are {{hours}} hours short. Add study time or cut a topic.",
+  "plan-shortfall_one": "This does not fit: you are {{hours}} hour short. Add study time or cut a topic.",
+  "plan-shortfall_other": "This does not fit: you are {{hours}} hours short. Add study time or cut a topic.",
   "plan-start": "Start this block",
   "plan-start-failed": "Could not open a study room",
   "plan-title": "Plan name",

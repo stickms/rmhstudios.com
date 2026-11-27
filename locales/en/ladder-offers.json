@@ -51,6 +51,10 @@
   "compare.start": "Start date",
   "compare.state": "Status",
   "compare.yearly": "Yearly total after year one",
+  "field-base-pay": "Base salary",
+  "field-bonus-value": "Bonus per year",
+  "field-equity-grant": "Equity grant value",
+  "field-sign-on": "Sign-on bonus",
   "form.basePay": "Base salary",
   "form.bonusAmount": "An amount per year",
   "form.bonusAmountValue": "Bonus per year",
@@ -107,9 +111,5 @@
   "pipeline.viewOffer": "View the offer",
   "remote.hybrid": "Hybrid",
   "remote.onsite": "On-site",
-  "remote.remote": "Remote",
-  "field-base-pay": "Base salary",
-  "field-bonus-value": "Bonus per year",
-  "field-sign-on": "Sign-on bonus",
-  "field-equity-grant": "Equity grant value"
+  "remote.remote": "Remote"
 }

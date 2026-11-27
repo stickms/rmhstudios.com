@@ -47,5 +47,7 @@
   "thread-panel-label": "Post as thread",
   "thread-post-button": "Post as thread ({{n}} posts)",
   "thread-posted": "Thread posted",
-  "thread-too-long": "A thread can have at most {{max}} posts. Shorten the draft."
+  "thread-too-long": "A thread can have at most {{max}} posts. Shorten the draft.",
+  "thread-too-long_one": "A thread can have at most {{max}} post. Shorten the draft.",
+  "thread-too-long_other": "A thread can have at most {{max}} posts. Shorten the draft."
 }

@@ -1,5 +1,7 @@
 {
   "all-description": "{{n}} records, newest first.",
+  "all-description_one": "{{n}} record, newest first.",
+  "all-description_other": "{{n}} records, newest first.",
   "all-title": "All your records",
   "chart-label": "Your best over time",
   "chart-points": "Records",

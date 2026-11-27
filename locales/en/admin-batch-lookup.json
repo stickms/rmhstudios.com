@@ -14,5 +14,7 @@
   "result-count_one": "{{count}} item looked up",
   "result-count_other": "{{count}} items looked up",
   "submit": "Look up",
-  "too-many": "At most {{max}} items"
+  "too-many": "At most {{max}} items",
+  "too-many_one": "At most {{max}} item",
+  "too-many_other": "At most {{max}} items"
 }

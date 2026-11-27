@@ -23,5 +23,7 @@
   "summary": "{{matches}} on {{places}}",
   "too-short": "Type at least 2 characters",
   "truncated": "Showing the first {{shown}} of {{total}} matches. Next and Previous still reach every one.",
+  "truncated_one": "Showing the first {{shown}} of {{total}} match. Next and Previous still reach every one.",
+  "truncated_other": "Showing the first {{shown}} of {{total}} matches. Next and Previous still reach every one.",
   "whole-words": "Whole words"
 }
