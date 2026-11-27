@@ -308,6 +308,12 @@ Consequences:
   (`lastRealRunWithin`, `outcome: 'skipped-min-interval'`) stops extra runs after a deploy; the worker queues the first
   run at start while none has finished OK or PARTIAL (`admitCurriculumOwed`). Result: `MedSchoolFact` rows with source
   `ADMIT` and a `MedSourceRun` (job `admit-curriculum`); detail in `features/medschools/CLAUDE.md`.
+  **Admit school results (owner 2026-11-27).** `medschools.admit-school-results` (daily `50 5 * * *`,
+  `MEDSCHOOLS_ADMIT_SCHOOL_RESULTS_CRON`, `exclusive`, `retryLimit: 0`, expires after 3 h, same Admit host, gate and
+  dedupe secret as the other Admit event jobs): one `getCycleResultsBySchool` request per active school and cycle, the
+  daily pass for the cycle in progress and then, while owed, a one-time pass for the two before it (each ends itself at
+  80 min). Queued at start while the past pass is owed (`schoolResultsPastOwed`). Detail:
+  `features/medschools/CLAUDE.md`.
   **Forecast job (phase 5).** `medschools.forecast` (daily at 06:40 UTC, `MEDSCHOOLS_FORECAST_CRON`, `exclusive`,
   `retryLimit: 0`, expires after 20 min, tick guarded with `maxRuntimeMs` equal to that expiry and a `shouldStop` one
   minute before it; cron owned by the `jobs` timekeeper through `startScheduledConsumer`; no flag, no secret and **no

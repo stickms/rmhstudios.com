@@ -124,6 +124,7 @@ model MedSchool {
   trackerApplications  MedTrackerApplication[]
   listItems            MedSchoolListItem[]
   forecasts            MedForecast[]
+  admitCycleTotals     MedAdmitCycleTotal[]
   waitCurves           MedWaitCurve[]
   secondaryPrompts     MedSecondaryPrompt[]
   secondaryChecks      MedSecondaryCheck[]
@@ -495,6 +496,26 @@ model MedAdmitMember {
 
   @@index([updatedAt])
   @@map("med_admit_member")
+}
+
+/// Admit's published totals for one school and one cycle (the figures its school page prints under "Key Statistics",
+/// from `getCycleResultsBySchool`): counts only, never a person. `cycleYear` is the entry year (the page's 2026-2027
+/// cycle is 2027). The index sets the interviews we hold against `interviews` ("x of y interviews accounted for").
+model MedAdmitCycleTotal {
+  id           String   @id @default(cuid())
+  schoolId     String
+  cycleYear    Int
+  applications Int?
+  interviews   Int?
+  acceptances  Int?
+  rejections   Int?
+  fetchedAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, cycleYear])
+  @@map("med_admit_cycle_total")
 }
 
 /// One Admit school-forum thread (a school's thread for one cycle on med.admit.org): a school and a cycle, never a person.

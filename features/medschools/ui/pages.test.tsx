@@ -92,6 +92,7 @@ const school = (slug: string, o: Partial<MedSchoolListItemDto> = {}): MedSchoolL
   state: 'NC',
   reported: { source: 'CYCLETRACK', count: 120 },
   latest: null,
+  accounted: null,
   ...o,
 });
 
@@ -165,6 +166,23 @@ describe('IndexPage', () => {
     );
     expect(html).toContain('1 reported invite, Admit.org');
     expect(html).toContain('1,200 reported invites, Admit.org');
+  });
+  it("sets the interviews we hold against Admit's own total when the figures are Admit's", () => {
+    h.search = {};
+    const html = withClient(
+      seedIndex([
+        school('nyu', { reported: { source: 'ADMIT', count: 150 }, accounted: { counted: 155, of: 220 } }),
+        // CycleTrack's figures are not Admit's: no Admit denominator beside them.
+        school('duke', { reported: { source: 'CYCLETRACK', count: 12 }, accounted: { counted: 5, of: 30 } }),
+        // Admit's figures but no published total: the plain count.
+        school('unc', { reported: { source: 'ADMIT', count: 7 }, accounted: null }),
+      ]),
+      <IndexPage />,
+    );
+    expect(html).toContain('155 of 220 interviews accounted for, Admit.org');
+    expect(html).toContain('12 reported invites, CycleTrack');
+    expect(html).not.toContain('5 of 30');
+    expect(html).toContain('7 reported invites, Admit.org');
   });
   it('prints nothing in the figure slot of a school with no data', () => {
     h.search = {};

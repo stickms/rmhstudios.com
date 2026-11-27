@@ -411,6 +411,38 @@ describe('medschools-worker wiring', () => {
     expect(src.slice(src.indexOf('async function shutdown'))).toContain('admitHistoryConsumer?.pause()');
   });
 
+  it('registers medschools.admit-school-results as its own exclusive queue, daily after the interviews walk, behind the Admit gate', () => {
+    const src = flat();
+    expect(src).toContain("const ADMIT_SCHOOL_RESULTS_QUEUE = 'medschools.admit-school-results'");
+    expect(src).toContain("process.env.MEDSCHOOLS_ADMIT_SCHOOL_RESULTS_CRON?.trim() || '50 5 * * *'");
+    expect(src).toContain('const ADMIT_SCHOOL_RESULTS_EXPIRY_S = 3 * 60 * 60');
+    const reg = slice(src, 'admitSchoolResultsConsumer = await startScheduledConsumer', 'sdnLiveConsumer = await');
+    expect(reg).toContain('queue: ADMIT_SCHOOL_RESULTS_QUEUE');
+    expect(reg).toContain('expireInSeconds: ADMIT_SCHOOL_RESULTS_EXPIRY_S');
+    expect(reg).toContain('retryLimit: 0');
+    expect(reg).toContain('handler: admitSchoolResultsTick');
+    const tick = slice(src, 'const admitSchoolResultsTick', 'const admitForumsTick');
+    expect(tick).toContain("guarded( 'admit-school-results'");
+    expect(tick).toContain('host: admitHost');
+    expect(tick.indexOf("admitGate('admit-school-results'")).toBeLessThan(tick.indexOf('runAdmitSchoolResults('));
+    // the daily pass first, then the one-time past pass only while it is owed
+    expect(tick.indexOf("kind: 'current'")).toBeLessThan(tick.indexOf("kind: 'past'"));
+    expect(tick.indexOf('schoolResultsPastOwed(')).toBeLessThan(tick.indexOf("kind: 'past'"));
+    expect(tick).toContain('ADMIT_SCHOOL_RESULTS_EXPIRY_S * 1000');
+    // two passes of at most 80 min each fit the 3 h expiry
+    expect(src).toContain('const ADMIT_SCHOOL_RESULTS_RUN_DEADLINE_MS = 80 * 60_000');
+    expect(src.slice(src.indexOf('async function shutdown'))).toContain('admitSchoolResultsConsumer?.pause()');
+  });
+
+  it('the past school results are queued at start while owed, only when Admit is enabled and the secret is set', () => {
+    const src = flat();
+    const main = src.slice(src.indexOf('async function main()'));
+    const at = main.indexOf('schoolResultsPastOwed(');
+    expect(at).toBeGreaterThan(-1);
+    expect(main.slice(Math.max(0, at - 160), at)).toContain('ADMIT_ENABLED && secretOk()');
+    expect(main.slice(at, at + 400)).toContain('admitSchoolResultsConsumer.runNow({ bootstrap: true })');
+  });
+
   it('the history backfill is queued at start while it is owed, only when Admit is enabled and the secret is set', () => {
     const src = flat();
     const main = src.slice(src.indexOf('async function main()'));

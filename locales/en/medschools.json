@@ -414,6 +414,7 @@
   "import-unmatched": "Could not match this school. Pick it below.",
   "import-unrecognised-school": "Unrecognised school",
   "import-year-inferred": "The file had no year; {{year}} was chosen. Check it.",
+  "index-accounted": "{{n}} of {{of}} interviews accounted for, {{source}}",
   "index-ask": "Ask",
   "index-day-count": "{{n}}, {{source}}",
   "index-day-heading": "Interview invites reported on {{date}}",

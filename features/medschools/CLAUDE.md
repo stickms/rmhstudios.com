@@ -502,6 +502,42 @@ predate the 13 extras and have no entry for them yet.
 - The SDN live queue runs daily (SDN forum activity is slow); AI extraction is capped monthly. Detail:
   `server/CLAUDE.md`.
 
+## Admit school results and "accounted for" (owner 2026-11-27)
+
+Why the index showed 46 interviews for NYU while Admit's school page said 220: the live feed is the newest 100 updates
+(about 6 h), and `getAllCycleResults` (the backfill's member discovery) returns only the latest update per school and
+status, so the profile backfill could reach only a sliver of a school's members. Admit's own school page loads
+**`getCycleResultsBySchool(slug, year)`**: the page's totals and one row per listed applicant (member id, `md_phd`,
+secondary / interview / decision dates), for the current cycle and the two before it (`year` is the cycle's start year,
+2026 = 2026-2027; the site's entry year is `year + 1`). The list is capped to visible members (NYU 2026: 606 rows of 836
+applications, 155 with an interview date), so we still hold fewer than Admit's printed total.
+
+- **Job.** `scrape/run-admit-school-results.ts`, queue `medschools.admit-school-results` (daily `50 5 * * *`,
+  `MEDSCHOOLS_ADMIT_SCHOOL_RESULTS_CRON`, `exclusive`, `retryLimit: 0`, expires after 3 h, behind the Admit gate and the
+  dedupe secret). One request per active school and cycle on the shared Admit host's backfill session (3 s plus 0-1 s
+  jitter, the daily budget, robots, the three-strike halt). Two passes in one tick, each its own `MedSourceRun` (source
+  `ADMIT`) and each ending itself at 80 min: **`admit-school-results`** (the cycle in progress; June to August also the
+  one before it, whose decisions roll over on 1 September) and **`admit-school-results-past`** (the two earlier cycles,
+  owed until one run ends OK: `schoolResultsPastOwed`; queued at worker start while owed, a PARTIAL run is retried by
+  the next tick; a repeat is a no-op because every key already exists).
+- **Same keys as the feed and the history.** Each listed applicant's dated entries go through the adapter's `mapHistory`
+  (day-only dates at UTC midnight, the event-type-aware cycle year, no future dates) and `admitMemberKey`, so one member
+  counts once per type per school per cycle whichever path saw it first; `commitAdmitEvents` keeps first report wins,
+  earliest day kept. The program is `md_phd === true` PHD, else REG (the profile rule); no profile lookup. A row with no
+  member id cannot be keyed and is skipped and counted.
+- **Anonymity.** `SCHOOL_CYCLE_RESULTS` selects the totals, `user_id`, `md_phd`, the three dates and the decision: never
+  `display_name`, `avatar` or `admit_score`. The id is hashed inside the key closure and dropped.
+  `run-admit-school-results.test.ts` holds that nothing written or logged carries an id.
+- **Admit's totals.** `MedAdmitCycleTotal` (`schoolId` x `cycleYear`, entry year; `applications`, `interviews`,
+  `acceptances`, `rejections`; counts only, institutional, no erasure; migration
+  `20270106090000_medschools_admit_cycle_totals`) is upserted by the job after each page.
+- **Index blurb.** `GET /schools` adds `accounted: { counted, of } | null` per school (`accountedBySchool`): `of` is
+  Admit's printed interview total for the site cycle, `counted` every dated ADMIT interview event we hold for the school
+  and cycle (all programs, null included; one `groupBy` over `med_cycle_event`); `of` is raised to `counted` when
+  Admit's total lags, so it never reads as more than all of them; null with no total. The row shows "155 of 220
+  interviews accounted for, Admit.org" only when the reader's figures are Admit's (`reported.source === 'ADMIT'`); with
+  CycleTrack's figures the line is the plain count, because the denominator is Admit's. Never added to another source's.
+
 ## Statistics, the Forecast tab and the personal chance (phase 5)
 
 Model and privacy first, then the UI. The plan's decision numbers (D1-D12) and rulings (R1-R12) are in

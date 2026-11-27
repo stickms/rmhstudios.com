@@ -107,6 +107,13 @@ export interface MedSchoolListItemDto {
    * program set), or null. `occurredAt` is to the minute; `dayOnly` when the source gave a day, not a time.
    */
   latest: { eventType: MedEventTypeId; occurredAt: string; dayOnly: boolean } | null;
+  /**
+   * How many of Admit's own published interviews for this school and cycle (`of`, the figure its school page prints)
+   * we hold as dated Admit events (`counted`, every program, the primary or not): "x of y interviews accounted for".
+   * `of` is never below `counted`. Null when Admit's total is not known for the school. A figure about ADMIT only; it
+   * is never added to another source's.
+   */
+  accounted: { counted: number; of: number } | null;
 }
 
 export interface SourceLinkDto {

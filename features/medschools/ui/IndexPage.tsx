@@ -162,7 +162,18 @@ export function IndexPage() {
                           state: s.state,
                         })}
                       </p>
-                      {s.reported ? (
+                      {s.reported?.source === 'ADMIT' && s.accounted ? (
+                        // Admit's own total for the school is the denominator, so this reads only when the figures
+                        // are Admit's: the dated interviews we hold of the ones Admit says were reported.
+                        <p className="medapp-row__meta medapp-row__reported">
+                          {t('index-accounted', {
+                            n: nf.format(s.accounted.counted),
+                            of: nf.format(s.accounted.of),
+                            source: sourceName('ADMIT'),
+                            defaultValue: '{{n}} of {{of}} interviews accounted for, {{source}}',
+                          })}
+                        </p>
+                      ) : s.reported ? (
                         <p className="medapp-row__meta medapp-row__reported">
                           {t('index-reported', {
                             count: s.reported.count,

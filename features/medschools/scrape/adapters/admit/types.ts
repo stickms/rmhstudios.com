@@ -50,6 +50,28 @@ export interface AdmitProfile {
   skipped: { unknownDecision: number; badDate: number; malformedEntries: number };
 }
 
+/** One applicant of a school's cycle page: the MD-PhD flag and dated events, anonymous like a feed event. */
+export interface SchoolCycleMember {
+  /** `md_phd` true is MD-PhD, anything else on a listed applicant is MD (the profile rule). */
+  program: 'REG' | 'PHD';
+  history: HistoryEvent[];
+}
+
+/** What one school-cycle request yields: Admit's printed totals and the listed applicants' events. */
+export interface SchoolCycle {
+  totals: {
+    applications: number | null;
+    interviews: number | null;
+    acceptances: number | null;
+    rejections: number | null;
+  };
+  members: SchoolCycleMember[];
+  /** Listed rows with no member id (cannot be keyed, so cannot be counted once) or failing validation. */
+  skippedRows: number;
+  /** Events dropped: unknown decision, missing or bad date, future date. */
+  skipped: { unknownDecision: number; badDate: number; malformedEntries: number };
+}
+
 export interface AdmitSchoolRef {
   slug: string;
   name: string;

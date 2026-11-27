@@ -155,3 +155,26 @@ export const curriculumRow = z.object({
   lecture_attendance_required: z.boolean().nullable(),
   home_hospital: z.array(z.string()).nullable(),
 });
+
+/** One listed applicant of a school's cycle, validated on its own so a malformed row drops only itself. */
+export const cycleApplicantRow = z.object({
+  user_id: z.string().nullish(),
+  md_phd: z.boolean().nullish(),
+  secondary_submitted: z.string().nullish(),
+  interview_received: z.string().nullish(),
+  decision_date: z.string().nullish(),
+  decision: z.string().nullish(),
+});
+
+/** `null` is a school or cycle Admit has no page for (not an error, not an empty cycle). */
+export const schoolCycleData = z.object({
+  getCycleResultsBySchool: z
+    .object({
+      total_applications: num,
+      num_of_interviews: num,
+      num_of_acceptances: num,
+      num_of_rejections: num,
+      current_applicants: z.array(z.unknown()).nullish(),
+    })
+    .nullable(),
+});
