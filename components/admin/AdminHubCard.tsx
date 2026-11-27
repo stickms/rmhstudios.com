@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ArrowRight } from 'lucide-react';
 
 /**
  * One destination on the /admin dashboard: title, one line, the whole row is
@@ -26,7 +25,7 @@ export function AdminHubCard({
   badge?: ReactNode;
 }) {
   return (
-    <Link to={to} className="group flex min-w-0 items-start gap-3 border-b border-site-border py-3">
+    <Link to={to} className="row-hover flex min-w-0 items-start gap-3 border-b border-site-border py-3">
       <span className="min-w-0 flex-1">
         <span className="t-heading flex items-center gap-2 text-site-text">
           <span className="min-w-0">{title}</span>
@@ -34,10 +33,6 @@ export function AdminHubCard({
         </span>
         <span className="t-body mt-1 block text-site-text-muted">{description}</span>
       </span>
-      <ArrowRight
-        className="mt-1 size-4 shrink-0 text-site-text-muted transition-colors duration-site-fast group-hover:text-site-text rtl:-scale-x-100"
-        aria-hidden
-      />
     </Link>
   );
 }
