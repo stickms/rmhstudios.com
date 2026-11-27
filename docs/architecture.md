@@ -246,13 +246,14 @@ live origin policy lacks permission; JavaScript remains the fallback. See
    - `docker compose up -d --scale web=0` — everything **except** web
    - **blue/green web hotswap** (`deploy/hotswap-web.sh`): start the new web container on the spare port (7005 ⇄ 7015),
      health-gate it, flip Apache's active-port include with a graceful reload, stop (not delete) the old container
-   - **smoke gate + bake** (`deploy/smoke-test.sh`): probe the real user path through Apache — `/` renders, `/api/ready`
-     is 200, `/blog/rss.xml` and `/sitemap.xml` carry their XML — once right after the flip, then every 20s for
-     `BAKE_SECONDS` (default 300) with the old container kept stopped as a rollback target. 3 consecutive failed rounds,
-     or the new container dying or restarting, **automatically flips traffic back** to the old container (only if the
-     old one comes back healthy — a shared-dependency outage leaves the new one live and fails the deploy loudly
-     instead). The deploy flock is held through the bake, so a newer push queues behind it.
-   - parallel health checks; prune stale + rollback images
+   - **smoke gate + bake** (`deploy/smoke-test.sh`, policy in `deploy/bake-policy.sh`): probe the real user path through
+     Apache — `/` renders, `/api/ready` is 200, `/blog/rss.xml` and `/sitemap.xml` carry their XML — right after the flip
+     (a 4-minute budget), then every 20s for `BAKE_SECONDS` (default 300) with the old container kept stopped as a rollback
+     target. The first 90 s of the bake are a startup grace, 3 consecutive *broken* rounds (or 9 *slow or unreachable* ones),
+     or the new container restarting more than once or staying down, **automatically flips traffic back** to the old
+     container (only if the old one comes back healthy — a shared-dependency outage leaves the new one live and fails the
+     deploy loudly instead). The deploy flock is held through the bake, so a newer push queues behind it.
+   - parallel health checks (a failed wave is re-checked for 90 s before the non-web services are rolled back); prune stale + rollback images
 3. **Rollback:** _web_ rolls back automatically during the bake (above) and the deploy reports "auto-rolled back" to
    Discord + the commit status. The rollback is web-only and runs after migrations, so a release must keep the old web
    compatible with its schema (expand/contract). Beyond the bake, previous SHA-tagged images are kept (one per env);

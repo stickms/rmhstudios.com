@@ -95,7 +95,11 @@ case "$*" in
     if [ "\${MOCK_MIGRATION_FAIL:-0}" = 1 ]; then echo 'The \x60unsafe_migration\x60 migration started at 2026-10-23 failed'; echo P3009; exit 1; fi ;;
   *'{{.DockerRootDir}}'*) echo "$MOCK_ROOT" ;;
   *'{{.State.Running}} {{.RestartCount}}'*)
-    if [ -f "$MOCK_ROOT/late-failure" ] && [ ! -f "$MOCK_ROOT/restored" ]; then echo "true $(cat "$MOCK_ROOT/late-failure")"; else echo 'true 0'; fi ;;
+    if [ -f "$MOCK_ROOT/late-failure" ] && [ ! -f "$MOCK_ROOT/restored" ]; then
+      n=$(cat "$MOCK_ROOT/late-failure"); echo "true $n"
+      # A crash loop keeps restarting: every look at the container sees one more restart.
+      [ "\${MOCK_LATE_GROWS:-0}" != 1 ] || echo $((n + 1)) > "$MOCK_ROOT/late-failure"
+    else echo 'true 0'; fi ;;
   *' up -d '*) [ ! -f "$MOCK_ROOT/late-failure" ] || touch "$MOCK_ROOT/restored" ;;
   *' ps -q '*) echo fixture-worker ;;
   *'{{.State.Health.Status}}'*) echo "\${MOCK_WIKI_HEALTH:-healthy}" ;;
@@ -332,14 +336,42 @@ describe('production deploy orchestration', () => {
     expect(readState(stateDir, 'live')?.id).toMatch(/^release-\d+-\d+$/);
     expect(readState(stateDir, 'last-successful')?.sha).toBe(shaB);
   }, 25_000);
-  it('detects a worker crash-loop (two restarts) after the initial parallel checks finish', () => {
+  it('rolls back a worker that is still crash-looping after the second look', () => {
     const { result, stateDir } = fixture({
       MOCK_LATE_FAILURE: '1',
       MOCK_LATE_RESTARTS: '2',
+      MOCK_LATE_GROWS: '1',
+      HEALTH_RECHECK_SECONDS: '1',
+    });
+    expect(result.status, result.error?.message || result.stdout + result.stderr).toBe(1);
+    expect(result.stdout).toContain('watching 1s more before deciding on a rollback');
+    expect(result.stdout).toContain('Still failing after the second look');
+    expect(result.stdout).toContain('Rolling back non-web services');
+    expect(readState(stateDir, 'last-successful')?.sha).toBe(shaA);
+    expect(readState(stateDir, 'release-candidate')?.phase).toBe('rolledback');
+  }, 25_000);
+  // A worker that restarted twice and then settled is a busy host, not a bad release: the first wave fails it,
+  // the second look (a fresh baseline, then a quiet window) forgives it, and nothing is rolled back.
+  it('forgives a worker that flapped and then settled: no rollback after the second look', () => {
+    const { result, stateDir } = fixture({
+      MOCK_LATE_FAILURE: '1',
+      MOCK_LATE_RESTARTS: '2',
+      HEALTH_RECHECK_SECONDS: '1',
+    });
+    expect(result.status, result.error?.message || result.stdout + result.stderr).toBe(0);
+    expect(result.stdout).toContain('health checks failed for:');
+    expect(result.stdout).toContain('Recovered:');
+    expect(result.stdout).not.toContain('Rolling back non-web services');
+    expect(readState(stateDir, 'live')?.sha).toBe(shaB);
+  }, 25_000);
+  it('HEALTH_RECHECK_SECONDS=0 rolls back on the first failed wave, as before', () => {
+    const { result, stateDir } = fixture({
+      MOCK_LATE_FAILURE: '1',
+      MOCK_LATE_RESTARTS: '2',
+      HEALTH_RECHECK_SECONDS: '0',
     });
     expect(result.status, result.error?.message || result.stdout + result.stderr).toBe(1);
     expect(result.stdout).toContain('Rolling back non-web services');
-    expect(readState(stateDir, 'last-successful')?.sha).toBe(shaA);
     expect(readState(stateDir, 'release-candidate')?.phase).toBe('rolledback');
   }, 25_000);
   it('tolerates ONE worker restart that left it running: warns, does not roll back', () => {
@@ -357,6 +389,7 @@ describe('production deploy orchestration', () => {
       MOCK_LATE_FAILURE: '1',
       MOCK_LATE_RESTARTS: '1',
       WORKER_RESTARTS_TOLERATED: '0',
+      HEALTH_RECHECK_SECONDS: '0',
     });
     expect(result.status, result.error?.message || result.stdout + result.stderr).toBe(1);
     expect(result.stdout).toContain('Rolling back non-web services');
