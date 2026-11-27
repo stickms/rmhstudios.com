@@ -53,7 +53,6 @@ export async function uniqueAlbumSlug(title: string): Promise<string> {
   const base = slugifyAlbum(title);
   if (!(await prisma.album.findUnique({ where: { slug: base }, select: { id: true } }))) return base;
   let n = 2;
-  // eslint-disable-next-line no-await-in-loop
   while (await prisma.album.findUnique({ where: { slug: `${base}-${n}` }, select: { id: true } })) n++;
   return `${base}-${n}`;
 }

@@ -81,6 +81,9 @@ jobs:
         run: pnpm run lint
       - name: Architecture ratchet (import cycles + layer boundaries)
         run: pnpm run lint:ratchet
+      # Type-aware rules (floating promises) over the server tier: ~50 s and ~7 GB, run after tsc has exited.
+      - name: Type-aware lint ratchet (server tier)
+        run: pnpm run lint:types
       - name: Accessibility ratchet (jsx-a11y findings only go down)
         run: pnpm run a11y:ratchet
       - name: Docs freshness

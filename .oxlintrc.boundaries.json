@@ -21,6 +21,7 @@
     "check_db.js",
     "sync_db.js",
     ".claude/worktrees/**",
+    "packages/sdk/src/**",
     "public/**",
     "app/routeTree.gen.ts"
   ],

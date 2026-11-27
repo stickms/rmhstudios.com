@@ -510,7 +510,6 @@ export function VoidBreakerGame() { const fmt = useLocaleFormat();
     setBossIntro({ name: hudRef.current.bossName, phase: hudRef.current.bossPhase });
     const id = setTimeout(() => setBossIntro(null), 3400);
     return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hud.bossActive]);
 
   // Wave-clear celebration: roll the wave number up (0 → current) over ~0.6s.

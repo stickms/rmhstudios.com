@@ -41,7 +41,6 @@ class SecretWordGame extends BaseMinigame {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   handleInput(_userId: string, _action: string, _data: unknown): void {}
 
   /**

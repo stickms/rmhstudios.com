@@ -26,10 +26,11 @@
     "webhook-server.cjs",
     "check_db.js",
     "sync_db.js",
-    ".claude/worktrees/**"
+    ".claude/worktrees/**",
+    "packages/sdk/src/**"
   ],
   "options": {
-    "reportUnusedDisableDirectives": "off"
+    "reportUnusedDisableDirectives": "warn"
   },
   "env": {
     "builtin": true,

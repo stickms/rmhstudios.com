@@ -1,0 +1,36 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "typescript"
+  ],
+  "categories": {
+    "correctness": "off"
+  },
+  "ignorePatterns": [
+    ".cache/**",
+    ".output/**",
+    ".tanstack/**",
+    ".vinxi/**",
+    "bazel-*/**",
+    "dist-server/**",
+    "build/**",
+    "**/node_modules/**",
+    "public/vibe-packages/**",
+    "public/balatro/engine/**",
+    "webhook-server.cjs",
+    "check_db.js",
+    "sync_db.js",
+    ".claude/worktrees/**",
+    "packages/sdk/src/**"
+  ],
+  "options": {
+    "typeAware": true,
+    "reportUnusedDisableDirectives": "off",
+    "respectEslintDisableDirectives": false
+  },
+  "rules": {
+    "typescript/no-floating-promises": "warn",
+    "typescript/no-misused-promises": "warn",
+    "typescript/await-thenable": "warn"
+  }
+}
