@@ -84,7 +84,7 @@ describe('the header source toggle (owner 2026-11-24)', () => {
   it('sits in the header, in the pressed style of the segmented control, 44px, and only from 600px', () => {
     const actions = readFileSync('features/medschools/ui/shell/HeaderActions.tsx', 'utf8');
     expect(actions).toContain('<SourceToggle />');
-    expect(actions).toContain('<SourceMenuRows');
+    expect(readFileSync('features/medschools/ui/shell/NavDrawer.tsx', 'utf8')).toContain('role="radiogroup"');
     const css = readFileSync('features/medschools/ui/medschools/frame-controls.css', 'utf8');
     const block = css.slice(css.indexOf('.medapp-chips.medapp-srctoggle {'));
     expect(block).toMatch(/\.medapp-chip\.medapp-srctoggle__opt \{[^}]*inline-size: 44px;[^}]*min-block-size: 44px;/);

@@ -150,7 +150,7 @@ export function IndexPage() {
                         })}
                       </p>
                       {s.reported ? (
-                        <p className="medapp-row__meta">
+                        <p className="medapp-row__meta medapp-row__reported">
                           {t('index-reported', {
                             count: s.reported.count,
                             n: nf.format(s.reported.count),
