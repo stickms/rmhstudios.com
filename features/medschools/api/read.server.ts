@@ -215,7 +215,7 @@ export async function listSchools(q: ListSchoolsQuery, now: Date = new Date()): 
   const filtered = filterSchools(searchable, { q: q.q, states: statesOf(q.state) }).filter((s) =>
     degrees.has(s.degree),
   );
-  const latest = await latestPublicEvents(cycleYear, set);
+  const [latest, accounted] = await Promise.all([latestPublicEvents(cycleYear, set), accountedBySchool(cycleYear)]);
   return {
     cycleYear,
     program,
@@ -233,9 +233,38 @@ export async function listSchools(q: ListSchoolsQuery, now: Date = new Date()): 
         state: s.state,
         reported: primary ? { source: primary, count: list.get(primary) ?? 0 } : null,
         latest: latest.get(s.id) ?? null,
+        accounted: accounted.get(s.id) ?? null,
       };
     }),
   };
+}
+
+/**
+ * Admit's own interview total for each school and cycle (what its school page prints; the worker stores it per school
+ * and cycle in `MedAdmitCycleTotal`) against the dated ADMIT interview events we hold (every program, null included:
+ * "x of y interviews accounted for"). One count per school, one read of the totals; nothing about the viewer. A school
+ * with no total (or a total of 0) has no entry. `of` is raised to `counted` when the page's total lags our events, so
+ * the pair never reads as more than all of them.
+ */
+async function accountedBySchool(cycleYear: number): Promise<Map<string, { counted: number; of: number }>> {
+  const [totals, held] = await Promise.all([
+    prisma.medAdmitCycleTotal.findMany({
+      where: { cycleYear, interviews: { gt: 0 } },
+      select: { schoolId: true, interviews: true },
+    }),
+    prisma.medCycleEvent.groupBy({
+      by: ['schoolId'],
+      where: { cycleYear, source: 'ADMIT', eventType: 'INTERVIEW' },
+      _count: { _all: true },
+    }),
+  ]);
+  const counted = new Map(held.map((h) => [h.schoolId, h._count._all] as const));
+  return new Map(
+    totals.map((t) => {
+      const n = counted.get(t.schoolId) ?? 0;
+      return [t.schoolId, { counted: n, of: Math.max(t.interviews ?? 0, n) }] as const;
+    }),
+  );
 }
 
 /**

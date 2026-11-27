@@ -16,6 +16,7 @@ const m = vi.hoisted(() => {
     medSchool: d(),
     medCycleCount: d(),
     medCycleEvent: d(),
+    medAdmitCycleTotal: d(),
     medCycle: d(),
     $queryRaw: vi.fn(async (..._a: unknown[]): Promise<unknown[]> => []),
   };

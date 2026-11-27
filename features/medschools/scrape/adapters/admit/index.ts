@@ -15,6 +15,8 @@ export type {
   NormalizedAdmitQuestion,
   NormalizedAdmitStats,
   ProgramFlag,
+  SchoolCycle,
+  SchoolCycleMember,
 } from './types';
 export { mapCurriculumRow } from './curriculum';
 export type { AdmitCurriculum, CurriculumFact } from './curriculum';

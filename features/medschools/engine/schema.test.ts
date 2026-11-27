@@ -137,6 +137,26 @@ model MedTrackerApplication {
     expect(fields).toEqual(['schoolId', 'program', 'cycleYear', 'date', 'eventType', 'source']);
   });
 
+  it("MedAdmitCycleTotal holds Admit's published counts for a school and cycle, nothing person-shaped", () => {
+    const m = parseModels(schema()).find((x) => x.model === 'MedAdmitCycleTotal');
+    expect(m, 'model missing').toBeDefined();
+    expect([...m!.fields].sort()).toEqual(
+      [
+        'acceptances',
+        'applications',
+        'cycleYear',
+        'fetchedAt',
+        'id',
+        'interviews',
+        'rejections',
+        'schoolId',
+        'updatedAt',
+      ].sort(),
+    );
+    expect(forbiddenColumns(schema()).filter((c) => c.startsWith('MedAdmitCycleTotal.'))).toEqual([]);
+    expect(schema()).toMatch(/@@unique\(\[schoolId, cycleYear\]\)\n  @@map\("med_admit_cycle_total"\)/);
+  });
+
   it('MedAdmitMember holds only a hashed member id and progress, and passes the person-like check', () => {
     const m = parseModels(schema()).find((x) => x.model === 'MedAdmitMember');
     expect(m?.fields).toEqual(['memberHash', 'state', 'attempts', 'createdAt', 'updatedAt']);
@@ -588,7 +608,9 @@ model MedTrackerApplication {
           !d.endsWith('_medschools_mdphd_sources') &&
           !d.endsWith('_medschools_applicant_stats') &&
           !d.endsWith('_medschools_retire_drew_ucla') &&
-          !d.endsWith('_medschools_forecast_per_source'),
+          !d.endsWith('_medschools_forecast_per_source') &&
+          // Admit's published per-school totals: a later, additive follow-up (2027-01).
+          !d.endsWith('_medschools_admit_cycle_totals'),
       );
       for (const o of others) expect(mine > o, o).toBe(true);
     });

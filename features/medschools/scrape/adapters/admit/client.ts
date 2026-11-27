@@ -20,11 +20,13 @@ import {
   RESULT_USERS,
   SCHOOL_CRESTS,
   SCHOOL_CURRICULUM,
+  SCHOOL_CYCLE_RESULTS,
   SCHOOL_STATS,
   type AdmitOperation,
 } from './queries';
 import { mapCurriculumRow } from './curriculum';
 import {
+  cycleApplicantRow,
   curriculumRow,
   feedData,
   feedRow,
@@ -37,6 +39,7 @@ import {
   resultUsersData,
   schoolCrestsData,
   schoolCurriculumData,
+  schoolCycleData,
   schoolStatsData,
 } from './schemas';
 import { admitMemberKey } from './member-key';
@@ -55,6 +58,7 @@ import {
   type NormalizedAdmitQuestion,
   type NormalizedAdmitStats,
   type ProgramFlag,
+  type SchoolCycle,
 } from './types';
 
 export class AdmitResponseError extends Error {
@@ -109,6 +113,13 @@ export interface AdmitClient {
    * a row failing validation is dropped and counted.
    */
   fetchCurriculum(): Promise<{ schools: AdmitCurriculum[]; malformedRows: number }>;
+  /**
+   * One school's results for one cycle in ONE request (`getCycleResultsBySchool`, the data Admit's own school page
+   * loads): Admit's printed totals and each listed applicant's MD-PhD flag and dated events, keyed like every other
+   * Admit event (`admitMemberKey`), so this, the feed and the profile history never count one report twice. `null` is a
+   * school or cycle Admit has no page for. `year` is the cycle's start year (2026 is the 2026-2027 cycle).
+   */
+  fetchSchoolCycle(slug: string, year: number): Promise<SchoolCycle | null>;
 }
 
 const DAY_MS = 86_400_000;
@@ -531,6 +542,42 @@ export function createAdmitClient(
         throw new AdmitResponseError(`${SCHOOL_CURRICULUM.operationName}: no valid row`);
       }
       return { schools: [...bySlug.values()], malformedRows };
+    },
+
+    async fetchSchoolCycle(slug, year) {
+      const data = await run(SCHOOL_CYCLE_RESULTS, { slug, year }, schoolCycleData);
+      const cycle = data.getCycleResultsBySchool;
+      if (cycle === null) return null;
+      const members: SchoolCycle['members'] = [];
+      const skipped = { unknownDecision: 0, badDate: 0, malformedEntries: 0 };
+      let skippedRows = 0;
+      for (const raw of cycle.current_applicants ?? []) {
+        const row = cycleApplicantRow.safeParse(raw);
+        if (!row.success || !row.data.user_id) {
+          skippedRows++;
+          continue;
+        }
+        const { user_id: userId, md_phd: mdPhd, ...dates } = row.data;
+        // The same dated-entry mapping as a profile's history, so the keys and the rules (day-only dates, the
+        // event-type-aware cycle year, no future dates) are one definition.
+        const mapped = mapHistory(userId, [{ school: { slug }, ...dates }]);
+        skipped.unknownDecision += mapped.skipped.unknownDecision;
+        skipped.badDate += mapped.skipped.badDate;
+        skipped.malformedEntries += mapped.skipped.malformedEntries;
+        if (mapped.history.length > 0)
+          members.push({ program: mdPhd === true ? 'PHD' : 'REG', history: mapped.history });
+      }
+      return {
+        totals: {
+          applications: cycle.total_applications,
+          interviews: cycle.num_of_interviews,
+          acceptances: cycle.num_of_acceptances,
+          rejections: cycle.num_of_rejections,
+        },
+        members,
+        skippedRows,
+        skipped,
+      };
     },
 
     async fetchSchoolStats(filter) {

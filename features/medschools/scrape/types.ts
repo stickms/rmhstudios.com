@@ -369,6 +369,9 @@ export interface MedPrisma {
     findFirst(args?: { where?: Where }): Promise<{ key: string; day: Date; requests: number } | null>;
     upsert(args: { where: Where; create: Data; update: Data }): Promise<{ key: string }>;
   };
+  medAdmitCycleTotal: {
+    upsert(args: { where: Where; create: Data; update: Data }): Promise<{ id: string }>;
+  };
   medAdmitMember: {
     findMany(args?: { where?: Where; select?: Record<string, boolean> }): Promise<MedAdmitMemberRow[]>;
     upsert(args: { where: Where; create: Data; update: Data }): Promise<{

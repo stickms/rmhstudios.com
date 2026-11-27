@@ -252,3 +252,29 @@ export const SCHOOL_CURRICULUM: AdmitOperation = {
 }`,
   variables: {},
 };
+
+/**
+ * One school's results for one cycle, the data Admit's own school page (`/cycle-results/<slug>`) loads: the page's
+ * totals and one row per listed applicant. ONLY the totals, the member id, the MD-PhD flag and the dates and decision
+ * are selected: never `display_name`, `avatar` or `admit_score`. `year` is the cycle's start year (2026 is the
+ * 2026-2027 cycle) and `Float!`; the page offers the current cycle and the two before it.
+ */
+export const SCHOOL_CYCLE_RESULTS: AdmitOperation = {
+  operationName: 'getCycleResultsBySchool',
+  query: `query getCycleResultsBySchool($slug: String, $year: Float!) {
+  getCycleResultsBySchool(slug: $slug, year: $year) {
+    total_applications
+    num_of_interviews
+    num_of_acceptances
+    num_of_rejections
+    current_applicants {
+      user_id
+      md_phd
+      secondary_submitted
+      interview_received
+      decision_date
+      decision
+    }
+  }
+}`,
+};

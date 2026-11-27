@@ -13,6 +13,8 @@
  *   medschools.admit-live   every 5 min — the Admit.org live decisions feed (needs the dedupe secret).
  *   medschools.interviews   daily — Admit interview profiles, questions and school stats (same).
  *   medschools.admit-history daily 03:10 — Admit profile-history backfill: the whole cycle, member-keyed (same secret).
+ *   medschools.admit-school-results daily 05:50 — each school's results page on Admit (`getCycleResultsBySchool`): the cycle in
+ *                             progress daily, the two before it once (owed until one run finishes OK); stores Admit's printed totals too.
  *
  *   medschools.forecast      daily 06:40 UTC — the statistics job: forecast bands per school, program and event type, then the
  *                             aggregate wait curves (needs no secret and makes no model call).
@@ -69,6 +71,10 @@ import {
 import { runAdmitLive } from '../../features/medschools/scrape/run-admit-live';
 import { runAdmitInterviews } from '../../features/medschools/scrape/run-admit-interviews';
 import { admitHistoryOwed, runAdmitHistory } from '../../features/medschools/scrape/run-admit-history';
+import {
+  runAdmitSchoolResults,
+  schoolResultsPastOwed,
+} from '../../features/medschools/scrape/run-admit-school-results';
 import admitAliasesJson from '../../data/medschools/admit-aliases.json';
 import sdnAliasesJson from '../../data/medschools/sdn-aliases.json';
 import sdnForumsJson from '../../data/medschools/sdn-forums.json';
@@ -215,8 +221,11 @@ function intEnv(name: string, dflt: number): number {
 const ADMIT_LIVE_EXPIRY_S = 20 * 60;
 const INTERVIEWS_EXPIRY_S = 3 * 60 * 60;
 const ADMIT_HISTORY_EXPIRY_S = 3 * 60 * 60;
+const ADMIT_SCHOOL_RESULTS_EXPIRY_S = 3 * 60 * 60;
 const INTERVIEWS_RUN_DEADLINE_MS = 150 * 60_000;
 const ADMIT_HISTORY_RUN_DEADLINE_MS = 150 * 60_000;
+// The tick runs the daily pass and then, while owed, the one-time past pass: each ends itself at 80 min, so both fit the 3 h expiry.
+const ADMIT_SCHOOL_RESULTS_RUN_DEADLINE_MS = 80 * 60_000;
 const SDN_MAX_LLM_CALLS = intEnv('MEDSCHOOLS_SDN_MAX_LLM_CALLS', 40);
 const SDN_BACKFILL_MAX_LLM_CALLS = intEnv('MEDSCHOOLS_SDN_BACKFILL_MAX_LLM_CALLS', 150);
 const SDN_LIVE_EXPIRY_S = 25 * 60;
@@ -605,6 +614,42 @@ const admitHistoryTick = guarded(
   ADMIT_HISTORY_EXPIRY_S * 1000,
 );
 
+const admitSchoolResultsTick = guarded(
+  'admit-school-results',
+  async (data) => {
+    log.info(
+      `admit-school-results tick starting (manual=${data.manual === true}, enabled=${ADMIT_ENABLED}, secret=${secretOk()})`,
+    );
+    if (!admitGate('admit-school-results', data)) return;
+    const trigger = data.manual === true ? 'MANUAL' : data.bootstrap === true ? 'BOOTSTRAP' : 'CRON';
+    const deps = () => ({
+      prisma: medPrisma,
+      host: admitHost,
+      secret: process.env.MEDSCHOOLS_DEDUPE_SECRET ?? '',
+      shouldStop: stopAfter(ADMIT_SCHOOL_RESULTS_RUN_DEADLINE_MS),
+      deadlineMs: ADMIT_SCHOOL_RESULTS_RUN_DEADLINE_MS,
+      log,
+    });
+    // The cycle in progress first (the daily pass), then the two earlier cycles while that one-time pass is owed.
+    const r = await runAdmitSchoolResults(deps(), { kind: 'current', trigger });
+    log.info(
+      `admit-school-results run complete [${r.runId}] — status=${r.status} kind=${r.kind} years=${r.years.join(',')} schools=${r.schools} fetched=${r.fetched} noPage=${r.noPage} failed=${r.failed} remaining=${r.remaining} created=${r.eventsCreated} moved=${r.eventsMoved} existing=${r.eventsExisting} totals=${r.totalsWritten} rolledUp=${r.rolledUp} budgetSpent=${r.budgetSpent} requests=${r.requests}`,
+    );
+    if (stopping || r.status === 'FAILED' || r.budgetSpent) return;
+    try {
+      if (!(await schoolResultsPastOwed(medPrisma))) return;
+    } catch (e) {
+      log.warn(`admit-school-results: past check failed: ${e instanceof Error ? e.message : String(e)}`);
+      return;
+    }
+    const p = await runAdmitSchoolResults(deps(), { kind: 'past', trigger });
+    log.info(
+      `admit-school-results run complete [${p.runId}] — status=${p.status} kind=${p.kind} years=${p.years.join(',')} schools=${p.schools} fetched=${p.fetched} noPage=${p.noPage} failed=${p.failed} remaining=${p.remaining} created=${p.eventsCreated} moved=${p.eventsMoved} existing=${p.eventsExisting} totals=${p.totalsWritten} rolledUp=${p.rolledUp} budgetSpent=${p.budgetSpent} requests=${p.requests}`,
+    );
+  },
+  ADMIT_SCHOOL_RESULTS_EXPIRY_S * 1000,
+);
+
 const admitForumsTick = guarded(
   'admit-forums',
   async (data) => {
@@ -868,6 +913,7 @@ const cycletrackCron =
 const ADMIT_LIVE_QUEUE = 'medschools.admit-live';
 const INTERVIEWS_QUEUE = 'medschools.interviews';
 const ADMIT_HISTORY_QUEUE = 'medschools.admit-history';
+const ADMIT_SCHOOL_RESULTS_QUEUE = 'medschools.admit-school-results';
 const admitLiveCron =
   process.env.MEDSCHOOLS_ADMIT_LIVE_CRON?.trim() || '*/5 * * * *';
 const interviewsCron =
@@ -875,6 +921,8 @@ const interviewsCron =
 // Daily, off-peak, ending (about 50 min for the 1500-profile cap) before the interviews walk at 04:35.
 const admitHistoryCron =
   process.env.MEDSCHOOLS_ADMIT_HISTORY_CRON?.trim() || '10 3 * * *';
+// Daily, off-peak, after the history run (03:10, up to 150 min) and the interviews walk (04:35).
+const admitSchoolResultsCron = process.env.MEDSCHOOLS_ADMIT_SCHOOL_RESULTS_CRON?.trim() || '50 5 * * *';
 const ADMIT_FORUMS_QUEUE = 'medschools.admit-forums';
 // Every 3 hours, UTC: 0 3 6 9 12 15 18 21. Fetching runs at any hour; the model reads only off-peak (the 03, 06 and 09
 // weekday runs look and hold). Persisted minimum interval 2.5 h, so a deploy never fires an extra one.
@@ -910,6 +958,7 @@ let admitLiveConsumer: ScheduledConsumer | null =
 let interviewsConsumer: ScheduledConsumer | null =
   null;
 let admitHistoryConsumer: ScheduledConsumer | null = null;
+let admitSchoolResultsConsumer: ScheduledConsumer | null = null;
 let admitForumsConsumer: ScheduledConsumer | null = null;
 let admitCurriculumConsumer: ScheduledConsumer | null = null;
 let sdnLiveConsumer: ScheduledConsumer | null = null;
@@ -1063,6 +1112,20 @@ async function main() {
     log.error('pg-boss unavailable — exiting so the container restarts');
     process.exit(1);
   }
+  admitSchoolResultsConsumer = await startScheduledConsumer({
+    queue: ADMIT_SCHOOL_RESULTS_QUEUE,
+    cron: admitSchoolResultsCron,
+    expireInSeconds: ADMIT_SCHOOL_RESULTS_EXPIRY_S,
+    retryLimit: 0,
+    handler: admitSchoolResultsTick,
+    shouldStop: () => stopping,
+    log: consumerLog,
+  });
+  if (!admitSchoolResultsConsumer) {
+    if (stopping) return;
+    log.error('pg-boss unavailable — exiting so the container restarts');
+    process.exit(1);
+  }
   sdnLiveConsumer = await startScheduledConsumer({
     queue: SDN_LIVE_QUEUE,
     cron: sdnLiveCron,
@@ -1181,7 +1244,7 @@ async function main() {
     return;
 
   log.info(
-    `Started — cycletrack="${cycletrackCron}" queues="${CYCLETRACK_QUEUE},${BACKFILL_QUEUE},${ADMIT_LIVE_QUEUE},${INTERVIEWS_QUEUE}" enabled=${CYCLETRACK_ENABLED} admit-live="${admitLiveCron}" interviews="${interviewsCron}" admit-history="${admitHistoryCron}" admitEnabled=${ADMIT_ENABLED} sdn-live="${sdnLiveCron}" sdn-backfill="${sdnBackfillCron}" sdn-interviews="${sdnInterviewsCron}" sdnEnabled=${SDN_ENABLED} queues+="${SDN_LIVE_QUEUE},${SDN_BACKFILL_QUEUE},${SDN_INTERVIEWS_QUEUE},${RMH_PUBLISH_QUEUE},${ADMIT_HISTORY_QUEUE}" rmh-publish="${RMH_PUBLISH_CRON}" forecast="${forecastCron}" admit-forums="${admitForumsCron}" forumsEnabled=${ADMIT_FORUMS_ENABLED} secondaries="${secondariesCron}" queue+="${SECONDARIES_QUEUE}" secondariesEnabled=${SECONDARIES_ENABLED} admit-curriculum="${admitCurriculumCron}" queue+="${ADMIT_CURRICULUM_QUEUE}" curriculumEnabled=${ADMIT_CURRICULUM_ENABLED}`,
+    `Started — cycletrack="${cycletrackCron}" queues="${CYCLETRACK_QUEUE},${BACKFILL_QUEUE},${ADMIT_LIVE_QUEUE},${INTERVIEWS_QUEUE}" enabled=${CYCLETRACK_ENABLED} admit-live="${admitLiveCron}" interviews="${interviewsCron}" admit-history="${admitHistoryCron}" admit-school-results="${admitSchoolResultsCron}" admitEnabled=${ADMIT_ENABLED} sdn-live="${sdnLiveCron}" sdn-backfill="${sdnBackfillCron}" sdn-interviews="${sdnInterviewsCron}" sdnEnabled=${SDN_ENABLED} queues+="${SDN_LIVE_QUEUE},${SDN_BACKFILL_QUEUE},${SDN_INTERVIEWS_QUEUE},${RMH_PUBLISH_QUEUE},${ADMIT_HISTORY_QUEUE},${ADMIT_SCHOOL_RESULTS_QUEUE}" rmh-publish="${RMH_PUBLISH_CRON}" forecast="${forecastCron}" admit-forums="${admitForumsCron}" forumsEnabled=${ADMIT_FORUMS_ENABLED} secondaries="${secondariesCron}" queue+="${SECONDARIES_QUEUE}" secondariesEnabled=${SECONDARIES_ENABLED} admit-curriculum="${admitCurriculumCron}" queue+="${ADMIT_CURRICULUM_QUEUE}" curriculumEnabled=${ADMIT_CURRICULUM_ENABLED}`,
   );
   // The profile-history backfill is owed until one pass has completed: queue it at once on the first deploy (and after
   // an interrupted first run) rather than wait for the 03:10 cron. Its first step is the one-time ADMIT re-key.
@@ -1193,6 +1256,18 @@ async function main() {
       }
     } catch (e) {
       log.warn(`Bootstrap: Admit history check failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+  // The two earlier cycles' school results are owed until one past run has finished OK: queue the tick at start (it runs
+  // the daily pass, then the past one) rather than wait for 05:50.
+  if (ADMIT_ENABLED && secretOk()) {
+    try {
+      if (await schoolResultsPastOwed(medPrisma)) {
+        log.info('Bootstrap: Admit past-cycle school results not yet fetched — queueing them');
+        await admitSchoolResultsConsumer.runNow({ bootstrap: true });
+      }
+    } catch (e) {
+      log.warn(`Bootstrap: Admit school results check failed: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
   // The curriculum table is owed until one run has finished: queue the first one at start rather than wait for Saturday.
@@ -1253,6 +1328,7 @@ async function shutdown(
       admitLiveConsumer?.pause(),
       interviewsConsumer?.pause(),
       admitHistoryConsumer?.pause(),
+      admitSchoolResultsConsumer?.pause(),
       sdnLiveConsumer?.pause(),
       sdnBackfillConsumer?.pause(),
       sdnInterviewsConsumer?.pause(),

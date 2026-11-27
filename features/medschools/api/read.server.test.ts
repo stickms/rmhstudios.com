@@ -12,6 +12,7 @@ const m = vi.hoisted(() => {
     medSchool: d(),
     medCycleCount: d(),
     medCycleEvent: d(),
+    medAdmitCycleTotal: d(),
     medSchoolStats: d(),
     medInterviewQuestion: d(),
     medInterviewProfile: d(),
@@ -514,6 +515,43 @@ describe('listSchools', () => {
     expect(ok.states).toEqual(['NC', 'TX']);
     expect(ok.schools.map((s) => [s.slug, s.reported])).toEqual([['duke', { source: 'ADMIT', count: 7 }]]);
     expect(ok.program).toBe('ALL');
+  });
+
+  it("sets Admit's own interview total against the dated ADMIT interviews we hold, never below them", async () => {
+    m.medSchool.findMany.mockResolvedValue([
+      school,
+      { ...school, id: 's2', slug: 'tx', name: 'Texas', shortName: 'TX' },
+    ]);
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2027 });
+    m.medAdmitCycleTotal.findMany.mockResolvedValue([
+      { schoolId: 's1', interviews: 220 },
+      { schoolId: 's2', interviews: 40 },
+    ]);
+    m.medCycleEvent.groupBy.mockResolvedValue([
+      { schoolId: 's1', _count: { _all: 155 } },
+      { schoolId: 's2', _count: { _all: 52 } },
+    ]);
+    const res = await listSchools({}, NOW);
+    expect(res.schools.map((s) => [s.slug, s.accounted])).toEqual([
+      ['duke', { counted: 155, of: 220 }],
+      // Admit's page lags our events: the pair never reads as more than all of them.
+      ['tx', { counted: 52, of: 52 }],
+    ]);
+    expect(m.medAdmitCycleTotal.findMany.mock.calls[0]?.[0]).toMatchObject({
+      where: { cycleYear: 2027, interviews: { gt: 0 } },
+    });
+    // every program, null included: only the source, the type and the cycle narrow it
+    expect(m.medCycleEvent.groupBy.mock.calls[0]?.[0]).toMatchObject({
+      where: { cycleYear: 2027, source: 'ADMIT', eventType: 'INTERVIEW' },
+    });
+  });
+
+  it('has no accounted pair for a school Admit published no total for', async () => {
+    m.medSchool.findMany.mockResolvedValue([school]);
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2027 });
+    m.medCycleEvent.groupBy.mockResolvedValue([{ schoolId: 's1', _count: { _all: 4 } }]);
+    const res = await listSchools({}, NOW);
+    expect(res.schools[0]!.accounted).toBeNull();
   });
 
   it("carries each school's newest public event: the live feed's sources only, the list's program set, a day-only flag", async () => {
