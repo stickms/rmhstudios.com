@@ -50,7 +50,7 @@ function AdminDashboardPage() {
     >
       <AdminBody>
         <LookupField />
-        <div className="grid grid-cols-1 border-t border-site-border md:grid-cols-2 md:gap-x-8">
+        <ul className="rule-cells" data-columns={2}>
           <AdminHubCard
             to="/admin/users"
             title={t('users-title', { defaultValue: 'Users' })}
@@ -437,7 +437,7 @@ function AdminDashboardPage() {
                 'The coming puzzles with their answers, reports from players, and a way to replace one before its day starts.',
             })}
           />
-        </div>
+        </ul>
       </AdminBody>
     </PageLayout>
   );
