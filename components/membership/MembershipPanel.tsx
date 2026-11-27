@@ -8,10 +8,10 @@
  * billing. A plan the viewer already has says so in words instead of showing a disabled button.
  * Under the plans, every gated feature is a row on a rule (`MemberFeatureGrid`).
  *
- * HARD-R and Pro start Stripe-hosted checkout through the better-auth stripe client; Enterprise is
+ * Pro and Max start Stripe-hosted checkout through the better-auth stripe client; Enterprise is
  * a mail link. Nothing here changes a price, a plan or what Stripe is asked for.
  *
- * Note on tier ids: the $20 tier is DISPLAYED as "HARD-R" but its id is still `starter` everywhere
+ * Note on tier ids: the $20 tier is DISPLAYED as "Pro" but its id is still `starter` everywhere
  * under the hood. That string is the Stripe plan name, the `Subscription.plan` column value and
  * the gift/grant API enum, so it is deliberately not renamed with the label.
  *
@@ -113,7 +113,7 @@ export function planCopy(
     },
     starter: {
       name: t('plan-starter-name', {
-        defaultValue: 'HARD-R',
+        defaultValue: 'Pro',
       }),
       period: t('plan-starter-period', {
         defaultValue: '/mo',
@@ -138,7 +138,7 @@ export function planCopy(
     },
     pro: {
       name: t('plan-pro-name', {
-        defaultValue: 'Pro',
+        defaultValue: 'Max',
       }),
       period: t('plan-pro-period', {
         defaultValue: '/mo',
@@ -148,7 +148,7 @@ export function planCopy(
       }),
       features: [
         t('plan-pro-feature-1', {
-          defaultValue: 'Everything in HARD-R',
+          defaultValue: 'Everything in Pro',
         }),
         t('plan-pro-feature-2', {
           defaultValue: 'Verified profile badge',
@@ -167,11 +167,11 @@ export function planCopy(
       }),
       period: '',
       tagline: t('plan-enterprise-tagline', {
-        defaultValue: 'Pro, scaled to your whole company.',
+        defaultValue: 'Max, scaled to your whole company.',
       }),
       features: [
         t('plan-enterprise-feature-1', {
-          defaultValue: 'Everything in Pro',
+          defaultValue: 'Everything in Max',
         }),
         t('plan-enterprise-feature-2', {
           defaultValue: 'Seats for your team',

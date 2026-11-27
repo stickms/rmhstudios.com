@@ -79,7 +79,7 @@ function DeveloperHome() {
         <p className="max-w-prose text-sm leading-relaxed text-site-text-muted">
           {t('developer-intro', {
             defaultValue:
-              'Build on RMH Studios programmatically. The REST API is available to HARD-R subscribers and above. Create a scoped key below, then read the documentation or point your codegen at the OpenAPI spec.',
+              'Build on RMH Studios programmatically. The REST API is available to Pro subscribers and above. Create a scoped key below, then read the documentation or point your codegen at the OpenAPI spec.',
           })}
         </p>
 

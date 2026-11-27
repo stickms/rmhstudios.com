@@ -28,11 +28,11 @@ export const route = apiRoute('/api/developer/keys', {
     async ({ request, session, body }) => {
       const userId = session.user.id;
 
-      // Gate creation on an active subscription (HARD-R+, plan id `starter`).
+      // Gate creation on an active subscription (Pro+, plan id `starter`).
       const tier = await getUserTier(userId);
       if (!hasApiAccess(tier)) {
         return Response.json(
-          { error: 'A HARD-R subscription or higher is required to use the developer API.' },
+          { error: 'A Pro subscription or higher is required to use the developer API.' },
           { status: 403 },
         );
       }

@@ -4,8 +4,8 @@ Limits are enforced **per key**, per minute:
 
 | Tier | Requests / minute |
 | ---- | ----------------- |
-| HARD-R | 120 |
-| Pro / higher | 600 |
+| Pro | 120 |
+| Max / higher | 600 |
 
 A key can be given a lower per-minute limit than its tier (Developer, API keys). Its `X-RateLimit-Limit` then shows that number, and the request that exceeds it takes the usual `429`.
 

@@ -1,6 +1,6 @@
 # 18 — A deletion request ends the membership too
 
-Surface: the delete-account panel's preview ("Your Pro membership ends on 14 December; you will not be charged again"),
+Surface: the delete-account panel's preview ("Your Max membership ends on 14 December; you will not be charged again"),
 the deletion pause and restore, the erasure. Wave 2. Namespace `deletion-billing`. Site tier (Steel). Hardening
 (follow-up).
 
@@ -108,7 +108,7 @@ to start renewing again only if I come back, so that I am never charged for an a
 
 ## Acceptance criteria
 
-- [ ] A Pro member requests deletion; Stripe shows the subscription set to cancel at the period's end; the panel said
+- [ ] A Max member requests deletion; Stripe shows the subscription set to cancel at the period's end; the panel said
       so.
 - [ ] Signing back in resumes it; a subscription the member had already cancelled stays cancelled.
 - [ ] At erasure, a subscription started during the grace period is cancelled; with Stripe failing, the account stays

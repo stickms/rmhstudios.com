@@ -30,7 +30,7 @@ export const Route = createFileRoute('/api/v1/images')({
             if (!hasApiImageUpload(tier)) {
               return error(
                 'feature_not_available',
-                'Image upload requires a HARD-R plan or higher.',
+                'Image upload requires a Pro plan or higher.',
                 403,
               );
             }
