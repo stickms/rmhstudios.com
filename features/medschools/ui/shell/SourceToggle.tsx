@@ -1,6 +1,5 @@
 import { useRef, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MenuItem, MenuLabel } from '@/components/ui/menu';
 import { SOURCE_PREFS, type SourcePref } from '../../engine/source-pref';
 import { SourceGlyph } from '../sources/SourceGlyph';
 import { useSourcePref } from '../useSourcePref';
@@ -75,35 +74,6 @@ export function SourceToggle() {
           </button>
         );
       })}
-    </div>
-  );
-}
-
-/**
- * The same choice as menu rows, for a phone's member menu (under 600px, where the toggle does not fit): a heading and
- * two `menuitemradio` rows with the favicons, the checked one marked. Choosing closes the menu.
- */
-export function SourceMenuRows({ onDone }: { onDone: () => void }) {
-  const { t } = useTranslation('medschools');
-  const { value, choose } = useSourcePref();
-  return (
-    <div role="group" aria-label={t('source-toggle-label', { defaultValue: 'Figures from' })}>
-      <MenuLabel>{t('source-toggle-label', { defaultValue: 'Figures from' })}</MenuLabel>
-      {SOURCE_PREFS.map((option) => (
-        <MenuItem
-          key={option}
-          checked={option === value}
-          onSelect={() => {
-            choose(option);
-            onDone();
-          }}
-        >
-          <span className="medapp-srcmenu">
-            <SourceGlyph source={option} size={16} />
-            {SOURCE_PREF_NAMES[option]}
-          </span>
-        </MenuItem>
-      ))}
     </div>
   );
 }

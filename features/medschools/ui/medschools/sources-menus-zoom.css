@@ -240,23 +240,59 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-/* A narrow phone: the same arrangement, tighter; the status words may take two lines rather than squeeze the school. */
-@media (max-width: 479px) {
+/* A phone (owner 2026-11-27): crest | the school | save. The row's words become grid items of their own
+   (`display: contents` on the body) so the newest status can sit between the place and the reported count: name, place,
+   the status as one line (the disc, the words in the status colour, the time muted), then the count, muted. The name
+   has the whole middle column, so nothing wraps into a narrow strip. From 600px the grid above is kept. */
+@media (max-width: 599px) {
   .medapp-schoolrow {
-    column-gap: var(--app-med-space-2);
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'crest name save'
+      'crest meta save'
+      'crest status save'
+      'crest reported save';
+    align-items: start;
+    column-gap: var(--app-med-space-3);
+    row-gap: 0;
+    padding-block: var(--app-med-space-3);
   }
-  .medapp-latest__text {
-    max-inline-size: 6.5rem;
-  }
-}
-@media (max-width: 359px) {
   .medapp-schoolrow > .medapp-row__body {
+    display: contents;
+  }
+  .medapp-schoolrow > .medapp-crest {
+    grid-area: crest;
+  }
+  .medapp-schoolrow .medapp-row__name {
+    grid-area: name;
     hyphens: auto;
   }
-  .medapp-latest__text {
-    max-inline-size: 4.5rem;
+  .medapp-schoolrow .medapp-row__meta {
+    grid-area: meta;
   }
-  .medapp-latest__when {
+  .medapp-schoolrow .medapp-row__reported {
+    grid-area: reported;
+  }
+  .medapp-schoolrow > .medapp-latest {
+    grid-area: status;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    padding-block-start: var(--app-med-space-1);
+  }
+  .medapp-schoolrow > .medapp-round {
+    grid-area: save;
+    grid-column: auto;
+    align-self: center;
+  }
+  .medapp-schoolrow .medapp-latest__text {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 var(--app-med-space-2);
+    max-inline-size: none;
+    text-align: start;
+  }
+  .medapp-schoolrow .medapp-latest__when {
     white-space: normal;
   }
 }

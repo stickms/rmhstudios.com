@@ -538,8 +538,7 @@
 /* ── The header's source choice (owner 2026-11-24) ───────────────────────── */
 /* CycleTrack or Admit.org (`SourceToggle`): the segmented well as a 44px pill of two 44px round options showing each
    source's favicon in the text colour; the checked one takes `.medapp-chip[aria-checked]`'s paper fill and border.
-   From 600px only: under that the bar has no room beside its four round buttons, and the choice is in the member's
-   menu (signed out, the sign-in link becomes a menu button there). */
+   From 600px only: under that the choice is a radio group in the phone drawer (`NavDrawer`). */
 .medapp-chips.medapp-srctoggle {
   display: none;
   flex: none;
@@ -557,22 +556,131 @@
   border-radius: 50%;
   corner-shape: round;
 }
-.medapp-srcmenu {
-  display: inline-flex;
-  align-items: center;
-  /* The menu portals outside `.medapp-theme`, where the spacing tokens live: 8px is space-2. */
-  gap: var(--app-med-space-2, 8px);
-}
 @media (min-width: 600px) {
   .medapp-chips.medapp-srctoggle {
     display: inline-flex;
   }
-  .medapp-round.medapp-narrow-only {
+}
+
+/* ── The phone's menu (owner 2026-11-27) ──────────────────────────────────────────────────────────────────────────
+   Under 600px the bar's actions are one round button and the drawer it opens from the start edge; from 600px the
+   bar shows its actions and the button and drawer are not drawn. The drawer is portalled into `.medapp-theme`, so
+   the palette tokens apply. The one fixed layer of this sheet, and only while open: the panel floats 8px off every
+   edge, and the scrim is a modal's, so no edge-pinned layer rests on the page. It slides in by a transition (no
+   keyframes) and closes at once. The two app-tier rule tests name `.medapp-drawer*` as their one exception. */
+.medapp-menu-btn {
+  margin-inline-start: auto;
+}
+@media (max-width: 599px) {
+  .medapp-bar__actions {
     display: none;
   }
 }
-@media (max-width: 599px) {
-  .medapp-round.medapp-wide-only {
+@media (min-width: 600px) {
+  .medapp-menu-btn,
+  .medapp-drawer,
+  .medapp-drawer__scrim {
     display: none;
   }
+}
+.medapp-drawer__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background-color: var(--app-bg);
+  opacity: 0.8;
+  transition: opacity 160ms var(--app-ease);
+}
+@starting-style {
+  .medapp-drawer__scrim {
+    opacity: 0;
+  }
+  .medapp-drawer {
+    transform: translateX(-100%);
+  }
+  [dir='rtl'] .medapp-drawer {
+    transform: translateX(100%);
+  }
+}
+.medapp-drawer {
+  position: fixed;
+  inset-block: var(--app-med-space-2);
+  inset-inline-start: var(--app-med-space-2);
+  z-index: 61;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  inline-size: min(20rem, calc(100vw - 48px));
+  padding: var(--app-med-space-3) var(--app-med-space-4);
+  background-color: var(--app-surface);
+  color: var(--app-text);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-med-radius-lg);
+  overflow-y: auto;
+  transition: transform 220ms var(--app-ease);
+}
+.medapp-drawer__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-med-space-3);
+  padding-block-end: var(--app-med-space-3);
+}
+.medapp-drawer__title {
+  margin: 0;
+  font-size: var(--app-med-text-section);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+.medapp-drawer__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--app-med-space-4);
+}
+.medapp-drawer__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-1);
+}
+.medapp-drawer__label {
+  margin: 0;
+  padding-inline: var(--app-med-space-3);
+  font-size: var(--app-med-text-meta);
+  font-weight: 600;
+  color: var(--app-text-muted);
+}
+.medapp-drawer__item {
+  display: flex;
+  align-items: center;
+  gap: var(--app-med-space-3);
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: 44px;
+  padding-inline: var(--app-med-space-3);
+  border: 0;
+  border-radius: var(--app-med-radius);
+  background: transparent;
+  color: var(--app-text);
+  font: inherit;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 90ms var(--app-ease);
+}
+.medapp-drawer__item:hover {
+  background-color: var(--app-med-tonal);
+}
+.medapp-drawer__item--current,
+.medapp-drawer__item[aria-checked='true'] {
+  background-color: var(--app-med-tonal);
+  font-weight: 600;
+}
+.medapp-drawer__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-med-space-3);
+  padding: var(--app-med-space-3) var(--app-med-space-3) 0;
+  border-block-start: 1px solid var(--app-border);
 }

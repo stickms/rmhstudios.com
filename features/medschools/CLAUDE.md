@@ -70,6 +70,14 @@ longer govern this feature**; the admin page does not move with it (`components/
   lazy chunk loaded and queried only at 1280px and up (`useMediaQuery`), replaces the skeleton with the M9 fade and
   keeps its rows, dimmed, on a refetch. The Steel shell's overlays (command palette, "/" shortcut, what's-new) are not
   here, as in the other apps; the margin takeover entry is gone and `ActivityRail` is mounted by `MedApp`.
+- **Phone menu (owner 2026-11-27).** Under 600px the bar's actions are not drawn; one round menu button opens
+  `NavDrawer` (`ui/shell/NavDrawer.tsx`, a Radix dialog from the start edge, portalled into `.medapp-theme` so the
+  `--app-*` tokens apply) holding the member's places (`mine-places.tsx`, shared with the profile menu) or Sign in,
+  Interview practice, Live activity, the source radio group and the dark-mode switch. From 600px the bar is unchanged.
+  It is the one `position: fixed` layer in `medschools.css` (floated 8px off every edge; the scrim is a modal's) and
+  slides by a transition, never keyframes; `shell.test.tsx` and `ui-rules.test.ts` strip `.medapp-drawer*` rules before
+  their fixed/keyframes checks. On a phone an index row is crest | school | save, with the newest status as one line
+  under the place and the reported count last (`display: contents` on the row body, grid areas).
 - **Mode.** Light or dark, device-local (`rmh-medschool-mode`, `{"dark":boolean}`, `engine/mode.ts`), defaulting to the
   OS preference; it does not follow the site Day/Night edition. RMH Music's design: `APP_ROUTE_THEME_BG` entry, the
   `lib/prepaint/theme-routes.ts` list, the device registry, `data-app-dark`.

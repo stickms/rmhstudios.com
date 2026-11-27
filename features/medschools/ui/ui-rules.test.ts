@@ -8,7 +8,9 @@ import { describe, expect, it } from 'vitest';
  * item 11): the Steel content rules this file used to hold (no rounded, shadow, backdrop, uppercase) came out with the
  * tier move, and the app-tier rules below replace them: palette tokens only, no hex, no keyframes, nothing `fixed`.
  */
-const ROUTES = ['index', 'live', '$slug', 'tracker', 'lists', 'ask', 'practice', 'stats', 'lists_.build'].map((n) => `app/routes/med/${n}.tsx`);
+const ROUTES = ['index', 'live', '$slug', 'tracker', 'lists', 'ask', 'practice', 'stats', 'lists_.build'].map(
+  (n) => `app/routes/med/${n}.tsx`,
+);
 const uiFiles = globSync('features/medschools/ui/**/*.tsx')
   .map(String)
   .filter((f) => !/\.test\./.test(f))
@@ -61,7 +63,10 @@ describe('medschools ui rules', () => {
   });
 
   it('keeps to the app tier: palette tokens only, no hex, no keyframes, nothing position: fixed', () => {
-    const css = readCss('features/medschools/ui/medschools.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    const css = readCss('features/medschools/ui/medschools.css')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      // The phone menu's drawer and scrim (owner 2026-11-27) are the one modal layer: a transient, floated overlay.
+      .replace(/\.medapp-drawer[\w-]*(?:\[[^\]]*\])?[^{}]*\{[^}]*\}/g, '');
     // Every colour is an `--app-*` token declaration; any other hex means a colour that escaped the palette.
     const stray = css.split('\n').filter((l) => /#[0-9a-fA-F]{3,8}\b/.test(l) && !/^\s*--(app|site)-[\w-]+:/.test(l));
     expect(stray.filter((l) => !/^\s*(\/?\*|\*)/.test(l))).toEqual([]);

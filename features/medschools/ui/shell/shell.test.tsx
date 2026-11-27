@@ -116,7 +116,10 @@ describe('medschools shell', () => {
   });
 
   it('keeps the wash static: in the flow, no fixed layer, no animation, a tile for each mode', () => {
-    const css = readCss('features/medschools/ui/medschools.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    const css = readCss('features/medschools/ui/medschools.css')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      // The phone menu's drawer and scrim (owner 2026-11-27) are the one modal layer: a transient, floated overlay.
+      .replace(/\.medapp-drawer[\w-]*(?:\[[^\]]*\])?[^{}]*\{[^}]*\}/g, '');
     expect(css).toMatch(/\.medapp-page\s*\{[^}]*background-image: var\(--app-med-wash-image\)/);
     // Nothing is fixed, and nothing is sticky flush to an edge of the screen. The one rule pinned at 0 is the rail's
     // heading, sticky inside the rail panel's own scroll box (the panel itself sits 16px off the top).
