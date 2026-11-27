@@ -19,20 +19,18 @@
  * So: everything matching the glob runs, and the only way to opt out is an
  * explicit, commented entry in `exclude`.
  *
- * **2. Isolation stays ON.** Each test file gets a fresh module registry.
- * `--no-isolate` runs this suite in ~20s instead of ~30s, and it was measured:
- * nine files fail outright (shared `vi.mock` registry), and two more —
- * `lib/rmhladder/pipeline/{run,process-source}.test.ts` — fail *differently on
- * every seed* under `--sequence.shuffle`, because their in-memory Prisma
- * doubles are module state. Order-dependent red is worse than slow green, and
- * this repo's whole gate culture is built on the suite being evidence. The
- * speed came from elsewhere (see `maxWorkers` below and the notes in
- * docs/testing.md §Speed). Re-measured on vitest 5.1.2 (2026-11-26): `--no-isolate` fails
- * 2692 tests across the altair, medschools and other `vi.mock`-heavy suites, so it is still
- * not an option; the "faster with isolate: false" hint in the run summary does not apply.
+ * **2. Two projects, split by whether a file may share a module registry.** Files that mock a module,
+ * stub a global or fake the clock (`NEEDS_OWN_REGISTRY` below) run in `isolated`, a fresh registry per file,
+ * because what they change outlives them: with a shared registry the next file in the worker imports the mock.
+ * Everything else runs in `shared` (`isolate: false`), which skips re-evaluating the module graph per file:
+ * about 17% off the suite (247 s to 205 s on 4 cores, 2026-11-27). A blanket `--no-isolate` is still not an
+ * option: on vitest 5.1.2 it fails 2484 tests in 377 files. The split is deterministic, so a new mocking test
+ * lands in `isolated` by itself. If a file passes alone but fails in `shared`, add it to
+ * `vitest.isolated-files.json` (one-directional: remove an entry once it passes shared).
  */
 import { defineConfig } from 'vitest/config';
 import { availableParallelism } from 'node:os';
+import { globSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { FRAMER_MOTION_INTERNALS } from './framer-motion-internals.mjs';
 import { I18N_RUNTIME_ALIASES } from './i18n-runtime-aliases.mjs';
@@ -48,6 +46,90 @@ import { ENGINE_TESTS_FROM_MAIN_SUITE } from './vitest.engine-tests.mjs';
  */
 const maxWorkers = Math.min(12, Math.max(2, Math.ceil(availableParallelism() * 1.5)));
 
+/** Files no part of this suite collects (each has its own suite or is a generated/tooling dir). */
+export const EXCLUDE = [
+  '**/node_modules/**',
+  '**/dist/**',
+  '**/dist-server/**',
+  '**/.output/**',
+  '**/.tanstack/**',
+  '**/coverage/**',
+  // Claude Code agent worktrees (gitignored) are full checkouts of other
+  // branches. Collected, they run a second, stale copy of the whole suite
+  // and fail the commit gate for code that is not in this tree.
+  '.claude/worktrees/**',
+  // The epic (book/textbook) content-build pipeline launches Chromium and
+  // needs 60s timeouts, so it is its own suite: `pnpm test:epic`
+  // (vitest.epic.config.ts), gated by .github/workflows/epic-tests.yml.
+  'scripts/epic/**',
+  // The integration suite drives a RUNNING app and a real Postgres, so it
+  // is its own suite: `pnpm test:integration` (vitest.integration.config.ts),
+  // gated by the `integration` job in .github/workflows/web-ci.yml.
+  'testing/integration/**',
+  // The TF2 browser game is gameplay, not mission-critical, so it is its
+  // own suite: `pnpm test:tf2` (vitest.tf2.config.ts), gated by
+  // .github/workflows/tf2-game-tests.yml.
+  'lib/tf2-game/**',
+  'scripts/tf2-game/**',
+  'server/socket-server/tf2/**',
+  // The single-player game layer (HL2 / Portal) is gameplay on the same
+  // engine: it runs in the TF2 suite, `pnpm test:tf2` (vitest.tf2.config.ts).
+  'lib/sp-game/**',
+  // CS:GO (de_dust2) is gameplay on the same engine too: the TF2 suite runs it.
+  'lib/csgo-game/**',
+  // The HUD editor's and the loadout's model are the same engine project
+  // (tsconfig.engine.json, audit AR4), so their tests run in that suite too.
+  // Their server side is not: `*.server.test.ts` and the tests the engine
+  // project names in its `exclude` are site files and stay here.
+  ...ENGINE_TESTS_FROM_MAIN_SUITE,
+  // Multiplayer Balatro is gameplay too: its own suite, `pnpm test:balatro`
+  // (vitest.balatro.config.ts, which includes exactly these globs), gated by
+  // .github/workflows/balatro-mp-tests.yml. The mission-critical Balatro
+  // tests (features/balatro/engine/__tests__/saves.test.ts, the hub auth walk under
+  // server/socket-server/handlers/__tests__/) stay here.
+  'features/balatro/engine/mp/**',
+  'lib/shared/p2p/**',
+  'features/balatro/server/hub/**',
+  'scripts/balatro/**',
+  // Its browser end-to-end suite: `pnpm test:balatro:e2e` (vitest.balatro-e2e.config.ts).
+  'testing/balatro-e2e/**',
+  // The Toolbox's pure utilities (/tools) are not mission-critical either: their own
+  // suite, `pnpm test:toolbox` (vitest.toolbox.config.ts), gated by .github/workflows/toolbox-tests.yml.
+  'lib/toolbox/**',
+  // Sprint 02's product logic (`*.product.test.ts`) is not mission-critical either: its own
+  // suite, `pnpm test:product` (vitest.product.config.ts), gated by .github/workflows/product-tests.yml.
+  '**/*.product.test.ts',
+  '**/*.product.test.tsx',
+];
+
+/**
+ * Which test files may share a module registry (`isolate: false`).
+ *
+ * A file that mocks a module, stubs a global or fakes the clock changes state that outlives it when the
+ * registry is shared: the next file in the same worker would import the mock. So those files keep a fresh
+ * registry per file (the `isolated` project) and only files that do none of that run in `shared`. The rule is
+ * a pattern, not a list, so a new mocking test lands in `isolated` by itself. `vitest.isolated-files.json`
+ * names the few other files that hold module state (an in-memory Prisma double, a singleton) and are
+ * one-directional: remove an entry once its file passes under `isolate: false`.
+ */
+const NEEDS_OWN_REGISTRY =
+  /\bvi\.(mock|doMock|stubGlobal|stubEnv|useFakeTimers|setSystemTime|resetModules|spyOn|hoisted)\b/;
+const EXTRA_ISOLATED: string[] = (
+  JSON.parse(readFileSync(path.resolve(import.meta.dirname, 'vitest.isolated-files.json'), 'utf8')) as { files: string[] }
+).files;
+function splitByIsolation(): { isolated: string[]; shared: string[] } {
+  const isolated = new Set(EXTRA_ISOLATED);
+  const shared: string[] = [];
+  for (const file of globSync('**/*.test.{ts,tsx}', { cwd: import.meta.dirname, exclude: (name) => name === 'node_modules' || name === '.git' || name === '.output' || name === '.cache' || name === 'dist' })) {
+    const rel = file.split(path.sep).join('/');
+    if (isolated.has(rel)) continue;
+    if (NEEDS_OWN_REGISTRY.test(readFileSync(path.resolve(import.meta.dirname, rel), 'utf8'))) isolated.add(rel);
+    else shared.push(rel);
+  }
+  return { isolated: [...isolated].sort(), shared: shared.sort() };
+}
+const { isolated: ISOLATED_FILES, shared: SHARED_FILES } = splitByIsolation();
+
 export default defineConfig({
   test: {
     // Brings the untracked generated modules (route tree, pre-paint script) up to date first.
@@ -57,60 +139,14 @@ export default defineConfig({
     // a stale `import.meta.glob` expansion and misses API files added since. Local runs keep it.
     fsModuleCache: !process.env.CI,
     // Every *.test.ts(x) in the repo, minus the exclusions below.
-    include: ['**/*.test.{ts,tsx}'],
-    exclude: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/dist-server/**',
-      '**/.output/**',
-      '**/.tanstack/**',
-      '**/coverage/**',
-      // Claude Code agent worktrees (gitignored) are full checkouts of other
-      // branches. Collected, they run a second, stale copy of the whole suite
-      // and fail the commit gate for code that is not in this tree.
-      '.claude/worktrees/**',
-      // The epic (book/textbook) content-build pipeline launches Chromium and
-      // needs 60s timeouts, so it is its own suite: `pnpm test:epic`
-      // (vitest.epic.config.ts), gated by .github/workflows/epic-tests.yml.
-      'scripts/epic/**',
-      // The integration suite drives a RUNNING app and a real Postgres, so it
-      // is its own suite: `pnpm test:integration` (vitest.integration.config.ts),
-      // gated by the `integration` job in .github/workflows/web-ci.yml.
-      'testing/integration/**',
-      // The TF2 browser game is gameplay, not mission-critical, so it is its
-      // own suite: `pnpm test:tf2` (vitest.tf2.config.ts), gated by
-      // .github/workflows/tf2-game-tests.yml.
-      'lib/tf2-game/**',
-      'scripts/tf2-game/**',
-      'server/socket-server/tf2/**',
-      // The single-player game layer (HL2 / Portal) is gameplay on the same
-      // engine: it runs in the TF2 suite, `pnpm test:tf2` (vitest.tf2.config.ts).
-      'lib/sp-game/**',
-      // CS:GO (de_dust2) is gameplay on the same engine too: the TF2 suite runs it.
-      'lib/csgo-game/**',
-      // The HUD editor's and the loadout's model are the same engine project
-      // (tsconfig.engine.json, audit AR4), so their tests run in that suite too.
-      // Their server side is not: `*.server.test.ts` and the tests the engine
-      // project names in its `exclude` are site files and stay here.
-      ...ENGINE_TESTS_FROM_MAIN_SUITE,
-      // Multiplayer Balatro is gameplay too: its own suite, `pnpm test:balatro`
-      // (vitest.balatro.config.ts, which includes exactly these globs), gated by
-      // .github/workflows/balatro-mp-tests.yml. The mission-critical Balatro
-      // tests (features/balatro/engine/__tests__/saves.test.ts, the hub auth walk under
-      // server/socket-server/handlers/__tests__/) stay here.
-      'features/balatro/engine/mp/**',
-      'lib/shared/p2p/**',
-      'features/balatro/server/hub/**',
-      'scripts/balatro/**',
-      // Its browser end-to-end suite: `pnpm test:balatro:e2e` (vitest.balatro-e2e.config.ts).
-      'testing/balatro-e2e/**',
-      // The Toolbox's pure utilities (/tools) are not mission-critical either: their own
-      // suite, `pnpm test:toolbox` (vitest.toolbox.config.ts), gated by .github/workflows/toolbox-tests.yml.
-      'lib/toolbox/**',
-      // Sprint 02's product logic (`*.product.test.ts`) is not mission-critical either: its own
-      // suite, `pnpm test:product` (vitest.product.config.ts), gated by .github/workflows/product-tests.yml.
-      '**/*.product.test.ts',
-      '**/*.product.test.tsx',
+    // `include` and `exclude` live in the projects, not here: an `extends: true` project MERGES array options with
+    // the root's, so a root `include` would make `isolated` collect every file.
+    // Two projects over the same files, split by whether the file needs its own module registry
+    // (see the header, point 2). `shared` reuses workers' module graphs across files, which is where
+    // the time goes; `isolated` is the old behaviour, for the files in vitest.isolated-files.json.
+    projects: [
+      { extends: true, test: { name: 'isolated', isolate: true, include: ISOLATED_FILES, exclude: EXCLUDE } },
+      { extends: true, test: { name: 'shared', isolate: false, include: SHARED_FILES, exclude: EXCLUDE } },
     ],
     environment: 'node',
     globals: true,

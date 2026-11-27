@@ -185,11 +185,16 @@ Per-file overhead (transform + module graph) dominates, which is why deleting wh
 micro-optimising the slowest ones did not: after the six fastest-file fixes the suite was still 37s, and it was file
 _count_ that took it to 20s.
 
-**Isolation stays on**, and that is deliberate. Measured on the pre-trim suite, `--no-isolate` took it from ~37s to ~20s
-— and nine files failed outright (shared `vi.mock` registry), while
-`lib/rmhladder/pipeline/{run,process-source}.test.ts` failed _on a different set of seeds every_ `--sequence.shuffle`,
-because their in-memory Prisma doubles are module state. Order-dependent red is worse than slow green, and the trim
-bought that time without the flakes. Don't re-litigate this without re-running the shuffle.
+**Two projects, split by isolation (2026-11-27).** A blanket `--no-isolate` took the pre-trim suite from ~37 s to
+~20 s but failed nine files (shared `vi.mock` registry), and `lib/rmhladder/pipeline/{run,process-source}.test.ts`
+failed _on a different set of seeds every_ `--sequence.shuffle` because their in-memory Prisma doubles are module
+state. Re-measured on vitest 5.1.2: `--no-isolate` fails 2484 tests in 377 files. So the suite is two vitest projects
+(`vitest.config.ts`): `isolated`, a fresh module registry per file, for every file whose source matches
+`NEEDS_OWN_REGISTRY` (`vi.mock`, `vi.doMock`, `vi.stubGlobal`, `vi.stubEnv`, `vi.useFakeTimers`, `vi.setSystemTime`,
+`vi.resetModules`, `vi.spyOn`, `vi.hoisted`) or named in `vitest.isolated-files.json`; and `shared`, `isolate: false`,
+for the rest (about half the files). Measured on 4 cores: 247 s all-isolated, ~205 s split; the shared project passed
+two plain runs and two shuffled-file-order runs on 2 workers. Order-dependent red is still worse than slow green: a
+file that fails only in `shared` goes in the JSON list, and the list only shrinks.
 
 To get logs back while debugging: `LOG_LEVEL=debug pnpm test <path>`.
 

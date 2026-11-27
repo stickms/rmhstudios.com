@@ -1,0 +1,4 @@
+{
+  "_comment": "Extra test files that need a fresh module registry per file, beyond the ones vitest.config.ts detects by pattern (vi.mock, stubGlobal, fake timers...). One-directional: remove an entry when the file passes under isolate: false.",
+  "files": []
+}

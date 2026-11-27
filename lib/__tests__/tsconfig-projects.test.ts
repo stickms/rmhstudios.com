@@ -19,7 +19,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import mainSuite from '../../vitest.config';
+import { EXCLUDE as mainExclude } from '../../vitest.config';
 import engineSuite from '../../vitest.tf2.config';
 import { engineProjectTests } from '../../vitest.engine-tests.mjs';
 
@@ -224,7 +224,6 @@ describe('nothing runs a bare tsc', () => {
 
 describe('the engine project and the test suites', () => {
   const engineTests = filesOf('engine').filter((file) => /\.test\.tsx?$/.test(file));
-  const mainExclude = mainSuite.test?.exclude ?? [];
   const engineInclude = engineSuite.test?.include ?? [];
 
   it('agrees with vitest.engine-tests.mjs on which tests are the engine project\'s', () => {
