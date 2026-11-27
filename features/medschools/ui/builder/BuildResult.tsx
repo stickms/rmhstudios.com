@@ -250,7 +250,12 @@ function SchoolRow({
         </label>
         <SchoolCrest slug={s.slug} name={s.name} size={40} />
         <div className="medapp-item__title">
-          <Link to="/med/$slug" params={{ slug: s.slug }} search={{ ...SCHOOL_SEARCH_DEFAULTS, tab: 'facts' }} className="medapp-name">
+          <Link
+            to="/med/$slug"
+            params={{ slug: s.slug }}
+            search={{ ...SCHOOL_SEARCH_DEFAULTS, tab: 'facts' }}
+            className="medapp-name"
+          >
             {s.name}
           </Link>
           <span className="medapp-build__label medapp-build__label--under">{label(s.label)}</span>
@@ -290,12 +295,7 @@ function SchoolRow({
         {s.reason ? (
           <p className="medapp-text">
             {s.reason.text}{' '}
-            <span className="medapp-meta">
-              {`[${s.reason.cites
-                .map(citeNo)
-                .filter(Boolean)
-                .join(', ')}]`}
-            </span>
+            <span className="medapp-meta">{`[${s.reason.cites.map(citeNo).filter(Boolean).join(', ')}]`}</span>
           </p>
         ) : null}
         {s.figures.length ? (

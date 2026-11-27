@@ -49,7 +49,12 @@ export type Existing = ReadonlyMap<MilestoneType, string>;
 
 export type MilestoneStatus = 'new' | 'same' | 'conflict' | 'invalid';
 
-export function statusOf(m: EditMilestone, existing: Existing | undefined, cycleYear: number, now: Date): MilestoneStatus {
+export function statusOf(
+  m: EditMilestone,
+  existing: Existing | undefined,
+  cycleYear: number,
+  now: Date,
+): MilestoneStatus {
   if (milestoneDateProblem(cycleYear, m.date, now) !== null) return 'invalid';
   const was = existing?.get(m.type);
   if (was === undefined) return 'new';

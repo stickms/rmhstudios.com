@@ -28,7 +28,7 @@ export function LatestStatus({ latest }: { latest: NonNullable<MedSchoolListItem
           className="medapp-latest__when"
         />
       </span>
-      <StatusIcon status={status} size="sm" />
+      <StatusIcon status={status} size="sm" className="medapp-latest__disc" />
     </span>
   );
 }

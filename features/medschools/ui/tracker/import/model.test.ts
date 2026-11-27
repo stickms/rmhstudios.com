@@ -34,9 +34,13 @@ const preview = (): MedImportPreviewRes => ({
         { type: 'INTERVIEW', date: '2026-10-05', yearInferred: true, ambiguous: true, from: '10/5' },
       ],
     },
-    { key: 'nowhere|REG', schoolName: 'Nowhere U', school: null, program: 'REG', milestones: [
-      { type: 'SUBMITTED', date: '2026-06-12', yearInferred: false, ambiguous: false, from: 'x' },
-    ] },
+    {
+      key: 'nowhere|REG',
+      schoolName: 'Nowhere U',
+      school: null,
+      program: 'REG',
+      milestones: [{ type: 'SUBMITTED', date: '2026-06-12', yearInferred: false, ambiguous: false, from: 'x' }],
+    },
   ],
 });
 const none = () => undefined;
@@ -106,7 +110,13 @@ describe('import preview rules', () => {
         homeState: null,
         shareAnonymously: false,
         applications: [
-          { id: 'a', school: { ...duke, active: true }, program: 'REG' as const, notes: null, milestones: [{ type: 'SUBMITTED' as const, date: '2026-06-01' }] },
+          {
+            id: 'a',
+            school: { ...duke, active: true },
+            program: 'REG' as const,
+            notes: null,
+            milestones: [{ type: 'SUBMITTED' as const, date: '2026-06-01' }],
+          },
         ],
       },
     };

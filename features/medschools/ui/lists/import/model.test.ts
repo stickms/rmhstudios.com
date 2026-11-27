@@ -11,7 +11,13 @@ import {
   toListEditable,
 } from './model';
 
-const school = (slug: string) => ({ slug, name: `${slug} School`, shortName: slug, degree: 'MD' as const, state: 'NC' });
+const school = (slug: string) => ({
+  slug,
+  name: `${slug} School`,
+  shortName: slug,
+  degree: 'MD' as const,
+  state: 'NC',
+});
 const preview: MedListImportPreviewRes = {
   truncated: false,
   dropped: 0,
@@ -41,7 +47,12 @@ describe('list import model', () => {
 
   it('statuses: add, already on the list (same program only), unmatched, unticked, named twice', () => {
     const rows = toListEditable(preview);
-    const existing = listIndex(list([{ slug: 'duke', program: 'ANY' }, { slug: 'ucsf', program: 'REG' }]));
+    const existing = listIndex(
+      list([
+        { slug: 'duke', program: 'ANY' },
+        { slug: 'ucsf', program: 'REG' },
+      ]),
+    );
     expect(rowStatuses(rows, existing)).toEqual(['there', 'add', 'unmatched']);
     const picked = pickSchool(rows, '?unrecognised-2|ANY', school('ucsf'));
     expect(picked[2]).toMatchObject({ include: true, school: { slug: 'ucsf' } });
@@ -59,7 +70,12 @@ describe('list import model', () => {
     expect(rows.map((r) => r.include)).toEqual([false, true, false]);
     expect(rowStatuses(rows, existing)[0]).toBe('there');
     // A tick that somehow arrived on a "there" row still adds nothing.
-    expect(rowStatuses(rows.map((r, i) => (i === 0 ? { ...r, include: true } : r)), existing)[0]).toBe('there');
+    expect(
+      rowStatuses(
+        rows.map((r, i) => (i === 0 ? { ...r, include: true } : r)),
+        existing,
+      )[0],
+    ).toBe('there');
     const otherProgram = rows.map((r, i) => (i === 0 ? { ...r, program: 'PHD' as const } : r));
     expect(rowStatuses(otherProgram, existing)[0]).toBe('skip');
     const ticked = otherProgram.map((r, i) => (i === 0 ? { ...r, include: true } : r));

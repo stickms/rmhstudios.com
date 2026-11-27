@@ -240,7 +240,13 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-/* A phone (owner 2026-11-27): crest | the school | save. The row's words become grid items of their own
+/* From 600px the crest's badge is not drawn (the disc at the row's end says it). */
+@media (min-width: 600px) {
+  .medapp-schoolrow__badge {
+    display: none;
+  }
+}
+/* A phone (owner 2026-11-27, layout C: the decision as a badge on the crest): crest | the school | save. The row's words become grid items of their own
    (`display: contents` on the body) so the newest status can sit between the place and the reported count: name, place,
    the status as one line (the disc, the words in the status colour, the time muted), then the count, muted. The name
    has the whole middle column, so nothing wraps into a narrow strip. From 600px the grid above is kept. */
@@ -260,8 +266,17 @@
   .medapp-schoolrow > .medapp-row__body {
     display: contents;
   }
-  .medapp-schoolrow > .medapp-crest {
+  .medapp-schoolrow > .medapp-crestbadge {
     grid-area: crest;
+    align-self: start;
+  }
+  /* The decision is the crest's badge here, so the disc beside the words is not drawn. */
+  .medapp-schoolrow .medapp-latest__disc {
+    display: none;
+  }
+  .medapp-schoolrow .medapp-latest__when::before {
+    content: '\00b7';
+    margin-inline-end: var(--app-med-space-1);
   }
   .medapp-schoolrow .medapp-row__name {
     grid-area: name;
@@ -288,7 +303,7 @@
     flex-direction: row;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 0 var(--app-med-space-2);
+    gap: 0 var(--app-med-space-1);
     max-inline-size: none;
     text-align: start;
   }

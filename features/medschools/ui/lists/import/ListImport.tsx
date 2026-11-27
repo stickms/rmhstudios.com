@@ -168,7 +168,8 @@ export default function ListImport({
           </p>
           <p className="medapp-meta mt-1">
             {t('lists-import-names-only', {
-              defaultValue: 'Only school names are read, with MD-PhD or DO-PhD where your file says so. Everything else is ignored.',
+              defaultValue:
+                'Only school names are read, with MD-PhD or DO-PhD where your file says so. Everything else is ignored.',
             })}
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -256,10 +257,15 @@ export default function ListImport({
                 onChange={(e) => setName(e.target.value)}
               />
               {nameProblem === 'empty' ? (
-                <span className="medapp-meta">{t('lists-import-name-empty', { defaultValue: 'Give the list a name.' })}</span>
+                <span className="medapp-meta">
+                  {t('lists-import-name-empty', { defaultValue: 'Give the list a name.' })}
+                </span>
               ) : nameProblem === 'long' ? (
                 <span className="medapp-meta">
-                  {t('lists-import-name-long', { max: LIMITS.listName, defaultValue: 'Use {{max}} characters or fewer.' })}
+                  {t('lists-import-name-long', {
+                    max: LIMITS.listName,
+                    defaultValue: 'Use {{max}} characters or fewer.',
+                  })}
                 </span>
               ) : null}
             </label>
