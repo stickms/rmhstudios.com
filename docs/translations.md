@@ -56,10 +56,10 @@ meanwhile is never overwritten (the run fails, and the next one picks the fix up
 A run pays for each string at most once:
 
 - **Already current is skipped.** A key whose recorded English matches today's English is never sent again.
-- **Older paid work is reused.** The pipeline before this branch left per-run `i18n/auto-translate*` branches whose
-  output never merged. `scripts/i18n-collect-reuse.ts` gathers every translation stored on any `i18n/*` branch, and the
-  translator adopts each one whose recorded English is still today's English. Once those old branches are deleted this
-  step finds nothing and costs nothing.
+- **Older paid work was reused, once.** The pipeline before this branch left per-run `i18n/auto-translate*` branches
+  whose output never merged; the workflow used to gather them (`scripts/i18n-collect-reuse.ts`, removed) and adopt each
+  translation whose recorded English was still today's. The `i18n/catalogs` branch holds that work now, so the step is
+  gone. `translate-locales.ts` still accepts `I18N_REUSE_DIR` (a `locales/`-shaped directory) for a one-off adoption.
 - **Identical English is translated once.** Within a locale, a string that already has a current translation under any
   key (`Cancel`, `Save`, `{{count}} players`) is copied rather than sent, and a string that appears under several
   untranslated keys is sent once.

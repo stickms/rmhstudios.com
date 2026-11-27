@@ -204,7 +204,7 @@ warnings versus the base branch, and a message that explains _why_.
 5. **i18n:** all user-facing strings through `t("key", { defaultValue })`; then `pnpm i18n:extract`. English is
    authoritative. Two silent failure modes to know: **(a)** `defaultValue` is only used when a key is MISSING, so
    changing the wording of a shipped string means a NEW key — editing the default in place changes English and nothing
-   else; **(b)** the extractor (`i18next-cli`, config `i18next.config.ts`) only sees literal keys, so a computed key never lands in `locales/`; check `locales/en/<ns>.json` after adding a string. Its output is additive and is reviewed before it is committed: a key it traces through a data table (`t(item.tKey, { defaultValue })`) is written with the key name as its English text, and a catalog value beats the call's `defaultValue`. A **new namespace
+   else; **(b)** the extractor (`i18next-cli`, config `i18next.config.ts`, run through `scripts/i18n-extract.mjs`) only sees literal keys, so a computed key never lands in `locales/`; check `locales/en/<ns>.json` after adding a string. It also follows `t(item.tKey, { defaultValue })` through data tables, finds keys with no text of their own and would write the key name or `''`; the wrapper leaves those out and lists them, because a catalog value beats the call's `defaultValue`. A **new namespace
    must be added to `NAMESPACES` in `lib/i18n/config.ts`** — a JSON file dropped into `locales/en/` without that entry
    is never loaded, and the UI silently falls back to its `defaultValue`s.
 6. **SEO:** per-route `head()`; `buildMeta`/`buildCanonical` from `@/lib/seo`; JSON-LD only via `jsonLdScript()` +
