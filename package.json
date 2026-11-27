@@ -285,7 +285,7 @@
     "tailwindcss": "^4.3.5",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
-    "typescript-js": "npm:typescript@^6.0.3",
+    "typescript-js": "npm:typescript@7.1.0-beta",
     "vite": "^8.4.0",
     "vitest": "^5.1.2"
   },

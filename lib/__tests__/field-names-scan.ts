@@ -18,7 +18,7 @@
  * A placeholder, a `title`, a comment and a label in another file do not name a field.
  */
 import { readFileSync } from 'node:fs';
-import ts from 'typescript-js';
+import * as ts from './ts-ast';
 
 /** Native elements that are form fields. */
 const NATIVE_FIELDS = new Set(['input', 'textarea', 'select']);
@@ -249,7 +249,7 @@ export function findUnnamedFields(source: string, fileName = 'file.tsx'): Unname
   const collectIds = (node: ts.Node): void => {
     if (ts.isJsxAttribute(node)) {
       const attrName = node.name.getText();
-      const owner = ts.isJsxAttributes(node.parent) ? node.parent.parent : undefined;
+      const owner = ts.isJsxAttributes(node.parent) ? (node.parent.parent as Opening) : undefined;
       const isIdProp = !!owner && ID_PROPS[tagName(owner)] === attrName;
       if (attrName === 'id' || isIdProp) {
         const v = attrValueText(node);

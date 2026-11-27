@@ -27,7 +27,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import ts from 'typescript-js';
+import * as ts from '@/lib/__tests__/ts-ast';
 import { describe, expect, it } from 'vitest';
 import { buildInitOptions, LOCALES, NAMESPACES } from '../config';
 import { createInstance as createRuntime } from '../runtime/i18next';

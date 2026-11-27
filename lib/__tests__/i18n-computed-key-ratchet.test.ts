@@ -25,7 +25,7 @@
  * Tests and `__tests__` are not scanned.
  */
 import { globSync, readFileSync } from 'node:fs';
-import ts from 'typescript-js';
+import * as ts from './ts-ast';
 import { describe, expect, it } from 'vitest';
 
 /**
