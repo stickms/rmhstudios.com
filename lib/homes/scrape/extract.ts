@@ -1,7 +1,7 @@
 /**
  * RMHHomes scraper — text field extractors (client-safe, pure).
  *
- * Feeds like Craigslist encode structured facts in free text — a title such as
+ * Housing RSS feeds often encode structured facts in free text — a title such as
  * "$1,850 / 2br - 900ft2 - Sunny flat near the park (Park Ave)" carries price,
  * beds, size and neighborhood. These helpers pull those out heuristically;
  * every one returns null when it can't find a confident value, so the ingest
@@ -74,7 +74,7 @@ export function extractPetsAllowed(text: string): boolean | null {
   return null;
 }
 
-/** Trailing "(Neighborhood)" from a Craigslist title, else null. */
+/** Trailing "(Neighborhood)" from a listing title, else null. */
 export function neighborhoodFromTitle(title: string): string | null {
   const matches = [...title.matchAll(/\(([^)]+)\)/g)];
   const last = matches.at(-1);
@@ -83,9 +83,9 @@ export function neighborhoodFromTitle(title: string): string | null {
 }
 
 /**
- * A human-readable title: strip the leading "$price / Nbr - Yft2 -" metadata
- * Craigslist prepends. Falls back to the original when stripping empties it
- * (e.g. a clean RSS title with no metadata is returned unchanged).
+ * A human-readable title: strip a leading "$price / Nbr - Yft2 -" metadata
+ * prefix when a feed prepends it. Falls back to the original when stripping
+ * empties it (e.g. a clean RSS title with no metadata is returned unchanged).
  */
 export function cleanTitle(title: string): string {
   let t = title

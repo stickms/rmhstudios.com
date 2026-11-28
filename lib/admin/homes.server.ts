@@ -188,8 +188,7 @@ export interface NewRssSource {
 
 /**
  * Add an RSS feed. The URL must be `https:` and pass the SSRF guard (every address it resolves to is public) before it
- * is stored; the adapter checks again when it fetches. The key is `rss:<host><path>` and must be new. Craigslist
- * sources are not added here: their region list is code (`seed.ts`).
+ * is stored; the adapter checks again when it fetches. The key is `rss:<host><path>` and must be new.
  */
 export async function addRssSource(adminId: string, input: NewRssSource): Promise<HomesChange> {
   const checked = checkFeedUrl(input.url);

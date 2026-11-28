@@ -108,7 +108,7 @@ function AddFeedForm({ onCancel, onAdded }: { onCancel: () => void; onAdded: Pro
         <DialogTitle>{t('add-title', { defaultValue: 'Add an RSS feed' })}</DialogTitle>
         <DialogDescription>
           {t('add-description', {
-            defaultValue: 'A public https feed of listings. Craigslist regions are set in code, not here.',
+            defaultValue: 'A public https RSS feed of housing listings.',
           })}
         </DialogDescription>
       </DialogHeader>

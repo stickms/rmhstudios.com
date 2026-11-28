@@ -3,17 +3,15 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { runHomesScrape, type RunPrisma } from './run';
 
-const FIXTURE = readFileSync(join(__dirname, 'adapters/__fixtures__/craigslist-apa.rss'), 'utf8');
-const FEED_URL = 'https://rochester.craigslist.org/search/apa?format=rss';
+const FIXTURE = readFileSync(join(__dirname, 'adapters/__fixtures__/rss-rentals.xml'), 'utf8');
+const FEED_URL = 'https://feeds.example.com/rochester/rentals.xml';
 
 const SOURCE_ROW = {
   id: 'src1',
-  key: 'craigslist:rochester:apa',
-  provider: 'CRAIGSLIST',
-  label: 'Craigslist Rochester — Rentals',
-  region: 'rochester',
-  category: 'apa',
-  url: null,
+  key: 'rss:feeds.example.com/rochester/rentals.xml',
+  provider: 'RSS',
+  label: 'Rochester Rentals',
+  url: FEED_URL,
   listingType: 'RENT',
   defaultCity: 'Rochester',
   defaultState: 'NY',

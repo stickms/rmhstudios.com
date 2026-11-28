@@ -48,8 +48,7 @@ export function HomesAdmin() {
         return t('status-blocked', { defaultValue: 'Blocked' });
     }
   };
-  const providerLabel = (p: HomeSourceProvider): string =>
-    p === 'RSS' ? t('provider-rss', { defaultValue: 'RSS' }) : t('provider-craigslist', { defaultValue: 'Craigslist' });
+  const providerLabel = (_p: HomeSourceProvider): string => t('provider-rss', { defaultValue: 'RSS' });
   const triggerLabel = (tr: HomeRunTrigger): string =>
     tr === 'MANUAL'
       ? t('trigger-manual', { defaultValue: 'Manual' })
@@ -157,7 +156,7 @@ export function HomesAdmin() {
               <EmptyState
                 title={t('sources-empty-title', { defaultValue: 'No sources yet' })}
                 description={t('sources-empty-description', {
-                  defaultValue: 'Add an RSS feed, or let the worker seed the default Craigslist regions.',
+                  defaultValue: 'Add an RSS feed to start importing outside listings.',
                 })}
               />
             ) : (

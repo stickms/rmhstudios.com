@@ -17,9 +17,9 @@ function ruleBlocks(): Array<[string, string]> {
   );
 }
 
-/** The body of the one rule whose selector is exactly `selector`; fails the test if there is none. */
+/** The body of the rule whose selector list matches or includes `selector`; fails the test if there is none. */
 function bodyOf(selector: string): string {
-  const hit = ruleBlocks().find(([s]) => s === selector);
+  const hit = ruleBlocks().find(([s]) => s === selector || s.split(',').some((part) => part.trim() === selector));
   if (!hit) throw new Error(`no rule for selector: ${selector}`);
   return hit[1];
 }

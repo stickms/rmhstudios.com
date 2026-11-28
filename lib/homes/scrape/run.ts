@@ -17,8 +17,6 @@ interface SourceRow {
   key: string;
   provider: string;
   label: string;
-  region: string | null;
-  category: string | null;
   url: string | null;
   listingType: string;
   defaultCity: string | null;
@@ -63,8 +61,6 @@ function toConfig(row: SourceRow): HomeSourceConfig {
     key: row.key,
     provider: row.provider as HomeProvider,
     label: row.label,
-    region: row.region,
-    category: row.category,
     url: row.url,
     listingType: row.listingType === 'SALE' ? 'SALE' : 'RENT',
     defaultCity: row.defaultCity,

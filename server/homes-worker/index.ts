@@ -3,8 +3,8 @@
  * Homes Worker — scraper consumer
  *
  * Long-lived Node.js process that runs the RMHHomes scraper on a configurable
- * schedule (default: every 6 hours). It aggregates public housing/apartment
- * feeds (Craigslist regional RSS, generic RSS) into EXTERNAL HomeListing rows so
+ * schedule (default: every 6 hours). It aggregates public RSS housing/apartment
+ * feeds into EXTERNAL HomeListing rows so
  * the marketplace has real inventory beyond member posts.
  *
  * The schedule is a pg-boss cron (`homes.scrape`) fired by the `jobs` worker's
@@ -24,7 +24,6 @@ import {
 } from '../../lib/jobs/scheduled-consumer.server';
 import { runHomesScrape, type RunPrisma } from '../../lib/homes/scrape/run';
 import { HOMES_SCRAPE_QUEUE, scrapeTriggerOf } from '../../lib/homes/scrape/trigger';
-import { seedHomeSources, type SeedPrisma } from '../../lib/homes/scrape/seed';
 import {
   notifyFavouritersOfExternalDrop,
   notifyWatchersOfExternalListing,
@@ -94,22 +93,18 @@ async function tick(data: Record<string, unknown> = {}) {
 }
 
 // ─── Startup bootstrap ──────────────────────────────────────────
-// A fresh database has no sources or external listings, and the first cron tick
-// can be hours away — self-initialize so the marketplace has inventory right
-// after deploy: seed default sources if none exist, then run once if there are
-// no external listings yet. Every step is idempotent and skipped once done.
+// When RSS sources are configured but no external listings have been fetched
+// yet, queue one scrape immediately instead of waiting for the next cron tick.
 
-/** Resolves true when the marketplace is empty and a first scrape should be queued now. */
+/** Resolves true when configured sources exist and no external listings have been fetched yet. */
 async function bootstrap(): Promise<boolean> {
   if (!SCRAPE_ENABLED || running || stopping) return false;
   running = true;
   try {
-    const sourceCount = await prisma.homeSource.count();
-    if (sourceCount === 0) {
-      console.log('[homes-worker] Bootstrap: no sources — seeding default feeds');
-      const seeded = await seedHomeSources(prisma as unknown as SeedPrisma);
-      console.log(`[homes-worker] Bootstrap: seeded ${seeded.sources} sources`);
-    }
+    const sourceCount = await prisma.homeSource.count({
+      where: { status: { in: ['ACTIVE', 'ERROR'] } },
+    });
+    if (sourceCount === 0) return false;
 
     const externalCount = await prisma.homeListing.count({ where: { source: 'EXTERNAL' } });
     if (externalCount === 0) {

@@ -89,7 +89,7 @@ model HomeListing {
   externalId  String?
   /// Canonical URL of the original posting ("View original listing").
   externalUrl String?     @db.VarChar(1000)
-  /// Human label for the source, snapshotted for display (e.g. "Craigslist — Rochester").
+  /// Human label for the source, snapshotted for display (e.g. "Rochester Rentals").
   sourceName  String?     @db.VarChar(120)
   /// Last time a scrape run saw this posting still live. Drives expiry of
   /// external listings that have disappeared from their feed.
@@ -195,8 +195,6 @@ model HomeWatch {
 
 /// The kind of public feed a HomeSource pulls from.
 enum HomeSourceProvider {
-  /// Craigslist regional RSS search feeds (apartments/housing + real estate).
-  CRAIGSLIST
   /// A generic RSS 2.0 housing feed configured by `url`.
   RSS
 }
@@ -219,18 +217,14 @@ enum HomeRunTrigger {
 /// yields EXTERNAL `HomeListing` rows tagged with `sourceRefId`.
 model HomeSource {
   id       String             @id @default(cuid())
-  /// Stable slug used to upsert on (re)seed, e.g. "craigslist:rochester:apa"
-  /// or "rss:<url>". A non-null unique avoids Postgres' NULL-distinct pitfall.
+  /// Stable slug used to dedupe RSS feeds, e.g. "rss:<host><path>".
+  /// A non-null unique avoids Postgres' NULL-distinct pitfall.
   key      String             @unique @db.VarChar(200)
   provider HomeSourceProvider
-  /// Display label, e.g. "Craigslist — Rochester". Snapshotted onto listings.
+  /// Display label, e.g. "Rochester Rentals". Snapshotted onto listings.
   label    String             @db.VarChar(120)
 
-  // Craigslist config: `region` is the site subdomain (e.g. "rochester") and
-  // `category` the search path segment (e.g. "apa"). For RSS sources `url` is
-  // the full feed URL instead.
-  region      String?         @db.VarChar(64)
-  category    String?         @db.VarChar(32)
+  /// Full RSS feed URL.
   url         String?         @db.VarChar(1000)
   listingType HomeListingType @default(RENT)
 

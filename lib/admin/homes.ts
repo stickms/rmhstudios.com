@@ -7,7 +7,7 @@
 export const HOME_SOURCE_STATUSES = ['ACTIVE', 'DISABLED', 'ERROR', 'BLOCKED'] as const;
 export type HomeSourceStatus = (typeof HOME_SOURCE_STATUSES)[number];
 
-export const HOME_SOURCE_PROVIDERS = ['CRAIGSLIST', 'RSS'] as const;
+export const HOME_SOURCE_PROVIDERS = ['RSS'] as const;
 export type HomeSourceProvider = (typeof HOME_SOURCE_PROVIDERS)[number];
 
 export const HOME_LISTING_TYPES = ['RENT', 'SALE'] as const;

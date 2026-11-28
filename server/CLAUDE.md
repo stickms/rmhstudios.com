@@ -168,8 +168,9 @@ Consequences:
   `ops.data-cleanup` cron in `jobs` (`lib/cleanup-job.server.ts`).
 - **`homes-worker/`** — RMHHomes listings-scraper consumer. No port. pg-boss cron (queue `homes.scrape`, `exclusive`,
   UTC, `HOMES_CRON_SCHEDULE`, default every 6h), same `scheduled-consumer` pattern as the ladder worker. Aggregates
-  public housing feeds (Craigslist/RSS) into `EXTERNAL` `HomeListing` rows and notifies watchers. Self-bootstraps
-  default sources + a first run on an empty DB. Built by `pnpm build` and run as its own compose service.
+  configured public RSS housing feeds into `EXTERNAL` `HomeListing` rows and notifies watchers. Bootstraps a first run
+  on startup when RSS sources exist and no external listings have been fetched yet. Built by `pnpm build` and run as its
+  own compose service.
 - **`medschools-worker/`** — RMH Med Schools CycleTrack ingest consumer. No port. **Live signal:** after committing
   new Admit or SDN events the jobs publish a bare `{ at }` on the realtime bus (`rt:medschools:live`, coalesced to one
   per 5 s, never throwing; `features/medschools/live-signal.server.ts`), which web's `/api/medschools/live/stream`

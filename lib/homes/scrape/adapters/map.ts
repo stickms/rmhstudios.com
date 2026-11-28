@@ -1,9 +1,8 @@
 /**
- * RMHHomes scraper — shared feed-item → NormalizedListing mapping.
+ * RMHHomes scraper — feed-item → NormalizedListing mapping.
  *
- * Craigslist and generic RSS differ only in how they build the feed URL and
- * derive a stable id; the field-by-field mapping (price/beds/baths/geo/images)
- * is identical, so it lives here and both adapters call it.
+ * Maps parsed RSS/RDF feed fields (price, beds, baths, geo, images) into a
+ * normalized listing for the ingest pipeline.
  */
 
 import type { FeedItem } from '../feed';
