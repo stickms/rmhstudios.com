@@ -686,10 +686,26 @@ html.readable-font body {
      icon fades in M5's 160 ms. Alone on the pill (`data-solo`) it keeps its
      width and the pill fades instead. */
   .fab-lane {
-    transition: opacity var(--m5) ease;
+    transition:
+      opacity var(--m5) ease,
+      transform var(--m3) ease,
+      visibility 0s linear 0s;
   }
   .fab-lane:not([data-shown]) {
     opacity: 0;
+  }
+  /* While the globe is open its bottom bar sits over this lane on a phone, so the pill fades and slides down out of
+     the way, and comes back the same way when the globe closes. `visibility` flips after the fade so the hidden
+     pill takes no taps and no focus. */
+  body:has(.globe-nav[data-open]) .fab-lane {
+    opacity: 0;
+    transform: translateY(0.75rem);
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity var(--m5) ease,
+      transform var(--m3) ease,
+      visibility 0s linear var(--m3);
   }
   .fab-lane__top {
     overflow: hidden;
@@ -701,9 +717,6 @@ html.readable-font body {
     width: 0;
     opacity: 0;
   }
-
-  /* No rule hides the lane while the globe is open: the open globe's veil
-     (--z-hub-overlay, 90) already covers it (z-40). */
 
   /* The tripwire back-to-top watches instead of a scroll listener: a 1px marker
      parked `threshold` pixels down the page, whose leaving the top of the
