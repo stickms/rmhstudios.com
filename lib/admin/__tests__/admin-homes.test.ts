@@ -156,11 +156,11 @@ vi.mock('@/lib/prisma.server', async () => {
 
 const source = (over: Row = {}): Row => ({
   id: 's1',
-  key: 'craigslist:rochester:apa',
-  provider: 'CRAIGSLIST',
-  label: 'Craigslist Rochester',
+  key: 'rss:feeds.example.com/rochester/rentals',
+  provider: 'RSS',
+  label: 'Rochester Rentals',
   listingType: 'RENT',
-  url: null,
+  url: 'https://feeds.example.com/rochester/rentals',
   status: 'ACTIVE',
   lastError: null,
   lastRunAt: null,
@@ -421,9 +421,10 @@ describe('add an RSS feed', () => {
     admin();
     const { status, json } = await call('list', 'POST', { body: NEW_FEED });
     expect(status).toBe(200);
-    const created = h.sources.find((s) => s.provider === 'RSS')!;
+    const created = h.sources.find((s) => s.key === 'rss:feeds.example.com/buffalo/rentals')!;
     expect(created).toMatchObject({
       key: 'rss:feeds.example.com/buffalo/rentals',
+      provider: 'RSS',
       label: 'Buffalo rentals',
       listingType: 'RENT',
       defaultCity: 'Buffalo',
@@ -470,7 +471,7 @@ describe('add an RSS feed', () => {
       const { status, json } = await call('list', 'POST', { body: { ...NEW_FEED, url } });
       expect([status, json?.code]).toEqual([409, 'HOME_SOURCE_EXISTS']);
     }
-    expect(h.sources.filter((s) => s.provider === 'RSS')).toHaveLength(1);
+    expect(h.sources.filter((s) => s.key === 'rss:feeds.example.com/buffalo/rentals')).toHaveLength(1);
     expect(h.audits).toHaveLength(1);
   });
 

@@ -2,7 +2,7 @@
  * RMHHomes — scraper types (server only).
  *
  * The homes scraper aggregates real housing/apartment postings from public
- * third-party feeds (Craigslist regional RSS, generic RSS housing feeds) so the
+ * third-party RSS housing feeds so the
  * marketplace has inventory beyond what RMH members post themselves. Every
  * discovered posting becomes an EXTERNAL `HomeListing` that links back to its
  * original URL — we aggregate and attribute, we never re-host the source.
@@ -10,7 +10,7 @@
 
 import type { PropertyType } from '../types';
 
-export type HomeProvider = 'CRAIGSLIST' | 'RSS';
+export type HomeProvider = 'RSS';
 
 /** The subset of a HomeSource row the adapters/pipeline read. */
 export interface HomeSourceConfig {
@@ -18,8 +18,6 @@ export interface HomeSourceConfig {
   key: string;
   provider: HomeProvider;
   label: string;
-  region: string | null;
-  category: string | null;
   url: string | null;
   listingType: 'RENT' | 'SALE';
   defaultCity: string | null;

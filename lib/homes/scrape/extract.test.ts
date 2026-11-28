@@ -97,7 +97,7 @@ describe('neighborhoodFromTitle', () => {
 });
 
 describe('cleanTitle', () => {
-  it('strips the Craigslist "$price / Nbr - Yft2" prefix', () => {
+  it('strips a leading "$price / Nbr - Yft2" prefix', () => {
     expect(cleanTitle('$1,850 / 2br - 900ft2 - Sunny flat near the park (Park Ave)')).toBe(
       'Sunny flat near the park (Park Ave)',
     );

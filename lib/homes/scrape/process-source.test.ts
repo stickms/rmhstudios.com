@@ -4,18 +4,16 @@ import { describe, expect, it } from 'vitest';
 import { processSource, type ProcessPrisma } from './process-source';
 import type { HomeSourceConfig } from './types';
 
-const FIXTURE = readFileSync(join(__dirname, 'adapters/__fixtures__/craigslist-apa.rss'), 'utf8');
-const FEED_URL = 'https://rochester.craigslist.org/search/apa?format=rss';
-const ROBOTS_URL = 'https://rochester.craigslist.org/robots.txt';
+const FIXTURE = readFileSync(join(__dirname, 'adapters/__fixtures__/rss-rentals.xml'), 'utf8');
+const FEED_URL = 'https://feeds.example.com/rochester/rentals.xml';
+const ROBOTS_URL = 'https://feeds.example.com/robots.txt';
 
 const SOURCE: HomeSourceConfig = {
   id: 'src1',
-  key: 'craigslist:rochester:apa',
-  provider: 'CRAIGSLIST',
-  label: 'Craigslist Rochester — Rentals',
-  region: 'rochester',
-  category: 'apa',
-  url: null,
+  key: 'rss:feeds.example.com/rochester/rentals.xml',
+  provider: 'RSS',
+  label: 'Rochester Rentals',
+  url: FEED_URL,
   listingType: 'RENT',
   defaultCity: 'Rochester',
   defaultState: 'NY',
@@ -240,7 +238,7 @@ describe('processSource', () => {
       SOURCE,
     );
     // Second run: a feed with only listing 1001 — 1002 should expire.
-    const onlyFirst = FIXTURE.replace(/<item rdf:about="[^"]*1002\.html">[\s\S]*?<\/item>/, '');
+    const onlyFirst = FIXTURE.replace(/<item>\s*<guid>1002<\/guid>[\s\S]*?<\/item>/, '');
     const stats = await processSource(
       {
         prisma,
@@ -276,7 +274,7 @@ describe('processSource', () => {
       {
         prisma,
         fetchImpl: makeFetch({
-          feedBody: '<rdf:RDF></rdf:RDF>',
+          feedBody: '<rss version="2.0"><channel></channel></rss>',
         }),
         now: new Date('2026-07-11T00:00:00Z'),
       },

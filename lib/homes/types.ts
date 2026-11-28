@@ -71,7 +71,7 @@ export interface Listing {
   author: ListingAuthor | null;
   /** For EXTERNAL listings: the original posting URL ("View original"). */
   externalUrl: string | null;
-  /** For EXTERNAL listings: the source label, e.g. "Craigslist — Rochester". */
+  /** For EXTERNAL listings: the source label, e.g. "Rochester Rentals". */
   sourceName: string | null;
   /** Whether the requesting user has favorited this listing. */
   favorited: boolean;

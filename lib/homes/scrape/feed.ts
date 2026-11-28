@@ -2,7 +2,7 @@
  * RMHHomes scraper — minimal RSS/RDF feed parser (server only).
  *
  * Housing feeds come in two shapes we care about: RSS 2.0 (`<item><title/>
- * <link/><description/><pubDate/>…`) and Craigslist's RDF variant (`<item
+ * <link/><description/><pubDate/>…`) and RDF/RSS 1.0 (`<item
  * rdf:about="…"><dc:date/><geo:lat/><geo:long/>…`). Both wrap listings in
  * `<item>` elements, so we split on those and read leaf fields by tag name.
  *
@@ -42,7 +42,7 @@ const CDATA_RE = /<!\[CDATA\[[\s\S]*?\]\]>/g;
 
 /**
  * Collect leaf `<tag>…</tag>` values, keyed by lower-cased tag name (first
- * writer wins). Container tags that hold child elements (e.g. Craigslist's
+ * writer wins). Container tags that hold child elements (e.g. RDF's
  * `<geo:Point>` wrapping `<geo:lat>`/`<geo:long>`) are recursed into rather than
  * stored. CDATA is ignored for the container test so a CDATA-wrapped HTML
  * description (which legitimately contains `<p>…`) still counts as a leaf.

@@ -23,12 +23,12 @@ const RSS2 = `<?xml version="1.0"?>
   </channel>
 </rss>`;
 
-// Craigslist's RDF variant: namespaced dc:date + a geo:Point wrapper.
-const CL_RDF = `<?xml version="1.0" encoding="UTF-8"?>
+// RDF/RSS 1.0 variant: namespaced dc:date + a geo:Point wrapper.
+const RDF_FEED = `<?xml version="1.0" encoding="UTF-8"?>
 <rdf:RDF xmlns:rdf="..." xmlns:dc="..." xmlns:geo="...">
-  <item rdf:about="https://rochester.craigslist.org/apa/d/x/7712345678.html">
+  <item rdf:about="https://feeds.example.com/listings/7712345678">
     <title><![CDATA[$1,850 / 2br - 900ft2 - Sunny flat (Park Ave)]]></title>
-    <link>https://rochester.craigslist.org/apa/d/x/7712345678.html</link>
+    <link>https://feeds.example.com/listings/7712345678</link>
     <dc:date>2026-07-08T09:30:00-04:00</dc:date>
     <geo:Point>
       <geo:lat>43.1566</geo:lat>
@@ -58,8 +58,8 @@ describe('parseFeedItems (RSS 2.0)', () => {
   });
 });
 
-describe('parseFeedItems (Craigslist RDF)', () => {
-  const [item] = parseFeedItems(CL_RDF);
+describe('parseFeedItems (RDF / RSS 1.0)', () => {
+  const [item] = parseFeedItems(RDF_FEED);
 
   it('reads namespaced leaf tags but skips container tags', () => {
     expect(item.fields['dc:date']).toBe('2026-07-08T09:30:00-04:00');
