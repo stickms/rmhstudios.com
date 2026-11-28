@@ -1,3 +1,4 @@
+import { deviceTimeZone } from '@/lib/core/zoned-time';
 import { useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
@@ -18,14 +19,6 @@ import type { AudienceRange } from '@/lib/social/audience';
 
 const RANGES: AudienceRange[] = [30, 90, 365];
 
-function viewerTimeZone(): string | undefined {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  } catch {
-    return undefined;
-  }
-}
-
 /**
  * The Audience section of /analytics: followers per day, gained / lost / net, net per week,
  * new followers, the hours the audience engages and the mutuals share. Owner-only data;
@@ -36,7 +29,7 @@ export function AudienceInsights() {
   const locale = i18n.language;
   const [range, setRange] = useState<AudienceRange>(30);
 
-  const timeZone = viewerTimeZone();
+  const timeZone = deviceTimeZone();
   const query = useQuery({
     ...apiQuery(getAudienceApi, {
       query: {

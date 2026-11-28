@@ -6,6 +6,7 @@
  * event map.
  */
 
+import { deviceTimeZone } from '@/lib/core/zoned-time';
 import { singleFlight } from '@/lib/shared/realtime/single-flight';
 import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';
@@ -22,15 +23,6 @@ let pendingRoomCode: string | null = null;
 // A body-doubling match id: lets the hub open the pair's room on first join.
 let pendingMatchId: string | null = null;
 
-/** The member's IANA zone, so the hub counts their streak in local days. */
-function viewerTimeZone(): string | undefined {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  } catch {
-    return undefined;
-  }
-}
-
 const store = () => useRmhStudyStore.getState();
 
 // ─── Connection ─────────────────────────────────────────────────────────────
@@ -41,7 +33,8 @@ async function connectToRmhStudyInner(roomCode?: string, matchId?: string): Prom
 
   if (client) {
     if (client.socket.connected && roomCode) {
-      client.emit('rmhstudy:room:join', { roomCode, matchId: pendingMatchId ?? undefined, timeZone: viewerTimeZone() });
+      // The member's IANA zone, so the hub counts their streak in local days.
+      client.emit('rmhstudy:room:join', { roomCode, matchId: pendingMatchId ?? undefined, timeZone: deviceTimeZone() });
     } else {
       client.reconnectNow();
     }
@@ -68,7 +61,7 @@ async function connectToRmhStudyInner(roomCode?: string, matchId?: string): Prom
     },
     onConnect: (socket) => {
       const code = store().room?.roomCode ?? pendingRoomCode;
-      if (code) socket.emit('rmhstudy:room:join', { roomCode: code, matchId: pendingMatchId ?? undefined, timeZone: viewerTimeZone() });
+      if (code) socket.emit('rmhstudy:room:join', { roomCode: code, matchId: pendingMatchId ?? undefined, timeZone: deviceTimeZone() });
     },
     bind: registerHandlers,
   });

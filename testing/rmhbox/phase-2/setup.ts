@@ -8,19 +8,14 @@
  * Environment-agnostic: no real DB or network connections required.
  */
 
+import type { MockUser } from '../player-fixture';
 import { vi } from 'vitest';
-import type { RMHboxPlayer, RMHboxSpectator, RMHboxLobby } from '../../../server/rmhbox/types';
+import type { RMHboxSpectator, RMHboxLobby } from '../../../server/rmhbox/types';
 import type { LobbySettings } from '../../../lib/rmhbox/types';
 
 // ─── Mock User Data (re-exported from Phase 1) ──────────────────
 
-export interface MockUser {
-  userId: string;
-  userName: string;
-  avatarUrl: string | null;
-  sessionToken: string;
-  expiresAt: Date;
-}
+export type { MockUser } from '../player-fixture';
 
 export const MOCK_USERS: Record<string, MockUser> = {
   alice: {
@@ -271,23 +266,7 @@ export const DEFAULT_SETTINGS: LobbySettings = {
 
 // ─── Helper to create a player object ────────────────────────────
 
-export function createPlayer(user: MockUser, overrides: Partial<RMHboxPlayer> = {}): RMHboxPlayer {
-  return {
-    userId: user.userId,
-    userName: user.userName,
-    avatarUrl: user.avatarUrl,
-    socketId: `socket-${user.userId}`,
-    isConnected: true,
-    isReady: false,
-    isAway: false,
-    score: 0,
-    roundScore: 0,
-    joinedAt: Date.now(),
-    lastSeenAt: Date.now(),
-    role: 'player',
-    ...overrides,
-  };
-}
+export { createPlayer } from '../player-fixture';
 
 /**
  * Create a spectator object from user data

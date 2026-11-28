@@ -5,29 +5,27 @@
  */
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { Client, closeDb, db } from './lib/client';
+import { createFreshMember, removeFreshMembers, type FreshMember } from './lib/fresh-member';
 
-afterAll(closeDb);
-
-const carol = () => new Client(inject('carol').cookies);
+let keyOwner: FreshMember;
 const bearer = (key: string) => ({
   authorization: `Bearer ${key}`,
 });
 
 beforeAll(async () => {
-  // Key creation is gated on a paid tier (Pro = plan `starter`). Stripe is
-  // out of scope here, so carol's active subscription is seeded directly — the
-  // same row the Stripe webhook would write.
-  await db().query(
-    `insert into "Subscription" (id, plan, "referenceId", status) values ($1, 'starter', $2, 'active')`,
-    [`it-sub-${inject('carol').id}`, inject('carol').id],
-  );
+  keyOwner = await createFreshMember('developer-key-owner', { starterSubscription: true });
+});
+
+afterAll(async () => {
+  await removeFreshMembers([keyOwner]);
+  await closeDb();
 });
 
 async function createKey(scopes?: string[]): Promise<{
   id: string;
   key: string;
 }> {
-  const res = await carol().post('/api/developer/keys', {
+  const res = await keyOwner.client.post('/api/developer/keys', {
     name: `integ ${Date.now()}`,
     ...(scopes
       ? {
@@ -56,13 +54,13 @@ describe('developer API', () => {
 
     const me = await new Client().get('/api/v1/me', bearer(key));
     expect(me.status).toBe(200);
-    expect(me.body.id).toBe(inject('carol').id);
+    expect(me.body.id).toBe(keyOwner.id);
 
     // The plaintext is shown once: listing keys never returns it.
-    const list = await carol().get('/api/developer/keys');
+    const list = await keyOwner.client.get('/api/developer/keys');
     expect(JSON.stringify(list.body)).not.toContain(key);
 
-    const revoke = await carol().delete(`/api/developer/keys/${id}`);
+    const revoke = await keyOwner.client.delete(`/api/developer/keys/${id}`);
     expect(revoke.status).toBe(200);
     expect((await new Client().get('/api/v1/me', bearer(key))).status).toBe(401);
   });
@@ -96,7 +94,7 @@ describe('developer API', () => {
 
     const { rows } = await db().query('select "userId", content from rmheet where id = $1', [created.body.id]);
     expect(rows[0]).toEqual({
-      userId: inject('carol').id,
+      userId: keyOwner.id,
       content,
     });
   });

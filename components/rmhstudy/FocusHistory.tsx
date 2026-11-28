@@ -1,3 +1,4 @@
+import { deviceTimeZone } from '@/lib/core/zoned-time';
 import { useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
@@ -30,21 +31,13 @@ const CHART_INK = {
   '--heat-ground': 'var(--app-bg-subtle)',
 } as React.CSSProperties;
 
-function viewerTimeZone(): string | undefined {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  } catch {
-    return undefined;
-  }
-}
-
 /** `/rmhstudy/history`: this week and last, the weekly goal, daily bars, a year heatmap, records, runs. */
 export default function FocusHistory() {
   const { t, i18n } = useTranslation('rmhstudy-focus');
   const { t: ts } = useTranslation('rmhstudy-streaks');
   const locale = i18n.language;
   const firstDay = firstDayOfWeek(locale);
-  const timeZone = viewerTimeZone();
+  const timeZone = deviceTimeZone();
   const [weekOffset, setWeekOffset] = useState(0);
 
   const query = useQuery({

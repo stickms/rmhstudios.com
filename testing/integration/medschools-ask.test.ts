@@ -381,7 +381,6 @@ describe.skipIf(!PORT)('medschools Q&A: with the fake provider', () => {
   });
 
   describe('the ceilings stop a question before any model call', () => {
-    // Carol may hold a paid plan (the developer API file seeds one, and files run in turn), so the cap is read, not assumed.
     const capOf = async (m: Member) => (await m.client.get<{ dailyCap: number }>(ASK)).body.dailyCap;
 
     it('the daily cap reached: 429 with the cap code, and the provider is never called', async () => {

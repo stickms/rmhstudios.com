@@ -10,7 +10,6 @@
  * again removes whatever the site had counted for it.
  */
 import type { Prisma } from '@prisma/client';
-import type { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { publishedLogWhere } from '@/lib/blog/publication';
 import { getLibraryBook } from '@/lib/library/library';
@@ -68,22 +67,7 @@ export function writeBudgetExceeded(userId: string): boolean {
   }).allowed;
 }
 
-export const queryOf = (request: Request): Record<string, string> =>
-  Object.fromEntries(new URL(request.url).searchParams);
-
-export function readInput<T extends z.ZodType>(raw: unknown, schema: T) {
-  const parsed = schema.safeParse(raw);
-  return parsed.success
-    ? ({ ok: true, data: parsed.data as z.infer<T> } as const)
-    : ({
-        ok: false,
-        message: parsed.error.issues[0]?.message ?? 'Invalid request',
-      } as const);
-}
-
-export async function readBody<T extends z.ZodType>(request: Request, schema: T) {
-  return readInput(await request.json().catch(() => null), schema);
-}
+export { queryOf, readInput, readBody } from './request-input';
 
 const pathFor = (kind: ReadingDocKind, key: string) =>
   kind === 'blog' ? `/blog/${key}` : kind === 'news' ? `/news/${key}` : `/library/${key}`;

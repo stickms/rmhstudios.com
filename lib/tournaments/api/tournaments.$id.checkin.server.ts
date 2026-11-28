@@ -1,20 +1,9 @@
-import { tournamentRefusal } from '@/lib/tournaments/tournament-error';
+import { tournamentErrorResponse } from '@/lib/tournaments/tournament-error';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { checkInApi, checkInSettingsApi, hostCheckInApi } from '@/lib/tournaments/checkin.contract';
 import { checkIn, hostCheckIn, undoHostCheckIn, updateCheckInSettings } from '@/lib/tournaments/checkin.server';
 import { checkInSettingsSchema, hostCheckInSchema } from '@/lib/tournaments/tournament-schema';
-import { TournamentError } from '@/lib/tournaments/tournament.server';
-
-function failure(error: unknown): Response {
-  if (error instanceof TournamentError) {
-    return Response.json(
-      { error: error.message, ...tournamentRefusal(error), code: error.code },
-      { status: error.status },
-    );
-  }
-  throw error;
-}
 
 export const route = apiRoute('/api/tournaments/$id/checkin', {
   // Self: the caller's own entrant row, never a user id from the request.
@@ -26,7 +15,7 @@ export const route = apiRoute('/api/tournaments/$id/checkin', {
         await checkIn({ tournamentId: params.id, userId });
         return { ok: true as const };
       } catch (error) {
-        return failure(error);
+        return tournamentErrorResponse(error);
       }
     },
   ),
@@ -49,7 +38,7 @@ export const route = apiRoute('/api/tournaments/$id/checkin', {
         else await undoHostCheckIn(opts);
         return { ok: true as const };
       } catch (error) {
-        return failure(error);
+        return tournamentErrorResponse(error);
       }
     },
   ),
@@ -70,7 +59,7 @@ export const route = apiRoute('/api/tournaments/$id/checkin', {
         });
         return { ok: true as const };
       } catch (error) {
-        return failure(error);
+        return tournamentErrorResponse(error);
       }
     },
   ),

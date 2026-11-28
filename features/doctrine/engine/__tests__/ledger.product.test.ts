@@ -100,11 +100,11 @@ describe('day bucketing', () => {
 });
 
 describe('cursor', () => {
-  it('round trips', () => {
-    const at = new Date('2026-11-20T12:34:56.789Z');
-    const back = decodeLedgerCursor(encodeLedgerCursor({ at, id: 'clx1abc' }));
-    expect(back?.id).toBe('clx1abc');
-    expect(back?.at.getTime()).toBe(at.getTime());
+  it('reads and writes previously issued timestamp and id tokens', () => {
+    const cursor = { at: new Date(1700000000000), id: 'run.é' };
+    const token = 'MTcwMDAwMDAwMDAwMC5ydW4uw6k';
+    expect(decodeLedgerCursor(token)).toEqual(cursor);
+    expect(encodeLedgerCursor(cursor)).toBe(token);
   });
 
   it('rejects anything that is not a cursor', () => {

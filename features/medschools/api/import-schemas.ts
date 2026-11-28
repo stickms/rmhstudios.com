@@ -1,13 +1,11 @@
 import { z } from 'zod';
+import { SCHOOL_SLUG_RE } from '../engine/school-slug';
 import { IMPORT_LIMITS, LIST_IMPORT_LIMITS } from '../engine/import';
 import { LIMITS, MILESTONE_TYPES, cleanText, cycleYearProblem, type MilestoneType } from '../engine/tracker';
 
-/**
- * The tracker and list imports' inputs (server-side importer only; the contract imports types). Restated here, like
- * `qa-schemas.ts`, so this module and its tests do not load Prisma.
- */
+/** Tracker and list import inputs. The contract imports only their types. */
 
-const slug = z.string().regex(/^[a-z0-9-]{1,80}$/);
+const slug = z.string().regex(SCHOOL_SLUG_RE);
 
 /** A cycle year the tracker will hold: inside the window around the current cycle (the same check as `me-schemas`). */
 const windowedCycleYear = z.number().superRefine((v, ctx) => {

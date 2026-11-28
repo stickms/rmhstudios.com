@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SCHOOL_SLUG_RE } from '../engine/school-slug';
 import { PROGRAM_KEYS } from '../engine/programs';
 import { CHARTED_TYPES } from '../engine/public-read';
 import { LIMITS, MILESTONE_TYPES, cleanText, cycleYearProblem, normalizeHomeState } from '../engine/tracker';
@@ -22,7 +23,7 @@ const homeState = z
   .nullable()
   .refine((v) => normalizeHomeState(v) !== 'invalid', { message: 'invalid home state' });
 
-const slug = z.string().regex(/^[a-z0-9-]{1,80}$/);
+const slug = z.string().regex(SCHOOL_SLUG_RE);
 
 /** Text that cleans to something within `max` code points, or to nothing at all (which clears the field). */
 const userText = (max: number) =>

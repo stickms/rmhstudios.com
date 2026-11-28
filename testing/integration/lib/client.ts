@@ -15,6 +15,11 @@ export const BASE_URL = (process.env.INTEGRATION_BASE_URL ?? 'http://localhost:7
 /** Shared by every test user; strong enough for any password rule. */
 export const PASSWORD = 'Integ-pass-123!';
 
+let counter = 0;
+/** The public responses sit behind a 30 s shared cache and an in-process micro cache keyed by URL; a unique query defeats both. */
+export const freshPath = (path: string) =>
+  `${path}${path.includes('?') ? '&' : '?'}cb=${Date.now().toString(36)}${(counter += 1)}`;
+
 let pool: pg.Pool | null = null;
 export function db(): pg.Pool {
   if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required (the throwaway DB the server uses)');

@@ -20,7 +20,7 @@
 import { createHmac, randomUUID } from 'node:crypto';
 import { readdirSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
-import { Client, closeDb, db, eventually, type TestUser } from './lib/client';
+import { Client, closeDb, db, eventually, freshPath, type TestUser } from './lib/client';
 import {
   MEDSCHOOL_FIXTURE_SLUG,
   PRIVATE_DO_ID,
@@ -63,11 +63,6 @@ let a: Member;
 let b: Member;
 let c: Member;
 const anon = new Client();
-let counter = 0;
-/** The public responses sit behind a 30 s shared cache and an in-process micro cache keyed by URL; a unique query defeats both. */
-const fresh = (path: string) =>
-  `${path}${path.includes('?') ? '&' : '?'}cb=${Date.now().toString(36)}${(counter += 1)}`;
-
 /** The shared cast from the global setup (sign-up is limited to 10 a minute per IP, so this file signs nobody up). */
 const member = (u: TestUser): Member => ({ ...u, client: new Client(u.cookies) });
 const originalCreated = new Map<string, Date>();
@@ -108,7 +103,7 @@ const putMilestone = (m: Member, appId: string, type: string, date: string) =>
 
 /** The public activity response for the MD fixture school (cache-busted), and the RMH source of its INTERVIEW chart. */
 async function publicInterview(slug = PRIVATE_MD_SLUG) {
-  const res = await anon.get(fresh(`/api/medschools/schools/${slug}/activity`));
+  const res = await anon.get(freshPath(`/api/medschools/schools/${slug}/activity`));
   expect(res.status).toBe(200);
   const type = res.body.types.find((t: { eventType: string }) => t.eventType === 'INTERVIEW');
   const rmh = type.sources.find((s: { source: string }) => s.source === 'RMH') ?? null;
@@ -286,7 +281,7 @@ describe('sharing reaches the public figure only through the daily job, and only
   });
 
   it('keeps RMH out of the live feed', async () => {
-    const res = await anon.get(fresh(`/api/medschools/live?school=${PRIVATE_MD_SLUG}&limit=100`));
+    const res = await anon.get(freshPath(`/api/medschools/live?school=${PRIVATE_MD_SLUG}&limit=100`));
     expect(res.status).toBe(200);
     expect(res.body.events).toEqual([]);
     expect(JSON.stringify(res.body)).not.toContain('RMH');
@@ -623,7 +618,7 @@ describe('lists and preferences', () => {
 describe('the public arrivals and live endpoints', () => {
   it('pins the arrivals key set (aggregates only, no person or time of one event)', async () => {
     await seedMedSchoolsFixture();
-    const res = await anon.get(fresh(`/api/medschools/schools/${MEDSCHOOL_FIXTURE_SLUG}/arrivals`));
+    const res = await anon.get(freshPath(`/api/medschools/schools/${MEDSCHOOL_FIXTURE_SLUG}/arrivals`));
     expect(res.status).toBe(200);
     expect(Object.keys(res.body).sort()).toEqual([
       'cycles',
@@ -653,7 +648,7 @@ describe('the public arrivals and live endpoints', () => {
       'programs=md',
       'programs=md-phd,do',
     ]) {
-      const res = await anon.get(fresh(`/api/medschools/live?${query}&limit=100`));
+      const res = await anon.get(freshPath(`/api/medschools/live?${query}&limit=100`));
       expect(res.status, query).toBe(200);
       expect(Object.keys(res.body).sort(), query).toEqual(['asOf', 'events', 'nextCursor']);
       for (const e of res.body.events) {
@@ -671,15 +666,15 @@ describe('the public arrivals and live endpoints', () => {
       }
       expect(JSON.stringify(res.body)).not.toMatch(/dedupeHash|ingestedAt|contributors|RMH/);
     }
-    const hit = await anon.get(fresh('/api/medschools/live?q=fixture&limit=100'));
+    const hit = await anon.get(freshPath('/api/medschools/live?q=fixture&limit=100'));
     expect(hit.body.events.length).toBeGreaterThan(0);
     expect(hit.body.events.every((e: { school: { slug: string } }) => e.school.slug === MEDSCHOOL_FIXTURE_SLUG)).toBe(
       true,
     );
-    const miss = await anon.get(fresh('/api/medschools/live?q=zzz-no-such-school&limit=100'));
+    const miss = await anon.get(freshPath('/api/medschools/live?q=zzz-no-such-school&limit=100'));
     expect(miss.body.events).toEqual([]);
     for (const bad of ['q=' + 'x'.repeat(200), 'types=nonsense', 'programs=md,xx', 'state=zz']) {
-      expect((await anon.get(fresh(`/api/medschools/live?${bad}`))).status, bad).toBeLessThan(500);
+      expect((await anon.get(freshPath(`/api/medschools/live?${bad}`))).status, bad).toBeLessThan(500);
     }
   });
 });
@@ -1038,7 +1033,7 @@ describe('the rolling guidance', () => {
 
 describe('secondary turnaround', () => {
   const publicTurnaround = async () => {
-    const res = await anon.get(fresh(`/api/medschools/schools/${PRIVATE_MD_SLUG}/secondaries`));
+    const res = await anon.get(freshPath(`/api/medschools/schools/${PRIVATE_MD_SLUG}/secondaries`));
     expect(res.status).toBe(200);
     return res.body.turnaround as Array<Record<string, unknown>>;
   };

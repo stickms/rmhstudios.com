@@ -7,6 +7,12 @@ import { describe, expect, it, vi } from 'vitest';
 const h = vi.hoisted(() => ({
   search: {} as Record<string, unknown>,
   session: null as null | { user: { id: string } },
+  navigate: vi.fn<(options: {
+    to: string;
+    search: (prev: Record<string, unknown>) => Record<string, unknown>;
+    replace: boolean;
+    resetScroll: boolean;
+  }) => void>(),
 }));
 
 vi.mock('react-i18next', () => ({
@@ -35,7 +41,7 @@ vi.mock('@tanstack/react-router', () => ({
       {children}
     </a>
   ),
-  useNavigate: () => () => undefined,
+  useNavigate: () => h.navigate,
   useSearch: () => h.search,
   // The header source choice (`useSourcePref`) asks which route is on screen.
   useRouterState: ({ select }: { select: (s: unknown) => unknown }) => select({ matches: [] }),
@@ -63,6 +69,9 @@ vi.mock('@/components/ui/select', () => ({
   ),
 }));
 
+import { schoolListItem as school } from './school-list-item.fixture';
+import { useSchoolListFilters } from './useSchoolListFilters';
+import * as deviceFilters from './useSavedFilters';
 import { IndexPage } from './IndexPage';
 import { LivePage } from './LivePage';
 import { loadMine } from '../load-mine';
@@ -82,19 +91,6 @@ import { parseAskSearch } from '../engine/search';
 
 const root = (p: string) => readFileSync(new URL(p, import.meta.url), 'utf8');
 const squash = (s: string) => s.replace(/\s+/g, '').replace(/,\)/g, ')').replace(/,}/g, '}');
-
-const school = (slug: string, o: Partial<MedSchoolListItemDto> = {}): MedSchoolListItemDto => ({
-  slug,
-  name: `${slug} University School of Medicine`,
-  shortName: slug,
-  degree: 'MD',
-  city: 'Durham',
-  state: 'NC',
-  reported: { source: 'CYCLETRACK', count: 120 },
-  latest: null,
-  accounted: null,
-  ...o,
-});
 
 function withClient(seed: (qc: QueryClient) => void, node: ReactNode): string {
   const qc = new QueryClient();
@@ -298,6 +294,45 @@ const trackerOf = (slugs: string[] | null) => ({
         })),
       }
     : null,
+});
+
+describe('remembered school list filters', () => {
+  it.each(['index', 'live'] as const)('patches only the changed URL keys and saves to the page scope on %s', (kind) => {
+    const save = vi.spyOn(deviceFilters, 'saveFilters').mockImplementation(() => {});
+    try {
+      let filters!: ReturnType<typeof useSchoolListFilters>;
+      function Probe() {
+        filters = useSchoolListFilters(kind, {});
+        return null;
+      }
+      withClient(() => {}, <Probe />);
+      h.navigate.mockClear();
+      filters.setStates(['CA', 'NY']);
+      filters.setMine({ kind: 'cycle' });
+      filters.setMine(null);
+      filters.setStates([]);
+
+      const prev = { programs: 'md', source: 'admit', list: 'all', state: 'NC' };
+      const destinations = h.navigate.mock.calls.map(([nav]) => {
+        expect(nav).toMatchObject({ to: kind === 'index' ? '/med' : '/med/live', replace: true, resetScroll: false });
+        return nav.search(prev);
+      });
+      expect(destinations).toStrictEqual([
+        { ...prev, state: 'CA,NY' },
+        { ...prev, mine: 'cycle', list: undefined },
+        { ...prev, mine: undefined, list: undefined },
+        { ...prev, state: undefined },
+      ]);
+      expect(save.mock.calls).toEqual([
+        ['page', { states: ['CA', 'NY'] }],
+        ['page', { mine: { kind: 'cycle' } }],
+        ['page', { mine: null }],
+        ['page', { states: [] }],
+      ]);
+    } finally {
+      save.mockRestore();
+    }
+  });
 });
 
 describe('My schools (owner 2026-11-24): My cycle, All my lists, one list', () => {

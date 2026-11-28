@@ -21,7 +21,7 @@ import { parseSummaryKey } from '../engine/sdn-title';
 import { essayQuestionsUrl } from '../scrape/adapters/sdn/urls';
 import { ADMIT_SECONDARY_URL } from '../scrape/sources';
 import { cycleYearOf } from '../engine/cycle';
-import { SLUG_RE } from './read.server';
+import { SCHOOL_SLUG_RE } from '../engine/school-slug';
 
 const SAFE_PART = /^[\w.-]+$/;
 const regFirst = (a: { program: string }, b: { program: string }): number =>
@@ -126,7 +126,7 @@ export async function getSchoolSecondaries(
   q: { program?: 'ALL' | 'REG' | 'PHD' | undefined },
   now: Date = new Date(),
 ): Promise<MedSchoolSecondariesRes | null> {
-  if (!SLUG_RE.test(slug)) return null;
+  if (!SCHOOL_SLUG_RE.test(slug)) return null;
   const school = await prisma.medSchool.findFirst({ where: { slug, active: true }, select: { id: true } });
   if (!school) return null;
   // The prompts are stored under the secondary cycle (it rolls over on June 1); the site cycle follows interviews and

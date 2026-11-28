@@ -10,6 +10,7 @@
  * Refusals never say why a member cannot be invited (a block, a ban and a pending deletion read the same), so the
  * invitation is no way to find out who blocked whom.
  */
+import { blockedEitherWay } from '@/lib/moderation/user-block.server';
 import { refusalBody, type ErrorCode } from '@/lib/errors/codes';
 import { lockKey } from '@/lib/db/advisory-lock.server';
 import { findUsersByHandles } from '@/lib/handles/lookup.server';
@@ -46,20 +47,6 @@ export const MEMBER_NAME = { ...userChipSelect, profile: { select: { displayName
 
 /** A member as a name, with what the rules read of their account: a ban and a pending deletion. */
 const MEMBER_STATE = { ...MEMBER_NAME, bannedUntil: true, deletionScheduledAt: true } as const;
-
-/** Whether either of two members has blocked the other. */
-async function blockedEitherWay(a: string, b: string): Promise<boolean> {
-  const hit = await prisma.userBlock.findFirst({
-    where: {
-      OR: [
-        { blockerId: a, blockedId: b },
-        { blockerId: b, blockedId: a },
-      ],
-    },
-    select: { id: true },
-  });
-  return !!hit;
-}
 
 const banned = (m: { bannedUntil: Date | null }, now: Date) =>
   !!m.bannedUntil && m.bannedUntil.getTime() > now.getTime();

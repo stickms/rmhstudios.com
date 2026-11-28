@@ -53,7 +53,6 @@ let free: Member;
 let paying: Member;
 let decline: Member;
 const everyone = () => [admin.id, free.id, paying.id, decline.id];
-const SUB_ID = 'it-sub-medschools-qa-limits';
 
 /** Reservation rows (`medschools-qa-ask`) are the day's count; a priced row is Q&A spend. */
 async function insertRows(userId: string | null, n: number, cost = 0, promptId = 'medschools-qa-ask') {
@@ -94,14 +93,8 @@ beforeAll(async () => {
   // flag it was created with).
   admin = await createFreshMember('qa-admin', { isAdmin: true });
   free = await createFreshMember('qa-free');
-  paying = await createFreshMember('qa-paying');
+  paying = await createFreshMember('qa-paying', { starterSubscription: true });
   decline = free;
-  // A paying member is a Subscription row, the one the Stripe webhook writes. The member is new, so the app has not
-  // cached a tier for them yet and the first read sees it.
-  await db().query(`insert into "Subscription" (id, plan, "referenceId", status) values ($1, 'starter', $2, 'active')`, [
-    SUB_ID,
-    paying.id,
-  ]);
   await clearLedger();
 });
 
@@ -110,7 +103,6 @@ afterAll(async () => {
     await clearLedger();
     await clearRequests();
   }
-  await db().query(`delete from "Subscription" where id = $1`, [SUB_ID]);
   await removeFreshMembers([admin, free, paying]);
   await closeDb();
 });

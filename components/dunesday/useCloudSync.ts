@@ -10,6 +10,7 @@
  * the edit credential, which is why the UI that copies that link says so.
  */
 
+import { deviceTimeZoneOrUtc } from '@/lib/core/zoned-time';
 import { readJson, removeKey, writeJson } from '@/lib/core/persist';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DunesdayState } from '@/lib/dunesday/state';
@@ -41,14 +42,6 @@ export interface DiscordView {
 }
 
 export type SyncStatus = 'off' | 'saving' | 'saved' | 'error';
-
-function zone(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-  } catch {
-    return 'UTC';
-  }
-}
 
 function readSlot(): SyncSlot | null {
   {
@@ -160,7 +153,7 @@ export function useCloudSync(
           headers: headers(slot),
           body: {
             state,
-            timeZone: zone(),
+            timeZone: deviceTimeZoneOrUtc(),
           },
         });
         setStatus('saved');
@@ -178,7 +171,7 @@ export function useCloudSync(
       const { feedId, token } = await api(createDunesdaySyncApi, {
         body: {
           state,
-          timeZone: zone(),
+          timeZone: deviceTimeZoneOrUtc(),
         },
       });
       const s: SyncSlot = {

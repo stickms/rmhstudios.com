@@ -8,6 +8,7 @@
  * guestbook from becoming a chat.
  */
 
+import { blockedEitherWay } from '@/lib/moderation/user-block.server';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
@@ -27,19 +28,6 @@ async function modeOf(ownerId: string): Promise<GuestbookMode> {
     select: { guestbookMode: true },
   });
   return isGuestbookMode(row?.guestbookMode) ? row.guestbookMode : 'off';
-}
-
-async function blockedEitherWay(a: string, b: string): Promise<boolean> {
-  const hit = await prisma.userBlock.findFirst({
-    where: {
-      OR: [
-        { blockerId: a, blockedId: b },
-        { blockerId: b, blockedId: a },
-      ],
-    },
-    select: { id: true },
-  });
-  return !!hit;
 }
 
 /** Whether `viewerId` may sign `ownerId`'s guestbook under its current mode. */

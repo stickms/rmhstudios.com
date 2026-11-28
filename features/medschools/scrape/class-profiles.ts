@@ -14,6 +14,7 @@
  * rows are never read or removed. Nothing is removed while a slug is unknown to the registry.
  */
 import { z } from 'zod';
+import { SCHOOL_SLUG_RE } from '../engine/school-slug';
 import {
   PROFILE_KIND_IDS,
   PROFILE_OLDEST_CLASS,
@@ -91,7 +92,7 @@ const classSchema = z
 
 const schoolSchema = z
   .object({
-    slug: z.string().regex(/^[a-z0-9-]{1,80}$/),
+    slug: z.string().regex(SCHOOL_SLUG_RE),
     checkedOn: day,
     classes: z.array(classSchema).min(1).max(6),
   })

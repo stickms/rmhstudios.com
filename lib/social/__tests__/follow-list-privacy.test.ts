@@ -5,9 +5,8 @@
  * Steam-style profile's friends row and the "Followed by" suggestion lines; every list shown also drops accounts in
  * a blocked pair with the viewer. Prisma is a small in-memory fake.
  */
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, globSync } from 'node:fs';
 import { join } from 'node:path';
-import { execSync } from 'node:child_process';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 import { FOLLOW_LIST_READ_PATHS } from '@/lib/social/follow-list-privacy';
@@ -328,12 +327,10 @@ describe('every path that reveals who follows whom is gated', () => {
       'server/socket-server/handlers/party.ts',
     ]);
     const known = new Set<string>([...FOLLOW_LIST_READ_PATHS, ...OWN]);
-    const files = execSync(
-      `grep -rlE "(follower|following): \\{ select|FROM follow|JOIN follow|\\.follow\\.findMany|(prisma|tx)\\.follow$" app lib features server --include=*.ts --include=*.tsx`,
-      { cwd: root, encoding: 'utf8' },
-    )
-      .split('\n')
-      .filter((f) => f && !/__tests__|\.test\./.test(f));
+    const followEdge = /(follower|following): \{ select|FROM follow|JOIN follow|\.follow\.findMany|(prisma|tx)\.follow$/m;
+    const files = globSync('{app,lib,features,server}/**/*.{ts,tsx}', { cwd: root }).filter(
+      (file) => !/__tests__|\.test\./.test(file) && followEdge.test(src(file)),
+    );
     const unknown = files.filter((f) => !known.has(f));
     expect(
       unknown,

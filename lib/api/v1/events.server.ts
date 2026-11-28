@@ -1035,25 +1035,7 @@ export function writeBudgetExceeded(userId: string): boolean {
   }).allowed;
 }
 
-export const queryOf = (request: Request): Record<string, string> =>
-  Object.fromEntries(new URL(request.url).searchParams);
-
-export function readInput<T extends z.ZodType>(raw: unknown, schema: T) {
-  const parsed = schema.safeParse(raw);
-  return parsed.success
-    ? ({
-        ok: true,
-        data: parsed.data as z.infer<T>,
-      } as const)
-    : ({
-        ok: false,
-        message: parsed.error.issues[0]?.message ?? 'Invalid request',
-      } as const);
-}
-
-export async function readBody<T extends z.ZodType>(request: Request, schema: T) {
-  return readInput(await request.json().catch(() => null), schema);
-}
+export { queryOf, readInput, readBody } from './request-input';
 
 /* ── Hosting: create, edit, cancel and post updates as the key owner (`manage:events`) ───────────────────────── */
 

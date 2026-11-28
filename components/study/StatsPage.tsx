@@ -1,3 +1,4 @@
+import { deviceTimeZone } from '@/lib/core/zoned-time';
 import { useMemo } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
@@ -22,14 +23,6 @@ import { getStudyStatsApi, type RetentionStat } from '@/lib/study/stats.contract
 
 const ALL_DECKS = '';
 
-function viewerTimeZone(): string | undefined {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  } catch {
-    return undefined;
-  }
-}
-
 /** The member's own flashcard statistics. `deckId` filters every section to one deck. */
 export function StatsPage({
   deckId,
@@ -43,7 +36,7 @@ export function StatsPage({
   const { data: session, isPending: sessionPending } = useSession();
   const signedIn = !!session?.user;
 
-  const timeZone = viewerTimeZone();
+  const timeZone = deviceTimeZone();
   const query = useQuery({
     ...apiQuery(getStudyStatsApi, {
       query: { ...(deckId ? { deckId } : {}), ...(timeZone ? { tz: timeZone } : {}) },

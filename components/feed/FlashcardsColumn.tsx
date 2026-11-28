@@ -1,4 +1,5 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
+import { deviceTimeZone } from '@/lib/core/zoned-time';
 import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -31,15 +32,6 @@ interface Deck {
   user?: { name: string | null; handle: string | null };
   /** Accepted editors besides the owner of a public deck (s11-10); no names. */
   editorCount?: number;
-}
-
-/** The member's IANA zone; undefined when the browser will not say. */
-function viewerTimeZone(): string | undefined {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  } catch {
-    return undefined;
-  }
 }
 
 export function FlashcardsColumn({
@@ -85,7 +77,8 @@ export function FlashcardsColumn({
 
   const load = useCallback(async () => {
     try {
-      const tz = viewerTimeZone();
+      // The member's IANA zone; undefined when the browser will not say.
+      const tz = deviceTimeZone();
       const data = await api(listDecksApi, tz ? { query: { tz } } : undefined);
       setMine(data.mine ?? []);
       setPopular(data.popular ?? []);
@@ -103,7 +96,7 @@ export function FlashcardsColumn({
   // session counts them in the member's own, so fetch the badges again in that zone once (s10-03).
   const correctZone = initialData?.paced === true;
   useEffect(() => {
-    if (correctZone && viewerTimeZone() !== 'UTC') void load();
+    if (correctZone && deviceTimeZone() !== 'UTC') void load();
   }, [correctZone, load]);
 
   useEffect(() => {

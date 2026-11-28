@@ -9,6 +9,14 @@ Anonymized US MD and DO admissions-cycle data: counts and reported events, never
 `server/medschools-worker/`, code in `scrape/`) collects it from CycleTrack, Admit.org and Student Doctor Network; the
 public pages (phase 3) read it.
 
+## Find and verify a change
+
+| Change | Implementation | Focused check |
+| --- | --- | --- |
+| School slug validation | `engine/school-slug.ts` defines the identifier used by routes, request schemas and curated imports. `api/read-schemas.ts` also bounds the comma-separated list. | `pnpm test features/medschools/api/read-schemas.test.ts` |
+| Index and live page filters | `ui/useSchoolListFilters.ts` applies state and “My schools” changes to the URL and device. Storage compatibility is in `engine/saved-filters.ts`. | `pnpm test features/medschools/ui/pages.test.tsx` |
+| School list row field | `MedSchoolListItemDto` in `medschools.contract.ts`, `listSchools` in `api/read.server.ts`, then `ui/IndexPage.tsx`. The index and Today rail tests build rows with `ui/school-list-item.fixture.ts`. | `pnpm test features/medschools/api/read.server.test.ts -t listSchools`, then `pnpm typecheck` for callers |
+
 ## What is public (phase 3)
 
 Signed-out readable, in the full-screen app frame of the redesign (see "Design"), not the `_site` shell:

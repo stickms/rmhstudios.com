@@ -6,7 +6,6 @@
  * right. Every query carries the key owner's `userId`.
  */
 import type { Prisma } from '@prisma/client';
-import type { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { getUnreadNotificationCount } from '@/lib/notifications.server';
 import { markAllRead, setRead } from '@/lib/notifications/inbox.server';
@@ -99,13 +98,4 @@ export async function markReadForKey(userId: string, body: MarkReadBody): Promis
   return { updated: await markAllRead(userId, undefined, new Date(body.before)) };
 }
 
-/** Parse a query string or JSON body with zod; the first issue's message, never the input. */
-export function readInput<T extends z.ZodType>(raw: unknown, schema: T) {
-  const parsed = schema.safeParse(raw);
-  return parsed.success
-    ? ({ ok: true, data: parsed.data as z.infer<T> } as const)
-    : ({ ok: false, message: parsed.error.issues[0]?.message ?? 'Invalid request' } as const);
-}
-
-export const queryOf = (request: Request): Record<string, string> =>
-  Object.fromEntries(new URL(request.url).searchParams);
+export { queryOf, readInput } from './request-input';

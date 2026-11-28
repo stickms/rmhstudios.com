@@ -7,7 +7,6 @@ vi.mock('@/lib/prisma.server', () => ({
     return fake.current?.prisma;
   },
 }));
-vi.mock('./read.server', () => ({ SLUG_RE: /^[a-z0-9-]{1,80}$/, siteCycleYear: async () => 2026 }));
 
 import { getSchoolSecondaries } from './secondaries.server';
 

@@ -9,21 +9,16 @@
  * Environment-agnostic: no real DB or network connections required.
  */
 
+import type { MockUser } from '../player-fixture';
 import { vi } from 'vitest';
-import type { RMHboxPlayer, RMHboxSpectator, RMHboxLobby } from '../../../server/rmhbox/types';
+import type { RMHboxSpectator, RMHboxLobby } from '../../../server/rmhbox/types';
 import type { LobbySettings } from '../../../lib/rmhbox/types';
 import type { MinigameContext, MinigameResults } from '../../../server/rmhbox/minigames/base-minigame';
 import { BaseMinigame } from '../../../server/rmhbox/minigames/base-minigame';
 
 // ─── Mock User Data ──────────────────────────────────────────────
 
-export interface MockUser {
-  userId: string;
-  userName: string;
-  avatarUrl: string | null;
-  sessionToken: string;
-  expiresAt: Date;
-}
+export type { MockUser } from '../player-fixture';
 
 export const MOCK_USERS: Record<string, MockUser> = {
   alice: {
@@ -297,23 +292,7 @@ export const DEFAULT_SETTINGS: LobbySettings = {
 
 // ─── Factory Functions ──────────────────────────────────────────
 
-export function createPlayer(user: typeof MOCK_USERS.alice, overrides: Partial<RMHboxPlayer> = {}): RMHboxPlayer {
-  return {
-    userId: user.userId,
-    userName: user.userName,
-    avatarUrl: user.avatarUrl,
-    socketId: `socket-${user.userId}`,
-    isConnected: true,
-    isReady: false,
-    isAway: false,
-    score: 0,
-    roundScore: 0,
-    joinedAt: Date.now(),
-    lastSeenAt: Date.now(),
-    role: 'player',
-    ...overrides,
-  };
-}
+export { createPlayer } from '../player-fixture';
 
 export function createSpectator(
   user: typeof MOCK_USERS.alice,

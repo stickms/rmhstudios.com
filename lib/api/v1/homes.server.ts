@@ -10,6 +10,7 @@
  * one whose author is blocked either way, reads `available: false` with its figures `null`; the saved row and the
  * note stay.
  */
+import { readInput } from './request-input';
 import type { Prisma } from '@prisma/client';
 import type { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
@@ -256,18 +257,6 @@ export function writeBudgetExceeded(userId: string): boolean {
   return !rateLimit(userId, { ...RATE_LIMIT_POLICIES.write, prefix: 'v1-homes-write' }).allowed;
 }
 
-/** Parse path parameters, the query string or a JSON body with zod; the first issue's message, never the input. */
-export function readInput<T extends z.ZodType>(raw: unknown, schema: T) {
-  const parsed = schema.safeParse(raw);
-  return parsed.success
-    ? ({ ok: true, data: parsed.data as z.infer<T> } as const)
-    : ({ ok: false, message: parsed.error.issues[0]?.message ?? 'Invalid request' } as const);
-}
-
-export async function readBody<T extends z.ZodType>(request: Request, schema: T) {
-  return readInput(await request.json().catch(() => null), schema);
-}
-
 /** Like `readBody`, but a request with no body at all is `{}`: `PUT` with nothing to say just saves the home. */
 export async function readOptionalBody<T extends z.ZodType>(request: Request, schema: T) {
   const text = await request.text().catch(() => null);
@@ -280,5 +269,4 @@ export async function readOptionalBody<T extends z.ZodType>(request: Request, sc
   }
 }
 
-export const queryOf = (request: Request): Record<string, string> =>
-  Object.fromEntries(new URL(request.url).searchParams);
+export { queryOf, readInput, readBody } from './request-input';

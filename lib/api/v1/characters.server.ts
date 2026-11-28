@@ -72,15 +72,7 @@ export interface ApiPartyDetail {
   turnIndex: number;
 }
 
-export function readInput<T extends z.ZodType>(raw: unknown, schema: T) {
-  const parsed = schema.safeParse(raw);
-  return parsed.success
-    ? ({ ok: true, data: parsed.data as z.infer<T> } as const)
-    : ({ ok: false, message: parsed.error.issues[0]?.message ?? 'Invalid request' } as const);
-}
-
-export const queryOf = (request: Request): Record<string, string> =>
-  Object.fromEntries(new URL(request.url).searchParams);
+export { queryOf, readInput } from './request-input';
 
 export interface Page<T> {
   data: T[];

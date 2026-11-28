@@ -13,6 +13,7 @@
  * - `exportTubeSubscriptions`: the member's own data for the account export. Erasure of `RmhTubeSubscription` stays
  *   `owner` (the open follows decision).
  */
+import { blockedEitherWay } from '@/lib/moderation/user-block.server';
 import type { PgBoss } from 'pg-boss';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
@@ -44,19 +45,6 @@ export type SubscribeResult =
   | { ok: true; subscribed: true }
   | { ok: false; code: 'TUBE_SUBSCRIBE_SELF' | 'NOT_FOUND' }
   | { ok: false; code: 'TUBE_SUBSCRIBE_LIMIT'; max: number };
-
-async function blockedEitherWay(a: string, b: string): Promise<boolean> {
-  const hit = await prisma.userBlock.findFirst({
-    where: {
-      OR: [
-        { blockerId: a, blockedId: b },
-        { blockerId: b, blockedId: a },
-      ],
-    },
-    select: { id: true },
-  });
-  return !!hit;
-}
 
 /** Follow a host's watch parties. Following twice is the same as once. */
 export async function subscribeToHost(

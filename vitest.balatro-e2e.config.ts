@@ -15,9 +15,7 @@
  * Chromium comes from Playwright or `CHROME_PATH` (the scripts/epic/browser.ts pattern).
  * Engine and match pages are heavy (software WebGL), so files run one at a time.
  */
-import path from 'node:path';
-import { FRAMER_MOTION_INTERNALS } from './framer-motion-internals.mjs';
-import { I18N_RUNTIME_ALIASES } from './i18n-runtime-aliases.mjs';
+import { uiTestAliases } from './vitest.aliases.mjs';
 import { defineConfig } from 'vitest/config';
 
 const shared = {
@@ -64,12 +62,5 @@ export default defineConfig({
       },
     ],
   },
-  resolve: {
-    alias: {
-      ...FRAMER_MOTION_INTERNALS,
-      ...I18N_RUNTIME_ALIASES,
-      '@': path.resolve(import.meta.dirname),
-      '@features': path.resolve(import.meta.dirname, 'features'),
-    },
-  },
+  resolve: { alias: uiTestAliases },
 });

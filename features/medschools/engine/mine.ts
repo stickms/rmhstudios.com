@@ -7,6 +7,10 @@
  * the explicit public `schools=` parameter, a sorted list anyone could type.
  */
 
+import { SCHOOL_SLUG_RE } from './school-slug';
+
+export { SCHOOL_SLUG_RE as SLUG_RE };
+
 /** The choice: the newest tracker cycle, every list, or one list. `null` everywhere means "All schools". */
 export type MineChoice = { kind: 'cycle' } | { kind: 'lists' } | { kind: 'list'; id: string };
 
@@ -87,16 +91,13 @@ export function mineIsKnown(choice: MineChoice | null | undefined, lists: MineLi
 /** The most slugs one `schools=` filter carries (there are about 220 active schools; the API's cap too). */
 export const MAX_SCHOOLS_FILTER = 300;
 
-/** A school slug as the public readers accept it. */
-export const SLUG_RE = /^[a-z0-9-]{1,80}$/;
-
 /**
  * The public `schools=` value for a set of slugs: valid slugs only, deduped, sorted (one set is one cache key, however
  * the member's lists are ordered), at most {@link MAX_SCHOOLS_FILTER}. `undefined` for an empty set: the caller shows
  * the empty state and asks for nothing.
  */
 export function schoolsParam(slugs: Iterable<string>): string | undefined {
-  const out = [...new Set([...slugs].filter((s) => SLUG_RE.test(s)))].sort().slice(0, MAX_SCHOOLS_FILTER);
+  const out = [...new Set([...slugs].filter((s) => SCHOOL_SLUG_RE.test(s)))].sort().slice(0, MAX_SCHOOLS_FILTER);
   return out.length > 0 ? out.join(',') : undefined;
 }
 

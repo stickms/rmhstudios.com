@@ -1,26 +1,9 @@
-import { tournamentRefusal } from '@/lib/tournaments/tournament-error';
+import { tournamentErrorResponse } from '@/lib/tournaments/tournament-error';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { awardMatchApi } from '@/lib/tournaments/scheduling.contract';
 import { awardWalkover } from '@/lib/tournaments/scheduling.server';
 import { awardMatchSchema } from '@/lib/tournaments/scheduling-schema';
-import { TournamentError } from '@/lib/tournaments/tournament-error';
-
-function failure(error: unknown): Response {
-  if (error instanceof TournamentError) {
-    return Response.json(
-      {
-        error: error.message,
-        ...tournamentRefusal(error),
-        code: error.code,
-      },
-      {
-        status: error.status,
-      },
-    );
-  }
-  throw error;
-}
 
 export const route = apiRoute('/api/tournaments/$id/matches/$matchId/award', {
   // Host (or admin): award an overdue match. Nothing is ever awarded automatically.
@@ -48,7 +31,7 @@ export const route = apiRoute('/api/tournaments/$id/matches/$matchId/award', {
           ...result,
         };
       } catch (error) {
-        return failure(error);
+        return tournamentErrorResponse(error);
       }
     },
   ),

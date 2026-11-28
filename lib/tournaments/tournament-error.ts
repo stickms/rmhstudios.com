@@ -60,3 +60,11 @@ export function tournamentRefusal(error: { message: string }): { refusal?: Error
   const code = REFUSAL_BY_MESSAGE[error.message];
   return code ? { refusal: code } : {};
 }
+
+export function tournamentErrorResponse(error: unknown): Response {
+  if (!(error instanceof TournamentError)) throw error;
+  return Response.json(
+    { error: error.message, ...tournamentRefusal(error), code: error.code },
+    { status: error.status },
+  );
+}

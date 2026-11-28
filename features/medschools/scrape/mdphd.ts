@@ -16,6 +16,7 @@
  * files for what this import owns and nothing else is touched.
  */
 import { z } from 'zod';
+import { SCHOOL_SLUG_RE } from '../engine/school-slug';
 import {
   MDPHD_CYCLE,
   MDPHD_KINDS,
@@ -31,7 +32,7 @@ import {
 import type { Logger, MedPrisma } from './types';
 
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
-const slug = z.string().regex(/^[a-z0-9-]{1,80}$/);
+const slug = z.string().regex(SCHOOL_SLUG_RE);
 const https = z
   .string()
   .url()
