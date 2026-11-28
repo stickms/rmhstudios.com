@@ -69,7 +69,7 @@ export function FabLane() {
         data-floating="fab"
         data-shown={shown || undefined}
         inert={!shown}
-        className="fab-lane floating-fab-lane surface-overlay fixed z-40 flex rounded-full lg:hidden"
+        className="fab-lane floating-fab-lane surface-overlay fixed z-40 flex rounded-full xl:hidden"
       >
         <button
           type="button"

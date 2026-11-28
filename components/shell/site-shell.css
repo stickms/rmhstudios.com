@@ -224,13 +224,8 @@
   corner-shape: round;
   background: var(--site-notify);
 }
-.site-sidebar__write {
-  flex: none;
-  block-size: 36px;
-  align-self: flex-start;
-}
-/* The foot: the handle is the last thing in the column, under the primary, under the globe. Fixed heights, because the
-   globe is placed from them (globe-nav.css `--globe-bottom`: 36px + 14px + 36px + 18px = 104px above the old foot). */
+/* The foot: the handle is the last thing in the column, under the globe. Fixed heights, because the globe is placed
+   from them (globe-nav.css `--globe-bottom`). "Write a post" moved to the margin (MarginActions). */
 .site-sidebar__account {
   flex: none;
   display: flex;
@@ -314,14 +309,23 @@
    it. The sticky offset is the column's own 22px
    bottom padding, so the foot is in the same place in both cases and does not jump between pages. It is never flush
    with the edge (iOS edge contract), like the sidebar's 16px off the top. */
+/* The actions and the foot links sit together at the bottom of the cell, and stay in view as the page scrolls. */
+.site-margin__dock {
+  margin-block-start: auto;
+  position: sticky;
+  inset-block-end: 22px;
+}
+.site-margin__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: -10px;
+}
 .site-margin__foot {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px 14px;
-  margin-block-start: auto;
   padding-block: 14px 8px;
-  position: sticky;
-  inset-block-end: 22px;
 }
 .site-margin__foot-link {
   color: var(--site-text-muted);

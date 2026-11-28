@@ -5,7 +5,7 @@ import { MoreHorizontal } from 'lucide-react';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { SIDEBAR_SECTIONS, WRITE_HREF, currentSection, isViewerPath, pageOwnsPrimary, viewerPathFor } from './sections';
+import { SIDEBAR_SECTIONS, currentSection, isViewerPath, viewerPathFor } from './sections';
 import { usePathname } from './shell-router-state';
 import { useSectionLabels } from './use-section-labels';
 import { useInboxCount } from './use-inbox-count';
@@ -21,16 +21,6 @@ import { Handle } from '@/components/ui/handle';
 const AccountMenu = lazy(() =>
   import('./AccountMenu').then((m) => ({
     default: m.AccountMenu,
-  })),
-);
-
-/**
- * The composer, opened in place over the current page. Its own lazy chunk: it is only needed once "Write a post" is
- * pressed. Navigating to `/share` instead swapped the content column for an empty frame behind the dialog.
- */
-const ComposeModal = lazy(() =>
-  import('@/components/feed/ComposeModal').then((m) => ({
-    default: m.ComposeModal,
   })),
 );
 
@@ -130,9 +120,6 @@ export function Sidebar() {
   }, [more]);
 
   const menuAnchor = useRef<HTMLButtonElement | null>(null);
-  // "Write a post" stays a link to `/share` (complete with scripting off, B1); a plain click from a signed-in viewer
-  // opens the composer over the page they are on, so the column behind the dialog keeps its content.
-  const [composeOpen, setComposeOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuMounted, setMenuMounted] = useState(false);
   const toggleMenu = () => {
@@ -236,26 +223,6 @@ export function Sidebar() {
 
         {/* The globe itself is GlobeNav's (one element for phone and desktop); this keeps its place at the foot. */}
         <div className="site-sidebar__globe-space" aria-hidden />
-
-        <Button asChild variant={pageOwnsPrimary(pathname) ? 'default' : 'primary'} className="site-sidebar__write">
-          <Link
-            to={WRITE_HREF}
-            onClick={(e) => {
-              if (!user || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-              e.preventDefault();
-              setComposeOpen(true);
-            }}
-          >
-            {t('shell-write-post', {
-              defaultValue: 'Write a post',
-            })}
-          </Link>
-        </Button>
-        {composeOpen && (
-          <Suspense fallback={null}>
-            <ComposeModal open onClose={() => setComposeOpen(false)} />
-          </Suspense>
-        )}
 
         {user ? (
           <div className={cn('site-sidebar__account', accountArrival)}>

@@ -45,7 +45,7 @@
     --globe-open-d: 440px;
     --globe-start: calc(max(0px, (100vw - 1240px) / 2) + 24px);
     /* 26px off the edge, plus the sidebar's foot under it: the primary, the handle and their gaps (site-shell.css). */
-    --globe-bottom: 130px;
+    --globe-bottom: 94px;
     --globe-shift: calc(50vw - var(--globe-start) - var(--globe-d) / 2);
     --globe-travel: calc(50dvh - var(--globe-bottom) - var(--globe-d) / 2);
     --globe-scale: 3.548;
