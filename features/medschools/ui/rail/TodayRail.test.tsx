@@ -62,6 +62,7 @@ const listItem = (slug: string, name: string, latest: MedSchoolListItemDto['late
   state: 'NC',
   reported: null,
   latest,
+  accounted: null,
 });
 const at = (iso: string, eventType: 'ACCEPTANCE' | 'WAITLIST' = 'ACCEPTANCE') => ({
   eventType,
