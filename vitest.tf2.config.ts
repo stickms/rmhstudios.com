@@ -8,7 +8,7 @@
  * files read a Steam install from `TF2_ROOT` and skip without one; CI runs
  * the rest in .github/workflows/tf2-game-tests.yml.
  */
-import path from 'node:path';
+import { workspaceAliases } from './vitest.aliases.mjs';
 import { defineConfig } from 'vitest/config';
 import { ENGINE_TESTS_FROM_MAIN_SUITE } from './vitest.engine-tests.mjs';
 import { I18N_RUNTIME_ALIASES } from './i18n-runtime-aliases.mjs';
@@ -31,11 +31,5 @@ export default defineConfig({
     testTimeout: 60_000,
     pool: 'threads',
   },
-  resolve: {
-    alias: {
-      ...I18N_RUNTIME_ALIASES,
-      '@': path.resolve(import.meta.dirname),
-      '@features': path.resolve(import.meta.dirname, 'features'),
-    },
-  },
+  resolve: { alias: { ...I18N_RUNTIME_ALIASES, ...workspaceAliases } },
 });

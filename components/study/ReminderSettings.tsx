@@ -1,3 +1,4 @@
+import { deviceTimeZoneOrUtc } from '@/lib/core/zoned-time';
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -14,14 +15,6 @@ import type { saveReminderBody } from '@/lib/study/reminders-schema';
 import type { z } from 'zod';
 
 type SaveInput = z.infer<typeof saveReminderBody>;
-
-function browserTimeZone(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-  } catch {
-    return 'UTC';
-  }
-}
 
 function supportedZones(): string[] {
   const list = (Intl as { supportedValuesOf?: (key: string) => string[] }).supportedValuesOf?.('timeZone');
@@ -52,7 +45,7 @@ export function ReminderSettings() {
   const current: ReminderSettings = query.data?.reminder ?? {
     enabled: false,
     time: DEFAULT_REMINDER_TIME,
-    timeZone: browserTimeZone(),
+    timeZone: deviceTimeZoneOrUtc(),
     nextAt: null,
     paused: false,
   };
@@ -62,7 +55,7 @@ export function ReminderSettings() {
     return (time: string) => f.format(new Date(`1970-01-01T${time}:00Z`));
   }, [locale]);
   const zones = useMemo(() => {
-    const all = new Set([current.timeZone, browserTimeZone(), ...supportedZones()]);
+    const all = new Set([current.timeZone, deviceTimeZoneOrUtc(), ...supportedZones()]);
     return [...all];
   }, [current.timeZone]);
   const nextLabel = useMemo(() => {

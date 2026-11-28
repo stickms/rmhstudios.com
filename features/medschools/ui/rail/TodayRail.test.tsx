@@ -25,6 +25,7 @@ vi.mock('@/components/session/session-context', () => ({
   useSession: () => ({ data: h.session, isPending: false }),
 }));
 
+import { schoolListItem } from '../school-list-item.fixture';
 import TodayRail from './TodayRail';
 import TodaySummary from './TodaySummary';
 import { memberSlugs, yourSchools } from './your-schools';
@@ -53,17 +54,8 @@ const SUMMARY: MedLiveSummaryRes = {
     { school: school('emory', 'Emory University'), count: 4 },
   ],
 };
-const listItem = (slug: string, name: string, latest: MedSchoolListItemDto['latest']): MedSchoolListItemDto => ({
-  slug,
-  name,
-  shortName: name,
-  degree: 'MD',
-  city: 'City',
-  state: 'NC',
-  reported: null,
-  latest,
-  accounted: null,
-});
+const listItem = (slug: string, name: string, latest: MedSchoolListItemDto['latest']) =>
+  schoolListItem(slug, { name, shortName: name, city: 'City', reported: null, latest });
 const at = (iso: string, eventType: 'ACCEPTANCE' | 'WAITLIST' = 'ACCEPTANCE') => ({
   eventType,
   occurredAt: iso,

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SCHOOL_SLUG_MAX_LENGTH, SCHOOL_SLUG_PATTERN, SCHOOL_SLUG_RE } from '../engine/school-slug';
 import { MAX_SCHOOLS_FILTER } from '../engine/mine';
 import { decodeLiveCursor } from '../engine/public-read';
 import { MAX_STATES } from '../engine/search';
@@ -31,8 +32,8 @@ const state = z
  */
 const schools = z
   .string()
-  .max(81 * MAX_SCHOOLS_FILTER)
-  .regex(new RegExp(`^[a-z0-9-]{1,80}(,[a-z0-9-]{1,80}){0,${MAX_SCHOOLS_FILTER - 1}}$`));
+  .max((SCHOOL_SLUG_MAX_LENGTH + 1) * MAX_SCHOOLS_FILTER)
+  .regex(new RegExp(`^${SCHOOL_SLUG_PATTERN}(,${SCHOOL_SLUG_PATTERN}){0,${MAX_SCHOOLS_FILTER - 1}}$`));
 /** `source=cycletrack|admit`: which source the totals and primary series follow (`engine/source-pref.ts`). Lower case. */
 const sourcePref = z.enum(['cycletrack', 'admit']);
 const chartedType = z.enum(['INTERVIEW', 'SECONDARY', 'WAITLIST', 'REJECTION', 'ACCEPTANCE']);
@@ -65,10 +66,7 @@ export const arrivalsQuery = historyQuery;
 
 export const liveQuery = z.object({
   type: anyType.optional(),
-  school: z
-    .string()
-    .regex(/^[a-z0-9-]{1,80}$/)
-    .optional(),
+  school: z.string().regex(SCHOOL_SLUG_RE).optional(),
   degree: degree.optional(),
   program: z.enum(['ALL', 'REG', 'PHD', 'NONE']).optional(),
   programs: programsParam.optional(),

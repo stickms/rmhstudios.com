@@ -24,6 +24,8 @@ export type FreshMember = TestUser & { client: Client };
 
 export interface FreshMemberOptions {
   isAdmin?: boolean;
+  /** Seed the paid tier before a session read can cache the free tier. */
+  starterSubscription?: boolean;
   /** Back-date the account (sharing needs one at least 7 days old). */
   createdAt?: Date;
 }
@@ -118,6 +120,12 @@ export async function createFreshMember(label: string, opts: FreshMemberOptions 
      values ($1, $2, $2, 'credential', $3, now(), now())`,
     [randomUUID().replace(/-/g, ''), id, await passwordHash()],
   );
+  if (opts.starterSubscription) {
+    await db().query(
+      `insert into "Subscription" (id, plan, "referenceId", status) values ($1, 'starter', $2, 'active')`,
+      [`it-sub-${id}`, id],
+    );
+  }
   const client = (await mintSession(id)) ?? (await signedIn(email));
   return { id, email, name, cookies: client.cookies, client };
 }
@@ -125,5 +133,7 @@ export async function createFreshMember(label: string, opts: FreshMemberOptions 
 /** Delete the members (the cascade takes their account, sessions, tracker and the rest). */
 export async function removeFreshMembers(members: Array<Pick<TestUser, 'id'> | undefined>): Promise<void> {
   const ids = members.filter((m): m is Pick<TestUser, 'id'> => !!m).map((m) => m.id);
-  if (ids.length) await db().query('delete from "user" where id = any($1)', [ids]);
+  if (!ids.length) return;
+  await db().query('delete from "Subscription" where "referenceId" = any($1)', [ids]);
+  await db().query('delete from "user" where id = any($1)', [ids]);
 }

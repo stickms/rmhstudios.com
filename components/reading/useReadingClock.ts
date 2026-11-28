@@ -8,6 +8,7 @@
  * on (it also carries this document's total for the "You've read this" line).
  */
 
+import { deviceTimeZone } from '@/lib/core/zoned-time';
 import { useCallback, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, apiQuery } from '@/lib/contract/client';
@@ -27,14 +28,6 @@ import {
 
 /** Reading activity inside the document: scroll, keys, pointer, wheel and touch. */
 const ACTIVITY_EVENTS = ['scroll', 'keydown', 'pointerdown', 'wheel', 'touchmove'] as const;
-
-function memberTimeZone(): string | undefined {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  } catch {
-    return undefined;
-  }
-}
 
 export interface ReadingClock {
   /** Tracking is on for this member. */
@@ -76,7 +69,7 @@ export function useReadingClock({
       touchRef.current = () => {};
       return;
     }
-    const tz = memberTimeZone();
+    const tz = deviceTimeZone();
     clock.current = initialClock;
 
     const flush = () => {

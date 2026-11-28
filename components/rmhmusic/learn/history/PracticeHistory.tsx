@@ -9,6 +9,7 @@
  * minutes are known, so a day of finished lessons is never blank. Days are the learner's own, from
  * the browser's time zone.
  */
+import { deviceTimeZone } from '@/lib/core/zoned-time';
 import { useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -38,19 +39,11 @@ const CHART_INK = {
   '--heat-ground': 'var(--app-bg-subtle)',
 } as React.CSSProperties;
 
-function viewerTimeZone(): string | undefined {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  } catch {
-    return undefined;
-  }
-}
-
 export function PracticeHistory() {
   const { t, i18n } = useTranslation('music-history');
   const locale = i18n.language;
   const firstDay = firstDayOfWeek(locale);
-  const timeZone = viewerTimeZone();
+  const timeZone = deviceTimeZone();
   const queryClient = useQueryClient();
   const confirm = useConfirm();
   const [weekOffset, setWeekOffset] = useState(0);

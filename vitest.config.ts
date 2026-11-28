@@ -28,12 +28,11 @@
  * lands in `isolated` by itself. If a file passes alone but fails in `shared`, add it to
  * `vitest.isolated-files.json` (one-directional: remove an entry once it passes shared).
  */
+import { uiTestAliases } from './vitest.aliases.mjs';
 import { defineConfig } from 'vitest/config';
 import { availableParallelism } from 'node:os';
 import { globSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { FRAMER_MOTION_INTERNALS } from './framer-motion-internals.mjs';
-import { I18N_RUNTIME_ALIASES } from './i18n-runtime-aliases.mjs';
 import { ENGINE_TESTS_FROM_MAIN_SUITE } from './vitest.engine-tests.mjs';
 
 /**
@@ -204,16 +203,5 @@ export default defineConfig({
       // Informational, not a gate — see docs/testing.md §Coverage.
     },
   },
-  resolve: {
-    alias: {
-      // `import.meta.dirname`, not `__dirname`: Vite 8.2's native config loader
-      // warns on the CJS global and will drop it when `configLoader: 'native'`
-      // becomes the default.
-      ...FRAMER_MOTION_INTERNALS,
-      ...I18N_RUNTIME_ALIASES,
-      '@': path.resolve(import.meta.dirname),
-      // Feature-sliced workspace (redesign A1): features/<id>/{engine,ui,net,server,api}.
-      '@features': path.resolve(import.meta.dirname, 'features'),
-    },
-  },
+  resolve: { alias: uiTestAliases },
 });

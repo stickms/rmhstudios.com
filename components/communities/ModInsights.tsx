@@ -1,4 +1,5 @@
 /** s03-15 — the Insights tab: members, activity, top posts, busy hours and flair use of the community, for moderators. */
+import { deviceTimeZone } from '@/lib/core/zoned-time';
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -19,14 +20,6 @@ import { INSIGHT_RANGES, gridMax, type Compared, type InsightRange } from '@/lib
 /** Share of the ink mixed into the page ground per level. Kept low so the number in a cell stays readable in both editions. */
 const LEVEL_MIX = [0, 8, 16, 24, 32] as const;
 
-function viewerTimeZone(): string | undefined {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  } catch {
-    return undefined;
-  }
-}
-
 /** The label of the Insights tab (the tab strip lives in `ModPanel`, which keeps one translation per tab). */
 export function useInsightsTabLabel(): string {
   const { t } = useTranslation('community-insights');
@@ -39,7 +32,7 @@ export function ModInsights({ slug }: { slug: string }) {
   const { t, i18n } = useTranslation('community-insights');
   const locale = i18n.language;
   const [range, setRange] = useState<InsightRange>(28);
-  const timeZone = useMemo(() => viewerTimeZone(), []);
+  const timeZone = useMemo(() => deviceTimeZone(), []);
 
   const query = useQuery({
     ...apiQuery(getCommunityInsightsApi, {

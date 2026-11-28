@@ -23,8 +23,8 @@
  * suite budgets its requests under them rather than switching them off, so the
  * build it tests is the build that ships.
  */
+import { workspaceAliases } from './vitest.aliases.mjs';
 import { defineConfig } from 'vitest/config';
-import path from 'node:path';
 
 export default defineConfig({
   test: {
@@ -36,10 +36,5 @@ export default defineConfig({
     hookTimeout: 60_000,
     pool: 'forks',
   },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, '.'),
-      '@features': path.resolve(__dirname, 'features'),
-    },
-  },
+  resolve: { alias: workspaceAliases },
 });

@@ -13,6 +13,7 @@
  * always equals the file.
  */
 import { z } from 'zod';
+import { SCHOOL_SLUG_RE } from '../engine/school-slug';
 import {
   FACT_CODES,
   FACT_KINDS,
@@ -55,7 +56,7 @@ const factSchema = z
 
 const schoolSchema = z
   .object({
-    slug: z.string().regex(/^[a-z0-9-]{1,80}$/),
+    slug: z.string().regex(SCHOOL_SLUG_RE),
     /** The school's name as the PDF prints it, by report id. */
     names: z.record(z.string(), z.string().min(1).max(300)),
     facts: z.array(factSchema).min(1).max(80),

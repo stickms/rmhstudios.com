@@ -1,26 +1,9 @@
-import { tournamentRefusal } from '@/lib/tournaments/tournament-error';
+import { tournamentErrorResponse } from '@/lib/tournaments/tournament-error';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { disputeMatchResultApi } from '@/lib/tournaments/match-results.contract';
 import { disputeResult } from '@/lib/tournaments/match-results.server';
 import { disputeResultSchema } from '@/lib/tournaments/match-results-schema';
-import { TournamentError } from '@/lib/tournaments/tournament-error';
-
-function failure(error: unknown): Response {
-  if (error instanceof TournamentError) {
-    return Response.json(
-      {
-        error: error.message,
-        ...tournamentRefusal(error),
-        code: error.code,
-      },
-      {
-        status: error.status,
-      },
-    );
-  }
-  throw error;
-}
 
 export const route = apiRoute('/api/tournaments/$id/matches/$matchId/dispute', {
   POST: implement(
@@ -46,7 +29,7 @@ export const route = apiRoute('/api/tournaments/$id/matches/$matchId/dispute', {
           ok: true as const,
         };
       } catch (error) {
-        return failure(error);
+        return tournamentErrorResponse(error);
       }
     },
   ),

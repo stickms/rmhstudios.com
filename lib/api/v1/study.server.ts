@@ -829,18 +829,4 @@ export async function readBody<T extends z.ZodType>(request: Request, schema: T)
       } as const);
 }
 
-/** Parse the path parameters or the query string with zod. */
-export function readInput<T extends z.ZodType>(raw: unknown, schema: T) {
-  const parsed = schema.safeParse(raw);
-  return parsed.success
-    ? ({
-        ok: true,
-        data: parsed.data as z.infer<T>,
-      } as const)
-    : ({
-        ok: false,
-        message: parsed.error.issues[0]?.message ?? 'Invalid request',
-      } as const);
-}
-
-export const queryOf = (request: Request) => Object.fromEntries(new URL(request.url).searchParams);
+export { queryOf, readInput } from './request-input';

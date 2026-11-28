@@ -7,16 +7,11 @@
  */
 
 import { vi } from 'vitest';
+import type { MockUser } from '../player-fixture';
 
 // ─── Mock User Data ──────────────────────────────────────────────
 
-export interface MockUser {
-  userId: string;
-  userName: string;
-  avatarUrl: string | null;
-  sessionToken: string;
-  expiresAt: Date;
-}
+export type { MockUser } from '../player-fixture';
 
 export const MOCK_USERS: Record<string, MockUser> = {
   alice: {

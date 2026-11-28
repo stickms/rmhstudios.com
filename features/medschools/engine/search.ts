@@ -1,3 +1,4 @@
+import { SCHOOL_SLUG_RE } from './school-slug';
 import { CHARTED_TYPES, SCHOOL_TABS, type SchoolTab } from './public-read';
 import { parsePrograms, programsFromLegacy, programsValue, type ProgramKey } from './programs';
 import type { MedEventType, MedSource } from './types';
@@ -159,7 +160,7 @@ export function parseLiveSearch(raw: Record<string, unknown>): {
   const mine = mineParam(raw.mine);
   return {
     ...(type ? { type } : {}),
-    ...(school && /^[a-z0-9-]{1,80}$/.test(school) ? { school } : {}),
+    ...(school && SCHOOL_SLUG_RE.test(school) ? { school } : {}),
     ...(states.length ? { states } : {}),
     ...(programs ? { programs } : {}),
     ...(list ? { list } : {}),

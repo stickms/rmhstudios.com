@@ -3,6 +3,7 @@
  * the member did not mean to send is ever stored. Every field is optional; the rules are `engine/applicant.ts`'s.
  */
 import { z } from 'zod';
+import { SCHOOL_SLUG_RE } from '../engine/school-slug';
 import {
   GRADUATE_TYPES,
   HOURS_CATEGORIES,
@@ -132,8 +133,6 @@ export type PutStatsBody = z.infer<typeof putStatsBody>;
 /** `PUT /api/medschools/me/stats/onboarding`: the member pressed "Skip for now". */
 export const putOnboardingBody = z.object({ state: z.literal('skipped') }).strict();
 
-const SLUG_RE = /^[a-z0-9-]{1,80}$/;
-
 /** `POST /api/medschools/me/list-builder`: the member's request in words, whether to use their stats, thinking. */
 export const buildListBody = z
   .object({
@@ -149,7 +148,7 @@ export const saveBuiltListBody = z
   .object({
     name: z.string().trim().min(1).max(60).refine(noControl, 'control characters'),
     items: z
-      .array(z.object({ slug: z.string().regex(SLUG_RE), program: z.enum(['ANY', 'REG', 'PHD']).optional() }).strict())
+      .array(z.object({ slug: z.string().regex(SCHOOL_SLUG_RE), program: z.enum(['ANY', 'REG', 'PHD']).optional() }).strict())
       .min(1)
       .max(60),
   })

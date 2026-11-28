@@ -10,9 +10,7 @@
  * lib/__tests__/test-discovery.test.ts checks that the two never overlap.
  * CI: .github/workflows/toolbox-tests.yml.
  */
-import path from 'node:path';
-import { FRAMER_MOTION_INTERNALS } from './framer-motion-internals.mjs';
-import { I18N_RUNTIME_ALIASES } from './i18n-runtime-aliases.mjs';
+import { uiTestAliases } from './vitest.aliases.mjs';
 import { defineConfig } from 'vitest/config';
 
 export const TOOLBOX_SUITE_GLOBS = ['lib/toolbox/**/*.test.ts'];
@@ -24,12 +22,5 @@ export default defineConfig({
     pool: 'threads',
     env: { LOG_LEVEL: process.env.LOG_LEVEL ?? 'silent' },
   },
-  resolve: {
-    alias: {
-      ...FRAMER_MOTION_INTERNALS,
-      ...I18N_RUNTIME_ALIASES,
-      '@': path.resolve(import.meta.dirname),
-      '@features': path.resolve(import.meta.dirname, 'features'),
-    },
-  },
+  resolve: { alias: uiTestAliases },
 });

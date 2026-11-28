@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
+import { SCHOOL_SLUG_RE } from '../engine/school-slug';
 import {
   CHARTED_TYPES,
   K_FLOOR,
@@ -102,11 +103,11 @@ function sumPrograms(rows: readonly RawCell[], today: string): RawCell[] {
   return [...out.values()];
 }
 
-/** Same shape the search parser accepts; anything else (`%00`, upper case, over-long) is a 404 and never reaches Postgres. */
-export const SLUG_RE = /^[a-z0-9-]{1,80}$/;
+export { SCHOOL_SLUG_RE as SLUG_RE };
 
+/** Invalid school URLs return 404 before querying Postgres. */
 async function findSchool(slug: string) {
-  if (!SLUG_RE.test(slug)) return null;
+  if (!SCHOOL_SLUG_RE.test(slug)) return null;
   return prisma.medSchool.findFirst({
     where: { slug, active: true },
     select: {

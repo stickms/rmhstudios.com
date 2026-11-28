@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { schoolsParam } from '../engine/mine';
+import { parseLiveSearch } from '../engine/search';
 import { listSchoolsQuery, liveQuery, liveSummaryQuery } from './read-schemas';
 
 describe('the state filter on the public reads (owner 2026-11-24: several at once)', () => {
@@ -24,6 +26,14 @@ describe('the schools= filter on the live reads (owner 2026-11-24: My cycle, My 
       const max = Array.from({ length: 300 }, (_, i) => 'school-' + i).join(',');
       expect(schema.safeParse({ schools: max }).success).toBe(true);
     }
+  });
+  it('accepts the same 80-character identifier in a school link and in a multi-school query', () => {
+    const slug = 'a'.repeat(79) + '-';
+    expect(parseLiveSearch({ school: slug }).school).toBe(slug);
+    expect(liveQuery.parse({ school: slug })).toEqual({ school: slug });
+    const schools = schoolsParam(['duke', slug]);
+    expect(schools).toBe(slug + ',duke');
+    expect(liveSummaryQuery.parse({ schools })).toEqual({ schools });
   });
   it('refuses an empty value, upper case, a malformed list, a long slug and more than 300', () => {
     const tooMany = Array.from({ length: 301 }, (_, i) => 's' + i).join(',');

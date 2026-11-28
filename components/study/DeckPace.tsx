@@ -1,3 +1,4 @@
+import { deviceTimeZone } from '@/lib/core/zoned-time';
 import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -12,20 +13,12 @@ import { getDeckPaceApi, setDeckPaceApi, type DeckPaceView } from '@/lib/study/p
 import { MAX_NEW_PER_DAY } from '@/lib/study/pace';
 import { NEW_PER_SESSION } from '@/lib/study/queue';
 
-function viewerTimeZone(): string | undefined {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  } catch {
-    return undefined;
-  }
-}
-
 /**
  * The deck page's "Pace" section (owner only): new cards a day, an optional test date with the pace it suggests,
  * and the next seven days. Opt-in: with no pace the deck keeps the per-session rule and says so.
  */
 export function DeckPace({ deckId }: { deckId: string }) {
-  const timeZone = viewerTimeZone();
+  const timeZone = deviceTimeZone();
   const query = useQuery({
     ...apiQuery(getDeckPaceApi, {
       params: { id: deckId },

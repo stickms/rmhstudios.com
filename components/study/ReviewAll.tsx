@@ -1,3 +1,4 @@
+import { deviceTimeZone } from '@/lib/core/zoned-time';
 import { useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
@@ -32,15 +33,6 @@ import { useCardListen } from '@/components/study/useCardListen';
 
 const GRADES = [0, 1, 2, 3] as const;
 
-/** The member's IANA zone, so a paced deck's "today" is theirs (the server falls back to UTC). */
-function viewerTimeZone(): string | undefined {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  } catch {
-    return undefined;
-  }
-}
-
 type Notice =
   | {
       kind: 'leech';
@@ -67,7 +59,8 @@ export function ReviewAll({
   const keysRef = useReviewKeys();
   const lastKeyRef = useRef('');
   const lastKeyAtRef = useRef(0);
-  const timeZone = viewerTimeZone();
+  // The member's IANA zone, so a paced deck's "today" is theirs (the server falls back to UTC).
+  const timeZone = deviceTimeZone();
   const query = useQuery({
     ...apiQuery(reviewQueueApi, {
       query: {

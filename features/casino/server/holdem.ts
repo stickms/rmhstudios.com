@@ -5,6 +5,7 @@
  * Standard NLHE rules with blinds, community cards, side pots.
  */
 
+import { generateRoomId, getNextSeatIndex } from './room-seats';
 import type { Server, Socket } from 'socket.io';
 import { getPrismaClient } from '../../../server/socket-server/prisma-client';
 import { debitCoinsOn, creditCoinsOn, getBalanceOn } from '../../../lib/economy/ledger-core';
@@ -174,15 +175,6 @@ function roomKey(roomId: string): string {
   return `holdem:${roomId}`;
 }
 
-function generateRoomId(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let id = '';
-  for (let i = 0; i < 5; i++) {
-    id += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return id;
-}
-
 // ── Helpers ────────────────────────────────────────────────────────
 
 function drawCard(room: HoldemRoom): Card {
@@ -303,16 +295,6 @@ function broadcastRoomList() {
       inProgress: r.phase !== 'waiting',
     }));
   ioRef.to(LOBBY_ROOM).emit(S2C.ROOM_LIST, { rooms: list });
-}
-
-// ── Seat Assignment ────────────────────────────────────────────────
-
-function getNextSeatIndex(room: HoldemRoom): number {
-  const taken = new Set(Array.from(room.players.values()).map((p) => p.seatIndex));
-  for (let i = 0; i < room.maxPlayers; i++) {
-    if (!taken.has(i)) return i;
-  }
-  return -1;
 }
 
 // ── Hand Lifecycle ────────────────────────────────────────────────

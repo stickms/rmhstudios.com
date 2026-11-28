@@ -50,10 +50,4 @@ export async function api<T>(
 }
 
 /** The viewer's IANA timezone, with a safe fallback. */
-export function viewerTimeZone(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-  } catch {
-    return 'UTC';
-  }
-}
+export { deviceTimeZoneOrUtc as viewerTimeZone } from '@/lib/core/zoned-time';

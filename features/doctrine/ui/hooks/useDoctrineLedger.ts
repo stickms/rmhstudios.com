@@ -7,13 +7,7 @@ import { api } from '@/lib/contract/client';
 import { getDoctrineActivityApi, getDoctrineLedgerApi } from '@features/doctrine/engine/doctrine.contract';
 
 /** The zone the browser reports; the server checks it and falls back to UTC. */
-export function browserTimeZone(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-  } catch {
-    return 'UTC';
-  }
-}
+export { deviceTimeZoneOrUtc as browserTimeZone } from '@/lib/core/zoned-time';
 
 export function useDoctrineLedger() {
   return useInfiniteQuery({

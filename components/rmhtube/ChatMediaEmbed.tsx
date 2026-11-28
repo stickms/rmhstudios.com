@@ -24,16 +24,9 @@ import { safeHref } from '@/lib/url-safety';
 import { api } from '@/lib/contract/client';
 import { gifOembedApi } from '@/lib/unfurl/oembed.contract';
 
-// ─── URL extraction & classification ─────────────────────────────
+import { extractMediaEmbeds, textWithoutMedia, type MediaEmbedInfo } from '@/lib/unfurl/chat-media';
 
-const URL_REGEX = /https?:\/\/[^\s<>"']+/gi;
-const IMAGE_EXT_REGEX = /\.(gif|png|jpe?g|webp|avif)(\?[^\s]*)?$/i;
-
-type MediaEmbedInfo = {
-  originalUrl: string;
-  directUrl: string | null; // null = needs async resolution (Tenor share)
-  type: 'image' | 'giphy' | 'tenor' | 'tenor-pending';
-};
+export { extractMediaEmbeds };
 
 export interface MessageMedia {
   /** The message text with embedded URLs removed. */
@@ -57,17 +50,8 @@ export function parseMessageMedia(content: string): MessageMedia {
   if (cached) return cached;
 
   const embeds = extractMediaEmbeds(content);
-  const embedUrls = new Set(embeds.map((e) => e.originalUrl));
-  const text =
-    embeds.length === 0
-      ? content
-      : content
-          .replace(URL_REGEX, (match) => (embedUrls.has(match) ? '' : match))
-          .replace(/\s{2,}/g, ' ')
-          .trim();
-
   const parsed: MessageMedia = {
-    text,
+    text: textWithoutMedia(content, embeds),
     embeds,
   };
   if (messageCache.size >= MESSAGE_CACHE_LIMIT) {
@@ -81,86 +65,6 @@ export function parseMessageMedia(content: string): MessageMedia {
 /** Message text with embedded media URLs removed. */
 export function stripEmbedUrls(content: string): string {
   return parseMessageMedia(content).text;
-}
-
-/** Embeddable media in a message. */
-export function extractMediaEmbeds(content: string): MediaEmbedInfo[] {
-  const urls = content.match(URL_REGEX);
-  if (!urls) return [];
-
-  const embeds: MediaEmbedInfo[] = [];
-  const seen = new Set<string>();
-
-  for (const url of urls) {
-    if (seen.has(url)) continue;
-    seen.add(url);
-
-    try {
-      const parsed = new URL(url);
-      const host = parsed.hostname.replace(/^www\./, '');
-
-      // Direct image URL (any host)
-      if (IMAGE_EXT_REGEX.test(parsed.pathname)) {
-        embeds.push({
-          originalUrl: url,
-          directUrl: url,
-          type: 'image',
-        });
-        continue;
-      }
-
-      // Giphy share URL: giphy.com/gifs/[optional-slug-]ID
-      if (host === 'giphy.com' && parsed.pathname.startsWith('/gifs/')) {
-        const pathParts = parsed.pathname.split('/').pop() ?? '';
-        const gifId = pathParts.includes('-') ? pathParts.split('-').pop() : pathParts;
-        if (gifId) {
-          embeds.push({
-            originalUrl: url,
-            directUrl: `https://media1.giphy.com/media/${gifId}/giphy.gif`,
-            type: 'giphy',
-          });
-        }
-        continue;
-      }
-
-      // Giphy media URL (already direct)
-      if (
-        (host.match(/^media\d*\.giphy\.com$/) || host === 'i.giphy.com') &&
-        /\.(gif|mp4|webp)(\?|$)/i.test(parsed.pathname)
-      ) {
-        embeds.push({
-          originalUrl: url,
-          directUrl: url,
-          type: 'giphy',
-        });
-        continue;
-      }
-
-      // Tenor media URL (already direct)
-      if (host.match(/^media\d*\.tenor\.com$/) && /\.(gif|mp4|webp|png)(\?|$)/i.test(parsed.pathname)) {
-        embeds.push({
-          originalUrl: url,
-          directUrl: url,
-          type: 'tenor',
-        });
-        continue;
-      }
-
-      // Tenor share URL: tenor.com/view/[slug]-gif-[id]
-      if (host === 'tenor.com' && parsed.pathname.startsWith('/view/')) {
-        embeds.push({
-          originalUrl: url,
-          directUrl: null,
-          type: 'tenor-pending',
-        });
-        continue;
-      }
-    } catch {
-      // Invalid URL — skip
-    }
-  }
-
-  return embeds;
 }
 
 // ─── Tenor resolver hook ─────────────────────────────────────────

@@ -1,17 +1,10 @@
+import { deviceTimeZone } from '@/lib/core/zoned-time';
 import { useQuery } from '@tanstack/react-query';
 import { Flame } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useArrival } from '@/components/ui/arrive';
 import { api } from '@/lib/contract/client';
 import { getFocusHistoryApi } from '@/lib/rmhstudy/history.contract';
-
-function viewerTimeZone(): string | undefined {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  } catch {
-    return undefined;
-  }
-}
 
 /**
  * Landing prompt: "Study today to keep your 4-day streak". Shown only when yesterday kept a
@@ -20,7 +13,7 @@ function viewerTimeZone(): string | undefined {
  */
 export default function StudyStreakPrompt() {
   const { t } = useTranslation('rmhstudy-streaks');
-  const timeZone = viewerTimeZone();
+  const timeZone = deviceTimeZone();
   const query = useQuery({
     queryKey: [getFocusHistoryApi.path, 'landing', timeZone],
     queryFn: ({ signal }) =>

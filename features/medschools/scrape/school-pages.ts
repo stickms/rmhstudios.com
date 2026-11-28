@@ -15,6 +15,7 @@
  * and the file's own method (read on the check date) does not say that.
  */
 import { z } from 'zod';
+import { SCHOOL_SLUG_RE } from '../engine/school-slug';
 import { cycleYearOf } from '../engine/cycle';
 import type { NormalizedPrompt } from '../engine/secondaries/types';
 import { recordCheck, recordPrompts, sanitizeSourceRef } from './secondaries-store';
@@ -83,7 +84,7 @@ const evidence = z
 
 const schoolSchema = z
   .object({
-    slug: z.string().regex(/^[a-z0-9-]{1,80}$/),
+    slug: z.string().regex(SCHOOL_SLUG_RE),
     checkedOn: day,
     secondary: z
       .object({

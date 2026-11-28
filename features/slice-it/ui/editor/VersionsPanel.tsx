@@ -8,6 +8,7 @@
  * version", which the editor performs through its own save.
  */
 
+import { deviceTimeZoneOrUtc } from '@/lib/core/zoned-time';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -35,15 +36,6 @@ import { editorState, useEditorStore } from '@features/slice-it/engine/editor/st
 import type { Difficulty, Slice } from '@features/slice-it/engine/editor/types';
 
 const ROW = 'flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-site-border py-3';
-
-/** The member's own zone; UTC where the browser will not say. */
-function memberTimeZone(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-  } catch {
-    return 'UTC';
-  }
-}
 
 /**
  * Put `stored` into the editor as one undoable restore, and say so with an Undo that only undoes this restore.
@@ -157,7 +149,8 @@ export function VersionsPanel({ open, onOpenChange, onSaveVersion, onPreview }: 
     if (await onSaveVersion(name.trim())) refresh();
   };
 
-  const groups = groupVersionsByDay(versions.data?.revisions ?? [], memberTimeZone());
+  // The member's own zone; UTC where the browser will not say.
+  const groups = groupVersionsByDay(versions.data?.revisions ?? [], deviceTimeZoneOrUtc());
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -10,8 +10,10 @@
  * the point.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
+  deviceTimeZone,
+  deviceTimeZoneOrUtc,
   getZonedParts,
   isSameZonedDay,
   zonedDateKey,
@@ -114,5 +116,19 @@ describe('zoned helpers', () => {
     // would be wrong from 2026-11-01 onward.
     expect(zoneAbbreviation(new Date('2026-08-13T00:00:00Z'), CHICAGO)).toBe('CDT');
     expect(zoneAbbreviation(new Date('2026-12-17T01:00:00Z'), CHICAGO)).toBe('CST');
+  });
+});
+
+describe('device time zone', () => {
+  it('preserves the caller’s fallback when Intl access fails', () => {
+    const options = vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockImplementation(() => {
+      throw new Error('Intl unavailable');
+    });
+    try {
+      expect(deviceTimeZone()).toBeUndefined();
+      expect(deviceTimeZoneOrUtc()).toBe('UTC');
+    } finally {
+      options.mockRestore();
+    }
   });
 });

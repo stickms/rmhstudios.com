@@ -145,3 +145,16 @@ export function zoneAbbreviation(instant: Date, timeZone: string): string {
 export function isSameZonedDay(a: Date, b: Date, timeZone: string): boolean {
   return zonedDateKey(a, timeZone) === zonedDateKey(b, timeZone);
 }
+
+/** A device may have no time zone or may block Intl access. */
+export function deviceTimeZone(): string | undefined {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return undefined;
+  }
+}
+
+export function deviceTimeZoneOrUtc(): string {
+  return deviceTimeZone() || 'UTC';
+}

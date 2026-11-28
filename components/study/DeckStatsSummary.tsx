@@ -1,3 +1,4 @@
+import { deviceTimeZone } from '@/lib/core/zoned-time';
 import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -6,21 +7,13 @@ import { useArrival } from '@/components/ui/arrive';
 import { apiQuery } from '@/lib/contract/client';
 import { getStudyStatsApi } from '@/lib/study/stats.contract';
 
-function viewerTimeZone(): string | undefined {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  } catch {
-    return undefined;
-  }
-}
-
 /**
  * One deck's due-today count and mature share for the signed-in studier, with a link to the
  * statistics page filtered to the deck. Renders nothing when the stats cannot be loaded.
  */
 export function DeckStatsSummary({ deckId }: { deckId: string }) {
   const { t, i18n } = useTranslation('study-stats');
-  const timeZone = viewerTimeZone();
+  const timeZone = deviceTimeZone();
   const { data, isPending } = useQuery({
     ...apiQuery(getStudyStatsApi, {
       query: { deckId, ...(timeZone ? { tz: timeZone } : {}) },

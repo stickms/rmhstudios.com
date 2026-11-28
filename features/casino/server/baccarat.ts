@@ -7,6 +7,7 @@
  * 8-deck shoe, 5% banker commission.
  */
 
+import { generateRoomId, getNextSeatIndex } from './room-seats';
 import { randomUUID } from 'crypto';
 import type { Server, Socket } from 'socket.io';
 import { getPrismaClient } from '../../../server/socket-server/prisma-client';
@@ -162,15 +163,6 @@ function roomKey(roomId: string): string {
   return `bacc:${roomId}`;
 }
 
-function generateRoomId(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let id = '';
-  for (let i = 0; i < 5; i++) {
-    id += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return id;
-}
-
 // ── Shoe Management ────────────────────────────────────────────────
 
 function drawCard(room: BaccaratRoom): Card {
@@ -257,16 +249,6 @@ function broadcastRoomList() {
       inProgress: roundInProgress(r),
     }));
   ioRef.to(LOBBY_ROOM).emit(S2C.ROOM_LIST, { rooms: list });
-}
-
-// ── Seat Assignment ────────────────────────────────────────────────
-
-function getNextSeatIndex(room: BaccaratRoom): number {
-  const taken = new Set(Array.from(room.players.values()).map((p) => p.seatIndex));
-  for (let i = 0; i < room.maxPlayers; i++) {
-    if (!taken.has(i)) return i;
-  }
-  return -1;
 }
 
 // ── Timer Helpers ──────────────────────────────────────────────────

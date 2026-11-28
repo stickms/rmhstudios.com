@@ -1,22 +1,18 @@
 import { useState } from 'react';
-import { holdScroll } from './hold-scroll';
-import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { Link, useSearch } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { MedSearch } from './controls/MedSearch';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
-import { mineOfSearch, mineToSearch, type MineChoice } from '../engine/mine';
 import { schoolProgramOf } from '../engine/programs';
-import { pickFilter } from '../engine/saved-filters';
 import { Q_MAX, SCHOOL_SEARCH_DEFAULTS, parseIndexSearch } from '../engine/search';
 import { indexQuery, schoolsQuery } from '../medschools.queries';
 import { MineSelect, MineSignedOutNote, useMineEmptyText } from './MineSelect';
 import { PrefsNote } from './PrefsNote';
-import { clearSavedFilters, saveFilters, useSavedFilters } from './useSavedFilters';
-import { useMineFilter } from './useMineFilter';
+import { clearSavedFilters } from './useSavedFilters';
 import { useSourcePref } from './useSourcePref';
-import { useEffectiveView } from './useEffectiveView';
+import { useSchoolListFilters } from './useSchoolListFilters';
 import { ProgramMultiSelect, StateMultiSelect } from './ProgramMultiSelect';
 import { SaveToList } from './SaveToList';
 import { SchoolCrest } from './SchoolCrest';
@@ -36,19 +32,14 @@ export function IndexPage() {
   const { t } = useTranslation('medschools');
   const { locale } = useLocaleFormat();
   const { sourceName } = useMedLabels();
-  const navigate = useNavigate();
   const search = parseIndexSearch(useSearch({ strict: false }) as Record<string, unknown>);
   const nf = new Intl.NumberFormat(locale);
   const [text, setText] = useState(search.q ?? '');
 
-  // The URL where it speaks, then this device's saved filters, then the viewer's preferences (D13/D14).
-  const { view, setSearch: setView } = useEffectiveView('index', search);
-  const saved = useSavedFilters().page;
-  const states = pickFilter(search.states, saved?.states, undefined, [] as string[]);
-  const mine = useMineFilter(mineOfSearch(search), saved?.mine);
+  const { view, setView, states, mine, fromDevice, setSearch, setStates, setMine } = useSchoolListFilters('index', search);
   // The header's CycleTrack / Admit.org choice: each row's reported count is that source's where the school has one.
   const source = useSourcePref();
-  const schools = useQuery(schoolsQuery(indexQuery({ q: search.q, states: states.value, source: source.value }, view)));
+  const schools = useQuery(schoolsQuery(indexQuery({ q: search.q, states, source: source.value }, view)));
   // A link that named the source hands it on to the school pages (a device choice needs no help: it is read there).
   const schoolSearch =
     source.from === 'url' && source.value === 'admit'
@@ -58,40 +49,12 @@ export function IndexPage() {
   useLiveSignal();
   const mineEmpty = useMineEmptyText();
 
-  const setSearch = (next: { q?: string | undefined; states?: string[] | undefined; mine?: MineChoice | null }) => {
-    holdScroll();
-    void navigate({
-      to: '/med',
-      // The preference key (`programs`) stays as the URL had it, and so does every key this change does not name: a
-      // filter that came from this device is not frozen into the address by a search.
-      search: ((prev: Record<string, unknown>) => {
-        const out: Record<string, unknown> = { ...prev };
-        if ('q' in next) out.q = next.q || undefined;
-        // A comma list of sorted codes (`state=CA,NY`); none is every state.
-        if ('states' in next) out.state = next.states?.length ? next.states.join(',') : undefined;
-        if ('mine' in next) Object.assign(out, mineToSearch(next.mine ?? null));
-        return out;
-      }) as never,
-      replace: true,
-      resetScroll: false,
-    });
-  };
   const pushQuery = useDebouncedCallback((q: string) => setSearch({ q: q.trim() || undefined }), 250);
-  // Changing a filter remembers it on this device; "all" forgets it.
-  const setStates = (next: string[]) => {
-    saveFilters('page', { states: next });
-    setSearch({ states: next });
-  };
-  const setMine = (next: MineChoice | null) => {
-    saveFilters('page', { mine: next });
-    setSearch({ mine: next });
-  };
 
   // "My schools" (D15, owner 2026-11-24): a client filter over the schools the public endpoint already returned, so
   // the public cache key never carries a user. A signed-out viewer of a `?list=` link sees every school and is told why.
   const listSlugs = mine.slugs;
   const rows = (schools.data?.schools ?? []).filter((s) => !listSlugs || listSlugs.has(s.slug));
-  const fromDevice = view.fromDevice || states.from === 'device' || mine.fromDevice;
 
   return (
     <div className="medapp-index medapp-fill">
@@ -108,7 +71,7 @@ export function IndexPage() {
               pushQuery(v);
             }}
           />
-          <StateMultiSelect states={schools.data?.states ?? []} value={states.value} onChange={setStates} />
+          <StateMultiSelect states={schools.data?.states ?? []} value={states} onChange={setStates} />
           <ProgramMultiSelect value={view.programs} onChange={(programs) => setView({ programs })} />
           {mine.signedIn ? <MineSelect value={mine.choice} lists={mine.lists} onChange={setMine} /> : null}
         </div>

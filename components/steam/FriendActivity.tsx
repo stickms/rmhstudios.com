@@ -1,3 +1,4 @@
+import { deviceTimeZoneOrUtc } from '@/lib/core/zoned-time';
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
@@ -26,14 +27,6 @@ export function FriendActivity({ signedIn }: { signedIn: boolean }) {
   return <FriendActivityView data={query.data} loading={query.isPending} failed={query.isError} />;
 }
 
-function browserZone(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-  } catch {
-    return 'UTC';
-  }
-}
-
 /** The view alone, so it renders the same from data in a test. */
 export function FriendActivityView({
   data,
@@ -48,7 +41,7 @@ export function FriendActivityView({
 }) {
   const { t, i18n } = useTranslation('games-friends');
   const arrival = useArrival(!loading);
-  const zone = timeZone ?? browserZone();
+  const zone = timeZone ?? deviceTimeZoneOrUtc();
   const days = useMemo(() => groupEventsByDay(data?.events ?? [], zone), [data, zone]);
 
   // A member who follows nobody (or only people who are left out) gets no section at all.

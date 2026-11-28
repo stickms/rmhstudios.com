@@ -21,16 +21,4 @@ export async function loadPeople(ids: readonly string[]): Promise<Map<string, Ca
   return out;
 }
 
-/** Ids of users the pair has blocked in either direction. */
-export async function blockedBetween(a: string, b: string): Promise<boolean> {
-  const hit = await prisma.userBlock.findFirst({
-    where: {
-      OR: [
-        { blockerId: a, blockedId: b },
-        { blockerId: b, blockedId: a },
-      ],
-    },
-    select: { id: true },
-  });
-  return !!hit;
-}
+export { blockedEitherWay as blockedBetween } from '@/lib/moderation/user-block.server';

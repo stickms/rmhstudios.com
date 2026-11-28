@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
+import { SCHOOL_SLUG_RE } from '../engine/school-slug';
 import {
   CURRICULUM_KIND_IDS,
   FACT_KINDS,
@@ -19,7 +20,6 @@ import type {
   MedSchoolFactsRes,
 } from '../medschools.contract';
 
-const SLUG_RE = /^[a-z0-9-]{1,80}$/;
 const day = (d: Date): string => d.toISOString().slice(0, 10);
 
 /**
@@ -30,7 +30,7 @@ const day = (d: Date): string => d.toISOString().slice(0, 10);
  * only when its kind belongs to the catalogue of its own source, so a stray kind never reaches the page.
  */
 export async function getSchoolFacts(slug: string): Promise<MedSchoolFactsRes | null> {
-  if (!SLUG_RE.test(slug)) return null;
+  if (!SCHOOL_SLUG_RE.test(slug)) return null;
   const school = await prisma.medSchool.findFirst({ where: { slug, active: true }, select: { id: true } });
   if (!school) return null;
   const [rows, phdRows, profileRows] = await Promise.all([

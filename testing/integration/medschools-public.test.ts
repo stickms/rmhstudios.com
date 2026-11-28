@@ -10,7 +10,7 @@
  *   INTEGRATION_BASE_URL=http://localhost:7005 DATABASE_URL=… pnpm test:integration -- testing/integration/medschools-public.test.ts
  */
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
-import { BASE_URL, Client, closeDb, db } from './lib/client';
+import { BASE_URL, Client, closeDb, db, freshPath } from './lib/client';
 import {
   MEDSCHOOL_FIXTURE_SLUG,
   SECONDARIES_NOTYET_SLUG,
@@ -388,7 +388,7 @@ describe('RMH Med Schools, public and anonymous', () => {
   it("lists each school's newest public status: pinned keys, the live feed's sources only, the list's programs", async () => {
     type Row = { slug: string; latest: { eventType: string; occurredAt: string; dayOnly: boolean } | null };
     const row = async (query = '') =>
-      ((await anon.get(`/api/medschools/schools${query}`)).body.schools as Row[]).find((r) => r.slug === SLUG)!;
+      ((await anon.get(freshPath(`/api/medschools/schools${query}`))).body.schools as Row[]).find((r) => r.slug === SLUG)!;
     const all = await row();
     expect(Object.keys(all.latest!).sort()).toEqual(['dayOnly', 'eventType', 'occurredAt']);
     // The newest is the RMH waitlist at 23:00 today, which is never public: the newest public one is today's 01:00
@@ -403,7 +403,7 @@ describe('RMH Med Schools, public and anonymous', () => {
 
   it('follows the public source= choice (owner 2026-11-24): one source, never a sum, unchanged keys, junk is a 400', async () => {
     type Row = { slug: string; reported: { source: string; count: number } | null };
-    const list = async (query = '') => (await anon.get(`/api/medschools/schools${query}`)).body.schools as Row[];
+    const list = async (query = '') => (await anon.get(freshPath(`/api/medschools/schools${query}`))).body.schools as Row[];
     const mine = (rows: Row[]) => rows.find((r) => r.slug === SLUG)!;
     const plain = await list();
     // CycleTrack is first in the primary order; Admit.org's own interview sum (3 + 5) when asked for.

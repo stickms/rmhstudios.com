@@ -324,15 +324,5 @@ export async function listRunsForKey(
   };
 }
 
-/** Parse a path or query with zod; the first issue's message, never the input. */
-export function readInput<T extends z.ZodType>(raw: unknown, schema: T) {
-  const parsed = schema.safeParse(raw);
-  return parsed.success
-    ? ({ ok: true, data: parsed.data as z.infer<T> } as const)
-    : ({ ok: false, message: parsed.error.issues[0]?.message ?? 'Invalid request' } as const);
-}
-
 /** The query string as a plain object (a repeated parameter keeps its last value). */
-export function queryOf(request: Request): Record<string, string> {
-  return Object.fromEntries(new URL(request.url).searchParams);
-}
+export { queryOf, readInput } from './request-input';
