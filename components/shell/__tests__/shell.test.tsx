@@ -99,9 +99,9 @@ describe('SiteShell renders complete without client hooks (B1, L1, L2)', () => {
 
 describe('the sidebar never scrolls: the lists give way to the globe and the foot (owner, 2026-11-12)', () => {
   const shell = read('components/shell/site-shell.css');
-  it('is, top to bottom: the words, the other places, the globe, the primary, the handle', () => {
+  it('is, top to bottom: the words, the other places, the globe, the handle', () => {
     const out = html();
-    const order = ['site-sidebar__sections', 'site-sidebar__more', 'site-sidebar__globe-space', 'site-sidebar__write', 'site-sidebar__account'].map(
+    const order = ['site-sidebar__sections', 'site-sidebar__more', 'site-sidebar__globe-space', 'site-sidebar__account'].map(
       (name) => out.indexOf(name),
     );
     expect(order.every((at) => at > 0)).toBe(true);
@@ -119,11 +119,11 @@ describe('the sidebar never scrolls: the lists give way to the globe and the foo
     expect(shell).toMatch(/flex-flow: column wrap;/);
   });
 
-  it('places the globe above the foot: 26px plus the primary, the handle and their gaps', () => {
+  it('places the globe above the foot: 26px plus the handle and its gaps', () => {
     const css = read('components/shell/globe-nav.css');
     const desktop = /@media \(min-width: 1024px\) \{\s*\.globe-nav \{([^}]*)\}/.exec(css)![1]!;
-    expect(desktop).toContain('--globe-bottom: 130px');
-    expect(shell).toMatch(/\.site-sidebar__write \{[^}]*block-size: 36px/);
+    expect(desktop).toContain('--globe-bottom: 94px');
+    expect(shell).not.toContain('site-sidebar__write');
     expect(shell).toMatch(/\.site-sidebar__account \{[^}]*margin-block-start: 14px;\s*block-size: 36px/);
     expect(shell).toMatch(/\.site-sidebar__globe-space \{[^}]*margin-block-end: 18px/);
   });
@@ -217,20 +217,16 @@ describe('the sidebar lists the sections as words, and "You" is the account row 
     expect(/href="\/explore"[^>]*aria-current="page"/.test(nav)).toBe(true);
   });
 
-  it('puts the primary button, no icons beside the words, and no top bar anywhere', () => {
+  it('puts no icons beside the words, no sidebar button (it moved to the margin), and no top bar anywhere', () => {
     const out = html();
     const nav = /<nav class="site-sidebar__sections" aria-label="Sections">([\s\S]*?)<\/nav>/.exec(out)![1]!;
     expect(nav).not.toContain('<svg');
-    expect(out).toContain('Write a post');
+    expect(out).toContain('site-margin__actions');
+    expect(out).not.toMatch(/<a [^>]*data-variant="\w+"[^>]*>Write a post/);
     expect(out).not.toContain('<header');
   });
 
-  it('the sidebar button is the primary only where the page has none of its own (R4)', () => {
-    const write = (path: string) => /<a [^>]*data-variant="(\w+)"[^>]*>Write a post/.exec(html(path))?.[1];
-    expect(write('/')).toBe('default');
-    expect(write('/u/rmh/post/abc')).toBe('default');
-    expect(write('/explore')).toBe('primary');
-    expect(write('/u/rmh')).toBe('primary');
+  it('knows which pages own the primary button (R4)', () => {
     expect(pageOwnsPrimary('/u/rmh/post/abc')).toBe(true);
     expect(pageOwnsPrimary('/u/rmh')).toBe(false);
     expect(pageOwnsPrimary('/news/some-headline-abc1234')).toBe(true);

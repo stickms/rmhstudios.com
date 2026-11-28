@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrivalSuspense } from '@/components/ui/arrive';
 import { Input } from '@/components/ui/input';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { MarginActions } from './MarginActions';
 import { MarginFooter } from './MarginFooter';
 import { takeoverFor } from './margin-takeover';
 import { useMarginSlotRef } from './margin-slot';
@@ -50,7 +51,7 @@ export function MarginColumn() {
           </ArrivalSuspense>
         )}
         <div ref={setSlot} className="site-margin__page" />
-        <MarginFooter />
+        <MarginDock />
       </aside>
     );
   }
@@ -85,7 +86,17 @@ export function MarginColumn() {
         </ArrivalSuspense>
       )}
       <div ref={setSlot} className="site-margin__page" />
-      <MarginFooter />
+      <MarginDock />
     </aside>
+  );
+}
+
+/** The foot of the column: the two actions above the footer links, kept together at the bottom of the cell. */
+function MarginDock() {
+  return (
+    <div className="site-margin__dock">
+      <MarginActions />
+      <MarginFooter />
+    </div>
   );
 }
